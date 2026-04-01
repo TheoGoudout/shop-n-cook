@@ -1,12 +1,11 @@
-import { useState } from "react"
-import { useMutation, useQuery } from "@tanstack/react-query"
-import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
+import { useMutation, useQuery } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
-
-import { RecipesService, ShoppingListsService } from "@/client"
+import { useState } from "react"
+import { useForm } from "react-hook-form"
+import { z } from "zod"
 import type { ShoppingListPublic } from "@/client"
+import { RecipesService, ShoppingListsService } from "@/client"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -60,7 +59,7 @@ export function AddRecipeToList({ listId, onUpdated }: AddRecipeToListProps) {
 
   const mutation = useMutation({
     mutationFn: (values: FormValues) =>
-      ShoppingListsService.addRecipe({
+      ShoppingListsService.addRecipeToList({
         id: listId,
         requestBody: {
           recipe_id: values.recipe_id,
@@ -144,7 +143,11 @@ export function AddRecipeToList({ listId, onUpdated }: AddRecipeToListProps) {
                 )}
               />
             </div>
-            <Button type="submit" disabled={mutation.isPending} className="w-full">
+            <Button
+              type="submit"
+              disabled={mutation.isPending}
+              className="w-full"
+            >
               {mutation.isPending ? "Adding..." : "Add to list"}
             </Button>
           </form>

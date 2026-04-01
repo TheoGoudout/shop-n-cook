@@ -1,12 +1,11 @@
-import { useState } from "react"
-import { useMutation } from "@tanstack/react-query"
-import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
+import { useMutation } from "@tanstack/react-query"
 import { Pencil } from "lucide-react"
-
-import { ShoppingListsService } from "@/client"
+import { useState } from "react"
+import { useForm } from "react-hook-form"
+import { z } from "zod"
 import type { ShoppingListPublic, ShoppingListRecipePublic } from "@/client"
+import { ShoppingListsService } from "@/client"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -38,7 +37,11 @@ interface EditRecipeEntryProps {
   onUpdated: (updated: ShoppingListPublic) => void
 }
 
-export function EditRecipeEntry({ listId, entry, onUpdated }: EditRecipeEntryProps) {
+export function EditRecipeEntry({
+  listId,
+  entry,
+  onUpdated,
+}: EditRecipeEntryProps) {
   const [open, setOpen] = useState(false)
 
   const form = useForm<FormValues>({
@@ -51,7 +54,7 @@ export function EditRecipeEntry({ listId, entry, onUpdated }: EditRecipeEntryPro
 
   const mutation = useMutation({
     mutationFn: (values: FormValues) =>
-      ShoppingListsService.updateRecipe({
+      ShoppingListsService.updateRecipeInList({
         id: listId,
         entryId: entry.id,
         requestBody: values,
@@ -106,7 +109,11 @@ export function EditRecipeEntry({ listId, entry, onUpdated }: EditRecipeEntryPro
                 )}
               />
             </div>
-            <Button type="submit" disabled={mutation.isPending} className="w-full">
+            <Button
+              type="submit"
+              disabled={mutation.isPending}
+              className="w-full"
+            >
               {mutation.isPending ? "Saving..." : "Save"}
             </Button>
           </form>

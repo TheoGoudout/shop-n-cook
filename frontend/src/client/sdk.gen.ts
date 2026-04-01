@@ -3,16 +3,150 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type {
-    ItemsReadItemsData, ItemsReadItemsResponse, ItemsCreateItemData, ItemsCreateItemResponse, ItemsReadItemData, ItemsReadItemResponse, ItemsUpdateItemData, ItemsUpdateItemResponse, ItemsDeleteItemData, ItemsDeleteItemResponse,
-    LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse,
-    PrivateCreateUserData, PrivateCreateUserResponse,
-    UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse,
-    UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse,
-    HouseholdsReadHouseholdsResponse, HouseholdsReadHouseholdData, HouseholdsReadHouseholdResponse, HouseholdsCreateHouseholdData, HouseholdsCreateHouseholdResponse, HouseholdsUpdateHouseholdData, HouseholdsUpdateHouseholdResponse, HouseholdsDeleteHouseholdData, HouseholdsDeleteHouseholdResponse, HouseholdsAddMemberData, HouseholdsAddMemberResponse, HouseholdsRemoveMemberData, HouseholdsRemoveMemberResponse,
-    RecipesReadRecipesData, RecipesReadRecipesResponse, RecipesReadRecipeData, RecipesReadRecipeResponse, RecipesCreateRecipeData, RecipesCreateRecipeResponse, RecipesUpdateRecipeData, RecipesUpdateRecipeResponse, RecipesDeleteRecipeData, RecipesDeleteRecipeResponse, RecipesAddIngredientData, RecipesAddIngredientResponse, RecipesUpdateIngredientData, RecipesUpdateIngredientResponse, RecipesDeleteIngredientData, RecipesDeleteIngredientResponse,
-    ShoppingListsReadListsResponse, ShoppingListsReadListData, ShoppingListsReadListResponse, ShoppingListsCreateListData, ShoppingListsCreateListResponse, ShoppingListsUpdateListData, ShoppingListsUpdateListResponse, ShoppingListsDeleteListData, ShoppingListsDeleteListResponse, ShoppingListsAddRecipeData, ShoppingListsAddRecipeResponse, ShoppingListsUpdateRecipeData, ShoppingListsUpdateRecipeResponse, ShoppingListsRemoveRecipeData, ShoppingListsRemoveRecipeResponse, ShoppingListsToggleIngredientData, ShoppingListsToggleIngredientResponse,
-} from './types.gen';
+import type { HouseholdsReadHouseholdsResponse, HouseholdsCreateHouseholdData, HouseholdsCreateHouseholdResponse, HouseholdsReadHouseholdData, HouseholdsReadHouseholdResponse, HouseholdsUpdateHouseholdData, HouseholdsUpdateHouseholdResponse, HouseholdsDeleteHouseholdData, HouseholdsDeleteHouseholdResponse, HouseholdsAddMemberData, HouseholdsAddMemberResponse, HouseholdsRemoveMemberData, HouseholdsRemoveMemberResponse, ItemsReadItemsData, ItemsReadItemsResponse, ItemsCreateItemData, ItemsCreateItemResponse, ItemsReadItemData, ItemsReadItemResponse, ItemsUpdateItemData, ItemsUpdateItemResponse, ItemsDeleteItemData, ItemsDeleteItemResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, RecipesReadRecipesData, RecipesReadRecipesResponse, RecipesCreateRecipeData, RecipesCreateRecipeResponse, RecipesReadRecipeData, RecipesReadRecipeResponse, RecipesUpdateRecipeData, RecipesUpdateRecipeResponse, RecipesDeleteRecipeData, RecipesDeleteRecipeResponse, RecipesAddIngredientData, RecipesAddIngredientResponse, RecipesUpdateIngredientData, RecipesUpdateIngredientResponse, RecipesDeleteIngredientData, RecipesDeleteIngredientResponse, ShoppingListsReadShoppingListsData, ShoppingListsReadShoppingListsResponse, ShoppingListsCreateShoppingListData, ShoppingListsCreateShoppingListResponse, ShoppingListsReadShoppingListData, ShoppingListsReadShoppingListResponse, ShoppingListsUpdateShoppingListData, ShoppingListsUpdateShoppingListResponse, ShoppingListsDeleteShoppingListData, ShoppingListsDeleteShoppingListResponse, ShoppingListsAddRecipeToListData, ShoppingListsAddRecipeToListResponse, ShoppingListsUpdateRecipeInListData, ShoppingListsUpdateRecipeInListResponse, ShoppingListsRemoveRecipeFromListData, ShoppingListsRemoveRecipeFromListResponse, ShoppingListsToggleIngredientData, ShoppingListsToggleIngredientResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
+
+export class HouseholdsService {
+    /**
+     * Read Households
+     * Return households the user owns or belongs to.
+     * @returns HouseholdsPublic Successful Response
+     * @throws ApiError
+     */
+    public static readHouseholds(): CancelablePromise<HouseholdsReadHouseholdsResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/households/'
+        });
+    }
+    
+    /**
+     * Create Household
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns HouseholdPublic Successful Response
+     * @throws ApiError
+     */
+    public static createHousehold(data: HouseholdsCreateHouseholdData): CancelablePromise<HouseholdsCreateHouseholdResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/households/',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Read Household
+     * @param data The data for the request.
+     * @param data.id
+     * @returns HouseholdPublic Successful Response
+     * @throws ApiError
+     */
+    public static readHousehold(data: HouseholdsReadHouseholdData): CancelablePromise<HouseholdsReadHouseholdResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/households/{id}',
+            path: {
+                id: data.id
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Update Household
+     * @param data The data for the request.
+     * @param data.id
+     * @param data.requestBody
+     * @returns HouseholdPublic Successful Response
+     * @throws ApiError
+     */
+    public static updateHousehold(data: HouseholdsUpdateHouseholdData): CancelablePromise<HouseholdsUpdateHouseholdResponse> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/v1/households/{id}',
+            path: {
+                id: data.id
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Delete Household
+     * @param data The data for the request.
+     * @param data.id
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static deleteHousehold(data: HouseholdsDeleteHouseholdData): CancelablePromise<HouseholdsDeleteHouseholdResponse> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/households/{id}',
+            path: {
+                id: data.id
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Add Member
+     * @param data The data for the request.
+     * @param data.id
+     * @param data.userEmail
+     * @returns HouseholdPublic Successful Response
+     * @throws ApiError
+     */
+    public static addMember(data: HouseholdsAddMemberData): CancelablePromise<HouseholdsAddMemberResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/households/{id}/members',
+            path: {
+                id: data.id
+            },
+            query: {
+                user_email: data.userEmail
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Remove Member
+     * @param data The data for the request.
+     * @param data.id
+     * @param data.userId
+     * @returns HouseholdPublic Successful Response
+     * @throws ApiError
+     */
+    public static removeMember(data: HouseholdsRemoveMemberData): CancelablePromise<HouseholdsRemoveMemberResponse> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/households/{id}/members/{user_id}',
+            path: {
+                id: data.id,
+                user_id: data.userId
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+}
 
 export class ItemsService {
     /**
@@ -237,6 +371,386 @@ export class PrivateService {
             url: '/api/v1/private/users/',
             body: data.requestBody,
             mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+}
+
+export class RecipesService {
+    /**
+     * Read Recipes
+     * @param data The data for the request.
+     * @param data.skip
+     * @param data.limit
+     * @returns RecipesPublic Successful Response
+     * @throws ApiError
+     */
+    public static readRecipes(data: RecipesReadRecipesData = {}): CancelablePromise<RecipesReadRecipesResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/recipes/',
+            query: {
+                skip: data.skip,
+                limit: data.limit
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Create Recipe
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns RecipePublic Successful Response
+     * @throws ApiError
+     */
+    public static createRecipe(data: RecipesCreateRecipeData): CancelablePromise<RecipesCreateRecipeResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/recipes/',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Read Recipe
+     * @param data The data for the request.
+     * @param data.id
+     * @returns RecipePublic Successful Response
+     * @throws ApiError
+     */
+    public static readRecipe(data: RecipesReadRecipeData): CancelablePromise<RecipesReadRecipeResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/recipes/{id}',
+            path: {
+                id: data.id
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Update Recipe
+     * @param data The data for the request.
+     * @param data.id
+     * @param data.requestBody
+     * @returns RecipePublic Successful Response
+     * @throws ApiError
+     */
+    public static updateRecipe(data: RecipesUpdateRecipeData): CancelablePromise<RecipesUpdateRecipeResponse> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/v1/recipes/{id}',
+            path: {
+                id: data.id
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Delete Recipe
+     * @param data The data for the request.
+     * @param data.id
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static deleteRecipe(data: RecipesDeleteRecipeData): CancelablePromise<RecipesDeleteRecipeResponse> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/recipes/{id}',
+            path: {
+                id: data.id
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Add Ingredient
+     * @param data The data for the request.
+     * @param data.id
+     * @param data.requestBody
+     * @returns RecipeIngredientPublic Successful Response
+     * @throws ApiError
+     */
+    public static addIngredient(data: RecipesAddIngredientData): CancelablePromise<RecipesAddIngredientResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/recipes/{id}/ingredients',
+            path: {
+                id: data.id
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Update Ingredient
+     * @param data The data for the request.
+     * @param data.id
+     * @param data.ingredientId
+     * @param data.requestBody
+     * @returns RecipeIngredientPublic Successful Response
+     * @throws ApiError
+     */
+    public static updateIngredient(data: RecipesUpdateIngredientData): CancelablePromise<RecipesUpdateIngredientResponse> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/v1/recipes/{id}/ingredients/{ingredient_id}',
+            path: {
+                id: data.id,
+                ingredient_id: data.ingredientId
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Delete Ingredient
+     * @param data The data for the request.
+     * @param data.id
+     * @param data.ingredientId
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static deleteIngredient(data: RecipesDeleteIngredientData): CancelablePromise<RecipesDeleteIngredientResponse> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/recipes/{id}/ingredients/{ingredient_id}',
+            path: {
+                id: data.id,
+                ingredient_id: data.ingredientId
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+}
+
+export class ShoppingListsService {
+    /**
+     * Read Shopping Lists
+     * @param data The data for the request.
+     * @param data.skip
+     * @param data.limit
+     * @returns ShoppingListsSummary Successful Response
+     * @throws ApiError
+     */
+    public static readShoppingLists(data: ShoppingListsReadShoppingListsData = {}): CancelablePromise<ShoppingListsReadShoppingListsResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/shopping-lists/',
+            query: {
+                skip: data.skip,
+                limit: data.limit
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Create Shopping List
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns ShoppingListPublic Successful Response
+     * @throws ApiError
+     */
+    public static createShoppingList(data: ShoppingListsCreateShoppingListData): CancelablePromise<ShoppingListsCreateShoppingListResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/shopping-lists/',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Read Shopping List
+     * @param data The data for the request.
+     * @param data.id
+     * @returns ShoppingListPublic Successful Response
+     * @throws ApiError
+     */
+    public static readShoppingList(data: ShoppingListsReadShoppingListData): CancelablePromise<ShoppingListsReadShoppingListResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/shopping-lists/{id}',
+            path: {
+                id: data.id
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Update Shopping List
+     * @param data The data for the request.
+     * @param data.id
+     * @param data.requestBody
+     * @returns ShoppingListPublic Successful Response
+     * @throws ApiError
+     */
+    public static updateShoppingList(data: ShoppingListsUpdateShoppingListData): CancelablePromise<ShoppingListsUpdateShoppingListResponse> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/v1/shopping-lists/{id}',
+            path: {
+                id: data.id
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Delete Shopping List
+     * @param data The data for the request.
+     * @param data.id
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static deleteShoppingList(data: ShoppingListsDeleteShoppingListData): CancelablePromise<ShoppingListsDeleteShoppingListResponse> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/shopping-lists/{id}',
+            path: {
+                id: data.id
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Add Recipe To List
+     * @param data The data for the request.
+     * @param data.id
+     * @param data.requestBody
+     * @returns ShoppingListPublic Successful Response
+     * @throws ApiError
+     */
+    public static addRecipeToList(data: ShoppingListsAddRecipeToListData): CancelablePromise<ShoppingListsAddRecipeToListResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/shopping-lists/{id}/recipes',
+            path: {
+                id: data.id
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Update Recipe In List
+     * @param data The data for the request.
+     * @param data.id
+     * @param data.entryId
+     * @param data.requestBody
+     * @returns ShoppingListPublic Successful Response
+     * @throws ApiError
+     */
+    public static updateRecipeInList(data: ShoppingListsUpdateRecipeInListData): CancelablePromise<ShoppingListsUpdateRecipeInListResponse> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/v1/shopping-lists/{id}/recipes/{entry_id}',
+            path: {
+                id: data.id,
+                entry_id: data.entryId
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Remove Recipe From List
+     * @param data The data for the request.
+     * @param data.id
+     * @param data.entryId
+     * @returns ShoppingListPublic Successful Response
+     * @throws ApiError
+     */
+    public static removeRecipeFromList(data: ShoppingListsRemoveRecipeFromListData): CancelablePromise<ShoppingListsRemoveRecipeFromListResponse> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/shopping-lists/{id}/recipes/{entry_id}',
+            path: {
+                id: data.id,
+                entry_id: data.entryId
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Toggle Ingredient
+     * @param data The data for the request.
+     * @param data.id
+     * @param data.ingredientName
+     * @param data.unit
+     * @param data.isChecked
+     * @returns ShoppingListPublic Successful Response
+     * @throws ApiError
+     */
+    public static toggleIngredient(data: ShoppingListsToggleIngredientData): CancelablePromise<ShoppingListsToggleIngredientResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/shopping-lists/{id}/ingredients/check',
+            path: {
+                id: data.id
+            },
+            query: {
+                ingredient_name: data.ingredientName,
+                unit: data.unit,
+                is_checked: data.isChecked
+            },
             errors: {
                 422: 'Validation Error'
             }
@@ -472,92 +986,6 @@ export class UtilsService {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/utils/health-check/'
-        });
-    }
-}
-
-export class HouseholdsService {
-    public static readHouseholds(): CancelablePromise<HouseholdsReadHouseholdsResponse> {
-        return __request(OpenAPI, { method: 'GET', url: '/api/v1/households/' });
-    }
-    public static readHousehold(data: HouseholdsReadHouseholdData): CancelablePromise<HouseholdsReadHouseholdResponse> {
-        return __request(OpenAPI, { method: 'GET', url: '/api/v1/households/{id}', path: { id: data.id } });
-    }
-    public static createHousehold(data: HouseholdsCreateHouseholdData): CancelablePromise<HouseholdsCreateHouseholdResponse> {
-        return __request(OpenAPI, { method: 'POST', url: '/api/v1/households/', body: data.requestBody, mediaType: 'application/json' });
-    }
-    public static updateHousehold(data: HouseholdsUpdateHouseholdData): CancelablePromise<HouseholdsUpdateHouseholdResponse> {
-        return __request(OpenAPI, { method: 'PUT', url: '/api/v1/households/{id}', path: { id: data.id }, body: data.requestBody, mediaType: 'application/json' });
-    }
-    public static deleteHousehold(data: HouseholdsDeleteHouseholdData): CancelablePromise<HouseholdsDeleteHouseholdResponse> {
-        return __request(OpenAPI, { method: 'DELETE', url: '/api/v1/households/{id}', path: { id: data.id } });
-    }
-    public static addMember(data: HouseholdsAddMemberData): CancelablePromise<HouseholdsAddMemberResponse> {
-        return __request(OpenAPI, { method: 'POST', url: '/api/v1/households/{id}/members', path: { id: data.id }, query: { user_email: data.userEmail } });
-    }
-    public static removeMember(data: HouseholdsRemoveMemberData): CancelablePromise<HouseholdsRemoveMemberResponse> {
-        return __request(OpenAPI, { method: 'DELETE', url: '/api/v1/households/{id}/members/{user_id}', path: { id: data.id, user_id: data.userId } });
-    }
-}
-
-export class RecipesService {
-    public static readRecipes(data: RecipesReadRecipesData = {}): CancelablePromise<RecipesReadRecipesResponse> {
-        return __request(OpenAPI, { method: 'GET', url: '/api/v1/recipes/', query: { skip: data.skip, limit: data.limit } });
-    }
-    public static readRecipe(data: RecipesReadRecipeData): CancelablePromise<RecipesReadRecipeResponse> {
-        return __request(OpenAPI, { method: 'GET', url: '/api/v1/recipes/{id}', path: { id: data.id } });
-    }
-    public static createRecipe(data: RecipesCreateRecipeData): CancelablePromise<RecipesCreateRecipeResponse> {
-        return __request(OpenAPI, { method: 'POST', url: '/api/v1/recipes/', body: data.requestBody, mediaType: 'application/json' });
-    }
-    public static updateRecipe(data: RecipesUpdateRecipeData): CancelablePromise<RecipesUpdateRecipeResponse> {
-        return __request(OpenAPI, { method: 'PUT', url: '/api/v1/recipes/{id}', path: { id: data.id }, body: data.requestBody, mediaType: 'application/json' });
-    }
-    public static deleteRecipe(data: RecipesDeleteRecipeData): CancelablePromise<RecipesDeleteRecipeResponse> {
-        return __request(OpenAPI, { method: 'DELETE', url: '/api/v1/recipes/{id}', path: { id: data.id } });
-    }
-    public static addIngredient(data: RecipesAddIngredientData): CancelablePromise<RecipesAddIngredientResponse> {
-        return __request(OpenAPI, { method: 'POST', url: '/api/v1/recipes/{id}/ingredients', path: { id: data.id }, body: data.requestBody, mediaType: 'application/json' });
-    }
-    public static updateIngredient(data: RecipesUpdateIngredientData): CancelablePromise<RecipesUpdateIngredientResponse> {
-        return __request(OpenAPI, { method: 'PUT', url: '/api/v1/recipes/{id}/ingredients/{ingredient_id}', path: { id: data.id, ingredient_id: data.ingredientId }, body: data.requestBody, mediaType: 'application/json' });
-    }
-    public static deleteIngredient(data: RecipesDeleteIngredientData): CancelablePromise<RecipesDeleteIngredientResponse> {
-        return __request(OpenAPI, { method: 'DELETE', url: '/api/v1/recipes/{id}/ingredients/{ingredient_id}', path: { id: data.id, ingredient_id: data.ingredientId } });
-    }
-}
-
-export class ShoppingListsService {
-    public static readShoppingLists(): CancelablePromise<ShoppingListsReadListsResponse> {
-        return __request(OpenAPI, { method: 'GET', url: '/api/v1/shopping-lists/' });
-    }
-    public static readShoppingList(data: ShoppingListsReadListData): CancelablePromise<ShoppingListsReadListResponse> {
-        return __request(OpenAPI, { method: 'GET', url: '/api/v1/shopping-lists/{id}', path: { id: data.id } });
-    }
-    public static createShoppingList(data: ShoppingListsCreateListData): CancelablePromise<ShoppingListsCreateListResponse> {
-        return __request(OpenAPI, { method: 'POST', url: '/api/v1/shopping-lists/', body: data.requestBody, mediaType: 'application/json' });
-    }
-    public static updateShoppingList(data: ShoppingListsUpdateListData): CancelablePromise<ShoppingListsUpdateListResponse> {
-        return __request(OpenAPI, { method: 'PUT', url: '/api/v1/shopping-lists/{id}', path: { id: data.id }, body: data.requestBody, mediaType: 'application/json' });
-    }
-    public static deleteShoppingList(data: ShoppingListsDeleteListData): CancelablePromise<ShoppingListsDeleteListResponse> {
-        return __request(OpenAPI, { method: 'DELETE', url: '/api/v1/shopping-lists/{id}', path: { id: data.id } });
-    }
-    public static addRecipe(data: ShoppingListsAddRecipeData): CancelablePromise<ShoppingListsAddRecipeResponse> {
-        return __request(OpenAPI, { method: 'POST', url: '/api/v1/shopping-lists/{id}/recipes', path: { id: data.id }, body: data.requestBody, mediaType: 'application/json' });
-    }
-    public static updateRecipe(data: ShoppingListsUpdateRecipeData): CancelablePromise<ShoppingListsUpdateRecipeResponse> {
-        return __request(OpenAPI, { method: 'PUT', url: '/api/v1/shopping-lists/{id}/recipes/{entry_id}', path: { id: data.id, entry_id: data.entryId }, body: data.requestBody, mediaType: 'application/json' });
-    }
-    public static removeRecipe(data: ShoppingListsRemoveRecipeData): CancelablePromise<ShoppingListsRemoveRecipeResponse> {
-        return __request(OpenAPI, { method: 'DELETE', url: '/api/v1/shopping-lists/{id}/recipes/{entry_id}', path: { id: data.id, entry_id: data.entryId } });
-    }
-    public static toggleIngredient(data: ShoppingListsToggleIngredientData): CancelablePromise<ShoppingListsToggleIngredientResponse> {
-        return __request(OpenAPI, {
-            method: 'POST',
-            url: '/api/v1/shopping-lists/{id}/ingredients/check',
-            path: { id: data.id },
-            query: { ingredient_name: data.ingredient_name, unit: data.unit, is_checked: data.is_checked }
         });
     }
 }

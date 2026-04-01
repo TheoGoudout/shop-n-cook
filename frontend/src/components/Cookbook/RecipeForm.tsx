@@ -1,11 +1,9 @@
-import { useFieldArray, useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
 import { Plus, Trash2 } from "lucide-react"
-
+import { useFieldArray, useForm } from "react-hook-form"
+import { z } from "zod"
+import type { RecipeCreate, RecipePublic } from "@/client"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
 import {
   Form,
   FormControl,
@@ -14,7 +12,8 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import type { RecipeCreate, RecipePublic } from "@/client"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 
 const ingredientSchema = z.object({
   name: z.string().min(1, "Required"),
@@ -50,11 +49,12 @@ export function RecipeForm({
       title: defaultValues?.title ?? "",
       description: defaultValues?.description ?? "",
       base_servings: defaultValues?.base_servings ?? 4,
-      ingredients: defaultValues?.ingredients?.map((i) => ({
-        name: i.name,
-        quantity: i.quantity,
-        unit: i.unit,
-      })) ?? [],
+      ingredients:
+        defaultValues?.ingredients?.map((i) => ({
+          name: i.name,
+          quantity: i.quantity,
+          unit: i.unit,
+        })) ?? [],
     },
   })
 

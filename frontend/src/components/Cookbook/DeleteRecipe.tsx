@@ -1,8 +1,9 @@
-import { useState } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Trash2 } from "lucide-react"
+import { useState } from "react"
 
 import { RecipesService } from "@/client"
+import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
@@ -12,7 +13,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
 
 interface DeleteRecipeProps {
   recipeId: string
@@ -20,7 +20,11 @@ interface DeleteRecipeProps {
   onDeleted?: () => void
 }
 
-export function DeleteRecipe({ recipeId, recipeTitle, onDeleted }: DeleteRecipeProps) {
+export function DeleteRecipe({
+  recipeId,
+  recipeTitle,
+  onDeleted,
+}: DeleteRecipeProps) {
   const [open, setOpen] = useState(false)
   const queryClient = useQueryClient()
 

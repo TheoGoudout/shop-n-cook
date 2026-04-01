@@ -1,4 +1,4 @@
-import { Briefcase, BookOpen, Home, ShoppingCart, Users } from "lucide-react"
+import { BookOpen, Briefcase, Home, ShoppingCart, Users } from "lucide-react"
 
 import { SidebarAppearance } from "@/components/Common/Appearance"
 import { Logo } from "@/components/Common/Logo"

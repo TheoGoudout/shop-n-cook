@@ -3,7 +3,6 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import {
   ArrowLeft,
   BookOpen,
-  Check,
   ChevronDown,
   ChevronRight,
   Trash2,
@@ -11,16 +10,19 @@ import {
   UtensilsCrossed,
 } from "lucide-react"
 import { useState } from "react"
-
+import type {
+  AggregatedIngredient,
+  ShoppingListPublic,
+  ShoppingListRecipePublic,
+} from "@/client"
 import { ShoppingListsService } from "@/client"
-import type { AggregatedIngredient, ShoppingListPublic, ShoppingListRecipePublic } from "@/client"
 import { AddRecipeToList } from "@/components/ShoppingLists/AddRecipeToList"
 import { EditRecipeEntry } from "@/components/ShoppingLists/EditRecipeEntry"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Separator } from "@/components/ui/separator"
-import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 
 export const Route = createFileRoute("/_layout/shopping-lists/$listId")({
@@ -50,9 +52,9 @@ function IngredientRow({
     mutationFn: (checked: boolean) =>
       ShoppingListsService.toggleIngredient({
         id: listId,
-        ingredient_name: ingredient.name,
+        ingredientName: ingredient.name,
         unit: ingredient.unit,
-        is_checked: checked,
+        isChecked: checked,
       }),
     onSuccess: onUpdated,
   })
@@ -105,9 +107,9 @@ function IngredientRow({
               className="flex items-center gap-2 text-sm text-muted-foreground pl-7 pt-1"
             >
               <BookOpen className="h-3.5 w-3.5 shrink-0" />
-              <span className="flex-1">{src.recipe_title}</span>
+              <span className="flex-1">{src.recipe_title as string}</span>
               <span>
-                {formatQty(src.quantity)} {src.unit}
+                {formatQty(src.quantity as number)} {src.unit as string}
               </span>
             </div>
           ))}
@@ -118,7 +120,7 @@ function IngredientRow({
       {!multipleRecipes && ingredient.sources[0] && (
         <div className="px-4 pb-2 text-xs text-muted-foreground flex items-center gap-1 pl-11">
           <BookOpen className="h-3 w-3" />
-          {ingredient.sources[0].recipe_title}
+          {ingredient.sources[0].recipe_title as string}
         </div>
       )}
     </div>
@@ -129,16 +131,17 @@ function RecipeEntry({
   entry,
   listId,
   onUpdated,
-  onRemove,
 }: {
   entry: ShoppingListRecipePublic
   listId: string
   onUpdated: (updated: ShoppingListPublic) => void
-  onRemove: () => void
 }) {
   const removeMutation = useMutation({
     mutationFn: () =>
-      ShoppingListsService.removeRecipe({ id: listId, entryId: entry.id }),
+      ShoppingListsService.removeRecipeFromList({
+        id: listId,
+        entryId: entry.id,
+      }),
     onSuccess: onUpdated,
   })
 
@@ -148,7 +151,8 @@ function RecipeEntry({
       <span className="flex-1 font-medium text-sm">{entry.recipe_title}</span>
       <div className="flex items-center gap-1 text-xs text-muted-foreground">
         <Users className="h-3.5 w-3.5" />
-        {entry.num_people} × {entry.num_meals} meal{entry.num_meals > 1 ? "s" : ""}
+        {entry.num_people} × {entry.num_meals} meal
+        {entry.num_meals > 1 ? "s" : ""}
       </div>
       <EditRecipeEntry listId={listId} entry={entry} onUpdated={onUpdated} />
       <Button
@@ -284,7 +288,6 @@ function ShoppingListDetailPage() {
                   entry={entry}
                   listId={listId}
                   onUpdated={handleUpdated}
-                  onRemove={() => {}}
                 />
               ))
             )}

@@ -1,10 +1,13 @@
-import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query"
+import {
+  useMutation,
+  useQueryClient,
+  useSuspenseQuery,
+} from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { BookOpen, ChefHat, Clock, Plus, Users } from "lucide-react"
-import { useState, Suspense } from "react"
-
-import { RecipesService } from "@/client"
+import { Suspense, useState } from "react"
 import type { RecipeCreate } from "@/client"
+import { RecipesService } from "@/client"
 import { RecipeForm } from "@/components/Cookbook/RecipeForm"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -15,7 +18,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Badge } from "@/components/ui/badge"
 
 export const Route = createFileRoute("/_layout/cookbook")({
   component: Cookbook,
@@ -51,10 +53,16 @@ function RecipesList() {
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {data.data.map((recipe) => (
-        <Link key={recipe.id} to="/cookbook/$recipeId" params={{ recipeId: recipe.id }}>
+        <Link
+          key={recipe.id}
+          to="/cookbook/$recipeId"
+          params={{ recipeId: recipe.id }}
+        >
           <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
             <CardHeader>
-              <CardTitle className="text-base line-clamp-2">{recipe.title}</CardTitle>
+              <CardTitle className="text-base line-clamp-2">
+                {recipe.title}
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               {recipe.description && (
@@ -91,7 +99,8 @@ function AddRecipeDialog() {
   const queryClient = useQueryClient()
 
   const mutation = useMutation({
-    mutationFn: (data: RecipeCreate) => RecipesService.createRecipe({ requestBody: data }),
+    mutationFn: (data: RecipeCreate) =>
+      RecipesService.createRecipe({ requestBody: data }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["recipes"] })
       setOpen(false)

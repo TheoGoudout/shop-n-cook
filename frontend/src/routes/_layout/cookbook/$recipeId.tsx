@@ -1,14 +1,17 @@
-import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query"
+import {
+  useMutation,
+  useQueryClient,
+  useSuspenseQuery,
+} from "@tanstack/react-query"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
-import { ArrowLeft, Edit2, X, Check } from "lucide-react"
-import { useState, Suspense } from "react"
-
-import { RecipesService } from "@/client"
+import { ArrowLeft, Edit2, X } from "lucide-react"
+import { Suspense, useState } from "react"
 import type { RecipeUpdate } from "@/client"
+import { RecipesService } from "@/client"
 import { DeleteRecipe } from "@/components/Cookbook/DeleteRecipe"
 import { RecipeForm } from "@/components/Cookbook/RecipeForm"
-import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 
 export const Route = createFileRoute("/_layout/cookbook/$recipeId")({
@@ -66,7 +69,8 @@ function RecipeDetail({ recipeId }: { recipeId: string }) {
         <div>
           <h1 className="text-2xl font-bold">{recipe.title}</h1>
           <p className="text-muted-foreground mt-1">
-            Base: {recipe.base_servings} serving{recipe.base_servings > 1 ? "s" : ""}
+            Base: {recipe.base_servings} serving
+            {recipe.base_servings > 1 ? "s" : ""}
           </p>
         </div>
         <div className="flex gap-2 shrink-0">
@@ -85,7 +89,9 @@ function RecipeDetail({ recipeId }: { recipeId: string }) {
       {recipe.description && (
         <div>
           <h2 className="font-semibold mb-2">Description / Instructions</h2>
-          <p className="text-muted-foreground whitespace-pre-wrap">{recipe.description}</p>
+          <p className="text-muted-foreground whitespace-pre-wrap">
+            {recipe.description}
+          </p>
         </div>
       )}
 
@@ -95,11 +101,14 @@ function RecipeDetail({ recipeId }: { recipeId: string }) {
         <h2 className="font-semibold mb-3">
           Ingredients{" "}
           <span className="text-muted-foreground font-normal text-sm">
-            (for {recipe.base_servings} serving{recipe.base_servings > 1 ? "s" : ""})
+            (for {recipe.base_servings} serving
+            {recipe.base_servings > 1 ? "s" : ""})
           </span>
         </h2>
         {recipe.ingredients.length === 0 ? (
-          <p className="text-muted-foreground text-sm">No ingredients listed.</p>
+          <p className="text-muted-foreground text-sm">
+            No ingredients listed.
+          </p>
         ) : (
           <ul className="space-y-2">
             {recipe.ingredients.map((ing) => (

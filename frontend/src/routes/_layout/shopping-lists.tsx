@@ -1,13 +1,16 @@
-import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query"
-import { createFileRoute, Link } from "@tanstack/react-router"
-import { Plus, ShoppingCart, BookOpen, Trash2 } from "lucide-react"
-import { useState, Suspense } from "react"
-import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
+import {
+  useMutation,
+  useQueryClient,
+  useSuspenseQuery,
+} from "@tanstack/react-query"
+import { createFileRoute, Link } from "@tanstack/react-router"
+import { BookOpen, Plus, ShoppingCart, Trash2 } from "lucide-react"
+import { Suspense, useState } from "react"
+import { useForm } from "react-hook-form"
 import { z } from "zod"
-
-import { ShoppingListsService } from "@/client"
 import type { ShoppingListCreate } from "@/client"
+import { ShoppingListsService } from "@/client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -26,7 +29,6 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
 
 export const Route = createFileRoute("/_layout/shopping-lists")({
   component: ShoppingListsPage,
@@ -94,7 +96,11 @@ function CreateListDialog() {
                 </FormItem>
               )}
             />
-            <Button type="submit" disabled={mutation.isPending} className="w-full">
+            <Button
+              type="submit"
+              disabled={mutation.isPending}
+              className="w-full"
+            >
               {mutation.isPending ? "Creating..." : "Create"}
             </Button>
           </form>
@@ -109,9 +115,9 @@ function ListsContent() {
   const queryClient = useQueryClient()
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) =>
-      ShoppingListsService.deleteShoppingList({ id }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["shopping-lists"] }),
+    mutationFn: (id: string) => ShoppingListsService.deleteShoppingList({ id }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["shopping-lists"] }),
   })
 
   if (data.data.length === 0) {
@@ -157,7 +163,9 @@ function ListsContent() {
           <CardContent>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <BookOpen className="h-3.5 w-3.5" />
-              <span>{list.recipe_count} recipe{list.recipe_count !== 1 ? "s" : ""}</span>
+              <span>
+                {list.recipe_count} recipe{list.recipe_count !== 1 ? "s" : ""}
+              </span>
               {list.created_at && (
                 <span className="ml-auto text-xs">
                   {new Date(list.created_at).toLocaleDateString()}
@@ -177,7 +185,9 @@ function ShoppingListsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Shopping Lists</h1>
-          <p className="text-muted-foreground">Plan your shopping from your recipes</p>
+          <p className="text-muted-foreground">
+            Plan your shopping from your recipes
+          </p>
         </div>
         <CreateListDialog />
       </div>

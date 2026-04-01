@@ -124,6 +124,7 @@ def update_recipe(
         for existing in list(recipe.ingredients):
             session.delete(existing)
         session.flush()
+        session.expire(recipe)  # clear stale in-memory relationship cache
         for ing_in in recipe_in.ingredients:
             ingredient = RecipeIngredient(
                 recipe_id=recipe.id,
@@ -133,7 +134,6 @@ def update_recipe(
             )
             session.add(ingredient)
 
-    session.add(recipe)
     session.commit()
     session.refresh(recipe)
     return _to_public(recipe)

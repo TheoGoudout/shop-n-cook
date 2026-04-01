@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime, timezone
+from typing import Optional
 
 from pydantic import EmailStr
 from sqlalchemy import DateTime
@@ -189,7 +190,7 @@ class RecipeIngredient(RecipeIngredientBase, table=True):
     __tablename__ = "recipeingredient"
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     recipe_id: uuid.UUID = Field(foreign_key="recipe.id", nullable=False, ondelete="CASCADE")
-    recipe: "Recipe | None" = Relationship(back_populates="ingredients")
+    recipe: Optional["Recipe"] = Relationship(back_populates="ingredients")
 
 
 class RecipeIngredientPublic(RecipeIngredientBase):
@@ -261,7 +262,7 @@ class ShoppingListRecipe(ShoppingListRecipeBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     shopping_list_id: uuid.UUID = Field(foreign_key="shoppinglist.id", nullable=False, ondelete="CASCADE")
     recipe_id: uuid.UUID = Field(foreign_key="recipe.id", nullable=False, ondelete="CASCADE")
-    shopping_list: "ShoppingList | None" = Relationship(back_populates="recipes")
+    shopping_list: Optional["ShoppingList"] = Relationship(back_populates="recipes")
     recipe: Recipe | None = Relationship(back_populates="shopping_list_entries")
 
 
@@ -272,7 +273,7 @@ class ShoppingListCheckedItem(SQLModel, table=True):
     ingredient_name: str = Field(max_length=255)
     unit: str = Field(max_length=50)
     is_checked: bool = Field(default=True)
-    shopping_list: "ShoppingList | None" = Relationship(back_populates="checked_items")
+    shopping_list: Optional["ShoppingList"] = Relationship(back_populates="checked_items")
 
 
 class ShoppingListBase(SQLModel):

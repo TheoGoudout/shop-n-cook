@@ -238,3 +238,210 @@ export type UtilsTestEmailData = {
 export type UtilsTestEmailResponse = (Message);
 
 export type UtilsHealthCheckResponse = (boolean);
+
+// ---------------------------------------------------------------------------
+// Household
+// ---------------------------------------------------------------------------
+
+export type HouseholdMemberPublic = {
+    user_id: string;
+    user_email: string;
+    user_full_name?: (string | null);
+};
+
+export type HouseholdPublic = {
+    name: string;
+    id: string;
+    owner_id: string;
+    created_at?: (string | null);
+    members: Array<HouseholdMemberPublic>;
+    member_count: number;
+};
+
+export type HouseholdsPublic = {
+    data: Array<HouseholdPublic>;
+    count: number;
+};
+
+export type HouseholdCreate = {
+    name: string;
+};
+
+export type HouseholdUpdate = {
+    name?: (string | null);
+};
+
+export type HouseholdsReadHouseholdsResponse = (HouseholdsPublic);
+export type HouseholdsReadHouseholdData = { id: string };
+export type HouseholdsReadHouseholdResponse = (HouseholdPublic);
+export type HouseholdsCreateHouseholdData = { requestBody: HouseholdCreate };
+export type HouseholdsCreateHouseholdResponse = (HouseholdPublic);
+export type HouseholdsUpdateHouseholdData = { id: string; requestBody: HouseholdUpdate };
+export type HouseholdsUpdateHouseholdResponse = (HouseholdPublic);
+export type HouseholdsDeleteHouseholdData = { id: string };
+export type HouseholdsDeleteHouseholdResponse = (Message);
+export type HouseholdsAddMemberData = { id: string; userEmail: string };
+export type HouseholdsAddMemberResponse = (HouseholdPublic);
+export type HouseholdsRemoveMemberData = { id: string; userId: string };
+export type HouseholdsRemoveMemberResponse = (HouseholdPublic);
+
+// ---------------------------------------------------------------------------
+// Recipe
+// ---------------------------------------------------------------------------
+
+export type RecipeIngredientPublic = {
+    name: string;
+    quantity: number;
+    unit: string;
+    id: string;
+    recipe_id: string;
+};
+
+export type RecipeIngredientCreate = {
+    name: string;
+    quantity: number;
+    unit: string;
+};
+
+export type RecipeIngredientUpdate = {
+    name?: (string | null);
+    quantity?: (number | null);
+    unit?: (string | null);
+};
+
+export type RecipePublic = {
+    title: string;
+    description?: (string | null);
+    base_servings: number;
+    id: string;
+    owner_id: string;
+    created_at?: (string | null);
+    ingredients: Array<RecipeIngredientPublic>;
+};
+
+export type RecipesPublic = {
+    data: Array<RecipePublic>;
+    count: number;
+};
+
+export type RecipeCreate = {
+    title: string;
+    description?: (string | null);
+    base_servings?: number;
+    ingredients?: Array<RecipeIngredientCreate>;
+};
+
+export type RecipeUpdate = {
+    title?: (string | null);
+    description?: (string | null);
+    base_servings?: (number | null);
+    ingredients?: (Array<RecipeIngredientCreate> | null);
+};
+
+export type RecipesReadRecipesData = { limit?: number; skip?: number };
+export type RecipesReadRecipesResponse = (RecipesPublic);
+export type RecipesReadRecipeData = { id: string };
+export type RecipesReadRecipeResponse = (RecipePublic);
+export type RecipesCreateRecipeData = { requestBody: RecipeCreate };
+export type RecipesCreateRecipeResponse = (RecipePublic);
+export type RecipesUpdateRecipeData = { id: string; requestBody: RecipeUpdate };
+export type RecipesUpdateRecipeResponse = (RecipePublic);
+export type RecipesDeleteRecipeData = { id: string };
+export type RecipesDeleteRecipeResponse = (Message);
+export type RecipesAddIngredientData = { id: string; requestBody: RecipeIngredientCreate };
+export type RecipesAddIngredientResponse = (RecipeIngredientPublic);
+export type RecipesUpdateIngredientData = { id: string; ingredientId: string; requestBody: RecipeIngredientUpdate };
+export type RecipesUpdateIngredientResponse = (RecipeIngredientPublic);
+export type RecipesDeleteIngredientData = { id: string; ingredientId: string };
+export type RecipesDeleteIngredientResponse = (Message);
+
+// ---------------------------------------------------------------------------
+// Shopping List
+// ---------------------------------------------------------------------------
+
+export type ShoppingListRecipePublic = {
+    num_people: number;
+    num_meals: number;
+    id: string;
+    recipe_id: string;
+    recipe_title: string;
+    recipe_base_servings: number;
+};
+
+export type AggregatedIngredient = {
+    name: string;
+    unit: string;
+    total_quantity: number;
+    is_checked: boolean;
+    sources: Array<{
+        slr_id: string;
+        recipe_id: string;
+        recipe_title: string;
+        quantity: number;
+        unit: string;
+    }>;
+};
+
+export type ShoppingListPublic = {
+    name: string;
+    id: string;
+    owner_id: string;
+    created_at?: (string | null);
+    recipes: Array<ShoppingListRecipePublic>;
+    ingredients: Array<AggregatedIngredient>;
+};
+
+export type ShoppingListSummary = {
+    name: string;
+    id: string;
+    owner_id: string;
+    created_at?: (string | null);
+    recipe_count: number;
+};
+
+export type ShoppingListsSummary = {
+    data: Array<ShoppingListSummary>;
+    count: number;
+};
+
+export type ShoppingListCreate = {
+    name: string;
+};
+
+export type ShoppingListUpdate = {
+    name?: (string | null);
+};
+
+export type ShoppingListRecipeCreate = {
+    recipe_id: string;
+    num_people: number;
+    num_meals?: number;
+};
+
+export type ShoppingListRecipeUpdate = {
+    num_people?: (number | null);
+    num_meals?: (number | null);
+};
+
+export type ShoppingListsReadListsResponse = (ShoppingListsSummary);
+export type ShoppingListsReadListData = { id: string };
+export type ShoppingListsReadListResponse = (ShoppingListPublic);
+export type ShoppingListsCreateListData = { requestBody: ShoppingListCreate };
+export type ShoppingListsCreateListResponse = (ShoppingListPublic);
+export type ShoppingListsUpdateListData = { id: string; requestBody: ShoppingListUpdate };
+export type ShoppingListsUpdateListResponse = (ShoppingListPublic);
+export type ShoppingListsDeleteListData = { id: string };
+export type ShoppingListsDeleteListResponse = (Message);
+export type ShoppingListsAddRecipeData = { id: string; requestBody: ShoppingListRecipeCreate };
+export type ShoppingListsAddRecipeResponse = (ShoppingListPublic);
+export type ShoppingListsUpdateRecipeData = { id: string; entryId: string; requestBody: ShoppingListRecipeUpdate };
+export type ShoppingListsUpdateRecipeResponse = (ShoppingListPublic);
+export type ShoppingListsRemoveRecipeData = { id: string; entryId: string };
+export type ShoppingListsRemoveRecipeResponse = (ShoppingListPublic);
+export type ShoppingListsToggleIngredientData = {
+    id: string;
+    ingredient_name: string;
+    unit: string;
+    is_checked: boolean;
+};
+export type ShoppingListsToggleIngredientResponse = (ShoppingListPublic);

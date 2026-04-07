@@ -1,4 +1,4 @@
-# FastAPI Project - Frontend
+# Shop n Cook - Frontend
 
 The frontend is built with [Vite](https://vitejs.dev/), [React](https://reactjs.org/), [TypeScript](https://www.typescriptlang.org/), [TanStack Query](https://tanstack.com/query), [TanStack Router](https://tanstack.com/router) and [Tailwind CSS](https://tailwindcss.com/).
 
@@ -85,9 +85,17 @@ The frontend code is structured as follows:
 
 * `frontend/src` - The main frontend code.
 * `frontend/src/assets` - Static assets.
-* `frontend/src/client` - The generated OpenAPI client.
-* `frontend/src/components` -  The different components of the frontend.
-* `frontend/src/hooks` - Custom hooks.
+* `frontend/src/client` - The generated OpenAPI client (auto-generated from backend OpenAPI schema).
+* `frontend/src/components` - The different components of the frontend:
+  * `Recipes/` - Recipe list, detail, create/edit forms, and AI import modal.
+  * `Ingredients/` - Ingredient catalog management.
+  * `ShoppingLists/` - Shopping list cards and item tracking.
+  * `Dashboard/` - Stats overview and bar chart (Recharts).
+  * `UserSettings/` - Household settings form.
+  * `Admin/` - Admin user management panel.
+  * `Common/` - Shared UI components (dialogs, tables, etc.).
+  * `ui/` - shadcn/ui base components.
+* `frontend/src/hooks` - Custom React hooks.
 * `frontend/src/routes` - The different routes of the frontend which include the pages.
 
 ## End-to-End Testing with Playwright

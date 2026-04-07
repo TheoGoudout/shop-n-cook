@@ -1,4 +1,4 @@
-# FastAPI Project - Development
+# Shop n Cook - Development
 
 ## Docker Compose
 
@@ -17,8 +17,6 @@ Backend, JSON based web API based on OpenAPI: <http://localhost:8000>
 Automatic interactive documentation with Swagger UI (from the OpenAPI backend): <http://localhost:8000/docs>
 
 Adminer, database web administration: <http://localhost:8080>
-
-Traefik UI, to see how the routes are being handled by the proxy: <http://localhost:8090>
 
 **Note**: The first time you start your stack, it might take a minute for it to be ready. While the backend waits for the database to be ready and configures everything. You can check the logs to monitor it.
 
@@ -54,7 +52,7 @@ For the backend and frontend, they use the same port that would be used by their
 
 This way, you could turn off a Docker Compose service and start its local development service, and everything would keep working, because it all uses the same ports.
 
-For example, you can stop that `frontend` service in the Docker Compose, in another terminal, run:
+For example, you can stop the `frontend` service in the Docker Compose, in another terminal, run:
 
 ```bash
 docker compose stop frontend
@@ -79,34 +77,6 @@ cd backend
 fastapi dev app/main.py
 ```
 
-## Docker Compose in `localhost.tiangolo.com`
-
-When you start the Docker Compose stack, it uses `localhost` by default, with different ports for each service (backend, frontend, adminer, etc).
-
-When you deploy it to production (or staging), it will deploy each service in a different subdomain, like `api.example.com` for the backend and `dashboard.example.com` for the frontend.
-
-In the guide about [deployment](deployment.md) you can read about Traefik, the configured proxy. That's the component in charge of transmitting traffic to each service based on the subdomain.
-
-If you want to test that it's all working locally, you can edit the local `.env` file, and change:
-
-```dotenv
-DOMAIN=localhost.tiangolo.com
-```
-
-That will be used by the Docker Compose files to configure the base domain for the services.
-
-Traefik will use this to transmit traffic at `api.localhost.tiangolo.com` to the backend, and traffic at `dashboard.localhost.tiangolo.com` to the frontend.
-
-The domain `localhost.tiangolo.com` is a special domain that is configured (with all its subdomains) to point to `127.0.0.1`. This way you can use that for your local development.
-
-After you update it, run again:
-
-```bash
-docker compose watch
-```
-
-When deploying, for example in production, the main Traefik is configured outside of the Docker Compose files. For local development, there's an included Traefik in `compose.override.yml`, just to let you test that the domains work as expected, for example with `api.localhost.tiangolo.com` and `dashboard.localhost.tiangolo.com`.
-
 ## Docker Compose files and env vars
 
 There is a main `compose.yml` file with all the configurations that apply to the whole stack, it is used automatically by `docker compose`.
@@ -114,8 +84,6 @@ There is a main `compose.yml` file with all the configurations that apply to the
 And there's also a `compose.override.yml` with overrides for development, for example to mount the source code as a volume. It is used automatically by `docker compose` to apply overrides on top of `compose.yml`.
 
 These Docker Compose files use the `.env` file containing configurations to be injected as environment variables in the containers.
-
-They also use some additional configurations taken from environment variables set in the scripts before calling the `docker compose` command.
 
 After changing variables, make sure you restart the stack:
 
@@ -125,15 +93,42 @@ docker compose watch
 
 ## The .env file
 
-The `.env` file is the one that contains all your configurations, generated keys and passwords, etc.
+The `.env` file is gitignored and must be created locally from the provided template:
 
-Depending on your workflow, you could want to exclude it from Git, for example if your project is public. In that case, you would have to make sure to set up a way for your CI tools to obtain it while building or deploying your project.
+```bash
+cp .env.example .env
+```
 
-One way to do it could be to add each environment variable to your CI/CD system, and updating the `compose.yml` file to read that specific env var instead of reading the `.env` file.
+Then edit `.env` to fill in your own values. At minimum you must set:
+
+- `SECRET_KEY` — generate with `python -c "import secrets; print(secrets.token_urlsafe(32))"`
+- `FIRST_SUPERUSER_PASSWORD` — password for the initial admin account
+- `POSTGRES_PASSWORD` — PostgreSQL database password
+
+## AI Recipe Import Configuration
+
+The AI recipe import feature requires an API key for your chosen AI provider. Set the following in your `.env`:
+
+```dotenv
+# Choose a provider: anthropic | openai | google
+AI_PROVIDER=anthropic
+
+# Provide the matching API key:
+ANTHROPIC_API_KEY=your-key-here   # for anthropic
+OPENAI_API_KEY=your-key-here      # for openai
+GOOGLE_API_KEY=your-key-here      # for google
+```
+
+Optionally, enable LangSmith tracing for observability:
+
+```dotenv
+LANGCHAIN_TRACING_V2=true
+LANGCHAIN_API_KEY=your-langsmith-key
+```
 
 ## Pre-commits and code linting
 
-we are using a tool called [prek](https://prek.j178.dev/) (modern alternative to [Pre-commit](https://pre-commit.com/)) for code linting and formatting.
+We are using a tool called [prek](https://prek.j178.dev/) (modern alternative to [Pre-commit](https://pre-commit.com/)) for code linting and formatting.
 
 When you install it, it runs right before making a commit in git. This way it ensures that the code is consistent and formatted even before it is committed.
 
@@ -166,7 +161,7 @@ Then you can `git add` the modified/fixed files again and now you can commit.
 
 #### Running prek hooks manually
 
-you can also run `prek` manually on all the files, you can do it using `uv` with:
+You can also run `prek` manually on all the files using `uv` with:
 
 ```bash
 ❯ uv run prek run --all-files
@@ -182,11 +177,7 @@ biome check..............................................................Passed
 
 ## URLs
 
-The production or staging URLs would use these same paths, but with your own domain.
-
 ### Development URLs
-
-Development URLs, for local development.
 
 Frontend: <http://localhost:5173>
 
@@ -198,24 +189,4 @@ Automatic Alternative Docs (ReDoc): <http://localhost:8000/redoc>
 
 Adminer: <http://localhost:8080>
 
-Traefik UI: <http://localhost:8090>
-
 MailCatcher: <http://localhost:1080>
-
-### Development URLs with `localhost.tiangolo.com` Configured
-
-Development URLs, for local development.
-
-Frontend: <http://dashboard.localhost.tiangolo.com>
-
-Backend: <http://api.localhost.tiangolo.com>
-
-Automatic Interactive Docs (Swagger UI): <http://api.localhost.tiangolo.com/docs>
-
-Automatic Alternative Docs (ReDoc): <http://api.localhost.tiangolo.com/redoc>
-
-Adminer: <http://localhost.tiangolo.com:8080>
-
-Traefik UI: <http://localhost.tiangolo.com:8090>
-
-MailCatcher: <http://localhost.tiangolo.com:1080>

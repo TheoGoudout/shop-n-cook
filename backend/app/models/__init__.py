@@ -14,6 +14,17 @@ from app.models.ingredient import (
     IngredientUpdate,
     Unit,
 )
+from app.models.recipe import (
+    Recipe,
+    RecipeBase,
+    RecipeCreate,
+    RecipeIngredient,
+    RecipeIngredientCreate,
+    RecipeIngredientPublic,
+    RecipePublic,
+    RecipesPublic,
+    RecipeUpdate,
+)
 from app.models.user import (
     NewPassword,
     Token,
@@ -56,4 +67,14 @@ __all__ = [
     "Ingredient",
     "IngredientPublic",
     "IngredientsPublic",
+    # recipe
+    "RecipeIngredientCreate",
+    "RecipeIngredientPublic",
+    "RecipeBase",
+    "RecipeCreate",
+    "RecipeUpdate",
+    "RecipeIngredient",
+    "Recipe",
+    "RecipePublic",
+    "RecipesPublic",
 ]

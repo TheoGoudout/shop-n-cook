@@ -4,6 +4,7 @@ import { ArrowLeft, ChefHat, Clock, Users } from "lucide-react"
 import { Suspense } from "react"
 
 import { RecipesService } from "@/client"
+import { APP_NAME } from "@/lib/config"
 import { RecipeActionsMenu } from "@/components/Recipes/RecipeActionsMenu"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -19,7 +20,7 @@ function getRecipeQueryOptions(id: string) {
 export const Route = createFileRoute("/_layout/recipes/$id")({
   component: RecipeDetail,
   head: () => ({
-    meta: [{ title: "Recipe - Shop n Cook" }],
+    meta: [{ title: `Recipe - ${APP_NAME}` }],
   }),
 })
 

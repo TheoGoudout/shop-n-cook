@@ -27,6 +27,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { APP_NAME } from "@/lib/config"
 import useCustomToast from "@/hooks/useCustomToast"
 import { handleError } from "@/utils"
 
@@ -40,7 +41,7 @@ function getListQueryOptions(id: string) {
 export const Route = createFileRoute("/_layout/shopping-lists/$id")({
   component: ShoppingListDetail,
   head: () => ({
-    meta: [{ title: "Shopping List - Shop n Cook" }],
+    meta: [{ title: `Shopping List - ${APP_NAME}` }],
   }),
 })
 

@@ -4,6 +4,7 @@ import { ShoppingCart } from "lucide-react"
 import { Suspense } from "react"
 
 import { ShoppingListsService } from "@/client"
+import { APP_NAME } from "@/lib/config"
 import PendingItems from "@/components/Pending/PendingItems"
 import AddShoppingList from "@/components/ShoppingLists/AddShoppingList"
 import { ShoppingListCard } from "@/components/ShoppingLists/ShoppingListCard"
@@ -18,7 +19,7 @@ function getShoppingListsQueryOptions() {
 export const Route = createFileRoute("/_layout/shopping-lists")({
   component: ShoppingLists,
   head: () => ({
-    meta: [{ title: "Shopping Lists - Shop n Cook" }],
+    meta: [{ title: `Shopping Lists - ${APP_NAME}` }],
   }),
 })
 

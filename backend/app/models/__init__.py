@@ -25,6 +25,21 @@ from app.models.recipe import (
     RecipesPublic,
     RecipeUpdate,
 )
+from app.models.shopping_list import (
+    ShoppingList,
+    ShoppingListBase,
+    ShoppingListCreate,
+    ShoppingListItem,
+    ShoppingListItemCreate,
+    ShoppingListItemPublic,
+    ShoppingListItemUpdate,
+    ShoppingListPublic,
+    ShoppingListRecipe,
+    ShoppingListRecipePublic,
+    ShoppingListRecipeUpdate,
+    ShoppingListsPublic,
+    ShoppingListUpdate,
+)
 from app.models.user import (
     NewPassword,
     Token,
@@ -77,4 +92,18 @@ __all__ = [
     "Recipe",
     "RecipePublic",
     "RecipesPublic",
+    # shopping list
+    "ShoppingListItemCreate",
+    "ShoppingListItemUpdate",
+    "ShoppingListItemPublic",
+    "ShoppingListItem",
+    "ShoppingListBase",
+    "ShoppingListCreate",
+    "ShoppingListUpdate",
+    "ShoppingList",
+    "ShoppingListPublic",
+    "ShoppingListsPublic",
+    "ShoppingListRecipe",
+    "ShoppingListRecipePublic",
+    "ShoppingListRecipeUpdate",
 ]

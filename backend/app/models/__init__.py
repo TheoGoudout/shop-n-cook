@@ -54,6 +54,12 @@ from app.models.user import (
     UserUpdate,
     UserUpdateMe,
 )
+from app.models.user_settings import (
+    ShoppingFrequency,
+    UserSettings,
+    UserSettingsPublic,
+    UserSettingsUpdate,
+)
 
 __all__ = [
     # base
@@ -73,6 +79,11 @@ __all__ = [
     "User",
     "UserPublic",
     "UsersPublic",
+    # user settings
+    "ShoppingFrequency",
+    "UserSettings",
+    "UserSettingsPublic",
+    "UserSettingsUpdate",
     # ingredient
     "IngredientCategory",
     "Unit",

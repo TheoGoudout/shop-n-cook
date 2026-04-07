@@ -4,7 +4,7 @@ import { createUser } from "./utils/privateApi.ts"
 import { randomEmail, randomPassword } from "./utils/random"
 import { logInUser, logOutUser } from "./utils/user"
 
-const tabs = ["My profile", "Password", "Danger zone"]
+const tabs = ["My profile", "Household", "Password", "Danger zone"]
 
 test("My profile tab is active by default", async ({ page }) => {
   await page.goto("/settings")
@@ -224,15 +224,10 @@ test("User can switch between theme modes", async ({ page }) => {
 test("Selected mode is preserved across sessions", async ({ page }) => {
   await page.goto("/settings")
 
-  await page.getByTestId("theme-button").click()
-  if (
-    await page.evaluate(() =>
-      document.documentElement.classList.contains("dark"),
-    )
-  ) {
-    await page.getByTestId("light-mode").click()
-    await page.getByTestId("theme-button").click()
-  }
+  // Ensure we start in light mode via localStorage, then navigate fresh
+  await page.evaluate(() => localStorage.setItem("vite-ui-theme", "light"))
+  await page.goto("/settings")
+  await page.waitForLoadState("networkidle")
 
   const isLightMode = await page.evaluate(() =>
     document.documentElement.classList.contains("light"),

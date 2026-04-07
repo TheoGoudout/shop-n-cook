@@ -32,6 +32,11 @@ from app.crud.shopping_list import (
     update_shopping_list_recipe,
 )
 from app.crud.user import authenticate, create_user, get_user_by_email, update_user
+from app.crud.user_settings import (
+    get_or_create_user_settings,
+    get_user_settings,
+    update_user_settings,
+)
 
 __all__ = [
     # user
@@ -39,6 +44,10 @@ __all__ = [
     "update_user",
     "get_user_by_email",
     "authenticate",
+    # user settings
+    "get_user_settings",
+    "get_or_create_user_settings",
+    "update_user_settings",
     # ingredient
     "get_ingredient",
     "get_ingredient_by_name",

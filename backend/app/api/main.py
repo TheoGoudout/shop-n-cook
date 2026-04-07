@@ -6,6 +6,7 @@ from app.api.routes import (
     private,
     recipes,
     shopping_lists,
+    user_settings,
     users,
     utils,
 )
@@ -18,6 +19,7 @@ api_router.include_router(utils.router)
 api_router.include_router(ingredients.router)
 api_router.include_router(recipes.router)
 api_router.include_router(shopping_lists.router)
+api_router.include_router(user_settings.router)
 
 
 if settings.ENVIRONMENT == "local":

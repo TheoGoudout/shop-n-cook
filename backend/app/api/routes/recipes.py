@@ -2,6 +2,7 @@ import uuid
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel, HttpUrl
 
 from app import crud
 from app.api.deps import CurrentUser, SessionDep
@@ -13,8 +14,13 @@ from app.models import (
     RecipesPublic,
     RecipeUpdate,
 )
+from app.services.recipe_import import ParsedRecipe, import_recipe_from_url
 
 router = APIRouter(prefix="/recipes", tags=["recipes"])
+
+
+class ImportUrlRequest(BaseModel):
+    url: HttpUrl
 
 
 @router.get("/", response_model=RecipesPublic)
@@ -84,3 +90,24 @@ def delete_recipe(
         raise HTTPException(status_code=403, detail="Not enough permissions")
     crud.delete_recipe(session=session, recipe=recipe)
     return Message(message="Recipe deleted successfully")
+
+
+@router.post("/import-url", response_model=ParsedRecipe)
+def import_recipe_url(
+    *,
+    _current_user: CurrentUser,
+    body: ImportUrlRequest,
+) -> Any:
+    """Parse a recipe from a URL using AI. Returns pre-filled data for review — does NOT save.
+
+    Requires ANTHROPIC_API_KEY to be configured. Returns 503 if not set.
+    """
+    try:
+        parsed = import_recipe_from_url(str(body.url))
+    except ValueError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=422, detail=f"Failed to parse recipe: {exc}"
+        ) from exc
+    return parsed

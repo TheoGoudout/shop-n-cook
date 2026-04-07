@@ -94,6 +94,20 @@ class Settings(BaseSettings):
     FIRST_SUPERUSER: EmailStr
     FIRST_SUPERUSER_PASSWORD: str
 
+    # AI recipe import — configure at least one provider key
+    AI_PROVIDER: str = "anthropic"  # anthropic | openai | google
+    ANTHROPIC_API_KEY: str | None = None
+    ANTHROPIC_MODEL: str = "claude-haiku-4-5-20251001"
+    OPENAI_API_KEY: str | None = None
+    OPENAI_MODEL: str = "gpt-4o-mini"
+    GOOGLE_API_KEY: str | None = None
+    GOOGLE_MODEL: str = "gemini-2.0-flash"
+
+    # LangSmith tracing (optional)
+    LANGCHAIN_TRACING_V2: bool = False
+    LANGCHAIN_API_KEY: str | None = None
+    LANGCHAIN_PROJECT: str = "shop-n-cook"
+
     def _check_default_secret(self, var_name: str, value: str | None) -> None:
         if value == "changethis":
             message = (

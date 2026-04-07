@@ -1,12 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" fill="none">
-  <!-- Brim / band -->
-  <rect x="4" y="26" width="28" height="6" rx="2" fill="#3d9fa0"/>
-  <!-- Hat dome -->
-  <path d="M18 8 C11 8 6 13 6 19 L6 26 L30 26 L30 19 C30 13 25 8 18 8 Z" fill="#3d9fa0"/>
-  <!-- Puff bumps on top -->
-  <circle cx="12" cy="11" r="5" fill="#3d9fa0"/>
-  <circle cx="18" cy="8" r="5.5" fill="#3d9fa0"/>
-  <circle cx="24" cy="11" r="5" fill="#3d9fa0"/>
-  <!-- White highlight crease -->
-  <line x1="18" y1="12" x2="18" y2="25" stroke="white" stroke-width="1.2" stroke-linecap="round" opacity="0.35"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36">
+  <!-- Hat crown: dome shape with flat bottom -->
+  <path d="M7 27 L7 17 Q7 6 18 6 Q29 6 29 17 L29 27 Z" fill="#3d9fa0"/>
+  <!-- Hat brim: wider than crown -->
+  <rect x="3" y="26" width="30" height="7" rx="2.5" fill="#3d9fa0"/>
+  <!-- Center crease detail -->
+  <line x1="18" y1="10" x2="18" y2="26" stroke="white" stroke-width="1.5" stroke-linecap="round" opacity="0.25"/>
 </svg>

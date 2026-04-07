@@ -1,12 +1,8 @@
 import { Link } from "@tanstack/react-router"
+import { ChefHat } from "lucide-react"
 
-import { useTheme } from "@/components/theme-provider"
 import { APP_NAME } from "@/lib/config"
 import { cn } from "@/lib/utils"
-import icon from "/assets/images/icon.svg"
-import iconDark from "/assets/images/icon-dark.svg"
-import logo from "/assets/images/logo.svg"
-import logoDark from "/assets/images/logo-dark.svg"
 
 interface LogoProps {
   variant?: "full" | "icon" | "responsive"
@@ -19,38 +15,35 @@ export function Logo({
   className,
   asLink = true,
 }: LogoProps) {
-  const { resolvedTheme } = useTheme()
-  const isDark = resolvedTheme === "dark"
+  const fullContent = (
+    <div className={cn("flex items-center gap-2", className)}>
+      <ChefHat className="h-5 w-5 shrink-0 text-primary" />
+      <span className="font-bold text-sm tracking-tight">{APP_NAME}</span>
+    </div>
+  )
 
-  const fullLogo = isDark ? logoDark : logo
-  const iconLogo = isDark ? iconDark : icon
+  const iconContent = (
+    <ChefHat className={cn("size-5 text-primary", className)} />
+  )
 
   const content =
     variant === "responsive" ? (
       <>
-        <img
-          src={fullLogo}
-          alt={APP_NAME}
+        <div className={cn("flex items-center gap-2 group-data-[collapsible=icon]:hidden", className)}>
+          <ChefHat className="h-5 w-5 shrink-0 text-primary" />
+          <span className="font-bold text-sm tracking-tight">{APP_NAME}</span>
+        </div>
+        <ChefHat
           className={cn(
-            "h-6 w-auto group-data-[collapsible=icon]:hidden",
-            className,
-          )}
-        />
-        <img
-          src={iconLogo}
-          alt={APP_NAME}
-          className={cn(
-            "size-5 hidden group-data-[collapsible=icon]:block",
+            "size-5 hidden group-data-[collapsible=icon]:block text-primary",
             className,
           )}
         />
       </>
+    ) : variant === "full" ? (
+      fullContent
     ) : (
-      <img
-        src={variant === "full" ? fullLogo : iconLogo}
-        alt={APP_NAME}
-        className={cn(variant === "full" ? "h-6 w-auto" : "size-5", className)}
-      />
+      iconContent
     )
 
   if (!asLink) {

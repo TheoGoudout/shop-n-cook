@@ -71,61 +71,69 @@ export const HTTPValidationErrorSchema = {
     title: 'HTTPValidationError'
 } as const;
 
-export const ItemCreateSchema = {
+export const ImportUrlRequestSchema = {
     properties: {
-        title: {
+        url: {
             type: 'string',
-            maxLength: 255,
+            maxLength: 2083,
             minLength: 1,
-            title: 'Title'
-        },
-        description: {
-            anyOf: [
-                {
-                    type: 'string',
-                    maxLength: 255
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Description'
+            format: 'uri',
+            title: 'Url'
         }
     },
     type: 'object',
-    required: ['title'],
-    title: 'ItemCreate'
+    required: ['url'],
+    title: 'ImportUrlRequest'
 } as const;
 
-export const ItemPublicSchema = {
+export const IngredientCategorySchema = {
+    type: 'string',
+    enum: ['produce', 'dairy', 'meat', 'seafood', 'grains', 'pantry', 'spices', 'beverages', 'frozen', 'bakery', 'other'],
+    title: 'IngredientCategory'
+} as const;
+
+export const IngredientCreateSchema = {
     properties: {
-        title: {
+        name: {
             type: 'string',
             maxLength: 255,
             minLength: 1,
-            title: 'Title'
+            title: 'Name'
         },
-        description: {
-            anyOf: [
-                {
-                    type: 'string',
-                    maxLength: 255
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Description'
+        category: {
+            '$ref': '#/components/schemas/IngredientCategory',
+            default: 'other'
+        },
+        default_unit: {
+            '$ref': '#/components/schemas/Unit',
+            default: 'piece'
+        }
+    },
+    type: 'object',
+    required: ['name'],
+    title: 'IngredientCreate'
+} as const;
+
+export const IngredientPublicSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            maxLength: 255,
+            minLength: 1,
+            title: 'Name'
+        },
+        category: {
+            '$ref': '#/components/schemas/IngredientCategory',
+            default: 'other'
+        },
+        default_unit: {
+            '$ref': '#/components/schemas/Unit',
+            default: 'piece'
         },
         id: {
             type: 'string',
             format: 'uuid',
             title: 'Id'
-        },
-        owner_id: {
-            type: 'string',
-            format: 'uuid',
-            title: 'Owner Id'
         },
         created_at: {
             anyOf: [
@@ -141,13 +149,13 @@ export const ItemPublicSchema = {
         }
     },
     type: 'object',
-    required: ['title', 'id', 'owner_id'],
-    title: 'ItemPublic'
+    required: ['name', 'id'],
+    title: 'IngredientPublic'
 } as const;
 
-export const ItemUpdateSchema = {
+export const IngredientUpdateSchema = {
     properties: {
-        title: {
+        name: {
             anyOf: [
                 {
                     type: 'string',
@@ -158,30 +166,38 @@ export const ItemUpdateSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Title'
+            title: 'Name'
         },
-        description: {
+        category: {
             anyOf: [
                 {
-                    type: 'string',
-                    maxLength: 255
+                    '$ref': '#/components/schemas/IngredientCategory'
                 },
                 {
                     type: 'null'
                 }
-            ],
-            title: 'Description'
+            ]
+        },
+        default_unit: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/Unit'
+                },
+                {
+                    type: 'null'
+                }
+            ]
         }
     },
     type: 'object',
-    title: 'ItemUpdate'
+    title: 'IngredientUpdate'
 } as const;
 
-export const ItemsPublicSchema = {
+export const IngredientsPublicSchema = {
     properties: {
         data: {
             items: {
-                '$ref': '#/components/schemas/ItemPublic'
+                '$ref': '#/components/schemas/IngredientPublic'
             },
             type: 'array',
             title: 'Data'
@@ -193,7 +209,7 @@ export const ItemsPublicSchema = {
     },
     type: 'object',
     required: ['data', 'count'],
-    title: 'ItemsPublic'
+    title: 'IngredientsPublic'
 } as const;
 
 export const MessageSchema = {
@@ -226,6 +242,112 @@ export const NewPasswordSchema = {
     title: 'NewPassword'
 } as const;
 
+export const ParsedIngredientSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            title: 'Name'
+        },
+        quantity: {
+            type: 'number',
+            title: 'Quantity'
+        },
+        unit: {
+            type: 'string',
+            title: 'Unit'
+        },
+        notes: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Notes'
+        }
+    },
+    type: 'object',
+    required: ['name', 'quantity', 'unit'],
+    title: 'ParsedIngredient'
+} as const;
+
+export const ParsedRecipeSchema = {
+    properties: {
+        title: {
+            type: 'string',
+            title: 'Title'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Description'
+        },
+        instructions: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Instructions'
+        },
+        servings: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Servings'
+        },
+        prep_time_minutes: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Prep Time Minutes'
+        },
+        cook_time_minutes: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Cook Time Minutes'
+        },
+        ingredients: {
+            items: {
+                '$ref': '#/components/schemas/ParsedIngredient'
+            },
+            type: 'array',
+            title: 'Ingredients',
+            default: []
+        }
+    },
+    type: 'object',
+    required: ['title'],
+    title: 'ParsedRecipe'
+} as const;
+
 export const PrivateUserCreateSchema = {
     properties: {
         email: {
@@ -251,6 +373,777 @@ export const PrivateUserCreateSchema = {
     title: 'PrivateUserCreate'
 } as const;
 
+export const RecipeCreateSchema = {
+    properties: {
+        title: {
+            type: 'string',
+            maxLength: 255,
+            minLength: 1,
+            title: 'Title'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 1000
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Description'
+        },
+        instructions: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Instructions'
+        },
+        servings: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    minimum: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Servings'
+        },
+        prep_time_minutes: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    minimum: 0
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Prep Time Minutes'
+        },
+        cook_time_minutes: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    minimum: 0
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Cook Time Minutes'
+        },
+        ingredients: {
+            items: {
+                '$ref': '#/components/schemas/RecipeIngredientCreate'
+            },
+            type: 'array',
+            title: 'Ingredients',
+            default: []
+        }
+    },
+    type: 'object',
+    required: ['title'],
+    title: 'RecipeCreate'
+} as const;
+
+export const RecipeIngredientCreateSchema = {
+    properties: {
+        quantity: {
+            type: 'number',
+            exclusiveMinimum: 0,
+            title: 'Quantity'
+        },
+        unit: {
+            '$ref': '#/components/schemas/Unit'
+        },
+        notes: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 255
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Notes'
+        },
+        ingredient_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Ingredient Id'
+        }
+    },
+    type: 'object',
+    required: ['quantity', 'unit', 'ingredient_id'],
+    title: 'RecipeIngredientCreate'
+} as const;
+
+export const RecipeIngredientPublicSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        ingredient_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Ingredient Id'
+        },
+        ingredient_name: {
+            type: 'string',
+            title: 'Ingredient Name'
+        },
+        ingredient_category: {
+            '$ref': '#/components/schemas/IngredientCategory'
+        },
+        quantity: {
+            type: 'number',
+            title: 'Quantity'
+        },
+        unit: {
+            '$ref': '#/components/schemas/Unit'
+        },
+        notes: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Notes'
+        }
+    },
+    type: 'object',
+    required: ['id', 'ingredient_id', 'ingredient_name', 'ingredient_category', 'quantity', 'unit'],
+    title: 'RecipeIngredientPublic'
+} as const;
+
+export const RecipePublicSchema = {
+    properties: {
+        title: {
+            type: 'string',
+            maxLength: 255,
+            minLength: 1,
+            title: 'Title'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 1000
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Description'
+        },
+        instructions: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Instructions'
+        },
+        servings: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    minimum: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Servings'
+        },
+        prep_time_minutes: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    minimum: 0
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Prep Time Minutes'
+        },
+        cook_time_minutes: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    minimum: 0
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Cook Time Minutes'
+        },
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        owner_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Owner Id'
+        },
+        created_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Created At'
+        },
+        ingredients: {
+            items: {
+                '$ref': '#/components/schemas/RecipeIngredientPublic'
+            },
+            type: 'array',
+            title: 'Ingredients',
+            default: []
+        }
+    },
+    type: 'object',
+    required: ['title', 'id', 'owner_id'],
+    title: 'RecipePublic'
+} as const;
+
+export const RecipeUpdateSchema = {
+    properties: {
+        title: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 255,
+                    minLength: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Title'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 1000
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Description'
+        },
+        instructions: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Instructions'
+        },
+        servings: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    minimum: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Servings'
+        },
+        prep_time_minutes: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    minimum: 0
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Prep Time Minutes'
+        },
+        cook_time_minutes: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    minimum: 0
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Cook Time Minutes'
+        },
+        ingredients: {
+            anyOf: [
+                {
+                    items: {
+                        '$ref': '#/components/schemas/RecipeIngredientCreate'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Ingredients'
+        }
+    },
+    type: 'object',
+    title: 'RecipeUpdate'
+} as const;
+
+export const RecipesPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/RecipePublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'RecipesPublic'
+} as const;
+
+export const ShoppingFrequencySchema = {
+    type: 'string',
+    enum: ['weekly', 'biweekly', 'monthly'],
+    title: 'ShoppingFrequency'
+} as const;
+
+export const ShoppingListCreateSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            maxLength: 255,
+            minLength: 1,
+            title: 'Name'
+        },
+        start_date: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Start Date'
+        },
+        end_date: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'End Date'
+        }
+    },
+    type: 'object',
+    required: ['name'],
+    title: 'ShoppingListCreate'
+} as const;
+
+export const ShoppingListItemCreateSchema = {
+    properties: {
+        quantity: {
+            type: 'number',
+            exclusiveMinimum: 0,
+            title: 'Quantity'
+        },
+        unit: {
+            '$ref': '#/components/schemas/Unit'
+        },
+        is_checked: {
+            type: 'boolean',
+            title: 'Is Checked',
+            default: false
+        },
+        notes: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 255
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Notes'
+        },
+        ingredient_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Ingredient Id'
+        }
+    },
+    type: 'object',
+    required: ['quantity', 'unit', 'ingredient_id'],
+    title: 'ShoppingListItemCreate'
+} as const;
+
+export const ShoppingListItemPublicSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        ingredient_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Ingredient Id'
+        },
+        ingredient_name: {
+            type: 'string',
+            title: 'Ingredient Name'
+        },
+        ingredient_category: {
+            '$ref': '#/components/schemas/IngredientCategory'
+        },
+        quantity: {
+            type: 'number',
+            title: 'Quantity'
+        },
+        unit: {
+            '$ref': '#/components/schemas/Unit'
+        },
+        is_checked: {
+            type: 'boolean',
+            title: 'Is Checked'
+        },
+        notes: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Notes'
+        }
+    },
+    type: 'object',
+    required: ['id', 'ingredient_id', 'ingredient_name', 'ingredient_category', 'quantity', 'unit', 'is_checked'],
+    title: 'ShoppingListItemPublic'
+} as const;
+
+export const ShoppingListItemUpdateSchema = {
+    properties: {
+        quantity: {
+            anyOf: [
+                {
+                    type: 'number',
+                    exclusiveMinimum: 0
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Quantity'
+        },
+        unit: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/Unit'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        is_checked: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Is Checked'
+        },
+        notes: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 255
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Notes'
+        }
+    },
+    type: 'object',
+    title: 'ShoppingListItemUpdate'
+} as const;
+
+export const ShoppingListPublicSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            maxLength: 255,
+            minLength: 1,
+            title: 'Name'
+        },
+        start_date: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Start Date'
+        },
+        end_date: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'End Date'
+        },
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        owner_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Owner Id'
+        },
+        created_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Created At'
+        },
+        items: {
+            items: {
+                '$ref': '#/components/schemas/ShoppingListItemPublic'
+            },
+            type: 'array',
+            title: 'Items',
+            default: []
+        },
+        planned_recipes: {
+            items: {
+                '$ref': '#/components/schemas/ShoppingListRecipePublic'
+            },
+            type: 'array',
+            title: 'Planned Recipes',
+            default: []
+        }
+    },
+    type: 'object',
+    required: ['name', 'id', 'owner_id'],
+    title: 'ShoppingListPublic'
+} as const;
+
+export const ShoppingListRecipePublicSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        recipe_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Recipe Id'
+        },
+        recipe_title: {
+            type: 'string',
+            title: 'Recipe Title'
+        },
+        recipe_servings: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Recipe Servings'
+        },
+        servings_planned: {
+            type: 'integer',
+            title: 'Servings Planned'
+        },
+        is_prepared: {
+            type: 'boolean',
+            title: 'Is Prepared'
+        },
+        ingredients: {
+            items: {
+                '$ref': '#/components/schemas/RecipeIngredientPublic'
+            },
+            type: 'array',
+            title: 'Ingredients',
+            default: []
+        }
+    },
+    type: 'object',
+    required: ['id', 'recipe_id', 'recipe_title', 'recipe_servings', 'servings_planned', 'is_prepared'],
+    title: 'ShoppingListRecipePublic'
+} as const;
+
+export const ShoppingListRecipeUpdateSchema = {
+    properties: {
+        is_prepared: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Is Prepared'
+        },
+        servings_planned: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    minimum: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Servings Planned'
+        }
+    },
+    type: 'object',
+    title: 'ShoppingListRecipeUpdate'
+} as const;
+
+export const ShoppingListUpdateSchema = {
+    properties: {
+        name: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 255,
+                    minLength: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name'
+        },
+        start_date: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Start Date'
+        },
+        end_date: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'End Date'
+        }
+    },
+    type: 'object',
+    title: 'ShoppingListUpdate'
+} as const;
+
+export const ShoppingListsPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/ShoppingListPublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'ShoppingListsPublic'
+} as const;
+
 export const TokenSchema = {
     properties: {
         access_token: {
@@ -266,6 +1159,12 @@ export const TokenSchema = {
     type: 'object',
     required: ['access_token'],
     title: 'Token'
+} as const;
+
+export const UnitSchema = {
+    type: 'string',
+    enum: ['g', 'kg', 'ml', 'L', 'piece', 'tbsp', 'tsp', 'cup', 'oz', 'lb', 'bunch', 'pinch', 'clove', 'slice', 'can', 'package'],
+    title: 'Unit'
 } as const;
 
 export const UpdatePasswordSchema = {
@@ -413,6 +1312,63 @@ export const UserRegisterSchema = {
     type: 'object',
     required: ['email', 'password'],
     title: 'UserRegister'
+} as const;
+
+export const UserSettingsPublicSchema = {
+    properties: {
+        household_size: {
+            type: 'integer',
+            minimum: 1,
+            title: 'Household Size',
+            default: 2
+        },
+        shopping_frequency: {
+            '$ref': '#/components/schemas/ShoppingFrequency',
+            default: 'weekly'
+        },
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        user_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'User Id'
+        }
+    },
+    type: 'object',
+    required: ['id', 'user_id'],
+    title: 'UserSettingsPublic'
+} as const;
+
+export const UserSettingsUpdateSchema = {
+    properties: {
+        household_size: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    minimum: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Household Size'
+        },
+        shopping_frequency: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/ShoppingFrequency'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        }
+    },
+    type: 'object',
+    title: 'UserSettingsUpdate'
 } as const;
 
 export const UserUpdateSchema = {

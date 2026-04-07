@@ -13,27 +13,35 @@ export type HTTPValidationError = {
     detail?: Array<ValidationError>;
 };
 
-export type ItemCreate = {
-    title: string;
-    description?: (string | null);
+export type ImportUrlRequest = {
+    url: string;
 };
 
-export type ItemPublic = {
-    title: string;
-    description?: (string | null);
+export type IngredientCategory = 'produce' | 'dairy' | 'meat' | 'seafood' | 'grains' | 'pantry' | 'spices' | 'beverages' | 'frozen' | 'bakery' | 'other';
+
+export type IngredientCreate = {
+    name: string;
+    category?: IngredientCategory;
+    default_unit?: Unit;
+};
+
+export type IngredientPublic = {
+    name: string;
+    category?: IngredientCategory;
+    default_unit?: Unit;
     id: string;
-    owner_id: string;
     created_at?: (string | null);
 };
 
-export type ItemsPublic = {
-    data: Array<ItemPublic>;
+export type IngredientsPublic = {
+    data: Array<IngredientPublic>;
     count: number;
 };
 
-export type ItemUpdate = {
-    title?: (string | null);
-    description?: (string | null);
+export type IngredientUpdate = {
+    name?: (string | null);
+    category?: (IngredientCategory | null);
+    default_unit?: (Unit | null);
 };
 
 export type Message = {
@@ -45,6 +53,23 @@ export type NewPassword = {
     new_password: string;
 };
 
+export type ParsedIngredient = {
+    name: string;
+    quantity: number;
+    unit: string;
+    notes?: (string | null);
+};
+
+export type ParsedRecipe = {
+    title: string;
+    description?: (string | null);
+    instructions?: (string | null);
+    servings?: (number | null);
+    prep_time_minutes?: (number | null);
+    cook_time_minutes?: (number | null);
+    ingredients?: Array<ParsedIngredient>;
+};
+
 export type PrivateUserCreate = {
     email: string;
     password: string;
@@ -52,10 +77,138 @@ export type PrivateUserCreate = {
     is_verified?: boolean;
 };
 
+export type RecipeCreate = {
+    title: string;
+    description?: (string | null);
+    instructions?: (string | null);
+    servings?: (number | null);
+    prep_time_minutes?: (number | null);
+    cook_time_minutes?: (number | null);
+    ingredients?: Array<RecipeIngredientCreate>;
+};
+
+export type RecipeIngredientCreate = {
+    quantity: number;
+    unit: Unit;
+    notes?: (string | null);
+    ingredient_id: string;
+};
+
+export type RecipeIngredientPublic = {
+    id: string;
+    ingredient_id: string;
+    ingredient_name: string;
+    ingredient_category: IngredientCategory;
+    quantity: number;
+    unit: Unit;
+    notes?: (string | null);
+};
+
+export type RecipePublic = {
+    title: string;
+    description?: (string | null);
+    instructions?: (string | null);
+    servings?: (number | null);
+    prep_time_minutes?: (number | null);
+    cook_time_minutes?: (number | null);
+    id: string;
+    owner_id: string;
+    created_at?: (string | null);
+    ingredients?: Array<RecipeIngredientPublic>;
+};
+
+export type RecipesPublic = {
+    data: Array<RecipePublic>;
+    count: number;
+};
+
+export type RecipeUpdate = {
+    title?: (string | null);
+    description?: (string | null);
+    instructions?: (string | null);
+    servings?: (number | null);
+    prep_time_minutes?: (number | null);
+    cook_time_minutes?: (number | null);
+    ingredients?: (Array<RecipeIngredientCreate> | null);
+};
+
+export type ShoppingFrequency = 'weekly' | 'biweekly' | 'monthly';
+
+export type ShoppingListCreate = {
+    name: string;
+    start_date?: (string | null);
+    end_date?: (string | null);
+};
+
+export type ShoppingListItemCreate = {
+    quantity: number;
+    unit: Unit;
+    is_checked?: boolean;
+    notes?: (string | null);
+    ingredient_id: string;
+};
+
+export type ShoppingListItemPublic = {
+    id: string;
+    ingredient_id: string;
+    ingredient_name: string;
+    ingredient_category: IngredientCategory;
+    quantity: number;
+    unit: Unit;
+    is_checked: boolean;
+    notes?: (string | null);
+};
+
+export type ShoppingListItemUpdate = {
+    quantity?: (number | null);
+    unit?: (Unit | null);
+    is_checked?: (boolean | null);
+    notes?: (string | null);
+};
+
+export type ShoppingListPublic = {
+    name: string;
+    start_date?: (string | null);
+    end_date?: (string | null);
+    id: string;
+    owner_id: string;
+    created_at?: (string | null);
+    items?: Array<ShoppingListItemPublic>;
+    planned_recipes?: Array<ShoppingListRecipePublic>;
+};
+
+export type ShoppingListRecipePublic = {
+    id: string;
+    recipe_id: string;
+    recipe_title: string;
+    recipe_servings: (number | null);
+    servings_planned: number;
+    is_prepared: boolean;
+    ingredients?: Array<RecipeIngredientPublic>;
+};
+
+export type ShoppingListRecipeUpdate = {
+    is_prepared?: (boolean | null);
+    servings_planned?: (number | null);
+};
+
+export type ShoppingListsPublic = {
+    data: Array<ShoppingListPublic>;
+    count: number;
+};
+
+export type ShoppingListUpdate = {
+    name?: (string | null);
+    start_date?: (string | null);
+    end_date?: (string | null);
+};
+
 export type Token = {
     access_token: string;
     token_type?: string;
 };
+
+export type Unit = 'g' | 'kg' | 'ml' | 'L' | 'piece' | 'tbsp' | 'tsp' | 'cup' | 'oz' | 'lb' | 'bunch' | 'pinch' | 'clove' | 'slice' | 'can' | 'package';
 
 export type UpdatePassword = {
     current_password: string;
@@ -83,6 +236,18 @@ export type UserRegister = {
     email: string;
     password: string;
     full_name?: (string | null);
+};
+
+export type UserSettingsPublic = {
+    household_size?: number;
+    shopping_frequency?: ShoppingFrequency;
+    id: string;
+    user_id: string;
+};
+
+export type UserSettingsUpdate = {
+    household_size?: (number | null);
+    shopping_frequency?: (ShoppingFrequency | null);
 };
 
 export type UsersPublic = {
@@ -113,37 +278,39 @@ export type ValidationError = {
     };
 };
 
-export type ItemsReadItemsData = {
+export type IngredientsReadIngredientsData = {
+    category?: (IngredientCategory | null);
     limit?: number;
+    search?: (string | null);
     skip?: number;
 };
 
-export type ItemsReadItemsResponse = (ItemsPublic);
+export type IngredientsReadIngredientsResponse = (IngredientsPublic);
 
-export type ItemsCreateItemData = {
-    requestBody: ItemCreate;
+export type IngredientsCreateIngredientData = {
+    requestBody: IngredientCreate;
 };
 
-export type ItemsCreateItemResponse = (ItemPublic);
+export type IngredientsCreateIngredientResponse = (IngredientPublic);
 
-export type ItemsReadItemData = {
+export type IngredientsReadIngredientData = {
     id: string;
 };
 
-export type ItemsReadItemResponse = (ItemPublic);
+export type IngredientsReadIngredientResponse = (IngredientPublic);
 
-export type ItemsUpdateItemData = {
+export type IngredientsUpdateIngredientData = {
     id: string;
-    requestBody: ItemUpdate;
+    requestBody: IngredientUpdate;
 };
 
-export type ItemsUpdateItemResponse = (ItemPublic);
+export type IngredientsUpdateIngredientResponse = (IngredientPublic);
 
-export type ItemsDeleteItemData = {
+export type IngredientsDeleteIngredientData = {
     id: string;
 };
 
-export type ItemsDeleteItemResponse = (Message);
+export type IngredientsDeleteIngredientResponse = (Message);
 
 export type LoginLoginAccessTokenData = {
     formData: Body_login_login_access_token;
@@ -176,6 +343,121 @@ export type PrivateCreateUserData = {
 };
 
 export type PrivateCreateUserResponse = (UserPublic);
+
+export type RecipesReadRecipesData = {
+    limit?: number;
+    skip?: number;
+};
+
+export type RecipesReadRecipesResponse = (RecipesPublic);
+
+export type RecipesCreateRecipeData = {
+    requestBody: RecipeCreate;
+};
+
+export type RecipesCreateRecipeResponse = (RecipePublic);
+
+export type RecipesReadRecipeData = {
+    id: string;
+};
+
+export type RecipesReadRecipeResponse = (RecipePublic);
+
+export type RecipesUpdateRecipeData = {
+    id: string;
+    requestBody: RecipeUpdate;
+};
+
+export type RecipesUpdateRecipeResponse = (RecipePublic);
+
+export type RecipesDeleteRecipeData = {
+    id: string;
+};
+
+export type RecipesDeleteRecipeResponse = (Message);
+
+export type RecipesImportRecipeUrlData = {
+    requestBody: ImportUrlRequest;
+};
+
+export type RecipesImportRecipeUrlResponse = (ParsedRecipe);
+
+export type ShoppingListsReadShoppingListsData = {
+    limit?: number;
+    skip?: number;
+};
+
+export type ShoppingListsReadShoppingListsResponse = (ShoppingListsPublic);
+
+export type ShoppingListsCreateShoppingListData = {
+    requestBody: ShoppingListCreate;
+};
+
+export type ShoppingListsCreateShoppingListResponse = (ShoppingListPublic);
+
+export type ShoppingListsReadShoppingListData = {
+    id: string;
+};
+
+export type ShoppingListsReadShoppingListResponse = (ShoppingListPublic);
+
+export type ShoppingListsUpdateShoppingListData = {
+    id: string;
+    requestBody: ShoppingListUpdate;
+};
+
+export type ShoppingListsUpdateShoppingListResponse = (ShoppingListPublic);
+
+export type ShoppingListsDeleteShoppingListData = {
+    id: string;
+};
+
+export type ShoppingListsDeleteShoppingListResponse = (Message);
+
+export type ShoppingListsAddItemData = {
+    id: string;
+    requestBody: ShoppingListItemCreate;
+};
+
+export type ShoppingListsAddItemResponse = (ShoppingListPublic);
+
+export type ShoppingListsUpdateItemData = {
+    id: string;
+    itemId: string;
+    requestBody: ShoppingListItemUpdate;
+};
+
+export type ShoppingListsUpdateItemResponse = (ShoppingListItemPublic);
+
+export type ShoppingListsDeleteItemData = {
+    id: string;
+    itemId: string;
+};
+
+export type ShoppingListsDeleteItemResponse = (Message);
+
+export type ShoppingListsAddRecipeData = {
+    id: string;
+    recipeId: string;
+    servings?: (number | null);
+};
+
+export type ShoppingListsAddRecipeResponse = (ShoppingListPublic);
+
+export type ShoppingListsUpdatePlannedRecipeData = {
+    id: string;
+    plannedRecipeId: string;
+    requestBody: ShoppingListRecipeUpdate;
+};
+
+export type ShoppingListsUpdatePlannedRecipeResponse = (ShoppingListRecipePublic);
+
+export type ShoppingListsDeletePlannedRecipeData = {
+    id: string;
+    plannedRecipeId: string;
+};
+
+export type ShoppingListsDeletePlannedRecipeResponse = (Message);
 
 export type UsersReadUsersData = {
     limit?: number;
@@ -230,6 +512,14 @@ export type UsersDeleteUserData = {
 };
 
 export type UsersDeleteUserResponse = (Message);
+
+export type UserSettingsReadUserSettingsResponse = (UserSettingsPublic);
+
+export type UserSettingsUpdateUserSettingsData = {
+    requestBody: UserSettingsUpdate;
+};
+
+export type UserSettingsUpdateUserSettingsResponse = (UserSettingsPublic);
 
 export type UtilsTestEmailData = {
     emailTo: string;

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36">
+  <!-- Crown: wide dome, tall body -->
+  <path d="M6 31 L6 19 Q6 5 18 5 Q30 5 30 19 L30 31 Z" fill="#5bbfc0"/>
+  <!-- Brim: thin, slightly wider than crown -->
+  <rect x="3" y="29" width="30" height="4" rx="2" fill="#5bbfc0"/>
+  <!-- Center crease -->
+  <line x1="18" y1="9" x2="18" y2="29" stroke="white" stroke-width="1.5" stroke-linecap="round" opacity="0.2"/>
+</svg>

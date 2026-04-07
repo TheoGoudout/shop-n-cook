@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 172 40">
+  <!-- Crown -->
+  <path d="M5 33 L5 21 Q5 6 18 6 Q31 6 31 21 L31 33 Z" fill="#3d9fa0"/>
+  <!-- Brim: thin -->
+  <rect x="2" y="31" width="32" height="5" rx="2" fill="#3d9fa0"/>
+  <!-- Center crease -->
+  <line x1="18" y1="10" x2="18" y2="31" stroke="white" stroke-width="1.5" stroke-linecap="round" opacity="0.2"/>
+  <!-- App name -->
+  <text x="42" y="27" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#1a1a1a" letter-spacing="-0.3">Shop n Cook</text>
+</svg>

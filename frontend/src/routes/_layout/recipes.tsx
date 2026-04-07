@@ -4,6 +4,7 @@ import { ChefHat } from "lucide-react"
 import { Suspense } from "react"
 
 import { RecipesService } from "@/client"
+import { APP_NAME } from "@/lib/config"
 import { DataTable } from "@/components/Common/DataTable"
 import PendingItems from "@/components/Pending/PendingItems"
 import AddRecipe from "@/components/Recipes/AddRecipe"
@@ -19,7 +20,7 @@ function getRecipesQueryOptions() {
 export const Route = createFileRoute("/_layout/recipes")({
   component: Recipes,
   head: () => ({
-    meta: [{ title: "Recipes - Shop n Cook" }],
+    meta: [{ title: `Recipes - ${APP_NAME}` }],
   }),
 })
 

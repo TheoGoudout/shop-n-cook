@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router"
 
+import { APP_NAME } from "@/lib/config"
+
 import ChangePassword from "@/components/UserSettings/ChangePassword"
 import DeleteAccount from "@/components/UserSettings/DeleteAccount"
 import { HouseholdSettings } from "@/components/UserSettings/HouseholdSettings"
@@ -17,7 +19,7 @@ const tabsConfig = [
 export const Route = createFileRoute("/_layout/settings")({
   component: UserSettings,
   head: () => ({
-    meta: [{ title: "Settings - Shop n Cook" }],
+    meta: [{ title: `Settings - ${APP_NAME}` }],
   }),
 })
 

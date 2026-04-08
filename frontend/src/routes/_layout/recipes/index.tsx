@@ -17,7 +17,7 @@ function getRecipesQueryOptions() {
   }
 }
 
-export const Route = createFileRoute("/_layout/recipes")({
+export const Route = createFileRoute("/_layout/recipes/")({
   component: Recipes,
   head: () => ({
     meta: [{ title: `Recipes - ${APP_NAME}` }],

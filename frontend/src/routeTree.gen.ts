@@ -15,13 +15,13 @@ import { Route as RecoverPasswordRouteImport } from './routes/recover-password'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LayoutRouteImport } from './routes/_layout'
 import { Route as LayoutIndexRouteImport } from './routes/_layout/index'
-import { Route as LayoutShoppingListsRouteImport } from './routes/_layout/shopping-lists'
 import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
-import { Route as LayoutRecipesRouteImport } from './routes/_layout/recipes'
 import { Route as LayoutIngredientsRouteImport } from './routes/_layout/ingredients'
 import { Route as LayoutAdminRouteImport } from './routes/_layout/admin'
-import { Route as LayoutShoppingListsIdRouteImport } from './routes/_layout/shopping-lists.$id'
-import { Route as LayoutRecipesIdRouteImport } from './routes/_layout/recipes.$id'
+import { Route as LayoutShoppingListsIndexRouteImport } from './routes/_layout/shopping-lists/index'
+import { Route as LayoutRecipesIndexRouteImport } from './routes/_layout/recipes/index'
+import { Route as LayoutShoppingListsIdRouteImport } from './routes/_layout/shopping-lists/$id'
+import { Route as LayoutRecipesIdRouteImport } from './routes/_layout/recipes/$id'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -52,19 +52,9 @@ const LayoutIndexRoute = LayoutIndexRouteImport.update({
   path: '/',
   getParentRoute: () => LayoutRoute,
 } as any)
-const LayoutShoppingListsRoute = LayoutShoppingListsRouteImport.update({
-  id: '/shopping-lists',
-  path: '/shopping-lists',
-  getParentRoute: () => LayoutRoute,
-} as any)
 const LayoutSettingsRoute = LayoutSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
-  getParentRoute: () => LayoutRoute,
-} as any)
-const LayoutRecipesRoute = LayoutRecipesRouteImport.update({
-  id: '/recipes',
-  path: '/recipes',
   getParentRoute: () => LayoutRoute,
 } as any)
 const LayoutIngredientsRoute = LayoutIngredientsRouteImport.update({
@@ -77,15 +67,26 @@ const LayoutAdminRoute = LayoutAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutShoppingListsIndexRoute =
+  LayoutShoppingListsIndexRouteImport.update({
+    id: '/shopping-lists/',
+    path: '/shopping-lists/',
+    getParentRoute: () => LayoutRoute,
+  } as any)
+const LayoutRecipesIndexRoute = LayoutRecipesIndexRouteImport.update({
+  id: '/recipes/',
+  path: '/recipes/',
+  getParentRoute: () => LayoutRoute,
+} as any)
 const LayoutShoppingListsIdRoute = LayoutShoppingListsIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => LayoutShoppingListsRoute,
+  id: '/shopping-lists/$id',
+  path: '/shopping-lists/$id',
+  getParentRoute: () => LayoutRoute,
 } as any)
 const LayoutRecipesIdRoute = LayoutRecipesIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => LayoutRecipesRoute,
+  id: '/recipes/$id',
+  path: '/recipes/$id',
+  getParentRoute: () => LayoutRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -96,11 +97,11 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/admin': typeof LayoutAdminRoute
   '/ingredients': typeof LayoutIngredientsRoute
-  '/recipes': typeof LayoutRecipesRouteWithChildren
   '/settings': typeof LayoutSettingsRoute
-  '/shopping-lists': typeof LayoutShoppingListsRouteWithChildren
   '/recipes/$id': typeof LayoutRecipesIdRoute
   '/shopping-lists/$id': typeof LayoutShoppingListsIdRoute
+  '/recipes/': typeof LayoutRecipesIndexRoute
+  '/shopping-lists/': typeof LayoutShoppingListsIndexRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -109,12 +110,12 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/admin': typeof LayoutAdminRoute
   '/ingredients': typeof LayoutIngredientsRoute
-  '/recipes': typeof LayoutRecipesRouteWithChildren
   '/settings': typeof LayoutSettingsRoute
-  '/shopping-lists': typeof LayoutShoppingListsRouteWithChildren
   '/': typeof LayoutIndexRoute
   '/recipes/$id': typeof LayoutRecipesIdRoute
   '/shopping-lists/$id': typeof LayoutShoppingListsIdRoute
+  '/recipes': typeof LayoutRecipesIndexRoute
+  '/shopping-lists': typeof LayoutShoppingListsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -125,12 +126,12 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/_layout/admin': typeof LayoutAdminRoute
   '/_layout/ingredients': typeof LayoutIngredientsRoute
-  '/_layout/recipes': typeof LayoutRecipesRouteWithChildren
   '/_layout/settings': typeof LayoutSettingsRoute
-  '/_layout/shopping-lists': typeof LayoutShoppingListsRouteWithChildren
   '/_layout/': typeof LayoutIndexRoute
   '/_layout/recipes/$id': typeof LayoutRecipesIdRoute
   '/_layout/shopping-lists/$id': typeof LayoutShoppingListsIdRoute
+  '/_layout/recipes/': typeof LayoutRecipesIndexRoute
+  '/_layout/shopping-lists/': typeof LayoutShoppingListsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -142,11 +143,11 @@ export interface FileRouteTypes {
     | '/signup'
     | '/admin'
     | '/ingredients'
-    | '/recipes'
     | '/settings'
-    | '/shopping-lists'
     | '/recipes/$id'
     | '/shopping-lists/$id'
+    | '/recipes/'
+    | '/shopping-lists/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
@@ -155,12 +156,12 @@ export interface FileRouteTypes {
     | '/signup'
     | '/admin'
     | '/ingredients'
-    | '/recipes'
     | '/settings'
-    | '/shopping-lists'
     | '/'
     | '/recipes/$id'
     | '/shopping-lists/$id'
+    | '/recipes'
+    | '/shopping-lists'
   id:
     | '__root__'
     | '/_layout'
@@ -170,12 +171,12 @@ export interface FileRouteTypes {
     | '/signup'
     | '/_layout/admin'
     | '/_layout/ingredients'
-    | '/_layout/recipes'
     | '/_layout/settings'
-    | '/_layout/shopping-lists'
     | '/_layout/'
     | '/_layout/recipes/$id'
     | '/_layout/shopping-lists/$id'
+    | '/_layout/recipes/'
+    | '/_layout/shopping-lists/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -230,25 +231,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutIndexRouteImport
       parentRoute: typeof LayoutRoute
     }
-    '/_layout/shopping-lists': {
-      id: '/_layout/shopping-lists'
-      path: '/shopping-lists'
-      fullPath: '/shopping-lists'
-      preLoaderRoute: typeof LayoutShoppingListsRouteImport
-      parentRoute: typeof LayoutRoute
-    }
     '/_layout/settings': {
       id: '/_layout/settings'
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof LayoutSettingsRouteImport
-      parentRoute: typeof LayoutRoute
-    }
-    '/_layout/recipes': {
-      id: '/_layout/recipes'
-      path: '/recipes'
-      fullPath: '/recipes'
-      preLoaderRoute: typeof LayoutRecipesRouteImport
       parentRoute: typeof LayoutRoute
     }
     '/_layout/ingredients': {
@@ -265,62 +252,57 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutAdminRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/shopping-lists/': {
+      id: '/_layout/shopping-lists/'
+      path: '/shopping-lists'
+      fullPath: '/shopping-lists/'
+      preLoaderRoute: typeof LayoutShoppingListsIndexRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/recipes/': {
+      id: '/_layout/recipes/'
+      path: '/recipes'
+      fullPath: '/recipes/'
+      preLoaderRoute: typeof LayoutRecipesIndexRouteImport
+      parentRoute: typeof LayoutRoute
+    }
     '/_layout/shopping-lists/$id': {
       id: '/_layout/shopping-lists/$id'
-      path: '/$id'
+      path: '/shopping-lists/$id'
       fullPath: '/shopping-lists/$id'
       preLoaderRoute: typeof LayoutShoppingListsIdRouteImport
-      parentRoute: typeof LayoutShoppingListsRoute
+      parentRoute: typeof LayoutRoute
     }
     '/_layout/recipes/$id': {
       id: '/_layout/recipes/$id'
-      path: '/$id'
+      path: '/recipes/$id'
       fullPath: '/recipes/$id'
       preLoaderRoute: typeof LayoutRecipesIdRouteImport
-      parentRoute: typeof LayoutRecipesRoute
+      parentRoute: typeof LayoutRoute
     }
   }
 }
 
-interface LayoutRecipesRouteChildren {
-  LayoutRecipesIdRoute: typeof LayoutRecipesIdRoute
-}
-
-const LayoutRecipesRouteChildren: LayoutRecipesRouteChildren = {
-  LayoutRecipesIdRoute: LayoutRecipesIdRoute,
-}
-
-const LayoutRecipesRouteWithChildren = LayoutRecipesRoute._addFileChildren(
-  LayoutRecipesRouteChildren,
-)
-
-interface LayoutShoppingListsRouteChildren {
-  LayoutShoppingListsIdRoute: typeof LayoutShoppingListsIdRoute
-}
-
-const LayoutShoppingListsRouteChildren: LayoutShoppingListsRouteChildren = {
-  LayoutShoppingListsIdRoute: LayoutShoppingListsIdRoute,
-}
-
-const LayoutShoppingListsRouteWithChildren =
-  LayoutShoppingListsRoute._addFileChildren(LayoutShoppingListsRouteChildren)
-
 interface LayoutRouteChildren {
   LayoutAdminRoute: typeof LayoutAdminRoute
   LayoutIngredientsRoute: typeof LayoutIngredientsRoute
-  LayoutRecipesRoute: typeof LayoutRecipesRouteWithChildren
   LayoutSettingsRoute: typeof LayoutSettingsRoute
-  LayoutShoppingListsRoute: typeof LayoutShoppingListsRouteWithChildren
   LayoutIndexRoute: typeof LayoutIndexRoute
+  LayoutRecipesIdRoute: typeof LayoutRecipesIdRoute
+  LayoutShoppingListsIdRoute: typeof LayoutShoppingListsIdRoute
+  LayoutRecipesIndexRoute: typeof LayoutRecipesIndexRoute
+  LayoutShoppingListsIndexRoute: typeof LayoutShoppingListsIndexRoute
 }
 
 const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutAdminRoute: LayoutAdminRoute,
   LayoutIngredientsRoute: LayoutIngredientsRoute,
-  LayoutRecipesRoute: LayoutRecipesRouteWithChildren,
   LayoutSettingsRoute: LayoutSettingsRoute,
-  LayoutShoppingListsRoute: LayoutShoppingListsRouteWithChildren,
   LayoutIndexRoute: LayoutIndexRoute,
+  LayoutRecipesIdRoute: LayoutRecipesIdRoute,
+  LayoutShoppingListsIdRoute: LayoutShoppingListsIdRoute,
+  LayoutRecipesIndexRoute: LayoutRecipesIndexRoute,
+  LayoutShoppingListsIndexRoute: LayoutShoppingListsIndexRoute,
 }
 
 const LayoutRouteWithChildren =

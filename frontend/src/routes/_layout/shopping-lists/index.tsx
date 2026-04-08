@@ -16,7 +16,7 @@ function getShoppingListsQueryOptions() {
   }
 }
 
-export const Route = createFileRoute("/_layout/shopping-lists")({
+export const Route = createFileRoute("/_layout/shopping-lists/")({
   component: ShoppingLists,
   head: () => ({
     meta: [{ title: `Shopping Lists - ${APP_NAME}` }],

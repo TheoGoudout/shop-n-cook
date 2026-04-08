@@ -19,6 +19,7 @@ services:
 
   prestart:
     image: shop-n-cook-backend:${TAG:-latest}
+    restart: "no"
     build:
       context: .
       dockerfile: backend/Dockerfile

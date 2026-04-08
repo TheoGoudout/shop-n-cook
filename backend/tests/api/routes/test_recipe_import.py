@@ -131,6 +131,36 @@ def test_get_llm_unknown_provider() -> None:
             assert "Unknown AI_PROVIDER" in str(exc)
 
 
+def test_import_recipe_filters_null_quantity_ingredients(
+    client: TestClient, superuser_token_headers: dict[str, str]
+) -> None:
+    recipe_with_garnish = {
+        **_SAMPLE_RECIPE,
+        "ingredients": [
+            {"name": "pasta", "quantity": 200.0, "unit": "g", "notes": None},
+            {"name": "maple syrup", "quantity": None, "unit": None, "notes": "to serve"},
+            {"name": "butter", "quantity": None, "unit": None, "notes": "to serve"},
+        ],
+    }
+    llm_mock = MagicMock()
+    llm_mock.invoke.return_value = _make_llm_response(recipe_with_garnish)
+
+    with (
+        patch("app.services.recipe_import._fetch_page_text", return_value="some recipe text"),
+        patch("app.services.recipe_import._get_llm", return_value=llm_mock),
+    ):
+        response = client.post(
+            f"{settings.API_V1_STR}/recipes/import-url",
+            headers=superuser_token_headers,
+            json={"url": "https://example.com/recipe"},
+        )
+
+    assert response.status_code == 200
+    ingredients = response.json()["ingredients"]
+    assert len(ingredients) == 1
+    assert ingredients[0]["name"] == "pasta"
+
+
 def test_configure_langsmith_sets_env() -> None:
     import os
 

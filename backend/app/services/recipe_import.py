@@ -60,7 +60,7 @@ Rules:
 - Convert all measurements to the closest available unit from the list
 - If quantity is fractional (e.g. 1/2), convert to decimal (0.5)
 - If no unit applies, use "piece"
-- Extract all ingredients
+- Only include ingredients with a measurable quantity — skip garnishes, serving suggestions, or "to taste"/"to serve" items that have no defined amount
 - Do not include any text outside the JSON object"""
 
 
@@ -155,4 +155,10 @@ def import_recipe_from_url(url: str) -> ParsedRecipe:
         content = content.strip()
 
     data: dict[str, Any] = json.loads(content)
+    if "ingredients" in data:
+        data["ingredients"] = [
+            ing
+            for ing in data["ingredients"]
+            if ing.get("quantity") is not None and ing.get("unit") is not None
+        ]
     return ParsedRecipe(**data)

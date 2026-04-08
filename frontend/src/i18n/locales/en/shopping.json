@@ -1,0 +1,75 @@
+{
+  "page": {
+    "title": "Shopping Lists",
+    "subtitle": "Plan your grocery runs",
+    "empty_title": "No shopping lists yet",
+    "empty_subtitle": "Create a list and start adding ingredients or recipes"
+  },
+  "detail": {
+    "back": "Back to Shopping Lists",
+    "loading": "Loading…",
+    "tab_shopping": "Shopping",
+    "tab_meals": "Meals",
+    "items_progress": "{{checked}}/{{total}} items checked",
+    "meals_progress": "{{prepared}}/{{total}} meals prepared",
+    "items_summary": "{{checked}}/{{total}} items",
+    "meals_summary": "{{prepared}}/{{total}} meals",
+    "shopping_empty": "No items yet. Add ingredients or use \"Add recipe\" to populate this list.",
+    "meals_empty": "No recipes planned yet. Go back and use \"Add recipe\" on the shopping list.",
+    "recipes_count": "{{count}} recipes",
+    "scaled_from": "· scaled from {{count}} servings",
+    "ingredients_count": "{{count}} ingredients"
+  },
+  "card": {
+    "items_count": "{{checked}}/{{total}} items",
+    "recipes_count": "{{count}} recipes",
+    "no_items": "No items yet",
+    "more_items": "+{{count}} more items",
+    "add_item": "Add item",
+    "add_recipe": "Add recipe",
+    "open": "Open"
+  },
+  "add_list": {
+    "button": "New List",
+    "dialog_title": "New Shopping List",
+    "dialog_description": "Give your shopping list a name and optional date range.",
+    "submit": "Create",
+    "success": "Shopping list created",
+    "name_label": "Name",
+    "name_placeholder": "e.g. Weekly groceries",
+    "name_required": "Name is required",
+    "start_date_label": "Start date",
+    "end_date_label": "End date"
+  },
+  "add_item_dialog": {
+    "title": "Add Item",
+    "ingredient_label": "Ingredient",
+    "quantity_label": "Quantity",
+    "unit_label": "Unit",
+    "select_ingredient": "Select ingredient",
+    "submit": "Add",
+    "success": "Item added"
+  },
+  "add_recipe_dialog": {
+    "title": "Add Recipe",
+    "description": "Ingredients will be scaled to the specified servings and added to the list.",
+    "recipe_label": "Recipe",
+    "servings_label": "Servings",
+    "recipe_default": "(recipe default: {{count}})",
+    "select_recipe": "Select recipe",
+    "submit": "Add",
+    "success": "Recipe added to list"
+  },
+  "rename_dialog": {
+    "title": "Rename List",
+    "submit": "Save",
+    "success": "List renamed"
+  },
+  "delete_dialog": {
+    "title": "Delete Shopping List",
+    "description": "\"{{name}}\" and all its items will be permanently deleted.",
+    "success": "Shopping list deleted"
+  },
+  "item_removed": "Item removed",
+  "servings_badge": "{{count}} servings"
+}

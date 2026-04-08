@@ -1,0 +1,29 @@
+{
+  "page": {
+    "title": "Utilisateurs",
+    "subtitle": "Gérez les comptes utilisateurs et les permissions"
+  },
+  "columns": {
+    "full_name": "Nom complet",
+    "email": "E-mail",
+    "role": "Rôle",
+    "status": "Statut"
+  },
+  "add": {
+    "button": "Ajouter un utilisateur",
+    "dialog_title": "Ajouter un utilisateur",
+    "dialog_description": "Créez un nouveau compte utilisateur.",
+    "success": "Utilisateur créé avec succès"
+  },
+  "edit": {
+    "menu_item": "Modifier",
+    "dialog_title": "Modifier l'utilisateur",
+    "success": "Utilisateur mis à jour avec succès"
+  },
+  "delete": {
+    "menu_item": "Supprimer",
+    "dialog_title": "Supprimer l'utilisateur",
+    "dialog_description": "Cet utilisateur sera définitivement supprimé.",
+    "success": "Utilisateur supprimé avec succès"
+  }
+}

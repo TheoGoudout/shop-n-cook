@@ -1,5 +1,6 @@
 import { useQueries } from "@tanstack/react-query"
 import { ChefHat, FlaskConical, ShoppingCart } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import {
   Bar,
   BarChart,
@@ -20,13 +21,15 @@ const CHART_COLORS = [
   "var(--color-chart-3)",
 ]
 
-const statsMeta = [
-  { label: "Recipes", icon: ChefHat },
-  { label: "Ingredients", icon: FlaskConical },
-  { label: "Shopping Lists", icon: ShoppingCart },
-]
-
 export function StatsChart() {
+  const { t } = useTranslation("dashboard")
+
+  const statsMeta = [
+    { labelKey: "stats.recipes", icon: ChefHat },
+    { labelKey: "stats.ingredients", icon: FlaskConical },
+    { labelKey: "stats.shopping_lists", icon: ShoppingCart },
+  ]
+
   const results = useQueries({
     queries: [
       {
@@ -47,19 +50,19 @@ export function StatsChart() {
   const counts = results.map((r) => r.data?.count ?? 0)
   const isLoading = results.some((r) => r.isLoading)
 
-  const chartData = statsMeta.map(({ label }, i) => ({
-    name: label,
+  const chartData = statsMeta.map(({ labelKey }, i) => ({
+    name: t(labelKey),
     value: counts[i],
   }))
 
   return (
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {statsMeta.map(({ label, icon: Icon }, i) => (
-          <Card key={label}>
+        {statsMeta.map(({ labelKey, icon: Icon }, i) => (
+          <Card key={labelKey}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                {label}
+                {t(labelKey)}
               </CardTitle>
               <Icon className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
@@ -74,7 +77,7 @@ export function StatsChart() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Kitchen Overview</CardTitle>
+          <CardTitle className="text-base">{t("stats.kitchen_overview")}</CardTitle>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={220}>
@@ -107,7 +110,7 @@ export function StatsChart() {
                 labelStyle={{ color: "var(--color-card-foreground)", fontWeight: 600 }}
                 itemStyle={{ color: "var(--color-muted-foreground)" }}
               />
-              <Bar dataKey="value" name="Total" radius={[4, 4, 0, 0]}>
+              <Bar dataKey="value" name={t("stats.total")} radius={[4, 4, 0, 0]}>
                 {chartData.map((_entry, index) => (
                   <Cell key={index} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                 ))}

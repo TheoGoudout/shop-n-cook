@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Download, Loader2, Plus, Trash2 } from "lucide-react"
 import { useState } from "react"
 import { type Resolver, useFieldArray, useForm } from "react-hook-form"
+import { useTranslation } from "react-i18next"
 import { z } from "zod"
 
 import { IngredientsService, RecipesService, type Unit } from "@/client"
@@ -95,6 +96,8 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>
 
 const AddRecipe = () => {
+  const { t } = useTranslation("recipes")
+  const { t: tCommon } = useTranslation("common")
   const [isOpen, setIsOpen] = useState(false)
   const [importUrl, setImportUrl] = useState("")
   const [isImporting, setIsImporting] = useState(false)
@@ -164,11 +167,11 @@ const AddRecipe = () => {
       setImportUrl("")
       showSuccessToast(
         unmatchedCount > 0
-          ? `Recipe imported. ${unmatchedCount} ingredient(s) will be created automatically.`
-          : "Recipe imported successfully.",
+          ? t("add.import_partial", { count: unmatchedCount })
+          : t("add.import_success"),
       )
     } catch {
-      showErrorToast("Failed to import recipe. Check the URL and try again.")
+      showErrorToast(t("add.import_error"))
     } finally {
       setIsImporting(false)
     }
@@ -200,7 +203,7 @@ const AddRecipe = () => {
         },
       }),
     onSuccess: () => {
-      showSuccessToast("Recipe created successfully")
+      showSuccessToast(t("add.success"))
       form.reset()
       setIsOpen(false)
     },
@@ -216,14 +219,14 @@ const AddRecipe = () => {
       <DialogTrigger asChild>
         <Button className="my-4">
           <Plus className="mr-2" />
-          Add Recipe
+          {t("add.button")}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add Recipe</DialogTitle>
+          <DialogTitle>{t("add.dialog_title")}</DialogTitle>
           <DialogDescription>
-            Create a new recipe with ingredients.
+            {t("add.dialog_description")}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -232,7 +235,7 @@ const AddRecipe = () => {
               {/* Import from URL */}
               <div className="flex gap-2 p-3 rounded-md border border-dashed bg-muted/30">
                 <Input
-                  placeholder="Paste a recipe URL to auto-fill…"
+                  placeholder={t("form.import_placeholder", { defaultValue: "Paste a recipe URL to auto-fill…" })}
                   value={importUrl}
                   onChange={(e) => setImportUrl(e.target.value)}
                   onKeyDown={(e) => {
@@ -255,7 +258,7 @@ const AddRecipe = () => {
                   ) : (
                     <Download className="h-4 w-4" />
                   )}
-                  <span className="ml-1.5">Import</span>
+                  <span className="ml-1.5">{tCommon("import")}</span>
                 </Button>
               </div>
 
@@ -265,11 +268,11 @@ const AddRecipe = () => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      Title <span className="text-destructive">*</span>
+                      {t("form.title_label")} <span className="text-destructive">*</span>
                     </FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="e.g. Spaghetti Bolognese"
+                        placeholder={t("form.title_placeholder")}
                         {...field}
                       />
                     </FormControl>
@@ -282,9 +285,9 @@ const AddRecipe = () => {
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Description</FormLabel>
+                    <FormLabel>{t("form.description_label")}</FormLabel>
                     <FormControl>
-                      <Input placeholder="Short description" {...field} />
+                      <Input placeholder={t("form.description_placeholder")} {...field} />
                     </FormControl>
                   </FormItem>
                 )}
@@ -295,7 +298,7 @@ const AddRecipe = () => {
                   name="servings"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Servings</FormLabel>
+                      <FormLabel>{t("form.servings_label")}</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
@@ -312,7 +315,7 @@ const AddRecipe = () => {
                   name="prep_time_minutes"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Prep (min)</FormLabel>
+                      <FormLabel>{t("form.prep_label")}</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
@@ -329,7 +332,7 @@ const AddRecipe = () => {
                   name="cook_time_minutes"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Cook (min)</FormLabel>
+                      <FormLabel>{t("form.cook_label")}</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
@@ -347,11 +350,11 @@ const AddRecipe = () => {
                 name="instructions"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Instructions</FormLabel>
+                    <FormLabel>{t("form.instructions_label")}</FormLabel>
                     <FormControl>
                       <textarea
                         className="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                        placeholder="Step by step instructions..."
+                        placeholder={t("form.instructions_placeholder")}
                         {...field}
                       />
                     </FormControl>
@@ -364,9 +367,9 @@ const AddRecipe = () => {
                   name="source_url"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Source URL</FormLabel>
+                      <FormLabel>{t("form.source_url_label")}</FormLabel>
                       <FormControl>
-                        <Input placeholder="https://…" {...field} />
+                        <Input placeholder={t("form.url_placeholder")} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -377,9 +380,9 @@ const AddRecipe = () => {
                   name="image_url"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Image URL</FormLabel>
+                      <FormLabel>{t("form.image_url_label")}</FormLabel>
                       <FormControl>
-                        <Input placeholder="https://…" {...field} />
+                        <Input placeholder={t("form.url_placeholder")} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -390,7 +393,7 @@ const AddRecipe = () => {
               {/* Ingredients */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <FormLabel>Ingredients</FormLabel>
+                  <FormLabel>{t("form.ingredients_label")}</FormLabel>
                   <Button
                     type="button"
                     variant="outline"
@@ -405,7 +408,7 @@ const AddRecipe = () => {
                       })
                     }
                   >
-                    <Plus className="mr-1 h-3 w-3" /> Add
+                    <Plus className="mr-1 h-3 w-3" /> {t("form.add_ingredient")}
                   </Button>
                 </div>
                 <div className="space-y-3">
@@ -445,11 +448,11 @@ const AddRecipe = () => {
                                             variant="secondary"
                                             className="text-xs"
                                           >
-                                            new
+                                            {tCommon("new")}
                                           </Badge>
                                         </span>
                                       ) : (
-                                        <SelectValue placeholder="Select ingredient" />
+                                        <SelectValue placeholder={t("form.select_ingredient")} />
                                       )}
                                     </SelectTrigger>
                                   </FormControl>
@@ -475,7 +478,7 @@ const AddRecipe = () => {
                                     type="number"
                                     min={0.01}
                                     step="any"
-                                    placeholder="Qty"
+                                    placeholder={t("form.qty_placeholder")}
                                     {...f}
                                   />
                                 </FormControl>
@@ -499,7 +502,7 @@ const AddRecipe = () => {
                                   <SelectContent>
                                     {UNITS.map((u) => (
                                       <SelectItem key={u} value={u}>
-                                        {u}
+                                        {tCommon(`unit_labels.${u}`, { defaultValue: u })}
                                       </SelectItem>
                                     ))}
                                   </SelectContent>
@@ -524,7 +527,7 @@ const AddRecipe = () => {
                             <FormItem className="pr-10">
                               <FormControl>
                                 <Input
-                                  placeholder="Notes (e.g. finely chopped)"
+                                  placeholder={t("form.notes_placeholder")}
                                   className="h-7 text-xs text-muted-foreground"
                                   {...f}
                                 />
@@ -542,11 +545,11 @@ const AddRecipe = () => {
             <DialogFooter>
               <DialogClose asChild>
                 <Button variant="outline" disabled={mutation.isPending}>
-                  Cancel
+                  {tCommon("cancel")}
                 </Button>
               </DialogClose>
               <LoadingButton type="submit" loading={mutation.isPending}>
-                Save
+                {tCommon("save")}
               </LoadingButton>
             </DialogFooter>
           </form>

@@ -15,6 +15,7 @@ import {
   Users,
 } from "lucide-react"
 import { Suspense } from "react"
+import { useTranslation } from "react-i18next"
 
 import {
   type ShoppingListItemPublic,
@@ -29,6 +30,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { APP_NAME } from "@/lib/config"
 import useCustomToast from "@/hooks/useCustomToast"
+import { useUnitSystem } from "@/hooks/useUnitSystem"
 import { handleError } from "@/utils"
 
 function getListQueryOptions(id: string) {
@@ -91,6 +93,9 @@ function recipeBreakdown(
 // ---- Shopping tab ---- //
 
 function ShoppingTab({ list }: { list: ShoppingListPublic }) {
+  const { t } = useTranslation("shopping")
+  const { t: tCommon } = useTranslation("common")
+  const { convert } = useUnitSystem()
   const queryClient = useQueryClient()
   const { showErrorToast } = useCustomToast()
   const id = list.id
@@ -121,7 +126,7 @@ function ShoppingTab({ list }: { list: ShoppingListPublic }) {
   if (items.length === 0) {
     return (
       <p className="text-sm text-muted-foreground italic py-4">
-        No items yet. Add ingredients or use "Add recipe" to populate this list.
+        {t("detail.shopping_empty")}
       </p>
     )
   }
@@ -132,18 +137,19 @@ function ShoppingTab({ list }: { list: ShoppingListPublic }) {
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        {checkedCount}/{items.length} items checked
+        {t("detail.items_progress", { checked: checkedCount, total: items.length })}
       </p>
       {grouped.map(([category, catItems]) => (
         <Card key={category}>
           <CardHeader className="py-3 px-4">
             <CardTitle className="text-sm capitalize text-muted-foreground font-medium tracking-wide">
-              {category}
+              {tCommon(`categories.${category}`, { defaultValue: category })}
             </CardTitle>
           </CardHeader>
           <CardContent className="px-4 pb-3 space-y-2">
             {catItems.map((item) => {
               const breakdown = recipeBreakdown(item, planned)
+              const converted = convert(item.quantity, item.unit)
               return (
                 <div key={item.id} className="group">
                   <div className="flex items-center gap-2">
@@ -162,7 +168,7 @@ function ShoppingTab({ list }: { list: ShoppingListPublic }) {
                       {item.ingredient_name}
                     </span>
                     <span className="text-sm text-muted-foreground">
-                      {item.quantity} {item.unit}
+                      {converted.quantity} {tCommon(`unit_labels.${converted.unit}`, { defaultValue: converted.unit })}
                     </span>
                     <Button
                       variant="ghost"
@@ -175,14 +181,17 @@ function ShoppingTab({ list }: { list: ShoppingListPublic }) {
                   </div>
                   {breakdown.length > 1 && (
                     <div className="ml-6 mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5">
-                      {breakdown.map((b) => (
-                        <span
-                          key={b.title}
-                          className="text-xs text-muted-foreground"
-                        >
-                          {b.title}: {b.quantity} {b.unit}
-                        </span>
-                      ))}
+                      {breakdown.map((b) => {
+                        const convertedB = convert(b.quantity, b.unit)
+                        return (
+                          <span
+                            key={b.title}
+                            className="text-xs text-muted-foreground"
+                          >
+                            {b.title}: {convertedB.quantity} {tCommon(`unit_labels.${convertedB.unit}`, { defaultValue: convertedB.unit })}
+                          </span>
+                        )
+                      })}
                     </div>
                   )}
                 </div>
@@ -198,6 +207,7 @@ function ShoppingTab({ list }: { list: ShoppingListPublic }) {
 // ---- Meals tab ---- //
 
 function MealsTab({ list }: { list: ShoppingListPublic }) {
+  const { t } = useTranslation("shopping")
   const queryClient = useQueryClient()
   const { showErrorToast } = useCustomToast()
   const id = list.id
@@ -233,8 +243,7 @@ function MealsTab({ list }: { list: ShoppingListPublic }) {
   if (planned.length === 0) {
     return (
       <p className="text-sm text-muted-foreground italic py-4">
-        No recipes planned yet. Go back and use "Add recipe" on the shopping
-        list.
+        {t("detail.meals_empty")}
       </p>
     )
   }
@@ -244,7 +253,7 @@ function MealsTab({ list }: { list: ShoppingListPublic }) {
   return (
     <div className="space-y-3">
       <p className="text-sm text-muted-foreground">
-        {preparedCount}/{planned.length} meals prepared
+        {t("detail.meals_progress", { prepared: preparedCount, total: planned.length })}
       </p>
       {planned.map((pr) => (
         <Card key={pr.id} className={pr.is_prepared ? "opacity-60" : ""}>
@@ -277,20 +286,20 @@ function MealsTab({ list }: { list: ShoppingListPublic }) {
                   </Link>
                   <Badge variant="secondary" className="text-xs">
                     <Users className="h-3 w-3 mr-1" />
-                    {pr.servings_planned} servings
+                    {t("servings_badge", { count: pr.servings_planned })}
                   </Badge>
                   {pr.is_prepared && (
                     <Badge variant="outline" className="text-xs text-green-600">
-                      Done
+                      {t("detail.done", { defaultValue: "Done" })}
                     </Badge>
                   )}
                 </div>
                 {(pr.ingredients ?? []).length > 0 && (
                   <p className="text-xs text-muted-foreground mt-1">
-                    {(pr.ingredients ?? []).length} ingredients
+                    {t("detail.ingredients_count", { count: (pr.ingredients ?? []).length })}
                     {pr.recipe_servings &&
                     pr.recipe_servings !== pr.servings_planned
-                      ? ` · scaled from ${pr.recipe_servings} servings`
+                      ? t("detail.scaled_from", { count: pr.recipe_servings })
                       : ""}
                   </p>
                 )}
@@ -314,6 +323,7 @@ function MealsTab({ list }: { list: ShoppingListPublic }) {
 // ---- Main content ---- //
 
 function ShoppingListDetailContent() {
+  const { t } = useTranslation("shopping")
   const { id } = Route.useParams()
   const { data: list } = useSuspenseQuery(getListQueryOptions(id))
   const items = list.items ?? []
@@ -338,13 +348,13 @@ function ShoppingListDetailContent() {
           <div className="flex items-center gap-1.5">
             <ShoppingCart className="h-4 w-4" />
             <span>
-              {checkedCount}/{items.length} items
+              {t("detail.items_summary", { checked: checkedCount, total: items.length })}
             </span>
           </div>
           <div className="flex items-center gap-1.5">
             <ChefHat className="h-4 w-4" />
             <span>
-              {preparedCount}/{planned.length} meals
+              {t("detail.meals_summary", { prepared: preparedCount, total: planned.length })}
             </span>
           </div>
         </div>
@@ -354,11 +364,11 @@ function ShoppingListDetailContent() {
         <TabsList>
           <TabsTrigger value="shopping">
             <ShoppingCart className="h-4 w-4 mr-2" />
-            Shopping
+            {t("detail.tab_shopping")}
           </TabsTrigger>
           <TabsTrigger value="meals">
             <ChefHat className="h-4 w-4 mr-2" />
-            Meals
+            {t("detail.tab_meals")}
           </TabsTrigger>
         </TabsList>
         <TabsContent value="shopping" className="mt-4">
@@ -373,13 +383,15 @@ function ShoppingListDetailContent() {
 }
 
 function ShoppingListDetail() {
+  const { t } = useTranslation("shopping")
+
   return (
     <div className="flex flex-col gap-6">
       <div>
         <Button variant="ghost" size="sm" asChild className="-ml-2">
           <Link to="/shopping-lists">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Shopping Lists
+            {t("detail.back")}
           </Link>
         </Button>
       </div>
@@ -387,7 +399,7 @@ function ShoppingListDetail() {
         fallback={
           <div className="flex items-center gap-2 text-muted-foreground">
             <ShoppingCart className="h-5 w-5 animate-pulse" />
-            <span>Loading…</span>
+            <span>{t("detail.loading")}</span>
           </div>
         }
       >

@@ -5,6 +5,7 @@ import {
   redirect,
 } from "@tanstack/react-router"
 import { useForm } from "react-hook-form"
+import { useTranslation } from "react-i18next"
 import { z } from "zod"
 
 import type { Body_login_login_access_token as AccessToken } from "@/client"
@@ -52,6 +53,7 @@ export const Route = createFileRoute("/login")({
 })
 
 function Login() {
+  const { t } = useTranslation("auth")
   const { loginMutation } = useAuth()
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -76,7 +78,7 @@ function Login() {
           className="flex flex-col gap-6"
         >
           <div className="flex flex-col items-center gap-2 text-center">
-            <h1 className="text-2xl font-bold">Login to your account</h1>
+            <h1 className="text-2xl font-bold">{t("login.title")}</h1>
           </div>
 
           <div className="grid gap-4">
@@ -85,11 +87,11 @@ function Login() {
               name="username"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>{t("fields.email")}</FormLabel>
                   <FormControl>
                     <Input
                       data-testid="email-input"
-                      placeholder="user@example.com"
+                      placeholder={t("placeholders.email")}
                       type="email"
                       {...field}
                     />
@@ -105,18 +107,18 @@ function Login() {
               render={({ field }) => (
                 <FormItem>
                   <div className="flex items-center">
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel>{t("fields.password")}</FormLabel>
                     <RouterLink
                       to="/recover-password"
                       className="ml-auto text-sm underline-offset-4 hover:underline"
                     >
-                      Forgot your password?
+                      {t("login.forgot_password")}
                     </RouterLink>
                   </div>
                   <FormControl>
                     <PasswordInput
                       data-testid="password-input"
-                      placeholder="Password"
+                      placeholder={t("placeholders.password")}
                       {...field}
                     />
                   </FormControl>
@@ -126,14 +128,14 @@ function Login() {
             />
 
             <LoadingButton type="submit" loading={loginMutation.isPending}>
-              Log In
+              {t("login.submit")}
             </LoadingButton>
           </div>
 
           <div className="text-center text-sm">
-            Don't have an account yet?{" "}
+            {t("login.no_account")}{" "}
             <RouterLink to="/signup" className="underline underline-offset-4">
-              Sign up
+              {t("login.sign_up_link")}
             </RouterLink>
           </div>
         </form>

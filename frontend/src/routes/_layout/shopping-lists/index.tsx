@@ -2,6 +2,7 @@ import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 import { ShoppingCart } from "lucide-react"
 import { Suspense } from "react"
+import { useTranslation } from "react-i18next"
 
 import { ShoppingListsService } from "@/client"
 import { APP_NAME } from "@/lib/config"
@@ -24,6 +25,7 @@ export const Route = createFileRoute("/_layout/shopping-lists/")({
 })
 
 function ShoppingListsContent() {
+  const { t } = useTranslation("shopping")
   const { data } = useSuspenseQuery(getShoppingListsQueryOptions())
 
   if (data.data.length === 0) {
@@ -32,9 +34,9 @@ function ShoppingListsContent() {
         <div className="rounded-full bg-muted p-4 mb-4">
           <ShoppingCart className="h-8 w-8 text-muted-foreground" />
         </div>
-        <h3 className="text-lg font-semibold">No shopping lists yet</h3>
+        <h3 className="text-lg font-semibold">{t("page.empty_title")}</h3>
         <p className="text-muted-foreground">
-          Create a list and start adding ingredients or recipes
+          {t("page.empty_subtitle")}
         </p>
       </div>
     )
@@ -50,12 +52,14 @@ function ShoppingListsContent() {
 }
 
 function ShoppingLists() {
+  const { t } = useTranslation("shopping")
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Shopping Lists</h1>
-          <p className="text-muted-foreground">Plan your grocery runs</p>
+          <h1 className="text-2xl font-bold tracking-tight">{t("page.title")}</h1>
+          <p className="text-muted-foreground">{t("page.subtitle")}</p>
         </div>
         <AddShoppingList />
       </div>

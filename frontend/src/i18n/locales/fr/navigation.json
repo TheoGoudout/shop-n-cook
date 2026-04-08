@@ -1,0 +1,15 @@
+{
+  "dashboard": "Tableau de bord",
+  "ingredients": "Ingrédients",
+  "recipes": "Recettes",
+  "shopping_lists": "Listes de courses",
+  "admin": "Administration",
+  "settings": "Paramètres",
+  "logout": "Se déconnecter",
+  "appearance": "Apparence",
+  "theme": {
+    "light": "Clair",
+    "dark": "Sombre",
+    "system": "Système"
+  }
+}

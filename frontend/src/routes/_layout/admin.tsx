@@ -1,6 +1,7 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute, redirect } from "@tanstack/react-router"
 import { Suspense } from "react"
+import { useTranslation } from "react-i18next"
 
 import { type UserPublic, UsersService } from "@/client"
 import { APP_NAME } from "@/lib/config"
@@ -57,13 +58,15 @@ function UsersTable() {
 }
 
 function Admin() {
+  const { t } = useTranslation("admin")
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Users</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{t("page.title")}</h1>
           <p className="text-muted-foreground">
-            Manage user accounts and permissions
+            {t("page.subtitle")}
           </p>
         </div>
         <AddUser />

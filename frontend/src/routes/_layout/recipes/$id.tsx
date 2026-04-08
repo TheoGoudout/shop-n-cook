@@ -2,6 +2,7 @@ import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { ArrowLeft, ChefHat, Clock, ExternalLink, Users } from "lucide-react"
 import { Suspense } from "react"
+import { useTranslation } from "react-i18next"
 
 import { RecipesService } from "@/client"
 import { APP_NAME } from "@/lib/config"
@@ -9,6 +10,7 @@ import { RecipeActionsMenu } from "@/components/Recipes/RecipeActionsMenu"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useUnitSystem } from "@/hooks/useUnitSystem"
 
 function getRecipeQueryOptions(id: string) {
   return {
@@ -25,6 +27,9 @@ export const Route = createFileRoute("/_layout/recipes/$id")({
 })
 
 function RecipeDetailContent() {
+  const { t } = useTranslation("recipes")
+  const { t: tCommon } = useTranslation("common")
+  const { convert } = useUnitSystem()
   const { id } = Route.useParams()
   const { data: recipe } = useSuspenseQuery(getRecipeQueryOptions(id))
 
@@ -61,7 +66,7 @@ function RecipeDetailContent() {
               className="inline-flex items-center gap-1 mt-1 text-sm text-muted-foreground hover:text-foreground underline-offset-4 hover:underline"
             >
               <ExternalLink className="h-3 w-3" />
-              Source
+              {t("detail.source")}
             </a>
           )}
         </div>
@@ -73,25 +78,25 @@ function RecipeDetailContent() {
         {recipe.servings && (
           <div className="flex items-center gap-1.5 text-muted-foreground">
             <Users className="h-4 w-4" />
-            <span>{recipe.servings} servings</span>
+            <span>{t("detail.servings", { count: recipe.servings })}</span>
           </div>
         )}
         {recipe.prep_time_minutes != null && (
           <div className="flex items-center gap-1.5 text-muted-foreground">
             <Clock className="h-4 w-4" />
-            <span>Prep: {recipe.prep_time_minutes} min</span>
+            <span>{t("detail.prep", { count: recipe.prep_time_minutes })}</span>
           </div>
         )}
         {recipe.cook_time_minutes != null && (
           <div className="flex items-center gap-1.5 text-muted-foreground">
             <Clock className="h-4 w-4" />
-            <span>Cook: {recipe.cook_time_minutes} min</span>
+            <span>{t("detail.cook", { count: recipe.cook_time_minutes })}</span>
           </div>
         )}
         {totalTime > 0 && (
           <div className="flex items-center gap-1.5 font-medium">
             <Clock className="h-4 w-4" />
-            <span>Total: {totalTime} min</span>
+            <span>{t("detail.total", { count: totalTime })}</span>
           </div>
         )}
       </div>
@@ -100,35 +105,38 @@ function RecipeDetailContent() {
         {/* Ingredients */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Ingredients</CardTitle>
+            <CardTitle className="text-base">{t("detail.ingredients_title")}</CardTitle>
           </CardHeader>
           <CardContent>
             {(recipe.ingredients ?? []).length === 0 ? (
               <p className="text-sm text-muted-foreground italic">
-                No ingredients listed
+                {t("detail.no_ingredients")}
               </p>
             ) : (
               <ul className="space-y-2">
-                {(recipe.ingredients ?? []).map((ing) => (
-                  <li key={ing.id} className="text-sm">
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium">{ing.ingredient_name}</span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-muted-foreground">
-                          {ing.quantity} {ing.unit}
-                        </span>
-                        <Badge variant="outline" className="text-xs capitalize">
-                          {ing.ingredient_category}
-                        </Badge>
+                {(recipe.ingredients ?? []).map((ing) => {
+                  const converted = convert(ing.quantity, ing.unit)
+                  return (
+                    <li key={ing.id} className="text-sm">
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium">{ing.ingredient_name}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground">
+                            {converted.quantity} {tCommon(`unit_labels.${converted.unit}`, { defaultValue: converted.unit })}
+                          </span>
+                          <Badge variant="outline" className="text-xs capitalize">
+                            {tCommon(`categories.${ing.ingredient_category}`, { defaultValue: ing.ingredient_category })}
+                          </Badge>
+                        </div>
                       </div>
-                    </div>
-                    {ing.notes && (
-                      <p className="text-xs text-muted-foreground mt-0.5 italic">
-                        {ing.notes}
-                      </p>
-                    )}
-                  </li>
-                ))}
+                      {ing.notes && (
+                        <p className="text-xs text-muted-foreground mt-0.5 italic">
+                          {ing.notes}
+                        </p>
+                      )}
+                    </li>
+                  )
+                })}
               </ul>
             )}
           </CardContent>
@@ -137,7 +145,7 @@ function RecipeDetailContent() {
         {/* Instructions */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Instructions</CardTitle>
+            <CardTitle className="text-base">{t("detail.instructions_title")}</CardTitle>
           </CardHeader>
           <CardContent>
             {recipe.instructions ? (
@@ -146,7 +154,7 @@ function RecipeDetailContent() {
               </p>
             ) : (
               <p className="text-sm text-muted-foreground italic">
-                No instructions provided
+                {t("detail.no_instructions")}
               </p>
             )}
           </CardContent>
@@ -157,13 +165,15 @@ function RecipeDetailContent() {
 }
 
 function RecipeDetail() {
+  const { t } = useTranslation("recipes")
+
   return (
     <div className="flex flex-col gap-6">
       <div>
         <Button variant="ghost" size="sm" asChild className="-ml-2">
           <Link to="/recipes">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Recipes
+            {t("detail.back")}
           </Link>
         </Button>
       </div>
@@ -171,7 +181,7 @@ function RecipeDetail() {
         fallback={
           <div className="flex items-center gap-2 text-muted-foreground">
             <ChefHat className="h-5 w-5 animate-pulse" />
-            <span>Loading recipe…</span>
+            <span>{t("detail.loading")}</span>
           </div>
         }
       >

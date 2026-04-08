@@ -1,0 +1,74 @@
+{
+  "page": {
+    "title": "Recipes",
+    "subtitle": "Manage your personal recipe collection",
+    "empty_title": "No recipes yet",
+    "empty_subtitle": "Add your first recipe to get started"
+  },
+  "detail": {
+    "back": "Back to Recipes",
+    "loading": "Loading recipe…",
+    "ingredients_title": "Ingredients",
+    "instructions_title": "Instructions",
+    "no_ingredients": "No ingredients listed",
+    "no_instructions": "No instructions provided",
+    "source": "Source",
+    "servings": "{{count}} servings",
+    "prep": "Prep: {{count}} min",
+    "cook": "Cook: {{count}} min",
+    "total": "Total: {{count}} min"
+  },
+  "columns": {
+    "title": "Title",
+    "description": "Description",
+    "servings": "Servings",
+    "time": "Time",
+    "ingredients": "Ingredients",
+    "no_description": "No description",
+    "minutes": "{{count}} min",
+    "ingredient_count": "{{count}} items"
+  },
+  "add": {
+    "button": "Add Recipe",
+    "dialog_title": "Add Recipe",
+    "dialog_description": "Create a new recipe with ingredients.",
+    "import_placeholder": "Paste a recipe URL to auto-fill…",
+    "success": "Recipe created successfully",
+    "import_success": "Recipe imported successfully.",
+    "import_partial": "Recipe imported. {{count}} ingredient(s) will be created automatically.",
+    "import_error": "Failed to import recipe. Check the URL and try again."
+  },
+  "edit": {
+    "menu_item": "Edit",
+    "dialog_title": "Edit Recipe",
+    "dialog_description": "Update the recipe details and ingredients.",
+    "success": "Recipe updated successfully"
+  },
+  "delete": {
+    "menu_item": "Delete",
+    "dialog_title": "Delete Recipe",
+    "dialog_description": "This recipe will be permanently deleted. Are you sure?",
+    "success": "Recipe deleted successfully"
+  },
+  "form": {
+    "title_label": "Title",
+    "title_placeholder": "e.g. Spaghetti Bolognese",
+    "title_required": "Title is required",
+    "description_label": "Description",
+    "description_placeholder": "Short description",
+    "servings_label": "Servings",
+    "prep_label": "Prep (min)",
+    "cook_label": "Cook (min)",
+    "instructions_label": "Instructions",
+    "instructions_placeholder": "Step by step instructions...",
+    "source_url_label": "Source URL",
+    "image_url_label": "Image URL",
+    "url_placeholder": "https://…",
+    "ingredients_label": "Ingredients",
+    "add_ingredient": "Add",
+    "select_ingredient": "Select ingredient",
+    "qty_placeholder": "Qty",
+    "notes_placeholder": "Notes (e.g. finely chopped)",
+    "ingredient_required": "Select or name an ingredient"
+  }
+}

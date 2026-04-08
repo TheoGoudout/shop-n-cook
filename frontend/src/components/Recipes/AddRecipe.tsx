@@ -125,21 +125,19 @@ const AddRecipe = () => {
       })
       // Match parsed ingredient names to existing ingredients
       const existingIngredients = ingredientsData?.data ?? []
-      const matchedIngredients = (parsed.ingredients ?? [])
-        .map((pi) => {
-          const match = existingIngredients.find(
-            (ing) => ing.name.toLowerCase() === pi.name.toLowerCase(),
-          )
-          return match
-            ? {
-                ingredient_id: match.id,
-                quantity: pi.quantity,
-                unit: pi.unit as Unit,
-                notes: pi.notes ?? "",
-              }
-            : null
-        })
-        .filter(Boolean) as FormData["ingredients"]
+      let unmatchedCount = 0
+      const mappedIngredients = (parsed.ingredients ?? []).map((pi) => {
+        const match = existingIngredients.find(
+          (ing) => ing.name.toLowerCase() === pi.name.toLowerCase(),
+        )
+        if (!match) unmatchedCount++
+        return {
+          ingredient_id: match?.id ?? "",
+          quantity: pi.quantity,
+          unit: pi.unit as Unit,
+          notes: pi.notes ?? "",
+        }
+      })
 
       form.reset({
         title: parsed.title,
@@ -148,11 +146,13 @@ const AddRecipe = () => {
         servings: parsed.servings ?? "",
         prep_time_minutes: parsed.prep_time_minutes ?? "",
         cook_time_minutes: parsed.cook_time_minutes ?? "",
-        ingredients: matchedIngredients,
+        ingredients: mappedIngredients,
       })
       setImportUrl("")
       showSuccessToast(
-        `Recipe imported. ${(parsed.ingredients ?? []).length - matchedIngredients.length} ingredient(s) not matched — add them manually.`,
+        unmatchedCount > 0
+          ? `Recipe imported. ${unmatchedCount} ingredient(s) not matched — select them manually.`
+          : "Recipe imported successfully.",
       )
     } catch {
       showErrorToast("Failed to import recipe. Check the URL and try again.")

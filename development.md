@@ -124,6 +124,7 @@ Optionally, enable LangSmith tracing for observability:
 ```dotenv
 LANGCHAIN_TRACING_V2=true
 LANGCHAIN_API_KEY=your-langsmith-key
+# LANGCHAIN_ENDPOINT=https://eu.api.smith.langchain.com  # EU region
 ```
 
 ## Pre-commits and code linting

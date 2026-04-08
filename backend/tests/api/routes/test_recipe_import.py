@@ -140,7 +140,9 @@ def test_configure_langsmith_sets_env() -> None:
         patch.object(settings, "LANGCHAIN_TRACING_V2", True),
         patch.object(settings, "LANGCHAIN_API_KEY", "test-key"),
         patch.object(settings, "LANGCHAIN_PROJECT", "test-proj"),
+        patch.object(settings, "LANGCHAIN_ENDPOINT", "https://eu.api.smith.langchain.com"),
     ):
         _configure_langsmith()
         assert os.environ.get("LANGCHAIN_TRACING_V2") == "true"
         assert os.environ.get("LANGCHAIN_API_KEY") == "test-key"
+        assert os.environ.get("LANGCHAIN_ENDPOINT") == "https://eu.api.smith.langchain.com"

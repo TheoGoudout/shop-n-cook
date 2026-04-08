@@ -58,6 +58,8 @@ Other variables with built-in defaults (no need to set in Coolify):
 | `EMAILS_FROM_EMAIL` | Sender email address |
 | `LANGCHAIN_TRACING_V2` | Set to `true` to enable LangSmith tracing |
 | `LANGCHAIN_API_KEY` | LangSmith API key |
+| `LANGCHAIN_PROJECT` | LangSmith project name (default: `shop-n-cook`) |
+| `LANGCHAIN_ENDPOINT` | LangSmith API endpoint (use `https://eu.api.smith.langchain.com` for EU) |
 
 ## Local Development
 

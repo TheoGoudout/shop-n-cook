@@ -15,6 +15,17 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing_extensions import Self
 
 
+def unescape_env_string(v: Any) -> Any:
+    """Strip backslash-escaped quotes injected by some env managers (e.g. Coolify).
+
+    Coolify serialises values that contain single quotes by escaping them with a
+    backslash, so  Shop'n'Cook  becomes  Shop\\'n\\'Cook  inside the container.
+    """
+    if isinstance(v, str):
+        return v.replace("\\'", "'").replace('\\"', '"')
+    return v
+
+
 def parse_cors(v: Any) -> list[str] | str:
     if isinstance(v, str) and not v.startswith("["):
         return [i.strip() for i in v.split(",") if i.strip()]
@@ -48,7 +59,7 @@ class Settings(BaseSettings):
             self.FRONTEND_HOST
         ]
 
-    PROJECT_NAME: str
+    PROJECT_NAME: Annotated[str, BeforeValidator(unescape_env_string)]
     SENTRY_DSN: HttpUrl | None = None
     POSTGRES_SERVER: str
     POSTGRES_PORT: int = 5432
@@ -106,7 +117,7 @@ class Settings(BaseSettings):
     # LangSmith tracing (optional)
     LANGCHAIN_TRACING_V2: bool = False
     LANGCHAIN_API_KEY: str | None = None
-    LANGCHAIN_PROJECT: str = "shop-n-cook"
+    LANGCHAIN_PROJECT: Annotated[str, BeforeValidator(unescape_env_string)] = "shop-n-cook"
     LANGCHAIN_ENDPOINT: str = "https://api.smith.langchain.com"
 
     def _check_default_secret(self, var_name: str, value: str | None) -> None:

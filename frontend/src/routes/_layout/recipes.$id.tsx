@@ -1,6 +1,6 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
-import { ArrowLeft, ChefHat, Clock, Users } from "lucide-react"
+import { ArrowLeft, ChefHat, Clock, ExternalLink, Users } from "lucide-react"
 import { Suspense } from "react"
 
 import { RecipesService } from "@/client"
@@ -33,6 +33,17 @@ function RecipeDetailContent() {
 
   return (
     <div className="flex flex-col gap-6 max-w-3xl">
+      {/* Recipe image */}
+      {recipe.image_url && (
+        <div className="rounded-lg overflow-hidden max-h-64 w-full">
+          <img
+            src={recipe.image_url}
+            alt={recipe.title}
+            className="w-full h-full object-cover"
+          />
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="flex-1">
@@ -41,6 +52,17 @@ function RecipeDetailContent() {
             <p className="text-muted-foreground mt-2 text-lg">
               {recipe.description}
             </p>
+          )}
+          {recipe.source_url && (
+            <a
+              href={recipe.source_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 mt-1 text-sm text-muted-foreground hover:text-foreground underline-offset-4 hover:underline"
+            >
+              <ExternalLink className="h-3 w-3" />
+              Source
+            </a>
           )}
         </div>
         <RecipeActionsMenu recipe={recipe} />
@@ -88,19 +110,23 @@ function RecipeDetailContent() {
             ) : (
               <ul className="space-y-2">
                 {(recipe.ingredients ?? []).map((ing) => (
-                  <li
-                    key={ing.id}
-                    className="flex items-center justify-between text-sm"
-                  >
-                    <span className="font-medium">{ing.ingredient_name}</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-muted-foreground">
-                        {ing.quantity} {ing.unit}
-                      </span>
-                      <Badge variant="outline" className="text-xs capitalize">
-                        {ing.ingredient_category}
-                      </Badge>
+                  <li key={ing.id} className="text-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">{ing.ingredient_name}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-muted-foreground">
+                          {ing.quantity} {ing.unit}
+                        </span>
+                        <Badge variant="outline" className="text-xs capitalize">
+                          {ing.ingredient_category}
+                        </Badge>
+                      </div>
                     </div>
+                    {ing.notes && (
+                      <p className="text-xs text-muted-foreground mt-0.5 italic">
+                        {ing.notes}
+                      </p>
+                    )}
                   </li>
                 ))}
               </ul>

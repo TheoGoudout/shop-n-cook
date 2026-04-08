@@ -68,6 +68,8 @@ export type ParsedRecipe = {
     prep_time_minutes?: (number | null);
     cook_time_minutes?: (number | null);
     ingredients?: Array<ParsedIngredient>;
+    source_url?: (string | null);
+    image_url?: (string | null);
 };
 
 export type PrivateUserCreate = {
@@ -84,6 +86,8 @@ export type RecipeCreate = {
     servings?: (number | null);
     prep_time_minutes?: (number | null);
     cook_time_minutes?: (number | null);
+    source_url?: (string | null);
+    image_url?: (string | null);
     ingredients?: Array<RecipeIngredientCreate>;
 };
 
@@ -91,7 +95,8 @@ export type RecipeIngredientCreate = {
     quantity: number;
     unit: Unit;
     notes?: (string | null);
-    ingredient_id: string;
+    ingredient_id?: (string | null);
+    ingredient_name?: (string | null);
 };
 
 export type RecipeIngredientPublic = {
@@ -111,6 +116,8 @@ export type RecipePublic = {
     servings?: (number | null);
     prep_time_minutes?: (number | null);
     cook_time_minutes?: (number | null);
+    source_url?: (string | null);
+    image_url?: (string | null);
     id: string;
     owner_id: string;
     created_at?: (string | null);
@@ -129,6 +136,8 @@ export type RecipeUpdate = {
     servings?: (number | null);
     prep_time_minutes?: (number | null);
     cook_time_minutes?: (number | null);
+    source_url?: (string | null);
+    image_url?: (string | null);
     ingredients?: (Array<RecipeIngredientCreate> | null);
 };
 

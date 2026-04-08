@@ -4,7 +4,7 @@ services:
     image: postgres:18
     restart: always
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${SERVICE_USER_DB:-${POSTGRES_USER}} -d ${POSTGRES_DB:-app}"]
+      test: ["CMD-SHELL", "pg_isready -U ${SERVICE_USER_DB} -d ${POSTGRES_DB:-app}"]
       interval: 10s
       retries: 5
       start_period: 30s
@@ -13,8 +13,8 @@ services:
       - app-db-data:/var/lib/postgresql/data/pgdata
     environment:
       - PGDATA=/var/lib/postgresql/data/pgdata
-      - POSTGRES_PASSWORD=${SERVICE_PASSWORD_DB:-${POSTGRES_PASSWORD?Variable not set}}
-      - POSTGRES_USER=${SERVICE_USER_DB:-${POSTGRES_USER?Variable not set}}
+      - POSTGRES_PASSWORD=${SERVICE_PASSWORD_DB?Variable not set}
+      - POSTGRES_USER=${SERVICE_USER_DB?Variable not set}
       - POSTGRES_DB=${POSTGRES_DB:-app}
 
   prestart:
@@ -29,12 +29,12 @@ services:
     command: bash scripts/prestart.sh
     environment:
       - PROJECT_NAME=${PROJECT_NAME:-Shop n Cook}
-      - FRONTEND_HOST=${SERVICE_URL_FRONTEND:-${FRONTEND_HOST?Variable not set}}
+      - FRONTEND_HOST=${SERVICE_URL_FRONTEND?Variable not set}
       - ENVIRONMENT=${ENVIRONMENT:-production}
-      - BACKEND_CORS_ORIGINS=${BACKEND_CORS_ORIGINS}
-      - SECRET_KEY=${SERVICE_PASSWORD_SECRET:-${SECRET_KEY?Variable not set}}
+      - BACKEND_CORS_ORIGINS=${SERVICE_URL_FRONTEND?Variable not set}
+      - SECRET_KEY=${SERVICE_PASSWORD_SECRET?Variable not set}
       - FIRST_SUPERUSER=${FIRST_SUPERUSER?Variable not set}
-      - FIRST_SUPERUSER_PASSWORD=${SERVICE_PASSWORD_SUPERUSER:-${FIRST_SUPERUSER_PASSWORD?Variable not set}}
+      - FIRST_SUPERUSER_PASSWORD=${SERVICE_PASSWORD_SUPERUSER?Variable not set}
       - SMTP_HOST=${SMTP_HOST}
       - SMTP_USER=${SMTP_USER}
       - SMTP_PASSWORD=${SMTP_PASSWORD}
@@ -42,8 +42,8 @@ services:
       - POSTGRES_SERVER=db
       - POSTGRES_PORT=${POSTGRES_PORT}
       - POSTGRES_DB=${POSTGRES_DB:-app}
-      - POSTGRES_USER=${SERVICE_USER_DB:-${POSTGRES_USER?Variable not set}}
-      - POSTGRES_PASSWORD=${SERVICE_PASSWORD_DB:-${POSTGRES_PASSWORD?Variable not set}}
+      - POSTGRES_USER=${SERVICE_USER_DB?Variable not set}
+      - POSTGRES_PASSWORD=${SERVICE_PASSWORD_DB?Variable not set}
       - SENTRY_DSN=${SENTRY_DSN}
       - AI_PROVIDER=${AI_PROVIDER}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
@@ -64,12 +64,12 @@ services:
         condition: service_completed_successfully
     environment:
       - PROJECT_NAME=${PROJECT_NAME:-Shop n Cook}
-      - FRONTEND_HOST=${SERVICE_URL_FRONTEND:-${FRONTEND_HOST?Variable not set}}
+      - FRONTEND_HOST=${SERVICE_URL_FRONTEND?Variable not set}
       - ENVIRONMENT=${ENVIRONMENT:-production}
-      - BACKEND_CORS_ORIGINS=${BACKEND_CORS_ORIGINS}
-      - SECRET_KEY=${SERVICE_PASSWORD_SECRET:-${SECRET_KEY?Variable not set}}
+      - BACKEND_CORS_ORIGINS=${SERVICE_URL_FRONTEND?Variable not set}
+      - SECRET_KEY=${SERVICE_PASSWORD_SECRET?Variable not set}
       - FIRST_SUPERUSER=${FIRST_SUPERUSER?Variable not set}
-      - FIRST_SUPERUSER_PASSWORD=${SERVICE_PASSWORD_SUPERUSER:-${FIRST_SUPERUSER_PASSWORD?Variable not set}}
+      - FIRST_SUPERUSER_PASSWORD=${SERVICE_PASSWORD_SUPERUSER?Variable not set}
       - SMTP_HOST=${SMTP_HOST}
       - SMTP_USER=${SMTP_USER}
       - SMTP_PASSWORD=${SMTP_PASSWORD}
@@ -77,8 +77,8 @@ services:
       - POSTGRES_SERVER=db
       - POSTGRES_PORT=${POSTGRES_PORT}
       - POSTGRES_DB=${POSTGRES_DB:-app}
-      - POSTGRES_USER=${SERVICE_USER_DB:-${POSTGRES_USER?Variable not set}}
-      - POSTGRES_PASSWORD=${SERVICE_PASSWORD_DB:-${POSTGRES_PASSWORD?Variable not set}}
+      - POSTGRES_USER=${SERVICE_USER_DB?Variable not set}
+      - POSTGRES_PASSWORD=${SERVICE_PASSWORD_DB?Variable not set}
       - SENTRY_DSN=${SENTRY_DSN}
       - AI_PROVIDER=${AI_PROVIDER}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
@@ -103,7 +103,8 @@ services:
       context: .
       dockerfile: frontend/Dockerfile
       args:
-        - VITE_API_URL=${SERVICE_URL_BACKEND:-${VITE_API_URL?Variable not set}}
+        - VITE_API_URL=${SERVICE_URL_BACKEND?Variable not set}
+        - VITE_PROJECT_NAME=${PROJECT_NAME:-Shop n Cook}
         - NODE_ENV=production
 
 volumes:

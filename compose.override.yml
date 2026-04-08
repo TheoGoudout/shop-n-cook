@@ -4,11 +4,25 @@ services:
     restart: "no"
     ports:
       - "5432:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER?Variable not set}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD?Variable not set}
 
   backend:
     restart: "no"
     ports:
       - "8000:8000"
+    environment: &backend-required-env
+      FRONTEND_HOST: ${FRONTEND_HOST?Variable not set}
+      SECRET_KEY: ${SECRET_KEY?Variable not set}
+      FIRST_SUPERUSER: ${FIRST_SUPERUSER?Variable not set}
+      FIRST_SUPERUSER_PASSWORD: ${FIRST_SUPERUSER_PASSWORD?Variable not set}
+      POSTGRES_USER: ${POSTGRES_USER?Variable not set}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD?Variable not set}
+      SMTP_HOST: "mailcatcher"
+      SMTP_PORT: "1025"
+      SMTP_TLS: "false"
+      EMAILS_FROM_EMAIL: "noreply@example.com"
     build:
       context: .
       dockerfile: backend/Dockerfile
@@ -30,11 +44,9 @@ services:
           action: rebuild
     volumes:
       - ./backend/htmlcov:/app/backend/htmlcov
-    environment:
-      SMTP_HOST: "mailcatcher"
-      SMTP_PORT: "1025"
-      SMTP_TLS: "false"
-      EMAILS_FROM_EMAIL: "noreply@example.com"
+
+  prestart:
+    environment: *backend-required-env
 
   mailcatcher:
     image: schickling/mailcatcher
@@ -50,7 +62,8 @@ services:
       context: .
       dockerfile: frontend/Dockerfile
       args:
-        - VITE_API_URL=http://localhost:8000
+        - VITE_API_URL=${API_URL?Variable not set}
+        - VITE_PROJECT_NAME=${PROJECT_NAME?Variable not set}
         - NODE_ENV=development
 
   playwright:

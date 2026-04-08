@@ -3,13 +3,17 @@ import uuid
 from sqlmodel import Session, col, func, select
 
 from app.models import (
+    Ingredient,
+    IngredientCreate,
     Recipe,
     RecipeCreate,
     RecipeIngredient,
+    RecipeIngredientCreate,
     RecipeIngredientPublic,
     RecipePublic,
     RecipeUpdate,
 )
+from app.crud.ingredient import get_ingredient_by_name
 
 
 def _ri_to_public(ri: RecipeIngredient) -> RecipeIngredientPublic:
@@ -33,10 +37,29 @@ def recipe_to_public(recipe: Recipe) -> RecipePublic:
         servings=recipe.servings,
         prep_time_minutes=recipe.prep_time_minutes,
         cook_time_minutes=recipe.cook_time_minutes,
+        source_url=recipe.source_url,
+        image_url=recipe.image_url,
         owner_id=recipe.owner_id,
         created_at=recipe.created_at,
         ingredients=[_ri_to_public(ri) for ri in recipe.recipe_ingredients],
     )
+
+
+def _resolve_ingredient_id(
+    *, session: Session, ing_in: RecipeIngredientCreate
+) -> uuid.UUID:
+    """Return the ingredient ID, creating the ingredient by name if it doesn't exist."""
+    if ing_in.ingredient_id is not None:
+        return ing_in.ingredient_id
+    existing = get_ingredient_by_name(session=session, name=ing_in.ingredient_name)  # type: ignore[arg-type]
+    if existing:
+        return existing.id
+    new_ingredient = Ingredient.model_validate(
+        IngredientCreate(name=ing_in.ingredient_name)  # type: ignore[arg-type]
+    )
+    session.add(new_ingredient)
+    session.flush()
+    return new_ingredient.id
 
 
 def get_recipe(*, session: Session, recipe_id: uuid.UUID) -> Recipe | None:
@@ -75,7 +98,7 @@ def create_recipe(
     for ing_in in recipe_in.ingredients:
         ri = RecipeIngredient(
             recipe_id=db_recipe.id,
-            ingredient_id=ing_in.ingredient_id,
+            ingredient_id=_resolve_ingredient_id(session=session, ing_in=ing_in),
             quantity=ing_in.quantity,
             unit=ing_in.unit,
             notes=ing_in.notes,
@@ -103,7 +126,7 @@ def update_recipe(
         for ing_in in recipe_in.ingredients:
             ri = RecipeIngredient(
                 recipe_id=db_recipe.id,
-                ingredient_id=ing_in.ingredient_id,
+                ingredient_id=_resolve_ingredient_id(session=session, ing_in=ing_in),
                 quantity=ing_in.quantity,
                 unit=ing_in.unit,
                 notes=ing_in.notes,

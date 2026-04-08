@@ -17,7 +17,7 @@ def get_ingredient(*, session: Session, ingredient_id: uuid.UUID) -> Ingredient 
 
 
 def get_ingredient_by_name(*, session: Session, name: str) -> Ingredient | None:
-    statement = select(Ingredient).where(Ingredient.name == name)
+    statement = select(Ingredient).where(func.lower(Ingredient.name) == name.lower())
     return session.exec(statement).first()
 
 

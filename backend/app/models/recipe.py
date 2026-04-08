@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
 
+from pydantic import model_validator
 from sqlalchemy import DateTime
 from sqlmodel import Field, Relationship, SQLModel
 
@@ -24,7 +25,14 @@ class RecipeIngredientBase(SQLModel):
 
 
 class RecipeIngredientCreate(RecipeIngredientBase):
-    ingredient_id: uuid.UUID
+    ingredient_id: uuid.UUID | None = None
+    ingredient_name: str | None = Field(default=None, min_length=1, max_length=255)
+
+    @model_validator(mode="after")
+    def check_ingredient_source(self) -> "RecipeIngredientCreate":
+        if self.ingredient_id is None and not self.ingredient_name:
+            raise ValueError("Either ingredient_id or ingredient_name must be provided")
+        return self
 
 
 class RecipeIngredientPublic(SQLModel):
@@ -66,6 +74,8 @@ class RecipeBase(SQLModel):
     servings: int | None = Field(default=None, ge=1)
     prep_time_minutes: int | None = Field(default=None, ge=0)
     cook_time_minutes: int | None = Field(default=None, ge=0)
+    source_url: str | None = None
+    image_url: str | None = None
 
 
 class RecipeCreate(RecipeBase):
@@ -79,6 +89,8 @@ class RecipeUpdate(SQLModel):
     servings: int | None = Field(default=None, ge=1)
     prep_time_minutes: int | None = Field(default=None, ge=0)
     cook_time_minutes: int | None = Field(default=None, ge=0)
+    source_url: str | None = None
+    image_url: str | None = None
     ingredients: list[RecipeIngredientCreate] | None = None
 
 

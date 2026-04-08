@@ -33,7 +33,7 @@ These are resolved automatically by Coolify — no manual configuration needed. 
 | Coolify Variable | Replaces | Description |
 |---|---|---|
 | `SERVICE_URL_FRONTEND` | `FRONTEND_HOST` | HTTPS URL of the frontend service |
-| `SERVICE_URL_BACKEND` | `VITE_API_URL` | HTTPS URL of the backend service (build-time) |
+| `SERVICE_URL_BACKEND` | `API_URL` | HTTPS URL of the backend service (build-time) |
 | `SERVICE_PASSWORD_SECRET` | `SECRET_KEY` | Auto-generated JWT signing secret |
 | `SERVICE_PASSWORD_DB` | `POSTGRES_PASSWORD` | Auto-generated database password |
 | `SERVICE_USER_DB` | `POSTGRES_USER` | Auto-generated database username |

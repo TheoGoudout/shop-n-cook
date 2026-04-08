@@ -30,6 +30,38 @@ import { LoadingButton } from "@/components/ui/loading-button"
 import useCustomToast from "@/hooks/useCustomToast"
 import { handleError } from "@/utils"
 
+function isoWeekNumber(d: Date): number {
+  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()))
+  const day = date.getUTCDay() || 7
+  date.setUTCDate(date.getUTCDate() + 4 - day)
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1))
+  return Math.ceil(((date.getTime() - yearStart.getTime()) / 86400000 + 1) / 7)
+}
+
+function toDateInput(d: Date): string {
+  return d.toISOString().split("T")[0]
+}
+
+function getDefaultListDefaults() {
+  const now = new Date()
+  const day = now.getDay()
+  const diff = day === 0 ? -6 : 1 - day // shift to Monday
+  const monday = new Date(now)
+  monday.setDate(now.getDate() + diff)
+  const sunday = new Date(monday)
+  sunday.setDate(monday.getDate() + 6)
+
+  const weekNum = isoWeekNumber(now)
+  const fmt = (d: Date) =>
+    d.toLocaleDateString(undefined, { day: "numeric", month: "short" })
+
+  return {
+    name: `Week #${weekNum} · ${fmt(monday)} – ${fmt(sunday)}`,
+    start_date: toDateInput(monday),
+    end_date: toDateInput(sunday),
+  }
+}
+
 const formSchema = z.object({
   name: z.string().min(1, { message: "Name is required" }),
   start_date: z.string().optional(),
@@ -45,7 +77,7 @@ const AddShoppingList = () => {
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
-    defaultValues: { name: "", start_date: "", end_date: "" },
+    defaultValues: getDefaultListDefaults(),
   })
 
   const mutation = useMutation({
@@ -59,7 +91,7 @@ const AddShoppingList = () => {
       }),
     onSuccess: () => {
       showSuccessToast("Shopping list created")
-      form.reset()
+      form.reset(getDefaultListDefaults())
       setIsOpen(false)
     },
     onError: handleError.bind(showErrorToast),
@@ -68,7 +100,13 @@ const AddShoppingList = () => {
   })
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        setIsOpen(open)
+        if (open) form.reset(getDefaultListDefaults())
+      }}
+    >
       <DialogTrigger asChild>
         <Button className="my-4">
           <Plus className="mr-2" />

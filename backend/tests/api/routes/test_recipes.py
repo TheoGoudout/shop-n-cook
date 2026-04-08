@@ -60,6 +60,59 @@ def test_create_recipe_with_ingredients(
     assert content["ingredients"][0]["quantity"] == 3.0
 
 
+def test_create_recipe_with_ingredient_name_auto_creates(
+    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+) -> None:
+    """Passing ingredient_name instead of ingredient_id should create the ingredient."""
+    data = {
+        "title": "Auto Ingredient Recipe",
+        "ingredients": [
+            {
+                "ingredient_name": "auto-created-ingredient-xyz",
+                "quantity": 1.0,
+                "unit": Unit.PIECE.value,
+            }
+        ],
+    }
+    response = client.post(
+        f"{settings.API_V1_STR}/recipes/",
+        headers=superuser_token_headers,
+        json=data,
+    )
+    assert response.status_code == 200
+    content = response.json()
+    assert len(content["ingredients"]) == 1
+    assert content["ingredients"][0]["ingredient_name"] == "auto-created-ingredient-xyz"
+
+
+def test_create_recipe_with_ingredient_name_reuses_existing(
+    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+) -> None:
+    """ingredient_name should match existing ingredient case-insensitively, not duplicate it."""
+    existing = crud.create_ingredient(
+        session=db,
+        ingredient_in=IngredientCreate(name="Existing-Dedup-Ingredient"),
+    )
+    data = {
+        "title": "Dedup Recipe",
+        "ingredients": [
+            {
+                "ingredient_name": "existing-dedup-ingredient",  # lowercase
+                "quantity": 2.0,
+                "unit": Unit.GRAM.value,
+            }
+        ],
+    }
+    response = client.post(
+        f"{settings.API_V1_STR}/recipes/",
+        headers=superuser_token_headers,
+        json=data,
+    )
+    assert response.status_code == 200
+    content = response.json()
+    assert content["ingredients"][0]["ingredient_id"] == str(existing.id)
+
+
 def test_create_recipe_requires_auth(client: TestClient) -> None:
     response = client.post(
         f"{settings.API_V1_STR}/recipes/", json={"title": "Sneaky Recipe"}

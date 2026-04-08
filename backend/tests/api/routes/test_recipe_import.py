@@ -34,7 +34,7 @@ def test_import_recipe_url_success(
     llm_mock.invoke.return_value = _make_llm_response(_SAMPLE_RECIPE)
 
     with (
-        patch("app.services.recipe_import._fetch_page_text", return_value="some recipe text"),
+        patch("app.services.recipe_import._fetch_page", return_value=("some recipe text", None)),
         patch("app.services.recipe_import._get_llm", return_value=llm_mock),
     ):
         response = client.post(
@@ -55,7 +55,7 @@ def test_import_recipe_url_no_api_key_returns_503(
     client: TestClient, superuser_token_headers: dict[str, str]
 ) -> None:
     with (
-        patch("app.services.recipe_import._fetch_page_text", return_value="some text"),
+        patch("app.services.recipe_import._fetch_page", return_value=("some text", None)),
         patch(
             "app.services.recipe_import._get_llm",
             side_effect=ValueError("ANTHROPIC_API_KEY is not configured"),
@@ -74,7 +74,7 @@ def test_import_recipe_url_parse_error_returns_422(
     client: TestClient, superuser_token_headers: dict[str, str]
 ) -> None:
     with (
-        patch("app.services.recipe_import._fetch_page_text", return_value="not a recipe"),
+        patch("app.services.recipe_import._fetch_page", return_value=("not a recipe", None)),
         patch(
             "app.services.recipe_import._get_llm",
             side_effect=RuntimeError("LLM unavailable"),
@@ -105,7 +105,7 @@ def test_import_recipe_url_strips_markdown_fences(
     llm_mock.invoke.return_value = MagicMock(content=fenced)
 
     with (
-        patch("app.services.recipe_import._fetch_page_text", return_value="text"),
+        patch("app.services.recipe_import._fetch_page", return_value=("text", None)),
         patch("app.services.recipe_import._get_llm", return_value=llm_mock),
     ):
         response = client.post(
@@ -146,7 +146,7 @@ def test_import_recipe_filters_null_quantity_ingredients(
     llm_mock.invoke.return_value = _make_llm_response(recipe_with_garnish)
 
     with (
-        patch("app.services.recipe_import._fetch_page_text", return_value="some recipe text"),
+        patch("app.services.recipe_import._fetch_page", return_value=("some recipe text", None)),
         patch("app.services.recipe_import._get_llm", return_value=llm_mock),
     ):
         response = client.post(
@@ -159,6 +159,31 @@ def test_import_recipe_filters_null_quantity_ingredients(
     ingredients = response.json()["ingredients"]
     assert len(ingredients) == 1
     assert ingredients[0]["name"] == "pasta"
+
+
+def test_import_returns_source_url_and_image_url(
+    client: TestClient, superuser_token_headers: dict[str, str]
+) -> None:
+    llm_mock = MagicMock()
+    llm_mock.invoke.return_value = _make_llm_response(_SAMPLE_RECIPE)
+
+    with (
+        patch(
+            "app.services.recipe_import._fetch_page",
+            return_value=("text", "https://example.com/image.jpg"),
+        ),
+        patch("app.services.recipe_import._get_llm", return_value=llm_mock),
+    ):
+        response = client.post(
+            f"{settings.API_V1_STR}/recipes/import-url",
+            headers=superuser_token_headers,
+            json={"url": "https://example.com/recipe"},
+        )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["source_url"] == "https://example.com/recipe"
+    assert data["image_url"] == "https://example.com/image.jpg"
 
 
 def test_configure_langsmith_sets_env() -> None:

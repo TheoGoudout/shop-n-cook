@@ -34,6 +34,8 @@ class ParsedRecipe(BaseModel):
     prep_time_minutes: int | None = None
     cook_time_minutes: int | None = None
     ingredients: list[ParsedIngredient] = []
+    source_url: str | None = None
+    image_url: str | None = None
 
 
 _SYSTEM_PROMPT = """You are a recipe extraction assistant. Given the text content of a recipe web page, extract the recipe information and return it as JSON.
@@ -61,6 +63,7 @@ Rules:
 - If quantity is fractional (e.g. 1/2), convert to decimal (0.5)
 - If no unit applies, use "piece"
 - Only include ingredients with a measurable quantity — skip garnishes, serving suggestions, or "to taste"/"to serve" items that have no defined amount
+- Use standard American English ingredient names to avoid regional duplicates (e.g. "all-purpose flour" not "plain flour", "eggplant" not "aubergine", "zucchini" not "courgette", "cilantro" not "coriander", "granulated sugar" or "powdered sugar" not just "sugar" when the type matters)
 - Do not include any text outside the JSON object"""
 
 
@@ -115,8 +118,8 @@ def _get_llm() -> BaseChatModel:
     )
 
 
-def _fetch_page_text(url: str) -> str:
-    """Fetch a URL and return cleaned plain text (truncated to ~12k chars)."""
+def _fetch_page(url: str) -> tuple[str, str | None]:
+    """Fetch a URL and return (cleaned plain text, og:image URL or None)."""
     response = httpx.get(
         url,
         timeout=15,
@@ -125,18 +128,28 @@ def _fetch_page_text(url: str) -> str:
     )
     response.raise_for_status()
     soup = BeautifulSoup(response.text, "html.parser")
+
+    image_url: str | None = None
+    for meta in soup.find_all("meta"):
+        prop = meta.get("property", "") or meta.get("name", "")
+        if prop in ("og:image", "twitter:image"):
+            content = (meta.get("content") or "").strip()
+            if content:
+                image_url = content
+                break
+
     for tag in soup(
         ["script", "style", "nav", "footer", "aside", "header", "noscript"]
     ):
         tag.decompose()
     text = soup.get_text(separator="\n", strip=True)
-    return text[:12000]
+    return text[:12000], image_url
 
 
 def import_recipe_from_url(url: str) -> ParsedRecipe:
     """Fetch the given URL and use an LLM to extract recipe data."""
     _configure_langsmith()
-    page_text = _fetch_page_text(url)
+    page_text, image_url = _fetch_page(url)
     llm = _get_llm()
 
     messages = [
@@ -161,4 +174,4 @@ def import_recipe_from_url(url: str) -> ParsedRecipe:
             for ing in data["ingredients"]
             if ing.get("quantity") is not None and ing.get("unit") is not None
         ]
-    return ParsedRecipe(**data)
+    return ParsedRecipe(**data, source_url=url, image_url=image_url)

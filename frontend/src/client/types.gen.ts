@@ -55,8 +55,9 @@ export type NewPassword = {
 
 export type ParsedIngredient = {
     name: string;
+    category: IngredientCategory;
     quantity: number;
-    unit: string;
+    unit: Unit;
     notes?: (string | null);
 };
 
@@ -97,6 +98,8 @@ export type RecipeIngredientCreate = {
     notes?: (string | null);
     ingredient_id?: (string | null);
     ingredient_name?: (string | null);
+    ingredient_category?: IngredientCategory;
+    ingredient_default_unit?: Unit;
 };
 
 export type RecipeIngredientPublic = {
@@ -217,7 +220,7 @@ export type Token = {
     token_type?: string;
 };
 
-export type Unit = 'g' | 'kg' | 'ml' | 'L' | 'piece' | 'tbsp' | 'tsp' | 'cup' | 'oz' | 'lb' | 'bunch' | 'pinch' | 'clove' | 'slice' | 'can' | 'package';
+export type Unit = 'g' | 'kg' | 'ml' | 'cl' | 'dl' | 'L' | 'piece' | 'tbsp' | 'tsp' | 'cup' | 'oz' | 'lb' | 'bunch' | 'pinch' | 'clove' | 'slice' | 'can' | 'package';
 
 export type UpdatePassword = {
     current_password: string;

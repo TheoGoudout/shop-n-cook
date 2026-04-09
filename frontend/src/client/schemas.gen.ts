@@ -248,13 +248,15 @@ export const ParsedIngredientSchema = {
             type: 'string',
             title: 'Name'
         },
+        category: {
+            '$ref': '#/components/schemas/IngredientCategory'
+        },
         quantity: {
             type: 'number',
             title: 'Quantity'
         },
         unit: {
-            type: 'string',
-            title: 'Unit'
+            '$ref': '#/components/schemas/Unit'
         },
         notes: {
             anyOf: [
@@ -269,7 +271,7 @@ export const ParsedIngredientSchema = {
         }
     },
     type: 'object',
-    required: ['name', 'quantity', 'unit'],
+    required: ['name', 'category', 'quantity', 'unit'],
     title: 'ParsedIngredient'
 } as const;
 
@@ -544,6 +546,14 @@ export const RecipeIngredientCreateSchema = {
                 }
             ],
             title: 'Ingredient Name'
+        },
+        ingredient_category: {
+            '$ref': '#/components/schemas/IngredientCategory',
+            default: 'other'
+        },
+        ingredient_default_unit: {
+            '$ref': '#/components/schemas/Unit',
+            default: 'piece'
         }
     },
     type: 'object',
@@ -1271,7 +1281,7 @@ export const TokenSchema = {
 
 export const UnitSchema = {
     type: 'string',
-    enum: ['g', 'kg', 'ml', 'L', 'piece', 'tbsp', 'tsp', 'cup', 'oz', 'lb', 'bunch', 'pinch', 'clove', 'slice', 'can', 'package'],
+    enum: ['g', 'kg', 'ml', 'cl', 'dl', 'L', 'piece', 'tbsp', 'tsp', 'cup', 'oz', 'lb', 'bunch', 'pinch', 'clove', 'slice', 'can', 'package'],
     title: 'Unit'
 } as const;
 

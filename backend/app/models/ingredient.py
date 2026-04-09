@@ -26,6 +26,8 @@ class Unit(str, Enum):
     GRAM = "g"
     KILOGRAM = "kg"
     MILLILITER = "ml"
+    CENTILITER = "cl"
+    DECILITER = "dl"
     LITER = "L"
     PIECE = "piece"
     TABLESPOON = "tbsp"

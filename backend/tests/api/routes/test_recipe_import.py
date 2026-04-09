@@ -21,7 +21,15 @@ _SAMPLE_RECIPE = {
     "servings": 2,
     "prep_time_minutes": 10,
     "cook_time_minutes": 20,
-    "ingredients": [{"name": "pasta", "quantity": 200.0, "unit": "g", "notes": None}],
+    "ingredients": [
+        {
+            "name": "pasta",
+            "category": "grains",
+            "quantity": 200.0,
+            "unit": "g",
+            "notes": None,
+        }
+    ],
 }
 
 
@@ -143,14 +151,27 @@ def test_import_recipe_filters_null_quantity_ingredients(
     recipe_with_garnish = {
         **_SAMPLE_RECIPE,
         "ingredients": [
-            {"name": "pasta", "quantity": 200.0, "unit": "g", "notes": None},
+            {
+                "name": "pasta",
+                "category": "grains",
+                "quantity": 200.0,
+                "unit": "g",
+                "notes": None,
+            },
             {
                 "name": "maple syrup",
+                "category": "pantry",
                 "quantity": None,
                 "unit": None,
                 "notes": "to serve",
             },
-            {"name": "butter", "quantity": None, "unit": None, "notes": "to serve"},
+            {
+                "name": "butter",
+                "category": "dairy",
+                "quantity": None,
+                "unit": None,
+                "notes": "to serve",
+            },
         ],
     }
     llm_mock = MagicMock()

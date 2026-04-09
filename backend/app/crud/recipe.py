@@ -56,7 +56,11 @@ def _resolve_ingredient_id(
     if existing:
         return existing.id
     new_ingredient = Ingredient.model_validate(
-        IngredientCreate(name=ing_in.ingredient_name)
+        IngredientCreate(
+            name=ing_in.ingredient_name,
+            category=ing_in.ingredient_category,
+            default_unit=ing_in.ingredient_default_unit,
+        )
     )
     session.add(new_ingredient)
     session.flush()

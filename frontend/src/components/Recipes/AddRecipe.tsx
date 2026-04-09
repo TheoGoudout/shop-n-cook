@@ -5,7 +5,13 @@ import { useState } from "react"
 import { type Resolver, useFieldArray, useForm } from "react-hook-form"
 import { z } from "zod"
 
-import { IngredientsService, RecipesService, type Unit } from "@/client"
+import {
+  type IngredientCategory,
+  IngredientsService,
+  RecipesService,
+  type Unit,
+} from "@/client"
+import { IngredientCategorySchema, UnitSchema } from "@/client/schemas.gen"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -38,29 +44,11 @@ import {
 import useCustomToast from "@/hooks/useCustomToast"
 import { handleError } from "@/utils"
 
-const UNITS = [
-  "g",
-  "kg",
-  "ml",
-  "L",
-  "piece",
-  "tbsp",
-  "tsp",
-  "cup",
-  "oz",
-  "lb",
-  "bunch",
-  "pinch",
-  "clove",
-  "slice",
-  "can",
-  "package",
-]
-
 const ingredientSchema = z
   .object({
     ingredient_id: z.string().optional(),
     ingredient_name: z.string().optional(),
+    category: z.string().min(1),
     quantity: z.coerce.number().positive(),
     unit: z.string().min(1),
     notes: z.string().optional(),
@@ -144,8 +132,9 @@ const AddRecipe = () => {
         return {
           ingredient_id: match?.id ?? "",
           ingredient_name: match ? "" : pi.name,
+          category: pi.category,
           quantity: pi.quantity,
-          unit: pi.unit as Unit,
+          unit: pi.unit,
           notes: pi.notes ?? "",
         }
       })
@@ -195,8 +184,10 @@ const AddRecipe = () => {
             ingredient_name: i.ingredient_id
               ? null
               : (i.ingredient_name ?? null),
+            ingredient_category: i.category as IngredientCategory,
             quantity: i.quantity,
             unit: i.unit as Unit,
+            ingredient_default_unit: i.unit as Unit,
             notes: i.notes || null,
           })),
         },
@@ -401,6 +392,7 @@ const AddRecipe = () => {
                       append({
                         ingredient_id: "",
                         ingredient_name: "",
+                        category: "other",
                         quantity: 1,
                         unit: "piece",
                         notes: "",
@@ -469,6 +461,31 @@ const AddRecipe = () => {
                           />
                           <FormField
                             control={form.control}
+                            name={`ingredients.${index}.category`}
+                            render={({ field: f }) => (
+                              <FormItem className="w-24">
+                                <Select
+                                  onValueChange={f.onChange}
+                                  value={f.value}
+                                >
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    {IngredientCategorySchema.enum.map((c) => (
+                                      <SelectItem key={c} value={c}>
+                                        {c}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
                             name={`ingredients.${index}.quantity`}
                             render={({ field: f }) => (
                               <FormItem className="w-20">
@@ -499,7 +516,7 @@ const AddRecipe = () => {
                                     </SelectTrigger>
                                   </FormControl>
                                   <SelectContent>
-                                    {UNITS.map((u) => (
+                                    {UnitSchema.enum.map((u) => (
                                       <SelectItem key={u} value={u}>
                                         {u}
                                       </SelectItem>

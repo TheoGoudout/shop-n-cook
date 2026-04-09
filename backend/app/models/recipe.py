@@ -27,6 +27,8 @@ class RecipeIngredientBase(SQLModel):
 class RecipeIngredientCreate(RecipeIngredientBase):
     ingredient_id: uuid.UUID | None = None
     ingredient_name: str | None = Field(default=None, min_length=1, max_length=255)
+    ingredient_category: IngredientCategory = Field(default=IngredientCategory.OTHER)
+    ingredient_default_unit: Unit = Field(default=Unit.PIECE)
 
     @model_validator(mode="after")
     def check_ingredient_source(self) -> "RecipeIngredientCreate":

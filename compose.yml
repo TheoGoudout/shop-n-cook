@@ -4,7 +4,7 @@ services:
     image: postgres:18
     restart: always
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${SERVICE_USER_DB} -d ${POSTGRES_DB:-app}"]
+      test: ["CMD-SHELL", "pg_isready -U ${SERVICE_USER_DB} -d ${POSTGRES_DB}"]
       interval: 10s
       retries: 5
       start_period: 30s
@@ -13,53 +13,12 @@ services:
       - app-db-data:/var/lib/postgresql/data/pgdata
     environment:
       - PGDATA=/var/lib/postgresql/data/pgdata
-      - POSTGRES_PASSWORD=${SERVICE_PASSWORD_DB?Variable not set}
-      - POSTGRES_USER=${SERVICE_USER_DB?Variable not set}
+      - POSTGRES_PASSWORD=${SERVICE_PASSWORD_DB:-}
+      - POSTGRES_USER=${SERVICE_USER_DB:-}
       - POSTGRES_DB=${POSTGRES_DB:-app}
-
-  prestart:
-    image: shop-n-cook-backend:${TAG:-latest}
-    restart: "no"
-    build:
-      context: .
-      dockerfile: backend/Dockerfile
-    depends_on:
-      db:
-        condition: service_healthy
-        restart: true
-    command: bash scripts/prestart.sh
-    environment:
-      - PROJECT_NAME=${PROJECT_NAME:-Shop n Cook}
-      - FRONTEND_HOST=${SERVICE_URL_FRONTEND?Variable not set}
-      - ENVIRONMENT=${ENVIRONMENT:-production}
-      - BACKEND_CORS_ORIGINS=${SERVICE_URL_FRONTEND?Variable not set}
-      - SECRET_KEY=${SERVICE_PASSWORD_SECRET?Variable not set}
-      - FIRST_SUPERUSER=${FIRST_SUPERUSER?Variable not set}
-      - FIRST_SUPERUSER_PASSWORD=${SERVICE_PASSWORD_SUPERUSER?Variable not set}
-      - SMTP_HOST=${SMTP_HOST}
-      - SMTP_USER=${SMTP_USER}
-      - SMTP_PASSWORD=${SMTP_PASSWORD}
-      - EMAILS_FROM_EMAIL=${EMAILS_FROM_EMAIL}
-      - POSTGRES_SERVER=db
-      - POSTGRES_PORT=${POSTGRES_PORT}
-      - POSTGRES_DB=${POSTGRES_DB:-app}
-      - POSTGRES_USER=${SERVICE_USER_DB?Variable not set}
-      - POSTGRES_PASSWORD=${SERVICE_PASSWORD_DB?Variable not set}
-      - SENTRY_DSN=${SENTRY_DSN}
-      - AI_PROVIDER=${AI_PROVIDER}
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-      - ANTHROPIC_MODEL=${ANTHROPIC_MODEL}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - OPENAI_MODEL=${OPENAI_MODEL}
-      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
-      - GOOGLE_MODEL=${GOOGLE_MODEL}
-      - LANGCHAIN_TRACING_V2=${LANGCHAIN_TRACING_V2}
-      - LANGCHAIN_API_KEY=${LANGCHAIN_API_KEY}
-      - LANGCHAIN_PROJECT=${LANGCHAIN_PROJECT}
-      - LANGCHAIN_ENDPOINT=${LANGCHAIN_ENDPOINT}
 
   backend:
-    image: shop-n-cook-backend:${TAG:-latest}
+    image: shop-n-cook/backend:${TAG:-latest}
     restart: always
     depends_on:
       db:
@@ -67,14 +26,14 @@ services:
         restart: true
       prestart:
         condition: service_completed_successfully
-    environment:
+    environment: &backend-required-env
       - PROJECT_NAME=${PROJECT_NAME:-Shop n Cook}
-      - FRONTEND_HOST=${SERVICE_URL_FRONTEND?Variable not set}
+      - FRONTEND_HOST=${SERVICE_URL_FRONTEND:-}
       - ENVIRONMENT=${ENVIRONMENT:-production}
-      - BACKEND_CORS_ORIGINS=${SERVICE_URL_FRONTEND?Variable not set}
-      - SECRET_KEY=${SERVICE_PASSWORD_SECRET?Variable not set}
+      - BACKEND_CORS_ORIGINS=${SERVICE_URL_FRONTEND:-}
+      - SECRET_KEY=${SERVICE_PASSWORD_SECRET:-}
       - FIRST_SUPERUSER=${FIRST_SUPERUSER?Variable not set}
-      - FIRST_SUPERUSER_PASSWORD=${SERVICE_PASSWORD_SUPERUSER?Variable not set}
+      - FIRST_SUPERUSER_PASSWORD=${SERVICE_PASSWORD_SUPERUSER:-}
       - SMTP_HOST=${SMTP_HOST}
       - SMTP_USER=${SMTP_USER}
       - SMTP_PASSWORD=${SMTP_PASSWORD}
@@ -82,8 +41,8 @@ services:
       - POSTGRES_SERVER=db
       - POSTGRES_PORT=${POSTGRES_PORT}
       - POSTGRES_DB=${POSTGRES_DB:-app}
-      - POSTGRES_USER=${SERVICE_USER_DB?Variable not set}
-      - POSTGRES_PASSWORD=${SERVICE_PASSWORD_DB?Variable not set}
+      - POSTGRES_USER=${SERVICE_USER_DB:-}
+      - POSTGRES_PASSWORD=${SERVICE_PASSWORD_DB:-}
       - SENTRY_DSN=${SENTRY_DSN}
       - AI_PROVIDER=${AI_PROVIDER}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
@@ -105,14 +64,27 @@ services:
       context: .
       dockerfile: backend/Dockerfile
 
+  prestart:
+    image: shop-n-cook/backend:${TAG:-latest}
+    restart: "no"
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+        restart: true
+    command: bash scripts/prestart.sh
+    environment: *backend-required-env
+
   frontend:
-    image: shop-n-cook-frontend:${TAG:-latest}
+    image: shop-n-cook/frontend:${TAG:-latest}
     restart: always
     build:
       context: .
       dockerfile: frontend/Dockerfile
       args:
-        - VITE_API_URL=${SERVICE_URL_BACKEND?Variable not set}
+        - VITE_API_URL=${SERVICE_URL_BACKEND:-}
         - VITE_PROJECT_NAME=${PROJECT_NAME:-Shop n Cook}
         - NODE_ENV=production
 

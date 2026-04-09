@@ -21,9 +21,7 @@ _SAMPLE_RECIPE = {
     "servings": 2,
     "prep_time_minutes": 10,
     "cook_time_minutes": 20,
-    "ingredients": [
-        {"name": "pasta", "quantity": 200.0, "unit": "g", "notes": None}
-    ],
+    "ingredients": [{"name": "pasta", "quantity": 200.0, "unit": "g", "notes": None}],
 }
 
 
@@ -34,7 +32,10 @@ def test_import_recipe_url_success(
     llm_mock.invoke.return_value = _make_llm_response(_SAMPLE_RECIPE)
 
     with (
-        patch("app.services.recipe_import._fetch_page", return_value=("some recipe text", None)),
+        patch(
+            "app.services.recipe_import._fetch_page",
+            return_value=("some recipe text", None),
+        ),
         patch("app.services.recipe_import._get_llm", return_value=llm_mock),
     ):
         response = client.post(
@@ -55,7 +56,9 @@ def test_import_recipe_url_no_api_key_returns_503(
     client: TestClient, superuser_token_headers: dict[str, str]
 ) -> None:
     with (
-        patch("app.services.recipe_import._fetch_page", return_value=("some text", None)),
+        patch(
+            "app.services.recipe_import._fetch_page", return_value=("some text", None)
+        ),
         patch(
             "app.services.recipe_import._get_llm",
             side_effect=ValueError("ANTHROPIC_API_KEY is not configured"),
@@ -74,7 +77,10 @@ def test_import_recipe_url_parse_error_returns_422(
     client: TestClient, superuser_token_headers: dict[str, str]
 ) -> None:
     with (
-        patch("app.services.recipe_import._fetch_page", return_value=("not a recipe", None)),
+        patch(
+            "app.services.recipe_import._fetch_page",
+            return_value=("not a recipe", None),
+        ),
         patch(
             "app.services.recipe_import._get_llm",
             side_effect=RuntimeError("LLM unavailable"),
@@ -126,7 +132,7 @@ def test_get_llm_unknown_provider() -> None:
     with p.object(settings, "AI_PROVIDER", "unknown"):
         try:
             _get_llm()
-            assert False, "should raise"
+            raise AssertionError("should raise")
         except ValueError as exc:
             assert "Unknown AI_PROVIDER" in str(exc)
 
@@ -138,7 +144,12 @@ def test_import_recipe_filters_null_quantity_ingredients(
         **_SAMPLE_RECIPE,
         "ingredients": [
             {"name": "pasta", "quantity": 200.0, "unit": "g", "notes": None},
-            {"name": "maple syrup", "quantity": None, "unit": None, "notes": "to serve"},
+            {
+                "name": "maple syrup",
+                "quantity": None,
+                "unit": None,
+                "notes": "to serve",
+            },
             {"name": "butter", "quantity": None, "unit": None, "notes": "to serve"},
         ],
     }
@@ -146,7 +157,10 @@ def test_import_recipe_filters_null_quantity_ingredients(
     llm_mock.invoke.return_value = _make_llm_response(recipe_with_garnish)
 
     with (
-        patch("app.services.recipe_import._fetch_page", return_value=("some recipe text", None)),
+        patch(
+            "app.services.recipe_import._fetch_page",
+            return_value=("some recipe text", None),
+        ),
         patch("app.services.recipe_import._get_llm", return_value=llm_mock),
     ):
         response = client.post(
@@ -195,9 +209,13 @@ def test_configure_langsmith_sets_env() -> None:
         patch.object(settings, "LANGCHAIN_TRACING_V2", True),
         patch.object(settings, "LANGCHAIN_API_KEY", "test-key"),
         patch.object(settings, "LANGCHAIN_PROJECT", "test-proj"),
-        patch.object(settings, "LANGCHAIN_ENDPOINT", "https://eu.api.smith.langchain.com"),
+        patch.object(
+            settings, "LANGCHAIN_ENDPOINT", "https://eu.api.smith.langchain.com"
+        ),
     ):
         _configure_langsmith()
         assert os.environ.get("LANGCHAIN_TRACING_V2") == "true"
         assert os.environ.get("LANGCHAIN_API_KEY") == "test-key"
-        assert os.environ.get("LANGCHAIN_ENDPOINT") == "https://eu.api.smith.langchain.com"
+        assert (
+            os.environ.get("LANGCHAIN_ENDPOINT") == "https://eu.api.smith.langchain.com"
+        )

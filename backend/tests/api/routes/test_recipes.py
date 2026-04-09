@@ -3,9 +3,13 @@ import uuid
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
-from app.core.config import settings
 from app import crud
-from app.models import IngredientCreate, IngredientCategory, RecipeIngredientCreate, Unit
+from app.core.config import settings
+from app.models import (
+    IngredientCategory,
+    IngredientCreate,
+    Unit,
+)
 from tests.utils.recipe import create_random_recipe
 from tests.utils.user import create_random_user
 
@@ -61,7 +65,7 @@ def test_create_recipe_with_ingredients(
 
 
 def test_create_recipe_with_ingredient_name_auto_creates(
-    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+    client: TestClient, superuser_token_headers: dict[str, str]
 ) -> None:
     """Passing ingredient_name instead of ingredient_id should create the ingredient."""
     data = {
@@ -123,9 +127,7 @@ def test_create_recipe_requires_auth(client: TestClient) -> None:
 def test_read_recipe(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:
-    superuser = crud.get_user_by_email(
-        session=db, email=settings.FIRST_SUPERUSER
-    )
+    superuser = crud.get_user_by_email(session=db, email=settings.FIRST_SUPERUSER)
     recipe = create_random_recipe(db, owner_id=superuser.id)  # type: ignore[union-attr]
     response = client.get(
         f"{settings.API_V1_STR}/recipes/{recipe.id}",  # type: ignore[attr-defined]
@@ -160,9 +162,7 @@ def test_read_recipe_forbidden_for_other_user(
 def test_read_recipes(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:
-    superuser = crud.get_user_by_email(
-        session=db, email=settings.FIRST_SUPERUSER
-    )
+    superuser = crud.get_user_by_email(session=db, email=settings.FIRST_SUPERUSER)
     create_random_recipe(db, owner_id=superuser.id)  # type: ignore[union-attr]
     create_random_recipe(db, owner_id=superuser.id)  # type: ignore[union-attr]
     response = client.get(
@@ -177,9 +177,7 @@ def test_read_recipes(
 def test_update_recipe(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:
-    superuser = crud.get_user_by_email(
-        session=db, email=settings.FIRST_SUPERUSER
-    )
+    superuser = crud.get_user_by_email(session=db, email=settings.FIRST_SUPERUSER)
     recipe = create_random_recipe(db, owner_id=superuser.id)  # type: ignore[union-attr]
     data = {"title": f"Updated-{recipe.title}", "servings": 2}  # type: ignore[attr-defined]
     response = client.put(
@@ -195,9 +193,7 @@ def test_update_recipe(
 def test_update_recipe_replace_ingredients(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:
-    superuser = crud.get_user_by_email(
-        session=db, email=settings.FIRST_SUPERUSER
-    )
+    superuser = crud.get_user_by_email(session=db, email=settings.FIRST_SUPERUSER)
     recipe = create_random_recipe(db, owner_id=superuser.id, with_ingredients=True)  # type: ignore[union-attr]
     assert len(recipe.recipe_ingredients) == 2  # type: ignore[attr-defined]
 
@@ -256,9 +252,7 @@ def test_update_recipe_not_enough_permissions(
 def test_delete_recipe(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:
-    superuser = crud.get_user_by_email(
-        session=db, email=settings.FIRST_SUPERUSER
-    )
+    superuser = crud.get_user_by_email(session=db, email=settings.FIRST_SUPERUSER)
     recipe = create_random_recipe(db, owner_id=superuser.id)  # type: ignore[union-attr]
     response = client.delete(
         f"{settings.API_V1_STR}/recipes/{recipe.id}",  # type: ignore[attr-defined]

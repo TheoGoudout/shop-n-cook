@@ -341,6 +341,28 @@ export const ParsedRecipeSchema = {
             type: 'array',
             title: 'Ingredients',
             default: []
+        },
+        source_url: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Source Url'
+        },
+        image_url: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Image Url'
         }
     },
     type: 'object',
@@ -440,6 +462,28 @@ export const RecipeCreateSchema = {
             ],
             title: 'Cook Time Minutes'
         },
+        source_url: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Source Url'
+        },
+        image_url: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Image Url'
+        },
         ingredients: {
             items: {
                 '$ref': '#/components/schemas/RecipeIngredientCreate'
@@ -477,13 +521,33 @@ export const RecipeIngredientCreateSchema = {
             title: 'Notes'
         },
         ingredient_id: {
-            type: 'string',
-            format: 'uuid',
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             title: 'Ingredient Id'
+        },
+        ingredient_name: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 255,
+                    minLength: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Ingredient Name'
         }
     },
     type: 'object',
-    required: ['quantity', 'unit', 'ingredient_id'],
+    required: ['quantity', 'unit'],
     title: 'RecipeIngredientCreate'
 } as const;
 
@@ -597,6 +661,28 @@ export const RecipePublicSchema = {
             ],
             title: 'Cook Time Minutes'
         },
+        source_url: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Source Url'
+        },
+        image_url: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Image Url'
+        },
         id: {
             type: 'string',
             format: 'uuid',
@@ -706,6 +792,28 @@ export const RecipeUpdateSchema = {
                 }
             ],
             title: 'Cook Time Minutes'
+        },
+        source_url: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Source Url'
+        },
+        image_url: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Image Url'
         },
         ingredients: {
             anyOf: [

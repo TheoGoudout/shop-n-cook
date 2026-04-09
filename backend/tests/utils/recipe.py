@@ -3,7 +3,13 @@ import uuid
 from sqlmodel import Session
 
 from app import crud
-from app.models import IngredientCreate, IngredientCategory, RecipeCreate, RecipeIngredientCreate, Unit
+from app.models import (
+    IngredientCategory,
+    IngredientCreate,
+    RecipeCreate,
+    RecipeIngredientCreate,
+    Unit,
+)
 from tests.utils.utils import random_lower_string
 
 

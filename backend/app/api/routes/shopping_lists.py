@@ -87,7 +87,7 @@ def update_shopping_list(
     sl = crud.update_shopping_list(
         session=session,
         db_list=sl,
-        list_in=list_in,  # type: ignore[arg-type]
+        list_in=list_in,
     )
     return crud.shopping_list_to_public(sl)
 
@@ -124,8 +124,8 @@ def add_item(
         raise HTTPException(status_code=404, detail="Ingredient not found")
     sl = crud.add_item_to_shopping_list(
         session=session,
-        shopping_list=sl,  # type: ignore[arg-type]
-        item_in=item_in,  # type: ignore[arg-type]
+        shopping_list=sl,
+        item_in=item_in,
     )
     return crud.shopping_list_to_public(sl)
 
@@ -199,9 +199,9 @@ def add_recipe(
         raise HTTPException(status_code=404, detail="Recipe not found")
     sl = crud.add_recipe_to_shopping_list(
         session=session,
-        shopping_list=sl,  # type: ignore[arg-type]
+        shopping_list=sl,
         recipe=recipe,
-        servings=servings,  # type: ignore[arg-type]
+        servings=servings,
     )
     return crud.shopping_list_to_public(sl)
 

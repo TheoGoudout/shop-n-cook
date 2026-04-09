@@ -109,7 +109,7 @@ def _get_llm() -> BaseChatModel:
 
         return ChatGoogleGenerativeAI(
             model=settings.GOOGLE_MODEL,
-            google_api_key=settings.GOOGLE_API_KEY,  # type: ignore[arg-type]
+            google_api_key=settings.GOOGLE_API_KEY,
             max_output_tokens=2048,
         )
 
@@ -133,7 +133,7 @@ def _fetch_page(url: str) -> tuple[str, str | None]:
     for meta in soup.find_all("meta"):
         prop = meta.get("property", "") or meta.get("name", "")
         if prop in ("og:image", "twitter:image"):
-            content = (meta.get("content") or "").strip()
+            content = str(meta.get("content") or "").strip()
             if content:
                 image_url = content
                 break

@@ -4,11 +4,11 @@ import { ArrowLeft, ChefHat, Clock, ExternalLink, Users } from "lucide-react"
 import { Suspense } from "react"
 
 import { RecipesService } from "@/client"
-import { APP_NAME } from "@/lib/config"
 import { RecipeActionsMenu } from "@/components/Recipes/RecipeActionsMenu"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { APP_NAME } from "@/lib/config"
 
 function getRecipeQueryOptions(id: string) {
   return {

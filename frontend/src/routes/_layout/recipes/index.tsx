@@ -4,11 +4,11 @@ import { ChefHat } from "lucide-react"
 import { Suspense } from "react"
 
 import { RecipesService } from "@/client"
-import { APP_NAME } from "@/lib/config"
 import { DataTable } from "@/components/Common/DataTable"
 import PendingItems from "@/components/Pending/PendingItems"
 import AddRecipe from "@/components/Recipes/AddRecipe"
 import { columns } from "@/components/Recipes/columns"
+import { APP_NAME } from "@/lib/config"
 
 function getRecipesQueryOptions() {
   return {

@@ -4,12 +4,12 @@ import { FlaskConical } from "lucide-react"
 import { Suspense } from "react"
 
 import { IngredientsService } from "@/client"
-import { APP_NAME } from "@/lib/config"
 import { DataTable } from "@/components/Common/DataTable"
 import AddIngredient from "@/components/Ingredients/AddIngredient"
 import { useColumns } from "@/components/Ingredients/columns"
 import PendingItems from "@/components/Pending/PendingItems"
 import useAuth from "@/hooks/useAuth"
+import { APP_NAME } from "@/lib/config"
 
 function getIngredientsQueryOptions() {
   return {

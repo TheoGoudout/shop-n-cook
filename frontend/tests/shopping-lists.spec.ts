@@ -1,4 +1,4 @@
-import { type Page, expect, test } from "@playwright/test"
+import { expect, type Page, test } from "@playwright/test"
 
 const uniqueName = () => `Playwright List ${Date.now()}`
 
@@ -24,7 +24,10 @@ async function deleteListFromCard(page: Page, name: string): Promise<void> {
   // The card header has two icon buttons: pencil (rename) then trash (delete)
   const card = page.locator("[data-slot='card']").filter({ hasText: name })
   await card.locator("button").nth(1).click()
-  await page.getByRole("button", { name: /Delete/i }).last().click()
+  await page
+    .getByRole("button", { name: /Delete/i })
+    .last()
+    .click()
 }
 
 test.describe("Shopping lists page", () => {
@@ -71,7 +74,7 @@ test.describe("Shopping lists page", () => {
   test("creates a shopping list successfully", async ({ page }) => {
     const name = uniqueName()
     await page.goto("/shopping-lists")
-    const id = await createList(page, name)
+    const _id = await createList(page, name)
     await deleteListFromCard(page, name)
   })
 })
@@ -97,9 +100,7 @@ test.describe("Shopping list detail page — client-side navigation", () => {
     await page.goto("/shopping-lists")
     const id = await createList(page, name)
 
-    const card = page
-      .locator("[data-slot='card']")
-      .filter({ hasText: name })
+    const card = page.locator("[data-slot='card']").filter({ hasText: name })
     await card.getByRole("link", { name: /Open/i }).click()
     await page.waitForURL(`/shopping-lists/${id}`)
     await expect(page.getByRole("heading", { name })).toBeVisible()

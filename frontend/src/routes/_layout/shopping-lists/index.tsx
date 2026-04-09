@@ -4,10 +4,10 @@ import { ShoppingCart } from "lucide-react"
 import { Suspense } from "react"
 
 import { ShoppingListsService } from "@/client"
-import { APP_NAME } from "@/lib/config"
 import PendingItems from "@/components/Pending/PendingItems"
 import AddShoppingList from "@/components/ShoppingLists/AddShoppingList"
 import { ShoppingListCard } from "@/components/ShoppingLists/ShoppingListCard"
+import { APP_NAME } from "@/lib/config"
 
 function getShoppingListsQueryOptions() {
   return {

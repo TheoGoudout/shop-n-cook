@@ -1,4 +1,4 @@
-import { type Page, expect, test } from "@playwright/test"
+import { expect, type Page, test } from "@playwright/test"
 
 const uniqueTitle = () => `Playwright Recipe ${Date.now()}`
 
@@ -7,24 +7,37 @@ async function createRecipe(page: Page, title: string): Promise<string> {
   await expect(page.getByRole("dialog", { name: "Add Recipe" })).toBeVisible()
   await page.getByLabel(/Title/i).fill(title)
   await page.getByRole("button", { name: "Save" }).click()
-  await expect(page.getByRole("dialog", { name: "Add Recipe" })).not.toBeVisible()
+  await expect(
+    page.getByRole("dialog", { name: "Add Recipe" }),
+  ).not.toBeVisible()
   await expect(page.getByRole("link", { name: title })).toBeVisible()
-  const href = await page.getByRole("link", { name: title }).getAttribute("href")
+  const href = await page
+    .getByRole("link", { name: title })
+    .getAttribute("href")
   return href!.split("/").pop()!
 }
 
 async function deleteRecipeFromDetail(page: Page): Promise<void> {
   // Actions button is the icon button containing EllipsisVertical SVG
-  await page.locator("button").filter({ has: page.locator("svg") }).last().click()
+  await page
+    .locator("button")
+    .filter({ has: page.locator("svg") })
+    .last()
+    .click()
   await page.getByRole("menuitem", { name: /Delete/i }).click()
-  await page.getByRole("button", { name: /Delete/i }).last().click()
+  await page
+    .getByRole("button", { name: /Delete/i })
+    .last()
+    .click()
 }
 
 test.describe("Recipes list page", () => {
   test("shows heading and Add Recipe button", async ({ page }) => {
     await page.goto("/recipes")
     await expect(page.getByRole("heading", { name: "Recipes" })).toBeVisible()
-    await expect(page.getByRole("button", { name: /Add Recipe/i })).toBeVisible()
+    await expect(
+      page.getByRole("button", { name: /Add Recipe/i }),
+    ).toBeVisible()
   })
 
   test("shows validation error when title is empty", async ({ page }) => {

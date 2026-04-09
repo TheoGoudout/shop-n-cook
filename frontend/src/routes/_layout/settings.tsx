@@ -1,13 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router"
-
-import { APP_NAME } from "@/lib/config"
-
 import ChangePassword from "@/components/UserSettings/ChangePassword"
 import DeleteAccount from "@/components/UserSettings/DeleteAccount"
 import { HouseholdSettings } from "@/components/UserSettings/HouseholdSettings"
 import UserInformation from "@/components/UserSettings/UserInformation"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import useAuth from "@/hooks/useAuth"
+import { APP_NAME } from "@/lib/config"
 
 const tabsConfig = [
   { value: "my-profile", title: "My profile", component: UserInformation },

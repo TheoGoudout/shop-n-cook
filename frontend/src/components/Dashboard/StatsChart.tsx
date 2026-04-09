@@ -11,7 +11,11 @@ import {
   YAxis,
 } from "recharts"
 
-import { IngredientsService, RecipesService, ShoppingListsService } from "@/client"
+import {
+  IngredientsService,
+  RecipesService,
+  ShoppingListsService,
+} from "@/client"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 const CHART_COLORS = [
@@ -83,7 +87,11 @@ export function StatsChart() {
               margin={{ top: 4, right: 16, left: -16, bottom: 4 }}
               barSize={48}
             >
-              <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-border" />
+              <CartesianGrid
+                vertical={false}
+                strokeDasharray="3 3"
+                className="stroke-border"
+              />
               <XAxis
                 dataKey="name"
                 axisLine={false}
@@ -104,12 +112,18 @@ export function StatsChart() {
                   borderRadius: "var(--radius-md)",
                   fontSize: 13,
                 }}
-                labelStyle={{ color: "var(--color-card-foreground)", fontWeight: 600 }}
+                labelStyle={{
+                  color: "var(--color-card-foreground)",
+                  fontWeight: 600,
+                }}
                 itemStyle={{ color: "var(--color-muted-foreground)" }}
               />
               <Bar dataKey="value" name="Total" radius={[4, 4, 0, 0]}>
                 {chartData.map((_entry, index) => (
-                  <Cell key={index} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                  <Cell
+                    key={index}
+                    fill={CHART_COLORS[index % CHART_COLORS.length]}
+                  />
                 ))}
               </Bar>
             </BarChart>

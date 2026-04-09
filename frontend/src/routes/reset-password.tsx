@@ -22,8 +22,8 @@ import {
 import { LoadingButton } from "@/components/ui/loading-button"
 import { PasswordInput } from "@/components/ui/password-input"
 import { isLoggedIn } from "@/hooks/useAuth"
-import { APP_NAME } from "@/lib/config"
 import useCustomToast from "@/hooks/useCustomToast"
+import { APP_NAME } from "@/lib/config"
 import { handleError } from "@/utils"
 
 const searchSchema = z.object({

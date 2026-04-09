@@ -117,7 +117,9 @@ class Settings(BaseSettings):
     # LangSmith tracing (optional)
     LANGCHAIN_TRACING_V2: bool = False
     LANGCHAIN_API_KEY: str | None = None
-    LANGCHAIN_PROJECT: Annotated[str, BeforeValidator(unescape_env_string)] = "shop-n-cook"
+    LANGCHAIN_PROJECT: Annotated[str, BeforeValidator(unescape_env_string)] = (
+        "shop-n-cook"
+    )
     LANGCHAIN_ENDPOINT: str = "https://api.smith.langchain.com"
 
     def _check_default_secret(self, var_name: str, value: str | None) -> None:

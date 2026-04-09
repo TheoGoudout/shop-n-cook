@@ -2,6 +2,7 @@ import uuid
 
 from sqlmodel import Session, col, func, select
 
+from app.crud.ingredient import get_ingredient_by_name
 from app.models import (
     Ingredient,
     IngredientCreate,
@@ -13,7 +14,6 @@ from app.models import (
     RecipePublic,
     RecipeUpdate,
 )
-from app.crud.ingredient import get_ingredient_by_name
 
 
 def _ri_to_public(ri: RecipeIngredient) -> RecipeIngredientPublic:
@@ -51,11 +51,12 @@ def _resolve_ingredient_id(
     """Return the ingredient ID, creating the ingredient by name if it doesn't exist."""
     if ing_in.ingredient_id is not None:
         return ing_in.ingredient_id
-    existing = get_ingredient_by_name(session=session, name=ing_in.ingredient_name)  # type: ignore[arg-type]
+    assert ing_in.ingredient_name is not None  # guaranteed by model validator
+    existing = get_ingredient_by_name(session=session, name=ing_in.ingredient_name)
     if existing:
         return existing.id
     new_ingredient = Ingredient.model_validate(
-        IngredientCreate(name=ing_in.ingredient_name)  # type: ignore[arg-type]
+        IngredientCreate(name=ing_in.ingredient_name)
     )
     session.add(new_ingredient)
     session.flush()

@@ -160,7 +160,9 @@ const EditRecipe = ({ recipe, onSuccess }: Props) => {
           image_url: data.image_url || null,
           ingredients: data.ingredients.map((i) => ({
             ingredient_id: i.ingredient_id || null,
-            ingredient_name: i.ingredient_id ? null : (i.ingredient_name ?? null),
+            ingredient_name: i.ingredient_id
+              ? null
+              : (i.ingredient_name ?? null),
             quantity: i.quantity,
             unit: i.unit as Unit,
             notes: i.notes || null,

@@ -21,8 +21,8 @@ import {
 import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
 import { isLoggedIn } from "@/hooks/useAuth"
-import { APP_NAME } from "@/lib/config"
 import useCustomToast from "@/hooks/useCustomToast"
+import { APP_NAME } from "@/lib/config"
 import { handleError } from "@/utils"
 
 const formSchema = z.object({

@@ -29,7 +29,12 @@ export function Logo({
   const content =
     variant === "responsive" ? (
       <>
-        <div className={cn("flex items-center gap-2 group-data-[collapsible=icon]:hidden", className)}>
+        <div
+          className={cn(
+            "flex items-center gap-2 group-data-[collapsible=icon]:hidden",
+            className,
+          )}
+        >
           <ChefHat className="h-5 w-5 shrink-0 text-primary" />
           <span className="font-bold text-sm tracking-tight">{APP_NAME}</span>
         </div>

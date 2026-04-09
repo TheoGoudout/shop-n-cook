@@ -14,6 +14,7 @@ import httpx
 from bs4 import BeautifulSoup
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.rate_limiters import InMemoryRateLimiter
 from pydantic import BaseModel
 
 from app.core.config import settings
@@ -79,6 +80,11 @@ def _configure_langsmith() -> None:
 def _get_llm() -> BaseChatModel:
     """Return the configured LangChain chat model."""
     provider = settings.AI_PROVIDER.lower()
+    rate_limiter = InMemoryRateLimiter(
+        requests_per_second=2.0,
+        check_every_n_seconds=0.1,
+        max_bucket_size=10,  # Allows for small bursts
+    )
 
     if provider == "anthropic":
         if not settings.ANTHROPIC_API_KEY:
@@ -88,7 +94,11 @@ def _get_llm() -> BaseChatModel:
         return ChatAnthropic(  # type: ignore[call-arg]
             model=settings.ANTHROPIC_MODEL,
             api_key=settings.ANTHROPIC_API_KEY,  # type: ignore[arg-type]
-            max_tokens=2048,
+            max_retries=2,
+            timeout=60,
+            max_tokens=1024,
+            temperature=0,
+            rate_limiter=rate_limiter,
         )
 
     if provider == "openai":
@@ -99,7 +109,11 @@ def _get_llm() -> BaseChatModel:
         return ChatOpenAI(  # type: ignore[call-arg]
             model=settings.OPENAI_MODEL,
             api_key=settings.OPENAI_API_KEY,  # type: ignore[arg-type]
-            max_tokens=2048,
+            max_retries=3,
+            timeout=45,
+            max_completion_tokens=1000,
+            temperature=0,
+            rate_limiter=rate_limiter,
         )
 
     if provider == "google":
@@ -110,7 +124,11 @@ def _get_llm() -> BaseChatModel:
         return ChatGoogleGenerativeAI(
             model=settings.GOOGLE_MODEL,
             google_api_key=settings.GOOGLE_API_KEY,
-            max_output_tokens=2048,
+            max_retries=2,
+            timeout=30,
+            max_output_tokens=1000,
+            temperature=0,
+            rate_limiter=rate_limiter,
         )
 
     raise ValueError(

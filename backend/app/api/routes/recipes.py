@@ -21,6 +21,7 @@ router = APIRouter(prefix="/recipes", tags=["recipes"])
 
 class ImportUrlRequest(BaseModel):
     url: HttpUrl
+    language: str | None = None
 
 
 @router.get("/", response_model=RecipesPublic)
@@ -103,7 +104,7 @@ def import_recipe_url(
     Requires ANTHROPIC_API_KEY to be configured. Returns 503 if not set.
     """
     try:
-        parsed = import_recipe_from_url(str(body.url))
+        parsed = import_recipe_from_url(str(body.url), language=body.language)
     except ValueError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     except Exception as exc:

@@ -1,0 +1,74 @@
+{
+  "page": {
+    "title": "Recettes",
+    "subtitle": "Gérez votre collection de recettes personnelles",
+    "empty_title": "Aucune recette pour l'instant",
+    "empty_subtitle": "Ajoutez votre première recette pour commencer"
+  },
+  "detail": {
+    "back": "Retour aux recettes",
+    "loading": "Chargement de la recette…",
+    "ingredients_title": "Ingrédients",
+    "instructions_title": "Instructions",
+    "no_ingredients": "Aucun ingrédient répertorié",
+    "no_instructions": "Aucune instruction fournie",
+    "source": "Source",
+    "servings": "{{count}} portions",
+    "prep": "Prép. : {{count}} min",
+    "cook": "Cuisson : {{count}} min",
+    "total": "Total : {{count}} min"
+  },
+  "columns": {
+    "title": "Titre",
+    "description": "Description",
+    "servings": "Portions",
+    "time": "Temps",
+    "ingredients": "Ingrédients",
+    "no_description": "Aucune description",
+    "minutes": "{{count}} min",
+    "ingredient_count": "{{count}} éléments"
+  },
+  "add": {
+    "button": "Ajouter une recette",
+    "dialog_title": "Ajouter une recette",
+    "dialog_description": "Créez une nouvelle recette avec des ingrédients.",
+    "import_placeholder": "Collez une URL de recette pour remplir automatiquement…",
+    "success": "Recette créée avec succès",
+    "import_success": "Recette importée avec succès.",
+    "import_partial": "Recette importée. {{count}} ingrédient(s) seront créés automatiquement.",
+    "import_error": "Impossible d'importer la recette. Vérifiez l'URL et réessayez."
+  },
+  "edit": {
+    "menu_item": "Modifier",
+    "dialog_title": "Modifier la recette",
+    "dialog_description": "Mettez à jour les détails et les ingrédients de la recette.",
+    "success": "Recette mise à jour avec succès"
+  },
+  "delete": {
+    "menu_item": "Supprimer",
+    "dialog_title": "Supprimer la recette",
+    "dialog_description": "Cette recette sera définitivement supprimée. Êtes-vous sûr(e) ?",
+    "success": "Recette supprimée avec succès"
+  },
+  "form": {
+    "title_label": "Titre",
+    "title_placeholder": "ex. Spaghetti Bolognaise",
+    "title_required": "Le titre est requis",
+    "description_label": "Description",
+    "description_placeholder": "Courte description",
+    "servings_label": "Portions",
+    "prep_label": "Prép. (min)",
+    "cook_label": "Cuisson (min)",
+    "instructions_label": "Instructions",
+    "instructions_placeholder": "Instructions étape par étape...",
+    "source_url_label": "URL source",
+    "image_url_label": "URL de l'image",
+    "url_placeholder": "https://…",
+    "ingredients_label": "Ingrédients",
+    "add_ingredient": "Ajouter",
+    "select_ingredient": "Sélectionner un ingrédient",
+    "qty_placeholder": "Qté",
+    "notes_placeholder": "Notes (ex. finement haché)",
+    "ingredient_required": "Sélectionnez ou nommez un ingrédient"
+  }
+}

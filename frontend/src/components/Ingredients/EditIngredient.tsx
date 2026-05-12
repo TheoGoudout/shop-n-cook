@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Pencil } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
+import { useTranslation } from "react-i18next"
 import { z } from "zod"
 
 import {
@@ -88,6 +89,8 @@ interface Props {
 }
 
 const EditIngredient = ({ ingredient, onSuccess }: Props) => {
+  const { t } = useTranslation("ingredients")
+  const { t: tCommon } = useTranslation("common")
   const [isOpen, setIsOpen] = useState(false)
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
@@ -108,7 +111,7 @@ const EditIngredient = ({ ingredient, onSuccess }: Props) => {
         requestBody: data as IngredientUpdate,
       }),
     onSuccess: () => {
-      showSuccessToast("Ingredient updated successfully")
+      showSuccessToast(t("edit.success"))
       setIsOpen(false)
       onSuccess()
     },
@@ -124,15 +127,15 @@ const EditIngredient = ({ ingredient, onSuccess }: Props) => {
         onClick={() => setIsOpen(true)}
       >
         <Pencil />
-        Edit
+        {t("edit.menu_item")}
       </DropdownMenuItem>
       <DialogContent className="sm:max-w-md">
         <Form {...form}>
           <form onSubmit={form.handleSubmit((d) => mutation.mutate(d))}>
             <DialogHeader>
-              <DialogTitle>Edit Ingredient</DialogTitle>
+              <DialogTitle>{t("edit.dialog_title")}</DialogTitle>
               <DialogDescription>
-                Update the ingredient details.
+                {t("edit.dialog_description")}
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
@@ -141,7 +144,7 @@ const EditIngredient = ({ ingredient, onSuccess }: Props) => {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Name</FormLabel>
+                    <FormLabel>{t("form.name_label")}</FormLabel>
                     <FormControl>
                       <Input {...field} />
                     </FormControl>
@@ -154,7 +157,7 @@ const EditIngredient = ({ ingredient, onSuccess }: Props) => {
                 name="category"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Category</FormLabel>
+                    <FormLabel>{t("form.category_label")}</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
@@ -166,8 +169,8 @@ const EditIngredient = ({ ingredient, onSuccess }: Props) => {
                       </FormControl>
                       <SelectContent>
                         {CATEGORIES.map((c) => (
-                          <SelectItem key={c} value={c} className="capitalize">
-                            {c}
+                          <SelectItem key={c} value={c}>
+                            {tCommon(`categories.${c}`, { defaultValue: c })}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -180,7 +183,7 @@ const EditIngredient = ({ ingredient, onSuccess }: Props) => {
                 name="default_unit"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Default Unit</FormLabel>
+                    <FormLabel>{t("form.default_unit_label")}</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
@@ -193,7 +196,7 @@ const EditIngredient = ({ ingredient, onSuccess }: Props) => {
                       <SelectContent>
                         {UNITS.map((u) => (
                           <SelectItem key={u} value={u}>
-                            {u}
+                            {tCommon(`unit_labels.${u}`, { defaultValue: u })}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -205,11 +208,11 @@ const EditIngredient = ({ ingredient, onSuccess }: Props) => {
             <DialogFooter>
               <DialogClose asChild>
                 <Button variant="outline" disabled={mutation.isPending}>
-                  Cancel
+                  {tCommon("cancel")}
                 </Button>
               </DialogClose>
               <LoadingButton type="submit" loading={mutation.isPending}>
-                Save
+                {tCommon("save")}
               </LoadingButton>
             </DialogFooter>
           </form>

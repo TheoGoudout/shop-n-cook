@@ -1,0 +1,15 @@
+{
+  "dashboard": "Dashboard",
+  "ingredients": "Ingredients",
+  "recipes": "Recipes",
+  "shopping_lists": "Shopping Lists",
+  "admin": "Admin",
+  "settings": "User Settings",
+  "logout": "Log Out",
+  "appearance": "Appearance",
+  "theme": {
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  }
+}

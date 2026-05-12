@@ -15,6 +15,7 @@ export type HTTPValidationError = {
 
 export type ImportUrlRequest = {
     url: string;
+    language?: (string | null);
 };
 
 export type IngredientCategory = 'produce' | 'dairy' | 'meat' | 'seafood' | 'grains' | 'pantry' | 'spices' | 'beverages' | 'frozen' | 'bakery' | 'other';

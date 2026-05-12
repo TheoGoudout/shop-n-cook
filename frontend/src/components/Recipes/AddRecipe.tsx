@@ -1,8 +1,10 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import i18n from "i18next"
 import { Download, Loader2, Plus, Trash2 } from "lucide-react"
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { type Resolver, useFieldArray, useForm } from "react-hook-form"
+import { useTranslation } from "react-i18next"
 import { z } from "zod"
 
 import {
@@ -44,22 +46,16 @@ import {
 import useCustomToast from "@/hooks/useCustomToast"
 import { handleError } from "@/utils"
 
-const ingredientSchema = z
-  .object({
-    ingredient_id: z.string().optional(),
-    ingredient_name: z.string().optional(),
-    category: z.string().min(1),
-    quantity: z.coerce.number().positive(),
-    unit: z.string().min(1),
-    notes: z.string().optional(),
-  })
-  .refine((d) => d.ingredient_id || d.ingredient_name, {
-    message: "Select or name an ingredient",
-    path: ["ingredient_id"],
-  })
-
-const formSchema = z.object({
-  title: z.string().min(1, { message: "Title is required" }),
+const _ingredientSchema = z.object({
+  ingredient_id: z.string().optional(),
+  ingredient_name: z.string().optional(),
+  category: z.string().min(1),
+  quantity: z.coerce.number().positive(),
+  unit: z.string().min(1),
+  notes: z.string().optional(),
+})
+const _formSchema = z.object({
+  title: z.string(),
   description: z.string().optional(),
   instructions: z.string().optional(),
   servings: z.coerce.number().int().positive().optional().or(z.literal("")),
@@ -77,12 +73,64 @@ const formSchema = z.object({
     .or(z.literal("")),
   source_url: z.string().url().optional().or(z.literal("")),
   image_url: z.string().url().optional().or(z.literal("")),
-  ingredients: z.array(ingredientSchema),
+  ingredients: z.array(_ingredientSchema),
 })
 
-type FormData = z.infer<typeof formSchema>
+type FormData = z.infer<typeof _formSchema>
 
 const AddRecipe = () => {
+  const { t } = useTranslation("recipes")
+  const { t: tCommon } = useTranslation("common")
+
+  const ingredientSchema = useMemo(
+    () =>
+      z
+        .object({
+          ingredient_id: z.string().optional(),
+          ingredient_name: z.string().optional(),
+          category: z.string().min(1),
+          quantity: z.coerce.number().positive(),
+          unit: z.string().min(1),
+          notes: z.string().optional(),
+        })
+        .refine((d) => d.ingredient_id || d.ingredient_name, {
+          message: t("form.ingredient_required"),
+          path: ["ingredient_id"],
+        }),
+    [t],
+  )
+
+  const formSchema = useMemo(
+    () =>
+      z.object({
+        title: z.string().min(1, { message: t("form.title_required") }),
+        description: z.string().optional(),
+        instructions: z.string().optional(),
+        servings: z.coerce
+          .number()
+          .int()
+          .positive()
+          .optional()
+          .or(z.literal("")),
+        prep_time_minutes: z.coerce
+          .number()
+          .int()
+          .min(0)
+          .optional()
+          .or(z.literal("")),
+        cook_time_minutes: z.coerce
+          .number()
+          .int()
+          .min(0)
+          .optional()
+          .or(z.literal("")),
+        source_url: z.string().url().optional().or(z.literal("")),
+        image_url: z.string().url().optional().or(z.literal("")),
+        ingredients: z.array(ingredientSchema),
+      }),
+    [t, ingredientSchema],
+  )
+
   const [isOpen, setIsOpen] = useState(false)
   const [importUrl, setImportUrl] = useState("")
   const [isImporting, setIsImporting] = useState(false)
@@ -120,7 +168,7 @@ const AddRecipe = () => {
     setIsImporting(true)
     try {
       const parsed = await RecipesService.importRecipeUrl({
-        requestBody: { url: importUrl },
+        requestBody: { url: importUrl, language: i18n.language },
       })
       const existingIngredients = ingredientsData?.data ?? []
       let unmatchedCount = 0
@@ -153,11 +201,11 @@ const AddRecipe = () => {
       setImportUrl("")
       showSuccessToast(
         unmatchedCount > 0
-          ? `Recipe imported. ${unmatchedCount} ingredient(s) will be created automatically.`
-          : "Recipe imported successfully.",
+          ? t("add.import_partial", { count: unmatchedCount })
+          : t("add.import_success"),
       )
     } catch {
-      showErrorToast("Failed to import recipe. Check the URL and try again.")
+      showErrorToast(t("add.import_error"))
     } finally {
       setIsImporting(false)
     }
@@ -193,7 +241,7 @@ const AddRecipe = () => {
         },
       }),
     onSuccess: () => {
-      showSuccessToast("Recipe created successfully")
+      showSuccessToast(t("add.success"))
       form.reset()
       setIsOpen(false)
     },
@@ -209,15 +257,13 @@ const AddRecipe = () => {
       <DialogTrigger asChild>
         <Button className="my-4">
           <Plus className="mr-2" />
-          Add Recipe
+          {t("add.button")}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add Recipe</DialogTitle>
-          <DialogDescription>
-            Create a new recipe with ingredients.
-          </DialogDescription>
+          <DialogTitle>{t("add.dialog_title")}</DialogTitle>
+          <DialogDescription>{t("add.dialog_description")}</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit((d) => mutation.mutate(d))}>
@@ -225,7 +271,7 @@ const AddRecipe = () => {
               {/* Import from URL */}
               <div className="flex gap-2 p-3 rounded-md border border-dashed bg-muted/30">
                 <Input
-                  placeholder="Paste a recipe URL to auto-fill…"
+                  placeholder={t("add.import_placeholder")}
                   value={importUrl}
                   onChange={(e) => setImportUrl(e.target.value)}
                   onKeyDown={(e) => {
@@ -248,7 +294,7 @@ const AddRecipe = () => {
                   ) : (
                     <Download className="h-4 w-4" />
                   )}
-                  <span className="ml-1.5">Import</span>
+                  <span className="ml-1.5">{tCommon("import")}</span>
                 </Button>
               </div>
 
@@ -258,11 +304,12 @@ const AddRecipe = () => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      Title <span className="text-destructive">*</span>
+                      {t("form.title_label")}{" "}
+                      <span className="text-destructive">*</span>
                     </FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="e.g. Spaghetti Bolognese"
+                        placeholder={t("form.title_placeholder")}
                         {...field}
                       />
                     </FormControl>
@@ -275,9 +322,12 @@ const AddRecipe = () => {
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Description</FormLabel>
+                    <FormLabel>{t("form.description_label")}</FormLabel>
                     <FormControl>
-                      <Input placeholder="Short description" {...field} />
+                      <Input
+                        placeholder={t("form.description_placeholder")}
+                        {...field}
+                      />
                     </FormControl>
                   </FormItem>
                 )}
@@ -288,7 +338,7 @@ const AddRecipe = () => {
                   name="servings"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Servings</FormLabel>
+                      <FormLabel>{t("form.servings_label")}</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
@@ -305,7 +355,7 @@ const AddRecipe = () => {
                   name="prep_time_minutes"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Prep (min)</FormLabel>
+                      <FormLabel>{t("form.prep_label")}</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
@@ -322,7 +372,7 @@ const AddRecipe = () => {
                   name="cook_time_minutes"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Cook (min)</FormLabel>
+                      <FormLabel>{t("form.cook_label")}</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
@@ -340,11 +390,11 @@ const AddRecipe = () => {
                 name="instructions"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Instructions</FormLabel>
+                    <FormLabel>{t("form.instructions_label")}</FormLabel>
                     <FormControl>
                       <textarea
                         className="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                        placeholder="Step by step instructions..."
+                        placeholder={t("form.instructions_placeholder")}
                         {...field}
                       />
                     </FormControl>
@@ -357,9 +407,12 @@ const AddRecipe = () => {
                   name="source_url"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Source URL</FormLabel>
+                      <FormLabel>{t("form.source_url_label")}</FormLabel>
                       <FormControl>
-                        <Input placeholder="https://…" {...field} />
+                        <Input
+                          placeholder={t("form.url_placeholder")}
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -370,9 +423,12 @@ const AddRecipe = () => {
                   name="image_url"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Image URL</FormLabel>
+                      <FormLabel>{t("form.image_url_label")}</FormLabel>
                       <FormControl>
-                        <Input placeholder="https://…" {...field} />
+                        <Input
+                          placeholder={t("form.url_placeholder")}
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -383,7 +439,7 @@ const AddRecipe = () => {
               {/* Ingredients */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <FormLabel>Ingredients</FormLabel>
+                  <FormLabel>{t("form.ingredients_label")}</FormLabel>
                   <Button
                     type="button"
                     variant="outline"
@@ -399,7 +455,7 @@ const AddRecipe = () => {
                       })
                     }
                   >
-                    <Plus className="mr-1 h-3 w-3" /> Add
+                    <Plus className="mr-1 h-3 w-3" /> {t("form.add_ingredient")}
                   </Button>
                 </div>
                 <div className="space-y-3">
@@ -439,11 +495,15 @@ const AddRecipe = () => {
                                             variant="secondary"
                                             className="text-xs"
                                           >
-                                            new
+                                            {tCommon("new")}
                                           </Badge>
                                         </span>
                                       ) : (
-                                        <SelectValue placeholder="Select ingredient" />
+                                        <SelectValue
+                                          placeholder={t(
+                                            "form.select_ingredient",
+                                          )}
+                                        />
                                       )}
                                     </SelectTrigger>
                                   </FormControl>
@@ -494,7 +554,7 @@ const AddRecipe = () => {
                                     type="number"
                                     min={0.01}
                                     step="any"
-                                    placeholder="Qty"
+                                    placeholder={t("form.qty_placeholder")}
                                     {...f}
                                   />
                                 </FormControl>
@@ -518,7 +578,9 @@ const AddRecipe = () => {
                                   <SelectContent>
                                     {UnitSchema.enum.map((u) => (
                                       <SelectItem key={u} value={u}>
-                                        {u}
+                                        {tCommon(`unit_labels.${u}`, {
+                                          defaultValue: u,
+                                        })}
                                       </SelectItem>
                                     ))}
                                   </SelectContent>
@@ -543,7 +605,7 @@ const AddRecipe = () => {
                             <FormItem className="pr-10">
                               <FormControl>
                                 <Input
-                                  placeholder="Notes (e.g. finely chopped)"
+                                  placeholder={t("form.notes_placeholder")}
                                   className="h-7 text-xs text-muted-foreground"
                                   {...f}
                                 />
@@ -561,11 +623,11 @@ const AddRecipe = () => {
             <DialogFooter>
               <DialogClose asChild>
                 <Button variant="outline" disabled={mutation.isPending}>
-                  Cancel
+                  {tCommon("cancel")}
                 </Button>
               </DialogClose>
               <LoadingButton type="submit" loading={mutation.isPending}>
-                Save
+                {tCommon("save")}
               </LoadingButton>
             </DialogFooter>
           </form>

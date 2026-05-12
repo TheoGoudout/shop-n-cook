@@ -14,8 +14,9 @@ async function createList(page: Page, name: string): Promise<string> {
   ).not.toBeVisible()
   await expect(page.getByText(name)).toBeVisible()
 
-  // Capture list ID from the Open link in the newest card
-  const openLink = page.getByRole("link", { name: /Open/i }).last()
+  // Capture list ID from the Open link inside the specific card
+  const card = page.locator("[data-slot='card']").filter({ hasText: name })
+  const openLink = card.getByRole("link", { name: /Open/i })
   const href = await openLink.getAttribute("href")
   return href!.split("/").pop()!
 }

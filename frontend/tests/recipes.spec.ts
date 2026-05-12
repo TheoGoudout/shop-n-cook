@@ -18,12 +18,8 @@ async function createRecipe(page: Page, title: string): Promise<string> {
 }
 
 async function deleteRecipeFromDetail(page: Page): Promise<void> {
-  // Actions button is the icon button containing EllipsisVertical SVG
-  await page
-    .locator("button")
-    .filter({ has: page.locator("svg") })
-    .last()
-    .click()
+  // Target the recipe actions DropdownMenu — exclude sidebar triggers (data-sidebar attr)
+  await page.locator('button[aria-haspopup="menu"]:not([data-sidebar])').click()
   await page.getByRole("menuitem", { name: /Delete/i }).click()
   await page
     .getByRole("button", { name: /Delete/i })
@@ -84,10 +80,14 @@ test.describe("Recipe detail page — client-side navigation", () => {
 
     await page.goto(`/recipes/${id}`)
     await expect(
-      page.getByRole("heading", { name: "Ingredients" }),
+      page
+        .locator('[data-slot="card-title"]')
+        .filter({ hasText: "Ingredients" }),
     ).toBeVisible()
     await expect(
-      page.getByRole("heading", { name: "Instructions" }),
+      page
+        .locator('[data-slot="card-title"]')
+        .filter({ hasText: "Instructions" }),
     ).toBeVisible()
 
     await deleteRecipeFromDetail(page)

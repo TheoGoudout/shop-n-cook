@@ -41,7 +41,28 @@ class ParsedRecipe(BaseModel):
     image_url: str | None = None
 
 
-_SYSTEM_PROMPT = f"""You are a recipe extraction assistant. Given the text content of a recipe web page, extract the recipe information and return it as JSON.
+_CATEGORIES = ", ".join(c.value for c in IngredientCategory)
+_UNITS = ", ".join(u.value for u in Unit)
+
+
+def _build_system_prompt(language: str | None = None) -> str:
+    lang = (language or "en").split("-")[0].lower()
+
+    if lang == "fr":
+        lang_rule = (
+            "- Translate all text fields (title, description, instructions, "
+            "ingredient names, and notes) to French\n"
+            "- Use standard French culinary terminology for ingredient names"
+        )
+    else:
+        lang_rule = (
+            "- Use standard American English ingredient names to avoid regional duplicates "
+            '(e.g. "all-purpose flour" not "plain flour", "eggplant" not "aubergine", '
+            '"zucchini" not "courgette", "cilantro" not "coriander", '
+            '"granulated sugar" or "powdered sugar" not just "sugar" when the type matters)'
+        )
+
+    return f"""You are a recipe extraction assistant. Given the text content of a recipe web page, extract the recipe information and return it as JSON.
 
 Return ONLY a valid JSON object with this exact structure:
 {{
@@ -54,9 +75,9 @@ Return ONLY a valid JSON object with this exact structure:
   "ingredients": [
     {{
       "name": "ingredient name",
-      "category": "string (use one of: {", ".join(c.value for c in IngredientCategory)})",
+      "category": "string (use one of: {_CATEGORIES})",
       "quantity": numeric value,
-      "unit": "unit string (use one of: {", ".join(u.value for u in Unit)})",
+      "unit": "unit string (use one of: {_UNITS})",
       "notes": "optional preparation note or null"
     }}
   ]
@@ -67,7 +88,7 @@ Rules:
 - If quantity is fractional (e.g. 1/2), convert to decimal (0.5)
 - If no unit applies, use "piece"
 - Only include ingredients with a measurable quantity — skip garnishes, serving suggestions, or "to taste"/"to serve" items that have no defined amount
-- Use standard American English ingredient names to avoid regional duplicates (e.g. "all-purpose flour" not "plain flour", "eggplant" not "aubergine", "zucchini" not "courgette", "cilantro" not "coriander", "granulated sugar" or "powdered sugar" not just "sugar" when the type matters)
+{lang_rule}
 - Do not include any text outside the JSON object"""
 
 
@@ -225,14 +246,14 @@ INSTRUCTIONS:
     return text[:4000], image_url
 
 
-def import_recipe_from_url(url: str) -> ParsedRecipe:
+def import_recipe_from_url(url: str, language: str | None = None) -> ParsedRecipe:
     """Fetch the given URL and use an LLM to extract recipe data."""
     _configure_langsmith()
     page_text, image_url = _fetch_page(url)
     llm = _get_llm()
 
     messages = [
-        SystemMessage(content=_SYSTEM_PROMPT),
+        SystemMessage(content=_build_system_prompt(language)),
         HumanMessage(
             content=f"""
 Extract the recipe from this content.
@@ -246,7 +267,8 @@ Content:
     ]
 
     response = llm.invoke(messages)
-    content = response.text.strip()
+    raw = response.content
+    content = (raw if isinstance(raw, str) else "").strip()
 
     # Strip markdown code fences if present
     if content.startswith("```"):

@@ -1,8 +1,9 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { useForm } from "react-hook-form"
+import { useTranslation } from "react-i18next"
 import { z } from "zod"
 
 import { type IngredientCreate, IngredientsService } from "@/client"
@@ -70,15 +71,28 @@ const UNITS = [
   "package",
 ]
 
-const formSchema = z.object({
-  name: z.string().min(1, { message: "Name is required" }),
+const _formSchema = z.object({
+  name: z.string(),
   category: z.string().min(1),
   default_unit: z.string().min(1),
 })
 
-type FormData = z.infer<typeof formSchema>
+type FormData = z.infer<typeof _formSchema>
 
 const AddIngredient = () => {
+  const { t } = useTranslation("ingredients")
+  const { t: tCommon } = useTranslation("common")
+
+  const formSchema = useMemo(
+    () =>
+      z.object({
+        name: z.string().min(1, { message: t("form.name_required") }),
+        category: z.string().min(1),
+        default_unit: z.string().min(1),
+      }),
+    [t],
+  )
+
   const [isOpen, setIsOpen] = useState(false)
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
@@ -92,7 +106,7 @@ const AddIngredient = () => {
     mutationFn: (data: IngredientCreate) =>
       IngredientsService.createIngredient({ requestBody: data }),
     onSuccess: () => {
-      showSuccessToast("Ingredient added successfully")
+      showSuccessToast(t("add.success"))
       form.reset()
       setIsOpen(false)
     },
@@ -106,15 +120,13 @@ const AddIngredient = () => {
       <DialogTrigger asChild>
         <Button className="my-4">
           <Plus className="mr-2" />
-          Add Ingredient
+          {t("add.button")}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Add Ingredient</DialogTitle>
-          <DialogDescription>
-            Add a new ingredient to the catalog.
-          </DialogDescription>
+          <DialogTitle>{t("add.dialog_title")}</DialogTitle>
+          <DialogDescription>{t("add.dialog_description")}</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form
@@ -129,10 +141,14 @@ const AddIngredient = () => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      Name <span className="text-destructive">*</span>
+                      {t("form.name_label")}{" "}
+                      <span className="text-destructive">*</span>
                     </FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g. cherry tomato" {...field} />
+                      <Input
+                        placeholder={t("form.name_placeholder")}
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -143,7 +159,7 @@ const AddIngredient = () => {
                 name="category"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Category</FormLabel>
+                    <FormLabel>{t("form.category_label")}</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
@@ -155,8 +171,8 @@ const AddIngredient = () => {
                       </FormControl>
                       <SelectContent>
                         {CATEGORIES.map((c) => (
-                          <SelectItem key={c} value={c} className="capitalize">
-                            {c}
+                          <SelectItem key={c} value={c}>
+                            {tCommon(`categories.${c}`, { defaultValue: c })}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -170,7 +186,7 @@ const AddIngredient = () => {
                 name="default_unit"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Default Unit</FormLabel>
+                    <FormLabel>{t("form.default_unit_label")}</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
@@ -183,7 +199,7 @@ const AddIngredient = () => {
                       <SelectContent>
                         {UNITS.map((u) => (
                           <SelectItem key={u} value={u}>
-                            {u}
+                            {tCommon(`unit_labels.${u}`, { defaultValue: u })}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -196,11 +212,11 @@ const AddIngredient = () => {
             <DialogFooter>
               <DialogClose asChild>
                 <Button variant="outline" disabled={mutation.isPending}>
-                  Cancel
+                  {tCommon("cancel")}
                 </Button>
               </DialogClose>
               <LoadingButton type="submit" loading={mutation.isPending}>
-                Save
+                {tCommon("save")}
               </LoadingButton>
             </DialogFooter>
           </form>

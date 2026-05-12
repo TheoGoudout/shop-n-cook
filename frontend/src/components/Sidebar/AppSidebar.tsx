@@ -1,4 +1,5 @@
 import { ChefHat, FlaskConical, Home, ShoppingCart, Users } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 import { SidebarAppearance } from "@/components/Common/Appearance"
 import { Logo } from "@/components/Common/Logo"
@@ -12,18 +13,19 @@ import useAuth from "@/hooks/useAuth"
 import { type Item, Main } from "./Main"
 import { User } from "./User"
 
-const baseItems: Item[] = [
-  { icon: Home, title: "Dashboard", path: "/" },
-  { icon: FlaskConical, title: "Ingredients", path: "/ingredients" },
-  { icon: ChefHat, title: "Recipes", path: "/recipes" },
-  { icon: ShoppingCart, title: "Shopping Lists", path: "/shopping-lists" },
-]
-
 export function AppSidebar() {
+  const { t } = useTranslation("navigation")
   const { user: currentUser } = useAuth()
 
+  const baseItems: Item[] = [
+    { icon: Home, title: t("dashboard"), path: "/" },
+    { icon: FlaskConical, title: t("ingredients"), path: "/ingredients" },
+    { icon: ChefHat, title: t("recipes"), path: "/recipes" },
+    { icon: ShoppingCart, title: t("shopping_lists"), path: "/shopping-lists" },
+  ]
+
   const items = currentUser?.is_superuser
-    ? [...baseItems, { icon: Users, title: "Admin", path: "/admin" }]
+    ? [...baseItems, { icon: Users, title: t("admin"), path: "/admin" }]
     : baseItems
 
   return (

@@ -52,7 +52,11 @@ export const useColumns = (): ColumnDef<RecipePublic>[] => {
         const prep = row.original.prep_time_minutes
         const cook = row.original.cook_time_minutes
         const total = (prep ?? 0) + (cook ?? 0)
-        return <span>{total > 0 ? t("columns.minutes", { count: total }) : "—"}</span>
+        return (
+          <span>
+            {total > 0 ? t("columns.minutes", { count: total }) : "—"}
+          </span>
+        )
       },
     },
     {
@@ -60,7 +64,9 @@ export const useColumns = (): ColumnDef<RecipePublic>[] => {
       header: t("columns.ingredients"),
       cell: ({ row }) => (
         <span className="text-muted-foreground">
-          {t("columns.ingredient_count", { count: (row.original.ingredients ?? []).length })}
+          {t("columns.ingredient_count", {
+            count: (row.original.ingredients ?? []).length,
+          })}
         </span>
       ),
     },

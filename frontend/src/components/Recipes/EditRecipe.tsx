@@ -75,8 +75,18 @@ const _formSchema = z.object({
   description: z.string().optional(),
   instructions: z.string().optional(),
   servings: z.coerce.number().int().positive().optional().or(z.literal("")),
-  prep_time_minutes: z.coerce.number().int().min(0).optional().or(z.literal("")),
-  cook_time_minutes: z.coerce.number().int().min(0).optional().or(z.literal("")),
+  prep_time_minutes: z.coerce
+    .number()
+    .int()
+    .min(0)
+    .optional()
+    .or(z.literal("")),
+  cook_time_minutes: z.coerce
+    .number()
+    .int()
+    .min(0)
+    .optional()
+    .or(z.literal("")),
   source_url: z.string().url().optional().or(z.literal("")),
   image_url: z.string().url().optional().or(z.literal("")),
   ingredients: z.array(_ingredientSchema),
@@ -93,33 +103,52 @@ const EditRecipe = ({ recipe, onSuccess }: Props) => {
   const { t } = useTranslation("recipes")
   const { t: tCommon } = useTranslation("common")
 
-  const ingredientSchema = useMemo(() =>
-    z.object({
-      ingredient_id: z.string().optional(),
-      ingredient_name: z.string().optional(),
-      quantity: z.coerce.number().positive(),
-      unit: z.string().min(1),
-      notes: z.string().optional(),
-    }).refine((d) => d.ingredient_id || d.ingredient_name, {
-      message: t("form.ingredient_required"),
-      path: ["ingredient_id"],
-    }),
-    [t]
+  const ingredientSchema = useMemo(
+    () =>
+      z
+        .object({
+          ingredient_id: z.string().optional(),
+          ingredient_name: z.string().optional(),
+          quantity: z.coerce.number().positive(),
+          unit: z.string().min(1),
+          notes: z.string().optional(),
+        })
+        .refine((d) => d.ingredient_id || d.ingredient_name, {
+          message: t("form.ingredient_required"),
+          path: ["ingredient_id"],
+        }),
+    [t],
   )
 
-  const formSchema = useMemo(() =>
-    z.object({
-      title: z.string().min(1, { message: t("form.title_required") }),
-      description: z.string().optional(),
-      instructions: z.string().optional(),
-      servings: z.coerce.number().int().positive().optional().or(z.literal("")),
-      prep_time_minutes: z.coerce.number().int().min(0).optional().or(z.literal("")),
-      cook_time_minutes: z.coerce.number().int().min(0).optional().or(z.literal("")),
-      source_url: z.string().url().optional().or(z.literal("")),
-      image_url: z.string().url().optional().or(z.literal("")),
-      ingredients: z.array(ingredientSchema),
-    }),
-    [t, ingredientSchema]
+  const formSchema = useMemo(
+    () =>
+      z.object({
+        title: z.string().min(1, { message: t("form.title_required") }),
+        description: z.string().optional(),
+        instructions: z.string().optional(),
+        servings: z.coerce
+          .number()
+          .int()
+          .positive()
+          .optional()
+          .or(z.literal("")),
+        prep_time_minutes: z.coerce
+          .number()
+          .int()
+          .min(0)
+          .optional()
+          .or(z.literal("")),
+        cook_time_minutes: z.coerce
+          .number()
+          .int()
+          .min(0)
+          .optional()
+          .or(z.literal("")),
+        source_url: z.string().url().optional().or(z.literal("")),
+        image_url: z.string().url().optional().or(z.literal("")),
+        ingredients: z.array(ingredientSchema),
+      }),
+    [t, ingredientSchema],
   )
 
   const [isOpen, setIsOpen] = useState(false)
@@ -211,9 +240,7 @@ const EditRecipe = ({ recipe, onSuccess }: Props) => {
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{t("edit.dialog_title")}</DialogTitle>
-          <DialogDescription>
-            {t("edit.dialog_description")}
-          </DialogDescription>
+          <DialogDescription>{t("edit.dialog_description")}</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit((d) => mutation.mutate(d))}>
@@ -224,7 +251,8 @@ const EditRecipe = ({ recipe, onSuccess }: Props) => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      {t("form.title_label")} <span className="text-destructive">*</span>
+                      {t("form.title_label")}{" "}
+                      <span className="text-destructive">*</span>
                     </FormLabel>
                     <FormControl>
                       <Input
@@ -243,7 +271,10 @@ const EditRecipe = ({ recipe, onSuccess }: Props) => {
                   <FormItem>
                     <FormLabel>{t("form.description_label")}</FormLabel>
                     <FormControl>
-                      <Input placeholder={t("form.description_placeholder")} {...field} />
+                      <Input
+                        placeholder={t("form.description_placeholder")}
+                        {...field}
+                      />
                     </FormControl>
                   </FormItem>
                 )}
@@ -325,7 +356,10 @@ const EditRecipe = ({ recipe, onSuccess }: Props) => {
                     <FormItem>
                       <FormLabel>{t("form.source_url_label")}</FormLabel>
                       <FormControl>
-                        <Input placeholder={t("form.url_placeholder")} {...field} />
+                        <Input
+                          placeholder={t("form.url_placeholder")}
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -338,7 +372,10 @@ const EditRecipe = ({ recipe, onSuccess }: Props) => {
                     <FormItem>
                       <FormLabel>{t("form.image_url_label")}</FormLabel>
                       <FormControl>
-                        <Input placeholder={t("form.url_placeholder")} {...field} />
+                        <Input
+                          placeholder={t("form.url_placeholder")}
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -406,7 +443,11 @@ const EditRecipe = ({ recipe, onSuccess }: Props) => {
                                           </Badge>
                                         </span>
                                       ) : (
-                                        <SelectValue placeholder={t("form.select_ingredient")} />
+                                        <SelectValue
+                                          placeholder={t(
+                                            "form.select_ingredient",
+                                          )}
+                                        />
                                       )}
                                     </SelectTrigger>
                                   </FormControl>
@@ -456,7 +497,9 @@ const EditRecipe = ({ recipe, onSuccess }: Props) => {
                                   <SelectContent>
                                     {UNITS.map((u) => (
                                       <SelectItem key={u} value={u}>
-                                        {tCommon(`unit_labels.${u}`, { defaultValue: u })}
+                                        {tCommon(`unit_labels.${u}`, {
+                                          defaultValue: u,
+                                        })}
                                       </SelectItem>
                                     ))}
                                   </SelectContent>

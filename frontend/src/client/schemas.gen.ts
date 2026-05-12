@@ -79,6 +79,17 @@ export const ImportUrlRequestSchema = {
             minLength: 1,
             format: 'uri',
             title: 'Url'
+        },
+        language: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Language'
         }
     },
     type: 'object',

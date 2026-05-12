@@ -56,7 +56,7 @@ def _build_system_prompt(language: str | None = None) -> str:
         )
     else:
         lang_rule = (
-            '- Use standard American English ingredient names to avoid regional duplicates '
+            "- Use standard American English ingredient names to avoid regional duplicates "
             '(e.g. "all-purpose flour" not "plain flour", "eggplant" not "aubergine", '
             '"zucchini" not "courgette", "cilantro" not "coriander", '
             '"granulated sugar" or "powdered sugar" not just "sugar" when the type matters)'
@@ -267,7 +267,7 @@ Content:
     ]
 
     response = llm.invoke(messages)
-    content = response.text.strip()
+    content = response.content.strip()
 
     # Strip markdown code fences if present
     if content.startswith("```"):

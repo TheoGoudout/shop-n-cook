@@ -34,12 +34,16 @@ export const useColumns = (): ColumnDef<IngredientPublic>[] => {
     {
       accessorKey: "category",
       header: t("columns.category"),
-      cell: ({ row }) => <CategoryCell category={row.original.category as string} />,
+      cell: ({ row }) => (
+        <CategoryCell category={row.original.category as string} />
+      ),
     },
     {
       accessorKey: "default_unit",
       header: t("columns.default_unit"),
-      cell: ({ row }) => <UnitCell unit={row.original.default_unit as string} />,
+      cell: ({ row }) => (
+        <UnitCell unit={row.original.default_unit as string} />
+      ),
     },
     ...(user?.is_superuser
       ? [

@@ -105,7 +105,9 @@ function RecipeDetailContent() {
         {/* Ingredients */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">{t("detail.ingredients_title")}</CardTitle>
+            <CardTitle className="text-base">
+              {t("detail.ingredients_title")}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {(recipe.ingredients ?? []).length === 0 ? (
@@ -119,13 +121,23 @@ function RecipeDetailContent() {
                   return (
                     <li key={ing.id} className="text-sm">
                       <div className="flex items-center justify-between">
-                        <span className="font-medium">{ing.ingredient_name}</span>
+                        <span className="font-medium">
+                          {ing.ingredient_name}
+                        </span>
                         <div className="flex items-center gap-2">
                           <span className="text-muted-foreground">
-                            {converted.quantity} {tCommon(`unit_labels.${converted.unit}`, { defaultValue: converted.unit })}
+                            {converted.quantity}{" "}
+                            {tCommon(`unit_labels.${converted.unit}`, {
+                              defaultValue: converted.unit,
+                            })}
                           </span>
-                          <Badge variant="outline" className="text-xs capitalize">
-                            {tCommon(`categories.${ing.ingredient_category}`, { defaultValue: ing.ingredient_category })}
+                          <Badge
+                            variant="outline"
+                            className="text-xs capitalize"
+                          >
+                            {tCommon(`categories.${ing.ingredient_category}`, {
+                              defaultValue: ing.ingredient_category,
+                            })}
                           </Badge>
                         </div>
                       </div>
@@ -145,7 +157,9 @@ function RecipeDetailContent() {
         {/* Instructions */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">{t("detail.instructions_title")}</CardTitle>
+            <CardTitle className="text-base">
+              {t("detail.instructions_title")}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {recipe.instructions ? (

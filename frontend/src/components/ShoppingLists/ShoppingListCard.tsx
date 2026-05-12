@@ -236,12 +236,17 @@ export function ShoppingListCard({ list }: Props) {
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span className="flex items-center gap-1">
               <ShoppingCart className="h-3 w-3" />
-              {t("card.items_count", { checked: checkedCount, total: items.length })}
+              {t("card.items_count", {
+                checked: checkedCount,
+                total: items.length,
+              })}
             </span>
             {(list.planned_recipes ?? []).length > 0 && (
               <span className="flex items-center gap-1">
                 <ChefHat className="h-3 w-3" />
-                {t("card.recipes_count", { count: (list.planned_recipes ?? []).length })}
+                {t("card.recipes_count", {
+                  count: (list.planned_recipes ?? []).length,
+                })}
               </span>
             )}
           </div>
@@ -266,7 +271,10 @@ export function ShoppingListCard({ list }: Props) {
                 <Checkbox
                   checked={item.is_checked}
                   onCheckedChange={(c) =>
-                    checkMutation.mutate({ itemId: item.id, checked: Boolean(c) })
+                    checkMutation.mutate({
+                      itemId: item.id,
+                      checked: Boolean(c),
+                    })
                   }
                 />
                 <span
@@ -274,11 +282,16 @@ export function ShoppingListCard({ list }: Props) {
                 >
                   {item.ingredient_name}
                   <span className="text-muted-foreground ml-1">
-                    {converted.quantity} {tCommon(`unit_labels.${converted.unit}`, { defaultValue: converted.unit })}
+                    {converted.quantity}{" "}
+                    {tCommon(`unit_labels.${converted.unit}`, {
+                      defaultValue: converted.unit,
+                    })}
                   </span>
                 </span>
                 <Badge variant="outline" className="text-xs capitalize">
-                  {tCommon(`categories.${item.ingredient_category}`, { defaultValue: item.ingredient_category })}
+                  {tCommon(`categories.${item.ingredient_category}`, {
+                    defaultValue: item.ingredient_category,
+                  })}
                 </Badge>
                 <Button
                   variant="ghost"
@@ -302,7 +315,9 @@ export function ShoppingListCard({ list }: Props) {
             </Link>
           )}
           {items.length === 0 && (
-            <p className="text-sm text-muted-foreground italic">{t("card.no_items")}</p>
+            <p className="text-sm text-muted-foreground italic">
+              {t("card.no_items")}
+            </p>
           )}
         </div>
 
@@ -338,13 +353,17 @@ export function ShoppingListCard({ list }: Props) {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div>
-              <p className="text-sm font-medium mb-1">{t("add_item_dialog.ingredient_label")}</p>
+              <p className="text-sm font-medium mb-1">
+                {t("add_item_dialog.ingredient_label")}
+              </p>
               <Select
                 value={selectedIngredient}
                 onValueChange={setSelectedIngredient}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={t("add_item_dialog.select_ingredient")} />
+                  <SelectValue
+                    placeholder={t("add_item_dialog.select_ingredient")}
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {ingredientsData?.data.map((ing) => (
@@ -357,7 +376,9 @@ export function ShoppingListCard({ list }: Props) {
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <p className="text-sm font-medium mb-1">{t("add_item_dialog.quantity_label")}</p>
+                <p className="text-sm font-medium mb-1">
+                  {t("add_item_dialog.quantity_label")}
+                </p>
                 <input
                   type="number"
                   min={0.01}
@@ -368,7 +389,9 @@ export function ShoppingListCard({ list }: Props) {
                 />
               </div>
               <div>
-                <p className="text-sm font-medium mb-1">{t("add_item_dialog.unit_label")}</p>
+                <p className="text-sm font-medium mb-1">
+                  {t("add_item_dialog.unit_label")}
+                </p>
                 <Select value={unit} onValueChange={setUnit}>
                   <SelectTrigger>
                     <SelectValue />
@@ -412,7 +435,9 @@ export function ShoppingListCard({ list }: Props) {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div>
-              <p className="text-sm font-medium mb-1">{t("add_recipe_dialog.recipe_label")}</p>
+              <p className="text-sm font-medium mb-1">
+                {t("add_recipe_dialog.recipe_label")}
+              </p>
               <Select
                 value={selectedRecipe}
                 onValueChange={(v) => {
@@ -422,7 +447,9 @@ export function ShoppingListCard({ list }: Props) {
                 }}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={t("add_recipe_dialog.select_recipe")} />
+                  <SelectValue
+                    placeholder={t("add_recipe_dialog.select_recipe")}
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {recipesData?.data.map((r) => (
@@ -439,7 +466,9 @@ export function ShoppingListCard({ list }: Props) {
                   {t("add_recipe_dialog.servings_label")}
                   {selectedRecipeData?.servings && (
                     <span className="text-muted-foreground font-normal ml-1">
-                      {t("add_recipe_dialog.recipe_default", { count: selectedRecipeData.servings })}
+                      {t("add_recipe_dialog.recipe_default", {
+                        count: selectedRecipeData.servings,
+                      })}
                     </span>
                   )}
                 </p>

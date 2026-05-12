@@ -83,13 +83,14 @@ const AddIngredient = () => {
   const { t } = useTranslation("ingredients")
   const { t: tCommon } = useTranslation("common")
 
-  const formSchema = useMemo(() =>
-    z.object({
-      name: z.string().min(1, { message: t("form.name_required") }),
-      category: z.string().min(1),
-      default_unit: z.string().min(1),
-    }),
-    [t]
+  const formSchema = useMemo(
+    () =>
+      z.object({
+        name: z.string().min(1, { message: t("form.name_required") }),
+        category: z.string().min(1),
+        default_unit: z.string().min(1),
+      }),
+    [t],
   )
 
   const [isOpen, setIsOpen] = useState(false)
@@ -125,9 +126,7 @@ const AddIngredient = () => {
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{t("add.dialog_title")}</DialogTitle>
-          <DialogDescription>
-            {t("add.dialog_description")}
-          </DialogDescription>
+          <DialogDescription>{t("add.dialog_description")}</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form
@@ -142,10 +141,14 @@ const AddIngredient = () => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      {t("form.name_label")} <span className="text-destructive">*</span>
+                      {t("form.name_label")}{" "}
+                      <span className="text-destructive">*</span>
                     </FormLabel>
                     <FormControl>
-                      <Input placeholder={t("form.name_placeholder")} {...field} />
+                      <Input
+                        placeholder={t("form.name_placeholder")}
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

@@ -132,10 +132,14 @@ const AddShoppingList = () => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      {t("add_list.name_label")} <span className="text-destructive">*</span>
+                      {t("add_list.name_label")}{" "}
+                      <span className="text-destructive">*</span>
                     </FormLabel>
                     <FormControl>
-                      <Input placeholder={t("add_list.name_placeholder")} {...field} />
+                      <Input
+                        placeholder={t("add_list.name_placeholder")}
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

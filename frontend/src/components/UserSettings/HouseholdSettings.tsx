@@ -55,7 +55,11 @@ export function HouseholdSettings() {
   })
 
   if (isLoading) {
-    return <p className="text-sm text-muted-foreground">{t("common:loading", { defaultValue: "Loading…" })}</p>
+    return (
+      <p className="text-sm text-muted-foreground">
+        {t("common:loading", { defaultValue: "Loading…" })}
+      </p>
+    )
   }
 
   const frequencyOptions = ["weekly", "biweekly", "monthly"] as const
@@ -64,9 +68,7 @@ export function HouseholdSettings() {
     <Card>
       <CardHeader>
         <CardTitle>{t("household.title")}</CardTitle>
-        <CardDescription>
-          {t("household.description")}
-        </CardDescription>
+        <CardDescription>{t("household.description")}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="grid gap-6 sm:grid-cols-2">
@@ -79,7 +81,9 @@ export function HouseholdSettings() {
               <SelectContent>
                 {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => (
                   <SelectItem key={n} value={String(n)}>
-                    {n === 1 ? t("household.person", { count: n }) : t("household.people", { count: n })}
+                    {n === 1
+                      ? t("household.person", { count: n })
+                      : t("household.people", { count: n })}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -90,7 +94,9 @@ export function HouseholdSettings() {
           </div>
 
           <div className="space-y-2">
-            <p className="text-sm font-medium">{t("household.frequency_label")}</p>
+            <p className="text-sm font-medium">
+              {t("household.frequency_label")}
+            </p>
             <Select value={currentFreq} onValueChange={setFrequency}>
               <SelectTrigger>
                 <SelectValue />

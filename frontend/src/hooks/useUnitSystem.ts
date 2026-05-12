@@ -1,16 +1,15 @@
 import { useCallback, useEffect, useState } from "react"
 import {
   type ConvertedQuantity,
-  type UnitSystem,
-  UNIT_SYSTEM_KEY,
   convertUnit,
   getSavedUnitSystem,
+  UNIT_SYSTEM_KEY,
+  type UnitSystem,
 } from "@/lib/units"
 
 export function useUnitSystem() {
-  const [unitSystem, setUnitSystemState] = useState<UnitSystem>(
-    getSavedUnitSystem,
-  )
+  const [unitSystem, setUnitSystemState] =
+    useState<UnitSystem>(getSavedUnitSystem)
 
   useEffect(() => {
     const handler = (e: StorageEvent) => {

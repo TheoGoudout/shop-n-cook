@@ -37,9 +37,7 @@ function RecipesTableContent() {
           <ChefHat className="h-8 w-8 text-muted-foreground" />
         </div>
         <h3 className="text-lg font-semibold">{t("page.empty_title")}</h3>
-        <p className="text-muted-foreground">
-          {t("page.empty_subtitle")}
-        </p>
+        <p className="text-muted-foreground">{t("page.empty_subtitle")}</p>
       </div>
     )
   }
@@ -54,10 +52,10 @@ function Recipes() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">{t("page.title")}</h1>
-          <p className="text-muted-foreground">
-            {t("page.subtitle")}
-          </p>
+          <h1 className="text-2xl font-bold tracking-tight">
+            {t("page.title")}
+          </h1>
+          <p className="text-muted-foreground">{t("page.subtitle")}</p>
         </div>
         <AddRecipe />
       </div>

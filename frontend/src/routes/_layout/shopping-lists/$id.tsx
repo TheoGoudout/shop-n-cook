@@ -137,7 +137,10 @@ function ShoppingTab({ list }: { list: ShoppingListPublic }) {
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        {t("detail.items_progress", { checked: checkedCount, total: items.length })}
+        {t("detail.items_progress", {
+          checked: checkedCount,
+          total: items.length,
+        })}
       </p>
       {grouped.map(([category, catItems]) => (
         <Card key={category}>
@@ -168,7 +171,10 @@ function ShoppingTab({ list }: { list: ShoppingListPublic }) {
                       {item.ingredient_name}
                     </span>
                     <span className="text-sm text-muted-foreground">
-                      {converted.quantity} {tCommon(`unit_labels.${converted.unit}`, { defaultValue: converted.unit })}
+                      {converted.quantity}{" "}
+                      {tCommon(`unit_labels.${converted.unit}`, {
+                        defaultValue: converted.unit,
+                      })}
                     </span>
                     <Button
                       variant="ghost"
@@ -188,7 +194,10 @@ function ShoppingTab({ list }: { list: ShoppingListPublic }) {
                             key={b.title}
                             className="text-xs text-muted-foreground"
                           >
-                            {b.title}: {convertedB.quantity} {tCommon(`unit_labels.${convertedB.unit}`, { defaultValue: convertedB.unit })}
+                            {b.title}: {convertedB.quantity}{" "}
+                            {tCommon(`unit_labels.${convertedB.unit}`, {
+                              defaultValue: convertedB.unit,
+                            })}
                           </span>
                         )
                       })}
@@ -253,7 +262,10 @@ function MealsTab({ list }: { list: ShoppingListPublic }) {
   return (
     <div className="space-y-3">
       <p className="text-sm text-muted-foreground">
-        {t("detail.meals_progress", { prepared: preparedCount, total: planned.length })}
+        {t("detail.meals_progress", {
+          prepared: preparedCount,
+          total: planned.length,
+        })}
       </p>
       {planned.map((pr) => (
         <Card key={pr.id} className={pr.is_prepared ? "opacity-60" : ""}>
@@ -296,7 +308,9 @@ function MealsTab({ list }: { list: ShoppingListPublic }) {
                 </div>
                 {(pr.ingredients ?? []).length > 0 && (
                   <p className="text-xs text-muted-foreground mt-1">
-                    {t("detail.ingredients_count", { count: (pr.ingredients ?? []).length })}
+                    {t("detail.ingredients_count", {
+                      count: (pr.ingredients ?? []).length,
+                    })}
                     {pr.recipe_servings &&
                     pr.recipe_servings !== pr.servings_planned
                       ? t("detail.scaled_from", { count: pr.recipe_servings })
@@ -348,13 +362,19 @@ function ShoppingListDetailContent() {
           <div className="flex items-center gap-1.5">
             <ShoppingCart className="h-4 w-4" />
             <span>
-              {t("detail.items_summary", { checked: checkedCount, total: items.length })}
+              {t("detail.items_summary", {
+                checked: checkedCount,
+                total: items.length,
+              })}
             </span>
           </div>
           <div className="flex items-center gap-1.5">
             <ChefHat className="h-4 w-4" />
             <span>
-              {t("detail.meals_summary", { prepared: preparedCount, total: planned.length })}
+              {t("detail.meals_summary", {
+                prepared: preparedCount,
+                total: planned.length,
+              })}
             </span>
           </div>
         </div>

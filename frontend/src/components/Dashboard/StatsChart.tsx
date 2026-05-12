@@ -81,7 +81,9 @@ export function StatsChart() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">{t("stats.kitchen_overview")}</CardTitle>
+          <CardTitle className="text-base">
+            {t("stats.kitchen_overview")}
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={220}>
@@ -121,7 +123,11 @@ export function StatsChart() {
                 }}
                 itemStyle={{ color: "var(--color-muted-foreground)" }}
               />
-              <Bar dataKey="value" name={t("stats.total")} radius={[4, 4, 0, 0]}>
+              <Bar
+                dataKey="value"
+                name={t("stats.total")}
+                radius={[4, 4, 0, 0]}
+              >
                 {chartData.map((_entry, index) => (
                   <Cell
                     key={index}

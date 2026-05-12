@@ -1,5 +1,4 @@
 import { useTranslation } from "react-i18next"
-import { useUnitSystem } from "@/hooks/useUnitSystem"
 import {
   Card,
   CardContent,
@@ -14,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useUnitSystem } from "@/hooks/useUnitSystem"
 import type { UnitSystem } from "@/lib/units"
 
 const LANGUAGES = [
@@ -34,7 +34,9 @@ export function AppPreferences() {
       <CardContent className="space-y-6">
         <div className="grid gap-6 sm:grid-cols-2">
           <div className="space-y-2">
-            <p className="text-sm font-medium">{t("preferences.language_label")}</p>
+            <p className="text-sm font-medium">
+              {t("preferences.language_label")}
+            </p>
             <Select
               value={i18n.language?.split("-")[0] ?? "en"}
               onValueChange={(lang) => i18n.changeLanguage(lang)}
@@ -53,7 +55,9 @@ export function AppPreferences() {
           </div>
 
           <div className="space-y-2">
-            <p className="text-sm font-medium">{t("preferences.unit_system_label")}</p>
+            <p className="text-sm font-medium">
+              {t("preferences.unit_system_label")}
+            </p>
             <Select
               value={unitSystem}
               onValueChange={(v) => setUnitSystem(v as UnitSystem)}
@@ -62,8 +66,12 @@ export function AppPreferences() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="metric">{t("preferences.unit_metric")}</SelectItem>
-                <SelectItem value="imperial">{t("preferences.unit_imperial")}</SelectItem>
+                <SelectItem value="metric">
+                  {t("preferences.unit_metric")}
+                </SelectItem>
+                <SelectItem value="imperial">
+                  {t("preferences.unit_imperial")}
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>

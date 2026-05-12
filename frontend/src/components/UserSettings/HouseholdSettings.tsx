@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 
 import { type UserSettingsPublic, UserSettingsService } from "@/client"
 import {
@@ -20,13 +21,8 @@ import {
 import useCustomToast from "@/hooks/useCustomToast"
 import { handleError } from "@/utils"
 
-const FREQUENCY_LABELS: Record<string, string> = {
-  weekly: "Weekly",
-  biweekly: "Every two weeks",
-  monthly: "Monthly",
-}
-
 export function HouseholdSettings() {
+  const { t } = useTranslation("settings")
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
 
@@ -52,29 +48,30 @@ export function HouseholdSettings() {
         },
       }),
     onSuccess: () => {
-      showSuccessToast("Household settings saved")
+      showSuccessToast(t("household.success"))
       queryClient.invalidateQueries({ queryKey: ["user-settings"] })
     },
     onError: handleError.bind(showErrorToast),
   })
 
   if (isLoading) {
-    return <p className="text-sm text-muted-foreground">Loading…</p>
+    return <p className="text-sm text-muted-foreground">{t("common:loading", { defaultValue: "Loading…" })}</p>
   }
+
+  const frequencyOptions = ["weekly", "biweekly", "monthly"] as const
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Household</CardTitle>
+        <CardTitle>{t("household.title")}</CardTitle>
         <CardDescription>
-          These settings are used as defaults when planning recipes and shopping
-          lists.
+          {t("household.description")}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="grid gap-6 sm:grid-cols-2">
           <div className="space-y-2">
-            <p className="text-sm font-medium">Household size</p>
+            <p className="text-sm font-medium">{t("household.size_label")}</p>
             <Select value={currentSize} onValueChange={setHouseholdSize}>
               <SelectTrigger>
                 <SelectValue />
@@ -82,34 +79,32 @@ export function HouseholdSettings() {
               <SelectContent>
                 {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => (
                   <SelectItem key={n} value={String(n)}>
-                    {n} {n === 1 ? "person" : "people"}
+                    {n === 1 ? t("household.person", { count: n }) : t("household.people", { count: n })}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground">
-              Used as the default serving count when adding recipes to a
-              shopping list.
+              {t("household.size_hint")}
             </p>
           </div>
 
           <div className="space-y-2">
-            <p className="text-sm font-medium">Shopping frequency</p>
+            <p className="text-sm font-medium">{t("household.frequency_label")}</p>
             <Select value={currentFreq} onValueChange={setFrequency}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {Object.entries(FREQUENCY_LABELS).map(([val, label]) => (
+                {frequencyOptions.map((val) => (
                   <SelectItem key={val} value={val}>
-                    {label}
+                    {t(`household.frequency.${val}`)}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground">
-              Determines the default date range when creating a new shopping
-              list.
+              {t("household.frequency_hint")}
             </p>
           </div>
         </div>
@@ -118,7 +113,7 @@ export function HouseholdSettings() {
           onClick={() => mutation.mutate()}
           loading={mutation.isPending}
         >
-          Save settings
+          {t("household.save")}
         </LoadingButton>
       </CardContent>
     </Card>

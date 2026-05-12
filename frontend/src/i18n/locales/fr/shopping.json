@@ -1,0 +1,75 @@
+{
+  "page": {
+    "title": "Listes de courses",
+    "subtitle": "Planifiez vos courses",
+    "empty_title": "Aucune liste de courses pour l'instant",
+    "empty_subtitle": "Créez une liste et commencez à ajouter des ingrédients ou des recettes"
+  },
+  "detail": {
+    "back": "Retour aux listes de courses",
+    "loading": "Chargement…",
+    "tab_shopping": "Courses",
+    "tab_meals": "Repas",
+    "items_progress": "{{checked}}/{{total}} articles cochés",
+    "meals_progress": "{{prepared}}/{{total}} repas préparés",
+    "items_summary": "{{checked}}/{{total}} articles",
+    "meals_summary": "{{prepared}}/{{total}} repas",
+    "shopping_empty": "Aucun article pour l'instant. Ajoutez des ingrédients ou utilisez « Ajouter une recette » pour remplir cette liste.",
+    "meals_empty": "Aucune recette planifiée pour l'instant. Revenez en arrière et utilisez « Ajouter une recette » sur la liste de courses.",
+    "recipes_count": "{{count}} recettes",
+    "scaled_from": "· mis à l'échelle depuis {{count}} portions",
+    "ingredients_count": "{{count}} ingrédients"
+  },
+  "card": {
+    "items_count": "{{checked}}/{{total}} articles",
+    "recipes_count": "{{count}} recettes",
+    "no_items": "Aucun article pour l'instant",
+    "more_items": "+{{count}} autres articles",
+    "add_item": "Ajouter un article",
+    "add_recipe": "Ajouter une recette",
+    "open": "Ouvrir"
+  },
+  "add_list": {
+    "button": "Nouvelle liste",
+    "dialog_title": "Nouvelle liste de courses",
+    "dialog_description": "Donnez un nom à votre liste de courses et une plage de dates optionnelle.",
+    "submit": "Créer",
+    "success": "Liste de courses créée",
+    "name_label": "Nom",
+    "name_placeholder": "ex. Courses de la semaine",
+    "name_required": "Le nom est requis",
+    "start_date_label": "Date de début",
+    "end_date_label": "Date de fin"
+  },
+  "add_item_dialog": {
+    "title": "Ajouter un article",
+    "ingredient_label": "Ingrédient",
+    "quantity_label": "Quantité",
+    "unit_label": "Unité",
+    "select_ingredient": "Sélectionner un ingrédient",
+    "submit": "Ajouter",
+    "success": "Article ajouté"
+  },
+  "add_recipe_dialog": {
+    "title": "Ajouter une recette",
+    "description": "Les ingrédients seront ajustés aux portions spécifiées et ajoutés à la liste.",
+    "recipe_label": "Recette",
+    "servings_label": "Portions",
+    "recipe_default": "(défaut de la recette : {{count}})",
+    "select_recipe": "Sélectionner une recette",
+    "submit": "Ajouter",
+    "success": "Recette ajoutée à la liste"
+  },
+  "rename_dialog": {
+    "title": "Renommer la liste",
+    "submit": "Enregistrer",
+    "success": "Liste renommée"
+  },
+  "delete_dialog": {
+    "title": "Supprimer la liste de courses",
+    "description": "« {{name}} » et tous ses articles seront définitivement supprimés.",
+    "success": "Liste de courses supprimée"
+  },
+  "item_removed": "Article supprimé",
+  "servings_badge": "{{count}} portions"
+}

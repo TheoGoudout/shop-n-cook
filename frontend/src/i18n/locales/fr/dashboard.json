@@ -1,0 +1,11 @@
+{
+  "greeting": "Bonjour, {{name}} 👋",
+  "welcome": "Bon retour, ravi de vous revoir !",
+  "stats": {
+    "recipes": "Recettes",
+    "ingredients": "Ingrédients",
+    "shopping_lists": "Listes de courses",
+    "kitchen_overview": "Vue d'ensemble",
+    "total": "Total"
+  }
+}

@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Trash2 } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
+import { useTranslation } from "react-i18next"
 
 import { IngredientsService } from "@/client"
 import { Button } from "@/components/ui/button"
@@ -25,6 +26,8 @@ interface Props {
 }
 
 const DeleteIngredient = ({ id, onSuccess }: Props) => {
+  const { t } = useTranslation("ingredients")
+  const { t: tCommon } = useTranslation("common")
   const [isOpen, setIsOpen] = useState(false)
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
@@ -33,7 +36,7 @@ const DeleteIngredient = ({ id, onSuccess }: Props) => {
   const mutation = useMutation({
     mutationFn: () => IngredientsService.deleteIngredient({ id }),
     onSuccess: () => {
-      showSuccessToast("Ingredient deleted successfully")
+      showSuccessToast(t("delete.success"))
       setIsOpen(false)
       onSuccess()
     },
@@ -50,21 +53,20 @@ const DeleteIngredient = ({ id, onSuccess }: Props) => {
         onClick={() => setIsOpen(true)}
       >
         <Trash2 />
-        Delete
+        {t("delete.menu_item")}
       </DropdownMenuItem>
       <DialogContent className="sm:max-w-md">
         <form onSubmit={handleSubmit(() => mutation.mutate())}>
           <DialogHeader>
-            <DialogTitle>Delete Ingredient</DialogTitle>
+            <DialogTitle>{t("delete.dialog_title")}</DialogTitle>
             <DialogDescription>
-              This ingredient will be permanently deleted. It cannot be deleted
-              if it is used in any recipe or shopping list.
+              {t("delete.dialog_description")}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="mt-4">
             <DialogClose asChild>
               <Button variant="outline" disabled={mutation.isPending}>
-                Cancel
+                {tCommon("cancel")}
               </Button>
             </DialogClose>
             <LoadingButton
@@ -72,7 +74,7 @@ const DeleteIngredient = ({ id, onSuccess }: Props) => {
               type="submit"
               loading={mutation.isPending}
             >
-              Delete
+              {tCommon("delete")}
             </LoadingButton>
           </DialogFooter>
         </form>

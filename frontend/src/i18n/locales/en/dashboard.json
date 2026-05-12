@@ -1,0 +1,11 @@
+{
+  "greeting": "Hi, {{name}} 👋",
+  "welcome": "Welcome back, nice to see you again!",
+  "stats": {
+    "recipes": "Recipes",
+    "ingredients": "Ingredients",
+    "shopping_lists": "Shopping Lists",
+    "kitchen_overview": "Kitchen Overview",
+    "total": "Total"
+  }
+}

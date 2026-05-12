@@ -1,0 +1,29 @@
+{
+  "page": {
+    "title": "Users",
+    "subtitle": "Manage user accounts and permissions"
+  },
+  "columns": {
+    "full_name": "Full Name",
+    "email": "Email",
+    "role": "Role",
+    "status": "Status"
+  },
+  "add": {
+    "button": "Add User",
+    "dialog_title": "Add User",
+    "dialog_description": "Create a new user account.",
+    "success": "User created successfully"
+  },
+  "edit": {
+    "menu_item": "Edit",
+    "dialog_title": "Edit User",
+    "success": "User updated successfully"
+  },
+  "delete": {
+    "menu_item": "Delete",
+    "dialog_title": "Delete User",
+    "dialog_description": "This user will be permanently deleted.",
+    "success": "User deleted successfully"
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "page": {
+    "title": "Ingredients",
+    "subtitle": "Browse and manage the ingredient catalog",
+    "empty_title": "No ingredients yet",
+    "empty_subtitle": "Add the first ingredient to the catalog"
+  },
+  "columns": {
+    "name": "Name",
+    "category": "Category",
+    "default_unit": "Default Unit"
+  },
+  "add": {
+    "button": "Add Ingredient",
+    "dialog_title": "Add Ingredient",
+    "dialog_description": "Add a new ingredient to the catalog.",
+    "success": "Ingredient added successfully"
+  },
+  "edit": {
+    "menu_item": "Edit",
+    "dialog_title": "Edit Ingredient",
+    "dialog_description": "Update the ingredient details.",
+    "success": "Ingredient updated successfully"
+  },
+  "delete": {
+    "menu_item": "Delete",
+    "dialog_title": "Delete Ingredient",
+    "dialog_description": "This ingredient will be permanently deleted. It cannot be deleted if it is used in any recipe or shopping list.",
+    "success": "Ingredient deleted successfully"
+  },
+  "form": {
+    "name_label": "Name",
+    "name_placeholder": "e.g. cherry tomato",
+    "name_required": "Name is required",
+    "category_label": "Category",
+    "default_unit_label": "Default Unit"
+  }
+}

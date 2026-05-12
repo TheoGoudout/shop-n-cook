@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
+import { useTranslation } from "react-i18next"
 import { z } from "zod"
 
 import { ShoppingListsService } from "@/client"
@@ -71,6 +72,8 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>
 
 const AddShoppingList = () => {
+  const { t } = useTranslation("shopping")
+  const { t: tCommon } = useTranslation("common")
   const [isOpen, setIsOpen] = useState(false)
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
@@ -90,7 +93,7 @@ const AddShoppingList = () => {
         },
       }),
     onSuccess: () => {
-      showSuccessToast("Shopping list created")
+      showSuccessToast(t("add_list.success"))
       form.reset(getDefaultListDefaults())
       setIsOpen(false)
     },
@@ -110,14 +113,14 @@ const AddShoppingList = () => {
       <DialogTrigger asChild>
         <Button className="my-4">
           <Plus className="mr-2" />
-          New List
+          {t("add_list.button")}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>New Shopping List</DialogTitle>
+          <DialogTitle>{t("add_list.dialog_title")}</DialogTitle>
           <DialogDescription>
-            Give your shopping list a name and optional date range.
+            {t("add_list.dialog_description")}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -129,10 +132,10 @@ const AddShoppingList = () => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      Name <span className="text-destructive">*</span>
+                      {t("add_list.name_label")} <span className="text-destructive">*</span>
                     </FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g. Weekly groceries" {...field} />
+                      <Input placeholder={t("add_list.name_placeholder")} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -144,7 +147,7 @@ const AddShoppingList = () => {
                   name="start_date"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Start date</FormLabel>
+                      <FormLabel>{t("add_list.start_date_label")}</FormLabel>
                       <FormControl>
                         <Input type="date" {...field} />
                       </FormControl>
@@ -156,7 +159,7 @@ const AddShoppingList = () => {
                   name="end_date"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>End date</FormLabel>
+                      <FormLabel>{t("add_list.end_date_label")}</FormLabel>
                       <FormControl>
                         <Input type="date" {...field} />
                       </FormControl>
@@ -168,11 +171,11 @@ const AddShoppingList = () => {
             <DialogFooter>
               <DialogClose asChild>
                 <Button variant="outline" disabled={mutation.isPending}>
-                  Cancel
+                  {tCommon("cancel")}
                 </Button>
               </DialogClose>
               <LoadingButton type="submit" loading={mutation.isPending}>
-                Create
+                {t("add_list.submit")}
               </LoadingButton>
             </DialogFooter>
           </form>

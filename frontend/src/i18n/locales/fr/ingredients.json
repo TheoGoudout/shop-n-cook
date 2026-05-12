@@ -1,0 +1,38 @@
+{
+  "page": {
+    "title": "Ingrédients",
+    "subtitle": "Parcourez et gérez le catalogue d'ingrédients",
+    "empty_title": "Aucun ingrédient pour l'instant",
+    "empty_subtitle": "Ajoutez le premier ingrédient au catalogue"
+  },
+  "columns": {
+    "name": "Nom",
+    "category": "Catégorie",
+    "default_unit": "Unité par défaut"
+  },
+  "add": {
+    "button": "Ajouter un ingrédient",
+    "dialog_title": "Ajouter un ingrédient",
+    "dialog_description": "Ajoutez un nouvel ingrédient au catalogue.",
+    "success": "Ingrédient ajouté avec succès"
+  },
+  "edit": {
+    "menu_item": "Modifier",
+    "dialog_title": "Modifier l'ingrédient",
+    "dialog_description": "Mettez à jour les détails de l'ingrédient.",
+    "success": "Ingrédient mis à jour avec succès"
+  },
+  "delete": {
+    "menu_item": "Supprimer",
+    "dialog_title": "Supprimer l'ingrédient",
+    "dialog_description": "Cet ingrédient sera définitivement supprimé. Il ne peut pas être supprimé s'il est utilisé dans une recette ou une liste de courses.",
+    "success": "Ingrédient supprimé avec succès"
+  },
+  "form": {
+    "name_label": "Nom",
+    "name_placeholder": "ex. tomate cerise",
+    "name_required": "Le nom est requis",
+    "category_label": "Catégorie",
+    "default_unit_label": "Unité par défaut"
+  }
+}

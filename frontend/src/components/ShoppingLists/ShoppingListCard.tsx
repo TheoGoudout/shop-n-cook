@@ -10,6 +10,7 @@ import {
   Trash2,
 } from "lucide-react"
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 
 import {
   IngredientsService,
@@ -40,6 +41,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import useCustomToast from "@/hooks/useCustomToast"
+import { useUnitSystem } from "@/hooks/useUnitSystem"
 import { handleError } from "@/utils"
 
 const UNITS = [
@@ -73,6 +75,9 @@ function formatDate(d: string) {
 }
 
 export function ShoppingListCard({ list }: Props) {
+  const { t } = useTranslation("shopping")
+  const { t: tCommon } = useTranslation("common")
+  const { convert } = useUnitSystem()
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
   const [addItemOpen, setAddItemOpen] = useState(false)
@@ -118,7 +123,7 @@ export function ShoppingListCard({ list }: Props) {
   const removeItemMutation = useMutation({
     mutationFn: (itemId: string) =>
       ShoppingListsService.deleteItem({ id: list.id, itemId }),
-    onSuccess: () => showSuccessToast("Item removed"),
+    onSuccess: () => showSuccessToast(t("item_removed")),
     onError: handleError.bind(showErrorToast),
     onSettled: invalidate,
   })
@@ -134,7 +139,7 @@ export function ShoppingListCard({ list }: Props) {
         },
       }),
     onSuccess: () => {
-      showSuccessToast("Item added")
+      showSuccessToast(t("add_item_dialog.success"))
       setAddItemOpen(false)
       setSelectedIngredient("")
       setQuantity("1")
@@ -152,7 +157,7 @@ export function ShoppingListCard({ list }: Props) {
         servings: servings ? Number(servings) : undefined,
       }),
     onSuccess: () => {
-      showSuccessToast("Recipe added to list")
+      showSuccessToast(t("add_recipe_dialog.success"))
       setAddRecipeOpen(false)
       setSelectedRecipe("")
       setServings("")
@@ -163,7 +168,7 @@ export function ShoppingListCard({ list }: Props) {
 
   const deleteListMutation = useMutation({
     mutationFn: () => ShoppingListsService.deleteShoppingList({ id: list.id }),
-    onSuccess: () => showSuccessToast("Shopping list deleted"),
+    onSuccess: () => showSuccessToast(t("delete_dialog.success")),
     onError: handleError.bind(showErrorToast),
     onSettled: invalidate,
   })
@@ -175,7 +180,7 @@ export function ShoppingListCard({ list }: Props) {
         requestBody: { name: newName },
       }),
     onSuccess: () => {
-      showSuccessToast("List renamed")
+      showSuccessToast(t("rename_dialog.success"))
       setRenameOpen(false)
     },
     onError: handleError.bind(showErrorToast),
@@ -231,12 +236,12 @@ export function ShoppingListCard({ list }: Props) {
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span className="flex items-center gap-1">
               <ShoppingCart className="h-3 w-3" />
-              {checkedCount}/{items.length} items
+              {t("card.items_count", { checked: checkedCount, total: items.length })}
             </span>
             {(list.planned_recipes ?? []).length > 0 && (
               <span className="flex items-center gap-1">
                 <ChefHat className="h-3 w-3" />
-                {(list.planned_recipes ?? []).length} recipes
+                {t("card.recipes_count", { count: (list.planned_recipes ?? []).length })}
               </span>
             )}
           </div>
@@ -254,46 +259,50 @@ export function ShoppingListCard({ list }: Props) {
       <CardContent className="space-y-3">
         {/* Preview items (up to 4) */}
         <div className="space-y-1">
-          {items.slice(0, 4).map((item) => (
-            <div key={item.id} className="flex items-center gap-2 group">
-              <Checkbox
-                checked={item.is_checked}
-                onCheckedChange={(c) =>
-                  checkMutation.mutate({ itemId: item.id, checked: Boolean(c) })
-                }
-              />
-              <span
-                className={`flex-1 text-sm ${item.is_checked ? "line-through text-muted-foreground" : ""}`}
-              >
-                {item.ingredient_name}
-                <span className="text-muted-foreground ml-1">
-                  {item.quantity} {item.unit}
+          {items.slice(0, 4).map((item) => {
+            const converted = convert(item.quantity, item.unit)
+            return (
+              <div key={item.id} className="flex items-center gap-2 group">
+                <Checkbox
+                  checked={item.is_checked}
+                  onCheckedChange={(c) =>
+                    checkMutation.mutate({ itemId: item.id, checked: Boolean(c) })
+                  }
+                />
+                <span
+                  className={`flex-1 text-sm ${item.is_checked ? "line-through text-muted-foreground" : ""}`}
+                >
+                  {item.ingredient_name}
+                  <span className="text-muted-foreground ml-1">
+                    {converted.quantity} {tCommon(`unit_labels.${converted.unit}`, { defaultValue: converted.unit })}
+                  </span>
                 </span>
-              </span>
-              <Badge variant="outline" className="text-xs capitalize">
-                {item.ingredient_category}
-              </Badge>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6 opacity-0 group-hover:opacity-100"
-                onClick={() => removeItemMutation.mutate(item.id)}
-              >
-                <Trash2 className="h-3 w-3" />
-              </Button>
-            </div>
-          ))}
+                <Badge variant="outline" className="text-xs capitalize">
+                  {tCommon(`categories.${item.ingredient_category}`, { defaultValue: item.ingredient_category })}
+                </Badge>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 opacity-0 group-hover:opacity-100"
+                  onClick={() => removeItemMutation.mutate(item.id)}
+                >
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </div>
+            )
+          })}
           {items.length > 4 && (
             <Link
               to="/shopping-lists/$id"
               params={{ id: list.id }}
               className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 mt-1"
             >
-              <ExternalLink className="h-3 w-3" />+{items.length - 4} more items
+              <ExternalLink className="h-3 w-3" />
+              {t("card.more_items", { count: items.length - 4 })}
             </Link>
           )}
           {items.length === 0 && (
-            <p className="text-sm text-muted-foreground italic">No items yet</p>
+            <p className="text-sm text-muted-foreground italic">{t("card.no_items")}</p>
           )}
         </div>
 
@@ -304,18 +313,18 @@ export function ShoppingListCard({ list }: Props) {
             size="sm"
             onClick={() => setAddItemOpen(true)}
           >
-            <Plus className="mr-1 h-3 w-3" /> Add item
+            <Plus className="mr-1 h-3 w-3" /> {t("card.add_item")}
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={() => setAddRecipeOpen(true)}
           >
-            <Plus className="mr-1 h-3 w-3" /> Add recipe
+            <Plus className="mr-1 h-3 w-3" /> {t("card.add_recipe")}
           </Button>
           <Button variant="outline" size="sm" asChild>
             <Link to="/shopping-lists/$id" params={{ id: list.id }}>
-              <ExternalLink className="mr-1 h-3 w-3" /> Open
+              <ExternalLink className="mr-1 h-3 w-3" /> {t("card.open")}
             </Link>
           </Button>
         </div>
@@ -325,17 +334,17 @@ export function ShoppingListCard({ list }: Props) {
       <Dialog open={addItemOpen} onOpenChange={setAddItemOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Add Item</DialogTitle>
+            <DialogTitle>{t("add_item_dialog.title")}</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div>
-              <p className="text-sm font-medium mb-1">Ingredient</p>
+              <p className="text-sm font-medium mb-1">{t("add_item_dialog.ingredient_label")}</p>
               <Select
                 value={selectedIngredient}
                 onValueChange={setSelectedIngredient}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select ingredient" />
+                  <SelectValue placeholder={t("add_item_dialog.select_ingredient")} />
                 </SelectTrigger>
                 <SelectContent>
                   {ingredientsData?.data.map((ing) => (
@@ -348,7 +357,7 @@ export function ShoppingListCard({ list }: Props) {
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <p className="text-sm font-medium mb-1">Quantity</p>
+                <p className="text-sm font-medium mb-1">{t("add_item_dialog.quantity_label")}</p>
                 <input
                   type="number"
                   min={0.01}
@@ -359,7 +368,7 @@ export function ShoppingListCard({ list }: Props) {
                 />
               </div>
               <div>
-                <p className="text-sm font-medium mb-1">Unit</p>
+                <p className="text-sm font-medium mb-1">{t("add_item_dialog.unit_label")}</p>
                 <Select value={unit} onValueChange={setUnit}>
                   <SelectTrigger>
                     <SelectValue />
@@ -367,7 +376,7 @@ export function ShoppingListCard({ list }: Props) {
                   <SelectContent>
                     {UNITS.map((u) => (
                       <SelectItem key={u} value={u}>
-                        {u}
+                        {tCommon(`unit_labels.${u}`, { defaultValue: u })}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -378,7 +387,7 @@ export function ShoppingListCard({ list }: Props) {
           <DialogFooter>
             <DialogClose asChild>
               <Button variant="outline" disabled={addItemMutation.isPending}>
-                Cancel
+                {tCommon("cancel")}
               </Button>
             </DialogClose>
             <LoadingButton
@@ -386,7 +395,7 @@ export function ShoppingListCard({ list }: Props) {
               loading={addItemMutation.isPending}
               disabled={!selectedIngredient}
             >
-              Add
+              {t("add_item_dialog.submit")}
             </LoadingButton>
           </DialogFooter>
         </DialogContent>
@@ -396,15 +405,14 @@ export function ShoppingListCard({ list }: Props) {
       <Dialog open={addRecipeOpen} onOpenChange={setAddRecipeOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Add Recipe</DialogTitle>
+            <DialogTitle>{t("add_recipe_dialog.title")}</DialogTitle>
             <DialogDescription>
-              Ingredients will be scaled to the specified servings and added to
-              the list.
+              {t("add_recipe_dialog.description")}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div>
-              <p className="text-sm font-medium mb-1">Recipe</p>
+              <p className="text-sm font-medium mb-1">{t("add_recipe_dialog.recipe_label")}</p>
               <Select
                 value={selectedRecipe}
                 onValueChange={(v) => {
@@ -414,7 +422,7 @@ export function ShoppingListCard({ list }: Props) {
                 }}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select recipe" />
+                  <SelectValue placeholder={t("add_recipe_dialog.select_recipe")} />
                 </SelectTrigger>
                 <SelectContent>
                   {recipesData?.data.map((r) => (
@@ -428,10 +436,10 @@ export function ShoppingListCard({ list }: Props) {
             {selectedRecipe && (
               <div>
                 <p className="text-sm font-medium mb-1">
-                  Servings
+                  {t("add_recipe_dialog.servings_label")}
                   {selectedRecipeData?.servings && (
                     <span className="text-muted-foreground font-normal ml-1">
-                      (recipe default: {selectedRecipeData.servings})
+                      {t("add_recipe_dialog.recipe_default", { count: selectedRecipeData.servings })}
                     </span>
                   )}
                 </p>
@@ -454,7 +462,7 @@ export function ShoppingListCard({ list }: Props) {
           <DialogFooter>
             <DialogClose asChild>
               <Button variant="outline" disabled={addRecipeMutation.isPending}>
-                Cancel
+                {tCommon("cancel")}
               </Button>
             </DialogClose>
             <LoadingButton
@@ -462,7 +470,7 @@ export function ShoppingListCard({ list }: Props) {
               loading={addRecipeMutation.isPending}
               disabled={!selectedRecipe}
             >
-              Add
+              {t("add_recipe_dialog.submit")}
             </LoadingButton>
           </DialogFooter>
         </DialogContent>
@@ -472,7 +480,7 @@ export function ShoppingListCard({ list }: Props) {
       <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Rename List</DialogTitle>
+            <DialogTitle>{t("rename_dialog.title")}</DialogTitle>
           </DialogHeader>
           <div className="py-4">
             <input
@@ -484,7 +492,7 @@ export function ShoppingListCard({ list }: Props) {
           <DialogFooter>
             <DialogClose asChild>
               <Button variant="outline" disabled={renameMutation.isPending}>
-                Cancel
+                {tCommon("cancel")}
               </Button>
             </DialogClose>
             <LoadingButton
@@ -492,7 +500,7 @@ export function ShoppingListCard({ list }: Props) {
               loading={renameMutation.isPending}
               disabled={!newName.trim()}
             >
-              Save
+              {t("rename_dialog.submit")}
             </LoadingButton>
           </DialogFooter>
         </DialogContent>
@@ -502,15 +510,15 @@ export function ShoppingListCard({ list }: Props) {
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Delete Shopping List</DialogTitle>
+            <DialogTitle>{t("delete_dialog.title")}</DialogTitle>
             <DialogDescription>
-              "{list.name}" and all its items will be permanently deleted.
+              {t("delete_dialog.description", { name: list.name })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="mt-4">
             <DialogClose asChild>
               <Button variant="outline" disabled={deleteListMutation.isPending}>
-                Cancel
+                {tCommon("cancel")}
               </Button>
             </DialogClose>
             <LoadingButton
@@ -518,7 +526,7 @@ export function ShoppingListCard({ list }: Props) {
               onClick={() => deleteListMutation.mutate()}
               loading={deleteListMutation.isPending}
             >
-              Delete
+              {tCommon("delete")}
             </LoadingButton>
           </DialogFooter>
         </DialogContent>

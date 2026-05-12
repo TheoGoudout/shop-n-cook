@@ -267,7 +267,8 @@ Content:
     ]
 
     response = llm.invoke(messages)
-    content = response.content.strip()
+    raw = response.content
+    content = (raw if isinstance(raw, str) else "").strip()
 
     # Strip markdown code fences if present
     if content.startswith("```"):

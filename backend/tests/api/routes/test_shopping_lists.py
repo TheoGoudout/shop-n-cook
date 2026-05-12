@@ -264,3 +264,123 @@ def test_ingredient_blocked_delete_when_in_recipe(
         headers=superuser_token_headers,
     )
     assert response.status_code == 409
+
+
+def test_update_item_not_in_list(
+    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+) -> None:
+    """PUT with an item_id that belongs to a different list returns 404."""
+    superuser = crud.get_user_by_email(session=db, email=settings.FIRST_SUPERUSER)
+    sl1 = create_random_shopping_list(db, owner_id=superuser.id)  # type: ignore[union-attr]
+    sl2 = create_random_shopping_list(db, owner_id=superuser.id)  # type: ignore[union-attr]
+    ingredient = create_random_ingredient(db)
+    sl2 = crud.add_item_to_shopping_list(
+        session=db,
+        shopping_list=sl2,  # type: ignore[arg-type]
+        item_in=ShoppingListItemCreate(
+            ingredient_id=ingredient.id, quantity=1.0, unit=Unit.PIECE
+        ),
+    )
+    item_id = sl2.items[0].id  # type: ignore[attr-defined]
+    # Use sl1's id but sl2's item_id → 404
+    response = client.put(
+        f"{settings.API_V1_STR}/shopping-lists/{sl1.id}/items/{item_id}",  # type: ignore[attr-defined]
+        headers=superuser_token_headers,
+        json={"is_checked": True},
+    )
+    assert response.status_code == 404
+
+
+def test_delete_item_not_in_list(
+    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+) -> None:
+    """DELETE with an item_id that belongs to a different list returns 404."""
+    superuser = crud.get_user_by_email(session=db, email=settings.FIRST_SUPERUSER)
+    sl1 = create_random_shopping_list(db, owner_id=superuser.id)  # type: ignore[union-attr]
+    sl2 = create_random_shopping_list(db, owner_id=superuser.id)  # type: ignore[union-attr]
+    ingredient = create_random_ingredient(db)
+    sl2 = crud.add_item_to_shopping_list(
+        session=db,
+        shopping_list=sl2,  # type: ignore[arg-type]
+        item_in=ShoppingListItemCreate(
+            ingredient_id=ingredient.id, quantity=1.0, unit=Unit.PIECE
+        ),
+    )
+    item_id = sl2.items[0].id  # type: ignore[attr-defined]
+    response = client.delete(
+        f"{settings.API_V1_STR}/shopping-lists/{sl1.id}/items/{item_id}",  # type: ignore[attr-defined]
+        headers=superuser_token_headers,
+    )
+    assert response.status_code == 404
+
+
+def test_update_planned_recipe_not_found(
+    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+) -> None:
+    """PATCH with a non-existent planned_recipe_id returns 404."""
+    superuser = crud.get_user_by_email(session=db, email=settings.FIRST_SUPERUSER)
+    sl = create_random_shopping_list(db, owner_id=superuser.id)  # type: ignore[union-attr]
+    response = client.patch(
+        f"{settings.API_V1_STR}/shopping-lists/{sl.id}/planned-recipes/{uuid.uuid4()}",  # type: ignore[attr-defined]
+        headers=superuser_token_headers,
+        json={"is_prepared": True},
+    )
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Planned recipe not found"
+
+
+def test_update_planned_recipe_wrong_list(
+    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+) -> None:
+    """PATCH where planned_recipe belongs to a different list returns 404."""
+    superuser = crud.get_user_by_email(session=db, email=settings.FIRST_SUPERUSER)
+    sl1 = create_random_shopping_list(db, owner_id=superuser.id)  # type: ignore[union-attr]
+    sl2 = create_random_shopping_list(db, owner_id=superuser.id)  # type: ignore[union-attr]
+    recipe = create_random_recipe(db, owner_id=superuser.id, with_ingredients=False)  # type: ignore[union-attr]
+    sl2 = crud.add_recipe_to_shopping_list(
+        session=db,
+        shopping_list=sl2,
+        recipe=recipe,  # type: ignore[arg-type]
+    )
+    planned_id = sl2.planned_recipes[0].id  # type: ignore[attr-defined]
+    response = client.patch(
+        f"{settings.API_V1_STR}/shopping-lists/{sl1.id}/planned-recipes/{planned_id}",  # type: ignore[attr-defined]
+        headers=superuser_token_headers,
+        json={"is_prepared": True},
+    )
+    assert response.status_code == 404
+
+
+def test_delete_planned_recipe_not_found(
+    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+) -> None:
+    """DELETE with a non-existent planned_recipe_id returns 404."""
+    superuser = crud.get_user_by_email(session=db, email=settings.FIRST_SUPERUSER)
+    sl = create_random_shopping_list(db, owner_id=superuser.id)  # type: ignore[union-attr]
+    response = client.delete(
+        f"{settings.API_V1_STR}/shopping-lists/{sl.id}/planned-recipes/{uuid.uuid4()}",  # type: ignore[attr-defined]
+        headers=superuser_token_headers,
+    )
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Planned recipe not found"
+
+
+def test_delete_planned_recipe_wrong_list(
+    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+) -> None:
+    """DELETE where planned_recipe belongs to a different list returns 404."""
+    superuser = crud.get_user_by_email(session=db, email=settings.FIRST_SUPERUSER)
+    sl1 = create_random_shopping_list(db, owner_id=superuser.id)  # type: ignore[union-attr]
+    sl2 = create_random_shopping_list(db, owner_id=superuser.id)  # type: ignore[union-attr]
+    recipe = create_random_recipe(db, owner_id=superuser.id, with_ingredients=False)  # type: ignore[union-attr]
+    sl2 = crud.add_recipe_to_shopping_list(
+        session=db,
+        shopping_list=sl2,
+        recipe=recipe,  # type: ignore[arg-type]
+    )
+    planned_id = sl2.planned_recipes[0].id  # type: ignore[attr-defined]
+    response = client.delete(
+        f"{settings.API_V1_STR}/shopping-lists/{sl1.id}/planned-recipes/{planned_id}",  # type: ignore[attr-defined]
+        headers=superuser_token_headers,
+    )
+    assert response.status_code == 404

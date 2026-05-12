@@ -19,9 +19,7 @@ async function createRecipe(page: Page, title: string): Promise<string> {
 
 async function deleteRecipeFromDetail(page: Page): Promise<void> {
   // Target the recipe actions DropdownMenu — exclude sidebar triggers (data-sidebar attr)
-  await page
-    .locator('button[aria-haspopup="menu"]:not([data-sidebar])')
-    .click()
+  await page.locator('button[aria-haspopup="menu"]:not([data-sidebar])').click()
   await page.getByRole("menuitem", { name: /Delete/i }).click()
   await page
     .getByRole("button", { name: /Delete/i })
@@ -82,10 +80,14 @@ test.describe("Recipe detail page — client-side navigation", () => {
 
     await page.goto(`/recipes/${id}`)
     await expect(
-      page.locator('[data-slot="card-title"]').filter({ hasText: "Ingredients" }),
+      page
+        .locator('[data-slot="card-title"]')
+        .filter({ hasText: "Ingredients" }),
     ).toBeVisible()
     await expect(
-      page.locator('[data-slot="card-title"]').filter({ hasText: "Instructions" }),
+      page
+        .locator('[data-slot="card-title"]')
+        .filter({ hasText: "Instructions" }),
     ).toBeVisible()
 
     await deleteRecipeFromDetail(page)

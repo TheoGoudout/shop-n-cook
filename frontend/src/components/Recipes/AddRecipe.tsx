@@ -1,8 +1,9 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Download, Loader2, Plus, Trash2 } from "lucide-react"
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { type Resolver, useFieldArray, useForm } from "react-hook-form"
+import i18n from "i18next"
 import { useTranslation } from "react-i18next"
 import { z } from "zod"
 
@@ -45,47 +46,62 @@ import {
 import useCustomToast from "@/hooks/useCustomToast"
 import { handleError } from "@/utils"
 
-const ingredientSchema = z
-  .object({
-    ingredient_id: z.string().optional(),
-    ingredient_name: z.string().optional(),
-    category: z.string().min(1),
-    quantity: z.coerce.number().positive(),
-    unit: z.string().min(1),
-    notes: z.string().optional(),
-  })
-  .refine((d) => d.ingredient_id || d.ingredient_name, {
-    message: "Select or name an ingredient",
-    path: ["ingredient_id"],
-  })
-
-const formSchema = z.object({
-  title: z.string().min(1, { message: "Title is required" }),
+const _ingredientSchema = z.object({
+  ingredient_id: z.string().optional(),
+  ingredient_name: z.string().optional(),
+  category: z.string().min(1),
+  quantity: z.coerce.number().positive(),
+  unit: z.string().min(1),
+  notes: z.string().optional(),
+})
+const _formSchema = z.object({
+  title: z.string(),
   description: z.string().optional(),
   instructions: z.string().optional(),
   servings: z.coerce.number().int().positive().optional().or(z.literal("")),
-  prep_time_minutes: z.coerce
-    .number()
-    .int()
-    .min(0)
-    .optional()
-    .or(z.literal("")),
-  cook_time_minutes: z.coerce
-    .number()
-    .int()
-    .min(0)
-    .optional()
-    .or(z.literal("")),
+  prep_time_minutes: z.coerce.number().int().min(0).optional().or(z.literal("")),
+  cook_time_minutes: z.coerce.number().int().min(0).optional().or(z.literal("")),
   source_url: z.string().url().optional().or(z.literal("")),
   image_url: z.string().url().optional().or(z.literal("")),
-  ingredients: z.array(ingredientSchema),
+  ingredients: z.array(_ingredientSchema),
 })
 
-type FormData = z.infer<typeof formSchema>
+type FormData = z.infer<typeof _formSchema>
 
 const AddRecipe = () => {
   const { t } = useTranslation("recipes")
   const { t: tCommon } = useTranslation("common")
+
+  const ingredientSchema = useMemo(() =>
+    z.object({
+      ingredient_id: z.string().optional(),
+      ingredient_name: z.string().optional(),
+      category: z.string().min(1),
+      quantity: z.coerce.number().positive(),
+      unit: z.string().min(1),
+      notes: z.string().optional(),
+    }).refine((d) => d.ingredient_id || d.ingredient_name, {
+      message: t("form.ingredient_required"),
+      path: ["ingredient_id"],
+    }),
+    [t]
+  )
+
+  const formSchema = useMemo(() =>
+    z.object({
+      title: z.string().min(1, { message: t("form.title_required") }),
+      description: z.string().optional(),
+      instructions: z.string().optional(),
+      servings: z.coerce.number().int().positive().optional().or(z.literal("")),
+      prep_time_minutes: z.coerce.number().int().min(0).optional().or(z.literal("")),
+      cook_time_minutes: z.coerce.number().int().min(0).optional().or(z.literal("")),
+      source_url: z.string().url().optional().or(z.literal("")),
+      image_url: z.string().url().optional().or(z.literal("")),
+      ingredients: z.array(ingredientSchema),
+    }),
+    [t, ingredientSchema]
+  )
+
   const [isOpen, setIsOpen] = useState(false)
   const [importUrl, setImportUrl] = useState("")
   const [isImporting, setIsImporting] = useState(false)
@@ -123,7 +139,7 @@ const AddRecipe = () => {
     setIsImporting(true)
     try {
       const parsed = await RecipesService.importRecipeUrl({
-        requestBody: { url: importUrl },
+        requestBody: { url: importUrl, language: i18n.language },
       })
       const existingIngredients = ingredientsData?.data ?? []
       let unmatchedCount = 0
@@ -228,7 +244,7 @@ const AddRecipe = () => {
               {/* Import from URL */}
               <div className="flex gap-2 p-3 rounded-md border border-dashed bg-muted/30">
                 <Input
-                  placeholder={t("form.import_placeholder", { defaultValue: "Paste a recipe URL to auto-fill…" })}
+                  placeholder={t("add.import_placeholder")}
                   value={importUrl}
                   onChange={(e) => setImportUrl(e.target.value)}
                   onKeyDown={(e) => {

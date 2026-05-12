@@ -452,7 +452,7 @@ export function ShoppingListCard({ list }: Props) {
                   placeholder={
                     selectedRecipeData?.servings
                       ? String(selectedRecipeData.servings)
-                      : "e.g. 4"
+                      : t("add_recipe_dialog.servings_placeholder")
                   }
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 />

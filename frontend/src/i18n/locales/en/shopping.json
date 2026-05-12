@@ -57,6 +57,7 @@
     "servings_label": "Servings",
     "recipe_default": "(recipe default: {{count}})",
     "select_recipe": "Select recipe",
+    "servings_placeholder": "e.g. 4",
     "submit": "Add",
     "success": "Recipe added to list"
   },

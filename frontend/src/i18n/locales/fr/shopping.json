@@ -57,6 +57,7 @@
     "servings_label": "Portions",
     "recipe_default": "(défaut de la recette : {{count}})",
     "select_recipe": "Sélectionner une recette",
+    "servings_placeholder": "ex. 4",
     "submit": "Ajouter",
     "success": "Recette ajoutée à la liste"
   },

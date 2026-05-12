@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { z } from "zod"
@@ -71,17 +71,27 @@ const UNITS = [
   "package",
 ]
 
-const formSchema = z.object({
-  name: z.string().min(1, { message: "Name is required" }),
+const _formSchema = z.object({
+  name: z.string(),
   category: z.string().min(1),
   default_unit: z.string().min(1),
 })
 
-type FormData = z.infer<typeof formSchema>
+type FormData = z.infer<typeof _formSchema>
 
 const AddIngredient = () => {
   const { t } = useTranslation("ingredients")
   const { t: tCommon } = useTranslation("common")
+
+  const formSchema = useMemo(() =>
+    z.object({
+      name: z.string().min(1, { message: t("form.name_required") }),
+      category: z.string().min(1),
+      default_unit: z.string().min(1),
+    }),
+    [t]
+  )
+
   const [isOpen, setIsOpen] = useState(false)
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()

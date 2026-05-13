@@ -268,7 +268,15 @@ Content:
 
     response = llm.invoke(messages)
     raw = response.content
-    content = (raw if isinstance(raw, str) else "").strip()
+    if isinstance(raw, str):
+        content = raw.strip()
+    elif isinstance(raw, list):
+        content = "".join(
+            part.get("text", "") if isinstance(part, dict) else str(part)
+            for part in raw
+        ).strip()
+    else:
+        content = ""
 
     # Strip markdown code fences if present
     if content.startswith("```"):

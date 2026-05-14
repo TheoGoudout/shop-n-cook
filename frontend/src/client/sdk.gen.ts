@@ -381,6 +381,9 @@ export class RecipesService {
      * Import Recipe Url
      * Parse a recipe from a URL using AI. Returns pre-filled data for review — does NOT save.
      *
+     * If the current user already has a saved recipe with the same source URL, that
+     * recipe's data is returned immediately without calling the LLM.
+     *
      * Requires ANTHROPIC_API_KEY to be configured. Returns 503 if not set.
      * @param data The data for the request.
      * @param data.requestBody

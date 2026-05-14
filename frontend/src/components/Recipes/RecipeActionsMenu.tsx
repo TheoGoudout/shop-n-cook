@@ -8,8 +8,10 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import useAuth from "@/hooks/useAuth"
 import DeleteRecipe from "./DeleteRecipe"
 import EditRecipe from "./EditRecipe"
+import ReimportRecipe from "./ReimportRecipe"
 
 interface Props {
   recipe: RecipePublic
@@ -17,6 +19,7 @@ interface Props {
 
 export const RecipeActionsMenu = ({ recipe }: Props) => {
   const [open, setOpen] = useState(false)
+  const { user } = useAuth()
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
@@ -27,6 +30,9 @@ export const RecipeActionsMenu = ({ recipe }: Props) => {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <EditRecipe recipe={recipe} onSuccess={() => setOpen(false)} />
+        {user?.is_superuser && recipe.source_url && (
+          <ReimportRecipe id={recipe.id} onSuccess={() => setOpen(false)} />
+        )}
         <DeleteRecipe id={recipe.id} onSuccess={() => setOpen(false)} />
       </DropdownMenuContent>
     </DropdownMenu>

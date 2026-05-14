@@ -50,6 +50,10 @@
     "dialog_description": "This recipe will be permanently deleted. Are you sure?",
     "success": "Recipe deleted successfully"
   },
+  "reimport": {
+    "menu_item": "Reimport",
+    "success": "Recipe reimported successfully"
+  },
   "form": {
     "title_label": "Title",
     "title_placeholder": "e.g. Spaghetti Bolognese",

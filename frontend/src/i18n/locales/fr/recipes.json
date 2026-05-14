@@ -50,6 +50,10 @@
     "dialog_description": "Cette recette sera définitivement supprimée. Êtes-vous sûr(e) ?",
     "success": "Recette supprimée avec succès"
   },
+  "reimport": {
+    "menu_item": "Réimporter",
+    "success": "Recette réimportée avec succès"
+  },
   "form": {
     "title_label": "Titre",
     "title_placeholder": "ex. Spaghetti Bolognaise",

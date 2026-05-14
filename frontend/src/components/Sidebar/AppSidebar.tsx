@@ -1,4 +1,4 @@
-import { ChefHat, FlaskConical, Home, ShoppingCart, Users } from "lucide-react"
+import { ChefHat, Home, ShoppingCart, Users } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
 import { SidebarAppearance } from "@/components/Common/Appearance"
@@ -19,7 +19,6 @@ export function AppSidebar() {
 
   const baseItems: Item[] = [
     { icon: Home, title: t("dashboard"), path: "/" },
-    { icon: FlaskConical, title: t("ingredients"), path: "/ingredients" },
     { icon: ChefHat, title: t("recipes"), path: "/recipes" },
     { icon: ShoppingCart, title: t("shopping_lists"), path: "/shopping-lists" },
   ]

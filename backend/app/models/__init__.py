@@ -23,6 +23,11 @@ from app.models.recipe import (
     RecipeIngredientPublic,
     RecipePublic,
     RecipesPublic,
+    RecipeStep,
+    RecipeStepCreate,
+    RecipeStepIngredient,
+    RecipeStepIngredientPublic,
+    RecipeStepPublic,
     RecipeUpdate,
 )
 from app.models.shopping_list import (
@@ -96,10 +101,15 @@ __all__ = [
     # recipe
     "RecipeIngredientCreate",
     "RecipeIngredientPublic",
+    "RecipeStepCreate",
+    "RecipeStepIngredientPublic",
+    "RecipeStepPublic",
     "RecipeBase",
     "RecipeCreate",
     "RecipeUpdate",
     "RecipeIngredient",
+    "RecipeStep",
+    "RecipeStepIngredient",
     "Recipe",
     "RecipePublic",
     "RecipesPublic",

@@ -29,10 +29,15 @@ class ParsedIngredient(BaseModel):
     notes: str | None = None
 
 
+class ParsedStep(BaseModel):
+    instruction: str
+    ingredient_names: list[str] = []
+
+
 class ParsedRecipe(BaseModel):
     title: str
     description: str | None = None
-    instructions: str | None = None
+    steps: list[ParsedStep] = []
     servings: int | None = None
     prep_time_minutes: int | None = None
     cook_time_minutes: int | None = None
@@ -50,7 +55,7 @@ def _build_system_prompt(language: str | None = None) -> str:
 
     if lang == "fr":
         lang_rule = (
-            "- Translate all text fields (title, description, instructions, "
+            "- Translate all text fields (title, description, step instructions, "
             "ingredient names, and notes) to French\n"
             "- Use standard French culinary terminology for ingredient names"
         )
@@ -68,7 +73,6 @@ Return ONLY a valid JSON object with this exact structure:
 {{
   "title": "Recipe name",
   "description": "Short description or null",
-  "instructions": "Full cooking instructions as a single string with steps separated by newlines, or null",
   "servings": integer or null,
   "prep_time_minutes": integer or null,
   "cook_time_minutes": integer or null,
@@ -80,10 +84,19 @@ Return ONLY a valid JSON object with this exact structure:
       "unit": "unit string (use one of: {_UNITS})",
       "notes": "optional preparation note or null"
     }}
+  ],
+  "steps": [
+    {{
+      "instruction": "What to do in this step",
+      "ingredient_names": ["ingredient name 1", "ingredient name 2"]
+    }}
   ]
 }}
 
 Rules:
+- Split instructions into individual steps (one action per step)
+- For each step, list the ingredient names used in that step — use the exact same names as in the ingredients list
+- Only reference ingredients in a step if they are actually used in that step
 - Convert all measurements to the closest available unit from the list
 - If quantity is fractional (e.g. 1/2), convert to decimal (0.5)
 - If no unit applies, use "piece"
@@ -120,7 +133,7 @@ def _get_llm() -> BaseChatModel:
             api_key=settings.ANTHROPIC_API_KEY,  # type: ignore[arg-type]
             max_retries=2,
             timeout=60,
-            max_tokens=1024,
+            max_tokens=2048,
             temperature=0,
             rate_limiter=rate_limiter,
         )
@@ -135,7 +148,7 @@ def _get_llm() -> BaseChatModel:
             api_key=settings.OPENAI_API_KEY,  # type: ignore[arg-type]
             max_retries=3,
             timeout=45,
-            max_completion_tokens=1000,
+            max_completion_tokens=2000,
             temperature=0,
             rate_limiter=rate_limiter,
         )
@@ -150,7 +163,7 @@ def _get_llm() -> BaseChatModel:
             google_api_key=settings.GOOGLE_API_KEY,
             max_retries=2,
             timeout=30,
-            max_output_tokens=1000,
+            max_output_tokens=2000,
             temperature=0,
             rate_limiter=rate_limiter,
         )
@@ -291,5 +304,9 @@ Content:
             ing
             for ing in data["ingredients"]
             if ing.get("quantity") is not None and ing.get("unit") is not None
+        ]
+    if "steps" in data:
+        data["steps"] = [
+            step for step in data["steps"] if step.get("instruction", "").strip()
         ]
     return ParsedRecipe(**data, source_url=url, image_url=image_url)

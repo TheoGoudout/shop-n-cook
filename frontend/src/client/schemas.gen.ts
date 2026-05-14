@@ -303,16 +303,13 @@ export const ParsedRecipeSchema = {
             ],
             title: 'Description'
         },
-        instructions: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Instructions'
+        steps: {
+            items: {
+                '$ref': '#/components/schemas/ParsedStep'
+            },
+            type: 'array',
+            title: 'Steps',
+            default: []
         },
         servings: {
             anyOf: [
@@ -383,6 +380,26 @@ export const ParsedRecipeSchema = {
     title: 'ParsedRecipe'
 } as const;
 
+export const ParsedStepSchema = {
+    properties: {
+        instruction: {
+            type: 'string',
+            title: 'Instruction'
+        },
+        ingredient_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Ingredient Names',
+            default: []
+        }
+    },
+    type: 'object',
+    required: ['instruction'],
+    title: 'ParsedStep'
+} as const;
+
 export const PrivateUserCreateSchema = {
     properties: {
         email: {
@@ -427,17 +444,6 @@ export const RecipeCreateSchema = {
                 }
             ],
             title: 'Description'
-        },
-        instructions: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Instructions'
         },
         servings: {
             anyOf: [
@@ -503,6 +509,14 @@ export const RecipeCreateSchema = {
             },
             type: 'array',
             title: 'Ingredients',
+            default: []
+        },
+        steps: {
+            items: {
+                '$ref': '#/components/schemas/RecipeStepCreate'
+            },
+            type: 'array',
+            title: 'Steps',
             default: []
         }
     },
@@ -635,17 +649,6 @@ export const RecipePublicSchema = {
             ],
             title: 'Description'
         },
-        instructions: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Instructions'
-        },
         servings: {
             anyOf: [
                 {
@@ -733,11 +736,90 @@ export const RecipePublicSchema = {
             type: 'array',
             title: 'Ingredients',
             default: []
+        },
+        steps: {
+            items: {
+                '$ref': '#/components/schemas/RecipeStepPublic'
+            },
+            type: 'array',
+            title: 'Steps',
+            default: []
         }
     },
     type: 'object',
     required: ['title', 'id', 'owner_id'],
     title: 'RecipePublic'
+} as const;
+
+export const RecipeStepCreateSchema = {
+    properties: {
+        step_number: {
+            type: 'integer',
+            title: 'Step Number'
+        },
+        instruction: {
+            type: 'string',
+            minLength: 1,
+            title: 'Instruction'
+        },
+        ingredient_indices: {
+            items: {
+                type: 'integer'
+            },
+            type: 'array',
+            title: 'Ingredient Indices',
+            default: []
+        }
+    },
+    type: 'object',
+    required: ['step_number', 'instruction'],
+    title: 'RecipeStepCreate'
+} as const;
+
+export const RecipeStepIngredientPublicSchema = {
+    properties: {
+        recipe_ingredient_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Recipe Ingredient Id'
+        },
+        ingredient_name: {
+            type: 'string',
+            title: 'Ingredient Name'
+        }
+    },
+    type: 'object',
+    required: ['recipe_ingredient_id', 'ingredient_name'],
+    title: 'RecipeStepIngredientPublic'
+} as const;
+
+export const RecipeStepPublicSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        step_number: {
+            type: 'integer',
+            title: 'Step Number'
+        },
+        instruction: {
+            type: 'string',
+            title: 'Instruction'
+        },
+        ingredients: {
+            items: {
+                '$ref': '#/components/schemas/RecipeStepIngredientPublic'
+            },
+            type: 'array',
+            title: 'Ingredients',
+            default: []
+        }
+    },
+    type: 'object',
+    required: ['id', 'step_number', 'instruction'],
+    title: 'RecipeStepPublic'
 } as const;
 
 export const RecipeUpdateSchema = {
@@ -766,17 +848,6 @@ export const RecipeUpdateSchema = {
                 }
             ],
             title: 'Description'
-        },
-        instructions: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Instructions'
         },
         servings: {
             anyOf: [
@@ -849,6 +920,20 @@ export const RecipeUpdateSchema = {
                 }
             ],
             title: 'Ingredients'
+        },
+        steps: {
+            anyOf: [
+                {
+                    items: {
+                        '$ref': '#/components/schemas/RecipeStepCreate'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Steps'
         }
     },
     type: 'object',

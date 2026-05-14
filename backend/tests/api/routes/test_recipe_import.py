@@ -17,7 +17,16 @@ def _make_llm_response(data: dict) -> MagicMock:
 _SAMPLE_RECIPE = {
     "title": "Test Pasta",
     "description": "A simple pasta dish",
-    "instructions": "Boil pasta. Add sauce.",
+    "steps": [
+        {
+            "instruction": "Boil the pasta in salted water.",
+            "ingredient_names": ["pasta"],
+        },
+        {
+            "instruction": "Add sauce and serve.",
+            "ingredient_names": [],
+        },
+    ],
     "servings": 2,
     "prep_time_minutes": 10,
     "cook_time_minutes": 20,
@@ -58,6 +67,8 @@ def test_import_recipe_url_success(
     assert data["servings"] == 2
     assert len(data["ingredients"]) == 1
     assert data["ingredients"][0]["name"] == "pasta"
+    assert len(data["steps"]) == 2
+    assert data["steps"][0]["ingredient_names"] == ["pasta"]
 
 
 def test_import_recipe_url_no_api_key_returns_503(
@@ -172,6 +183,9 @@ def test_import_recipe_filters_null_quantity_ingredients(
                 "unit": None,
                 "notes": "to serve",
             },
+        ],
+        "steps": [
+            {"instruction": "Cook pasta.", "ingredient_names": ["pasta"]},
         ],
     }
     llm_mock = MagicMock()

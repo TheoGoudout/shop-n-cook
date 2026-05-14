@@ -59,8 +59,6 @@
     "servings_label": "Portions",
     "prep_label": "Prép. (min)",
     "cook_label": "Cuisson (min)",
-    "instructions_label": "Instructions",
-    "instructions_placeholder": "Instructions étape par étape...",
     "source_url_label": "URL source",
     "image_url_label": "URL de l'image",
     "url_placeholder": "https://…",
@@ -69,6 +67,10 @@
     "select_ingredient": "Sélectionner un ingrédient",
     "qty_placeholder": "Qté",
     "notes_placeholder": "Notes (ex. finement haché)",
-    "ingredient_required": "Sélectionnez ou nommez un ingrédient"
+    "ingredient_required": "Sélectionnez ou nommez un ingrédient",
+    "steps_label": "Étapes",
+    "add_step": "Ajouter une étape",
+    "step_instruction_placeholder": "Décrivez ce qu'il faut faire à cette étape…",
+    "step_ingredients_hint": "Ingrédients utilisés à cette étape"
   }
 }

@@ -12,6 +12,11 @@ from app.models import (
     RecipeIngredientCreate,
     RecipeIngredientPublic,
     RecipePublic,
+    RecipeStep,
+    RecipeStepCreate,
+    RecipeStepIngredient,
+    RecipeStepIngredientPublic,
+    RecipeStepPublic,
     RecipeUpdate,
 )
 
@@ -28,12 +33,26 @@ def _ri_to_public(ri: RecipeIngredient) -> RecipeIngredientPublic:
     )
 
 
+def _step_to_public(step: RecipeStep) -> RecipeStepPublic:
+    return RecipeStepPublic(
+        id=step.id,
+        step_number=step.step_number,
+        instruction=step.instruction,
+        ingredients=[
+            RecipeStepIngredientPublic(
+                recipe_ingredient_id=si.recipe_ingredient_id,
+                ingredient_name=si.recipe_ingredient.ingredient.name,
+            )
+            for si in step.step_ingredients
+        ],
+    )
+
+
 def recipe_to_public(recipe: Recipe) -> RecipePublic:
     return RecipePublic(
         id=recipe.id,
         title=recipe.title,
         description=recipe.description,
-        instructions=recipe.instructions,
         servings=recipe.servings,
         prep_time_minutes=recipe.prep_time_minutes,
         cook_time_minutes=recipe.cook_time_minutes,
@@ -42,6 +61,10 @@ def recipe_to_public(recipe: Recipe) -> RecipePublic:
         owner_id=recipe.owner_id,
         created_at=recipe.created_at,
         ingredients=[_ri_to_public(ri) for ri in recipe.recipe_ingredients],
+        steps=sorted(
+            [_step_to_public(s) for s in recipe.steps],
+            key=lambda s: s.step_number,
+        ),
     )
 
 
@@ -65,6 +88,32 @@ def _resolve_ingredient_id(
     session.add(new_ingredient)
     session.flush()
     return new_ingredient.id
+
+
+def _create_steps(
+    *,
+    session: Session,
+    recipe_id: uuid.UUID,
+    steps_in: list[RecipeStepCreate],
+    ri_list: list[RecipeIngredient],
+) -> None:
+    """Create RecipeStep rows and their RecipeStepIngredient links."""
+    for step_in in steps_in:
+        step = RecipeStep(
+            recipe_id=recipe_id,
+            step_number=step_in.step_number,
+            instruction=step_in.instruction,
+        )
+        session.add(step)
+        session.flush()
+        for idx in step_in.ingredient_indices:
+            if 0 <= idx < len(ri_list):
+                session.add(
+                    RecipeStepIngredient(
+                        step_id=step.id,
+                        recipe_ingredient_id=ri_list[idx].id,
+                    )
+                )
 
 
 def get_recipe(*, session: Session, recipe_id: uuid.UUID) -> Recipe | None:
@@ -95,11 +144,12 @@ def get_recipes(
 def create_recipe(
     *, session: Session, recipe_in: RecipeCreate, owner_id: uuid.UUID
 ) -> Recipe:
-    recipe_data = recipe_in.model_dump(exclude={"ingredients"})
+    recipe_data = recipe_in.model_dump(exclude={"ingredients", "steps"})
     db_recipe = Recipe(**recipe_data, owner_id=owner_id)
     session.add(db_recipe)
-    session.flush()  # get db_recipe.id before inserting ingredients
+    session.flush()
 
+    ri_list: list[RecipeIngredient] = []
     for ing_in in recipe_in.ingredients:
         ri = RecipeIngredient(
             recipe_id=db_recipe.id,
@@ -109,6 +159,15 @@ def create_recipe(
             notes=ing_in.notes,
         )
         session.add(ri)
+        session.flush()
+        ri_list.append(ri)
+
+    _create_steps(
+        session=session,
+        recipe_id=db_recipe.id,
+        steps_in=recipe_in.steps,
+        ri_list=ri_list,
+    )
 
     session.commit()
     session.refresh(db_recipe)
@@ -121,13 +180,17 @@ def update_recipe(
     db_recipe: Recipe,
     recipe_in: RecipeUpdate,
 ) -> Recipe:
-    update_data = recipe_in.model_dump(exclude_unset=True, exclude={"ingredients"})
+    update_data = recipe_in.model_dump(exclude_unset=True, exclude={"ingredients", "steps"})
     db_recipe.sqlmodel_update(update_data)
+
+    # Determine the current RI list (used for step index resolution)
+    ri_list: list[RecipeIngredient] = list(db_recipe.recipe_ingredients)
 
     if recipe_in.ingredients is not None:
         for ri in list(db_recipe.recipe_ingredients):
             session.delete(ri)
         session.flush()
+        ri_list = []
         for ing_in in recipe_in.ingredients:
             ri = RecipeIngredient(
                 recipe_id=db_recipe.id,
@@ -137,6 +200,19 @@ def update_recipe(
                 notes=ing_in.notes,
             )
             session.add(ri)
+            session.flush()
+            ri_list.append(ri)
+
+    if recipe_in.steps is not None:
+        for step in list(db_recipe.steps):
+            session.delete(step)
+        session.flush()
+        _create_steps(
+            session=session,
+            recipe_id=db_recipe.id,
+            steps_in=recipe_in.steps,
+            ri_list=ri_list,
+        )
 
     session.commit()
     session.refresh(db_recipe)

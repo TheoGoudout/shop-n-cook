@@ -65,13 +65,18 @@ export type ParsedIngredient = {
 export type ParsedRecipe = {
     title: string;
     description?: (string | null);
-    instructions?: (string | null);
+    steps?: Array<ParsedStep>;
     servings?: (number | null);
     prep_time_minutes?: (number | null);
     cook_time_minutes?: (number | null);
     ingredients?: Array<ParsedIngredient>;
     source_url?: (string | null);
     image_url?: (string | null);
+};
+
+export type ParsedStep = {
+    instruction: string;
+    ingredient_names?: Array<(string)>;
 };
 
 export type PrivateUserCreate = {
@@ -84,13 +89,13 @@ export type PrivateUserCreate = {
 export type RecipeCreate = {
     title: string;
     description?: (string | null);
-    instructions?: (string | null);
     servings?: (number | null);
     prep_time_minutes?: (number | null);
     cook_time_minutes?: (number | null);
     source_url?: (string | null);
     image_url?: (string | null);
     ingredients?: Array<RecipeIngredientCreate>;
+    steps?: Array<RecipeStepCreate>;
 };
 
 export type RecipeIngredientCreate = {
@@ -116,7 +121,6 @@ export type RecipeIngredientPublic = {
 export type RecipePublic = {
     title: string;
     description?: (string | null);
-    instructions?: (string | null);
     servings?: (number | null);
     prep_time_minutes?: (number | null);
     cook_time_minutes?: (number | null);
@@ -126,6 +130,7 @@ export type RecipePublic = {
     owner_id: string;
     created_at?: (string | null);
     ingredients?: Array<RecipeIngredientPublic>;
+    steps?: Array<RecipeStepPublic>;
 };
 
 export type RecipesPublic = {
@@ -133,16 +138,34 @@ export type RecipesPublic = {
     count: number;
 };
 
+export type RecipeStepCreate = {
+    step_number: number;
+    instruction: string;
+    ingredient_indices?: Array<(number)>;
+};
+
+export type RecipeStepIngredientPublic = {
+    recipe_ingredient_id: string;
+    ingredient_name: string;
+};
+
+export type RecipeStepPublic = {
+    id: string;
+    step_number: number;
+    instruction: string;
+    ingredients?: Array<RecipeStepIngredientPublic>;
+};
+
 export type RecipeUpdate = {
     title?: (string | null);
     description?: (string | null);
-    instructions?: (string | null);
     servings?: (number | null);
     prep_time_minutes?: (number | null);
     cook_time_minutes?: (number | null);
     source_url?: (string | null);
     image_url?: (string | null);
     ingredients?: (Array<RecipeIngredientCreate> | null);
+    steps?: (Array<RecipeStepCreate> | null);
 };
 
 export type ShoppingFrequency = 'weekly' | 'biweekly' | 'monthly';

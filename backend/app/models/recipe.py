@@ -65,6 +65,63 @@ class RecipeIngredient(RecipeIngredientBase, table=True):
 
 
 # --------------------------------------------------------------------------- #
+# RecipeStep schemas                                                           #
+# --------------------------------------------------------------------------- #
+
+
+class RecipeStepCreate(SQLModel):
+    step_number: int
+    instruction: str = Field(min_length=1)
+    ingredient_indices: list[int] = []
+
+
+class RecipeStepIngredientPublic(SQLModel):
+    recipe_ingredient_id: uuid.UUID
+    ingredient_name: str
+
+
+class RecipeStepPublic(SQLModel):
+    id: uuid.UUID
+    step_number: int
+    instruction: str
+    ingredients: list[RecipeStepIngredientPublic] = []
+
+
+# --------------------------------------------------------------------------- #
+# RecipeStep table models                                                      #
+# --------------------------------------------------------------------------- #
+
+
+class RecipeStepIngredient(SQLModel, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    step_id: uuid.UUID = Field(
+        foreign_key="recipestep.id", nullable=False, ondelete="CASCADE"
+    )
+    recipe_ingredient_id: uuid.UUID = Field(
+        foreign_key="recipeingredient.id", nullable=False, ondelete="CASCADE"
+    )
+    step: "RecipeStep" = Relationship(back_populates="step_ingredients")
+    recipe_ingredient: RecipeIngredient = Relationship(
+        sa_relationship_kwargs={"lazy": "selectin"}
+    )
+
+
+class RecipeStep(SQLModel, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    recipe_id: uuid.UUID = Field(
+        foreign_key="recipe.id", nullable=False, ondelete="CASCADE"
+    )
+    step_number: int
+    instruction: str
+    recipe: "Recipe" = Relationship(back_populates="steps")
+    step_ingredients: list[RecipeStepIngredient] = Relationship(
+        back_populates="step",
+        cascade_delete=True,
+        sa_relationship_kwargs={"lazy": "selectin"},
+    )
+
+
+# --------------------------------------------------------------------------- #
 # Recipe schemas                                                               #
 # --------------------------------------------------------------------------- #
 
@@ -72,7 +129,6 @@ class RecipeIngredient(RecipeIngredientBase, table=True):
 class RecipeBase(SQLModel):
     title: str = Field(min_length=1, max_length=255)
     description: str | None = Field(default=None, max_length=1000)
-    instructions: str | None = None
     servings: int | None = Field(default=None, ge=1)
     prep_time_minutes: int | None = Field(default=None, ge=0)
     cook_time_minutes: int | None = Field(default=None, ge=0)
@@ -82,18 +138,19 @@ class RecipeBase(SQLModel):
 
 class RecipeCreate(RecipeBase):
     ingredients: list[RecipeIngredientCreate] = []
+    steps: list[RecipeStepCreate] = []
 
 
 class RecipeUpdate(SQLModel):
     title: str | None = Field(default=None, min_length=1, max_length=255)
     description: str | None = Field(default=None, max_length=1000)
-    instructions: str | None = None
     servings: int | None = Field(default=None, ge=1)
     prep_time_minutes: int | None = Field(default=None, ge=0)
     cook_time_minutes: int | None = Field(default=None, ge=0)
     source_url: str | None = None
     image_url: str | None = None
     ingredients: list[RecipeIngredientCreate] | None = None
+    steps: list[RecipeStepCreate] | None = None
 
 
 # --------------------------------------------------------------------------- #
@@ -116,6 +173,11 @@ class Recipe(RecipeBase, table=True):
         cascade_delete=True,
         sa_relationship_kwargs={"lazy": "selectin"},
     )
+    steps: list[RecipeStep] = Relationship(
+        back_populates="recipe",
+        cascade_delete=True,
+        sa_relationship_kwargs={"lazy": "selectin"},
+    )
 
 
 # --------------------------------------------------------------------------- #
@@ -128,6 +190,7 @@ class RecipePublic(RecipeBase):
     owner_id: uuid.UUID
     created_at: datetime | None = None
     ingredients: list[RecipeIngredientPublic] = []
+    steps: list[RecipeStepPublic] = []
 
 
 class RecipesPublic(SQLModel):

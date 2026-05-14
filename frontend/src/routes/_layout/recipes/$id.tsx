@@ -36,6 +36,8 @@ function RecipeDetailContent() {
   const totalTime =
     (recipe.prep_time_minutes ?? 0) + (recipe.cook_time_minutes ?? 0)
 
+  const hasSteps = (recipe.steps ?? []).length > 0
+
   return (
     <div className="flex flex-col gap-6 max-w-3xl">
       {/* Recipe image */}
@@ -101,79 +103,96 @@ function RecipeDetailContent() {
         )}
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* Ingredients */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">
-              {t("detail.ingredients_title")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {(recipe.ingredients ?? []).length === 0 ? (
-              <p className="text-sm text-muted-foreground italic">
-                {t("detail.no_ingredients")}
-              </p>
-            ) : (
-              <ul className="space-y-2">
-                {(recipe.ingredients ?? []).map((ing) => {
-                  const converted = convert(ing.quantity, ing.unit)
-                  return (
-                    <li key={ing.id} className="text-sm">
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium">
-                          {ing.ingredient_name}
+      {/* Ingredients */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">
+            {t("detail.ingredients_title")}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {(recipe.ingredients ?? []).length === 0 ? (
+            <p className="text-sm text-muted-foreground italic">
+              {t("detail.no_ingredients")}
+            </p>
+          ) : (
+            <ul className="space-y-2">
+              {(recipe.ingredients ?? []).map((ing) => {
+                const converted = convert(ing.quantity, ing.unit)
+                return (
+                  <li key={ing.id} className="text-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">{ing.ingredient_name}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-muted-foreground">
+                          {converted.quantity}{" "}
+                          {tCommon(`unit_labels.${converted.unit}`, {
+                            defaultValue: converted.unit,
+                          })}
                         </span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-muted-foreground">
-                            {converted.quantity}{" "}
-                            {tCommon(`unit_labels.${converted.unit}`, {
-                              defaultValue: converted.unit,
-                            })}
-                          </span>
-                          <Badge
-                            variant="outline"
-                            className="text-xs capitalize"
-                          >
-                            {tCommon(`categories.${ing.ingredient_category}`, {
-                              defaultValue: ing.ingredient_category,
-                            })}
-                          </Badge>
-                        </div>
+                        <Badge variant="outline" className="text-xs capitalize">
+                          {tCommon(`categories.${ing.ingredient_category}`, {
+                            defaultValue: ing.ingredient_category,
+                          })}
+                        </Badge>
                       </div>
-                      {ing.notes && (
-                        <p className="text-xs text-muted-foreground mt-0.5 italic">
-                          {ing.notes}
-                        </p>
-                      )}
-                    </li>
-                  )
-                })}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
+                    </div>
+                    {ing.notes && (
+                      <p className="text-xs text-muted-foreground mt-0.5 italic">
+                        {ing.notes}
+                      </p>
+                    )}
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
 
-        {/* Instructions */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">
-              {t("detail.instructions_title")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {recipe.instructions ? (
-              <p className="text-sm whitespace-pre-wrap leading-relaxed">
-                {recipe.instructions}
-              </p>
-            ) : (
-              <p className="text-sm text-muted-foreground italic">
-                {t("detail.no_instructions")}
-              </p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      {/* Steps / Instructions */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">
+            {t("detail.instructions_title")}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {hasSteps ? (
+            <ol className="space-y-5">
+              {(recipe.steps ?? []).map((step) => (
+                <li key={step.id} className="flex gap-3">
+                  <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center font-semibold mt-0.5">
+                    {step.step_number}
+                  </span>
+                  <div className="flex-1">
+                    <p className="text-sm leading-relaxed">
+                      {step.instruction}
+                    </p>
+                    {(step.ingredients ?? []).length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {(step.ingredients ?? []).map((ing) => (
+                          <Badge
+                            key={ing.recipe_ingredient_id}
+                            variant="secondary"
+                            className="text-xs"
+                          >
+                            {ing.ingredient_name}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <p className="text-sm text-muted-foreground italic">
+              {t("detail.no_instructions")}
+            </p>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }

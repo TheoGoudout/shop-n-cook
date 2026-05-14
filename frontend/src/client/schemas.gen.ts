@@ -959,6 +959,24 @@ export const RecipesPublicSchema = {
     title: 'RecipesPublic'
 } as const;
 
+export const ReimportRequestSchema = {
+    properties: {
+        language: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Language'
+        }
+    },
+    type: 'object',
+    title: 'ReimportRequest'
+} as const;
+
 export const ShoppingFrequencySchema = {
     type: 'string',
     enum: ['weekly', 'biweekly', 'monthly'],

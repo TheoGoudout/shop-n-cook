@@ -487,7 +487,9 @@ def test_fetch_page_fallback_plain_text() -> None:
 # ---- reimport endpoint tests ----
 
 
-def _create_recipe_with_url(db: object, superuser_id: object, source_url: str) -> object:
+def _create_recipe_with_url(
+    db: object, superuser_id: object, source_url: str
+) -> object:
     from app import crud
     from app.models import RecipeCreate
 

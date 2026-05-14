@@ -168,6 +168,10 @@ export type RecipeUpdate = {
     steps?: (Array<RecipeStepCreate> | null);
 };
 
+export type ReimportRequest = {
+    language?: (string | null);
+};
+
 export type ShoppingFrequency = 'weekly' | 'biweekly' | 'monthly';
 
 export type ShoppingListCreate = {
@@ -411,6 +415,13 @@ export type RecipesDeleteRecipeData = {
 };
 
 export type RecipesDeleteRecipeResponse = (Message);
+
+export type RecipesReimportRecipeData = {
+    id: string;
+    requestBody: ReimportRequest;
+};
+
+export type RecipesReimportRecipeResponse = (RecipePublic);
 
 export type RecipesImportRecipeUrlData = {
     requestBody: ImportUrlRequest;

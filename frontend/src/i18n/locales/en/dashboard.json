@@ -7,5 +7,32 @@
     "shopping_lists": "Shopping Lists",
     "kitchen_overview": "Kitchen Overview",
     "total": "Total"
+  },
+  "recent_recipes": {
+    "title": "Recent Recipes",
+    "see_all": "See all",
+    "servings": "{{count}} servings",
+    "prep_min": "{{count}} min prep",
+    "total_min": "{{count}} min total",
+    "ingredient_count": "{{count}} ingredients"
+  },
+  "active_list": {
+    "title": "Active Shopping List",
+    "progress": "{{checked}}/{{total}} items checked",
+    "open": "Open List",
+    "all_lists": "All Lists"
+  },
+  "quick_actions": {
+    "title": "Quick Actions",
+    "import_recipe": "Import Recipe",
+    "new_list": "New Shopping List",
+    "browse_recipes": "Browse Recipes",
+    "view_lists": "View Lists"
+  },
+  "empty_state": {
+    "title": "Your kitchen is ready!",
+    "subtitle": "Start by adding your first recipe or creating a shopping list.",
+    "add_recipe": "Add a Recipe",
+    "create_list": "Create a List"
   }
 }

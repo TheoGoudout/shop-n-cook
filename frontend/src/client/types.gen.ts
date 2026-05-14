@@ -20,12 +20,6 @@ export type ImportUrlRequest = {
 
 export type IngredientCategory = 'produce' | 'dairy' | 'meat' | 'seafood' | 'grains' | 'pantry' | 'spices' | 'beverages' | 'frozen' | 'bakery' | 'other';
 
-export type IngredientCreate = {
-    name: string;
-    category?: IngredientCategory;
-    default_unit?: Unit;
-};
-
 export type IngredientPublic = {
     name: string;
     category?: IngredientCategory;
@@ -37,12 +31,6 @@ export type IngredientPublic = {
 export type IngredientsPublic = {
     data: Array<IngredientPublic>;
     count: number;
-};
-
-export type IngredientUpdate = {
-    name?: (string | null);
-    category?: (IngredientCategory | null);
-    default_unit?: (Unit | null);
 };
 
 export type Message = {
@@ -327,30 +315,11 @@ export type IngredientsReadIngredientsData = {
 
 export type IngredientsReadIngredientsResponse = (IngredientsPublic);
 
-export type IngredientsCreateIngredientData = {
-    requestBody: IngredientCreate;
-};
-
-export type IngredientsCreateIngredientResponse = (IngredientPublic);
-
 export type IngredientsReadIngredientData = {
     id: string;
 };
 
 export type IngredientsReadIngredientResponse = (IngredientPublic);
-
-export type IngredientsUpdateIngredientData = {
-    id: string;
-    requestBody: IngredientUpdate;
-};
-
-export type IngredientsUpdateIngredientResponse = (IngredientPublic);
-
-export type IngredientsDeleteIngredientData = {
-    id: string;
-};
-
-export type IngredientsDeleteIngredientResponse = (Message);
 
 export type LoginLoginAccessTokenData = {
     formData: Body_login_login_access_token;

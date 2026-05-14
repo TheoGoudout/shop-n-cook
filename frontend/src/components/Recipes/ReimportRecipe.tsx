@@ -18,7 +18,11 @@ const ReimportRecipe = ({ id, onSuccess }: Props) => {
   const { showSuccessToast, showErrorToast } = useCustomToast()
 
   const mutation = useMutation({
-    mutationFn: () => RecipesService.reimportRecipe({ id, requestBody: { language: i18n.language } }),
+    mutationFn: () =>
+      RecipesService.reimportRecipe({
+        id,
+        requestBody: { language: i18n.language },
+      }),
     onSuccess: () => {
       showSuccessToast(t("reimport.success"))
       onSuccess()

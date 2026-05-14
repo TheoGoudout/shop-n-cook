@@ -252,20 +252,6 @@ def test_add_recipe_not_found(
     assert response.status_code == 404
 
 
-def test_ingredient_blocked_delete_when_in_recipe(
-    client: TestClient, superuser_token_headers: dict[str, str], db: Session
-) -> None:
-    """Deleting an ingredient used in a recipe must return 409."""
-    superuser = crud.get_user_by_email(session=db, email=settings.FIRST_SUPERUSER)
-    recipe = create_random_recipe(db, owner_id=superuser.id, with_ingredients=True)  # type: ignore[union-attr]
-    ingredient_id = recipe.recipe_ingredients[0].ingredient_id  # type: ignore[attr-defined]
-    response = client.delete(
-        f"{settings.API_V1_STR}/ingredients/{ingredient_id}",
-        headers=superuser_token_headers,
-    )
-    assert response.status_code == 409
-
-
 def test_update_item_not_in_list(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:

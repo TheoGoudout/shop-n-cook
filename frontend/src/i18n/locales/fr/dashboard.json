@@ -7,5 +7,32 @@
     "shopping_lists": "Listes de courses",
     "kitchen_overview": "Vue d'ensemble",
     "total": "Total"
+  },
+  "recent_recipes": {
+    "title": "Recettes récentes",
+    "see_all": "Voir tout",
+    "servings": "{{count}} portions",
+    "prep_min": "{{count}} min prép.",
+    "total_min": "{{count}} min total",
+    "ingredient_count": "{{count}} ingrédients"
+  },
+  "active_list": {
+    "title": "Liste de courses active",
+    "progress": "{{checked}}/{{total}} articles cochés",
+    "open": "Ouvrir la liste",
+    "all_lists": "Toutes les listes"
+  },
+  "quick_actions": {
+    "title": "Actions rapides",
+    "import_recipe": "Importer une recette",
+    "new_list": "Nouvelle liste",
+    "browse_recipes": "Parcourir les recettes",
+    "view_lists": "Voir les listes"
+  },
+  "empty_state": {
+    "title": "Votre cuisine est prête !",
+    "subtitle": "Commencez par ajouter votre première recette ou créer une liste de courses.",
+    "add_recipe": "Ajouter une recette",
+    "create_list": "Créer une liste"
   }
 }

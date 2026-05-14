@@ -636,7 +636,6 @@ def test_import_url_cache_hit_returns_existing_recipe(
 
 def test_import_url_cache_is_per_user(
     client: TestClient,
-    superuser_token_headers: dict[str, str],
     normal_user_token_headers: dict[str, str],
     db: object,
 ) -> None:

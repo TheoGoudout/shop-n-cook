@@ -17,7 +17,12 @@ from app.models import (
     RecipeUpdate,
 )
 from app.models.user import User
-from app.services.recipe_import import ParsedIngredient, ParsedRecipe, ParsedStep, import_recipe_from_url
+from app.services.recipe_import import (
+    ParsedIngredient,
+    ParsedRecipe,
+    ParsedStep,
+    import_recipe_from_url,
+)
 
 router = APIRouter(prefix="/recipes", tags=["recipes"])
 

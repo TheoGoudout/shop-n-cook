@@ -180,7 +180,9 @@ def update_recipe(
     db_recipe: Recipe,
     recipe_in: RecipeUpdate,
 ) -> Recipe:
-    update_data = recipe_in.model_dump(exclude_unset=True, exclude={"ingredients", "steps"})
+    update_data = recipe_in.model_dump(
+        exclude_unset=True, exclude={"ingredients", "steps"}
+    )
     db_recipe.sqlmodel_update(update_data)
 
     # Determine the current RI list (used for step index resolution)

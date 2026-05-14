@@ -59,8 +59,6 @@
     "servings_label": "Servings",
     "prep_label": "Prep (min)",
     "cook_label": "Cook (min)",
-    "instructions_label": "Instructions",
-    "instructions_placeholder": "Step by step instructions...",
     "source_url_label": "Source URL",
     "image_url_label": "Image URL",
     "url_placeholder": "https://…",
@@ -69,6 +67,10 @@
     "select_ingredient": "Select ingredient",
     "qty_placeholder": "Qty",
     "notes_placeholder": "Notes (e.g. finely chopped)",
-    "ingredient_required": "Select or name an ingredient"
+    "ingredient_required": "Select or name an ingredient",
+    "steps_label": "Steps",
+    "add_step": "Add Step",
+    "step_instruction_placeholder": "Describe what to do in this step…",
+    "step_ingredients_hint": "Ingredients used in this step"
   }
 }

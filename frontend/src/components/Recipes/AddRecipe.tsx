@@ -46,6 +46,11 @@ import {
 import useCustomToast from "@/hooks/useCustomToast"
 import { handleError } from "@/utils"
 
+const _stepSchema = z.object({
+  instruction: z.string().min(1),
+  ingredient_indices: z.array(z.number()),
+})
+
 const _ingredientSchema = z.object({
   ingredient_id: z.string().optional(),
   ingredient_name: z.string().optional(),
@@ -54,10 +59,10 @@ const _ingredientSchema = z.object({
   unit: z.string().min(1),
   notes: z.string().optional(),
 })
+
 const _formSchema = z.object({
   title: z.string(),
   description: z.string().optional(),
-  instructions: z.string().optional(),
   servings: z.coerce.number().int().positive().optional().or(z.literal("")),
   prep_time_minutes: z.coerce
     .number()
@@ -74,6 +79,7 @@ const _formSchema = z.object({
   source_url: z.string().url().optional().or(z.literal("")),
   image_url: z.string().url().optional().or(z.literal("")),
   ingredients: z.array(_ingredientSchema),
+  steps: z.array(_stepSchema),
 })
 
 type FormData = z.infer<typeof _formSchema>
@@ -100,12 +106,22 @@ const AddRecipe = () => {
     [t],
   )
 
+  const stepSchema = useMemo(
+    () =>
+      z.object({
+        instruction: z
+          .string()
+          .min(1, { message: t("form.step_instruction_placeholder") }),
+        ingredient_indices: z.array(z.number()),
+      }),
+    [t],
+  )
+
   const formSchema = useMemo(
     () =>
       z.object({
         title: z.string().min(1, { message: t("form.title_required") }),
         description: z.string().optional(),
-        instructions: z.string().optional(),
         servings: z.coerce
           .number()
           .int()
@@ -127,8 +143,9 @@ const AddRecipe = () => {
         source_url: z.string().url().optional().or(z.literal("")),
         image_url: z.string().url().optional().or(z.literal("")),
         ingredients: z.array(ingredientSchema),
+        steps: z.array(stepSchema),
       }),
-    [t, ingredientSchema],
+    [t, ingredientSchema, stepSchema],
   )
 
   const [isOpen, setIsOpen] = useState(false)
@@ -148,20 +165,29 @@ const AddRecipe = () => {
     defaultValues: {
       title: "",
       description: "",
-      instructions: "",
       servings: "",
       prep_time_minutes: "",
       cook_time_minutes: "",
       source_url: "",
       image_url: "",
       ingredients: [],
+      steps: [],
     },
   })
 
-  const { fields, append, remove } = useFieldArray({
-    control: form.control,
-    name: "ingredients",
-  })
+  const {
+    fields: ingredientFields,
+    append: appendIngredient,
+    remove: removeIngredient,
+  } = useFieldArray({ control: form.control, name: "ingredients" })
+
+  const {
+    fields: stepFields,
+    append: appendStep,
+    remove: removeStep,
+  } = useFieldArray({ control: form.control, name: "steps" })
+
+  const watchedIngredients = form.watch("ingredients")
 
   const handleImport = async () => {
     if (!importUrl.trim()) return
@@ -187,16 +213,33 @@ const AddRecipe = () => {
         }
       })
 
+      // Map step ingredient_names → indices into mappedIngredients
+      const mappedSteps = (parsed.steps ?? []).map((ps) => {
+        const indices = (ps.ingredient_names ?? [])
+          .map((name) =>
+            mappedIngredients.findIndex(
+              (mi) =>
+                (mi.ingredient_name || "").toLowerCase() ===
+                  name.toLowerCase() ||
+                existingIngredients
+                  .find((ei) => ei.id === mi.ingredient_id)
+                  ?.name.toLowerCase() === name.toLowerCase(),
+            ),
+          )
+          .filter((idx) => idx >= 0)
+        return { instruction: ps.instruction, ingredient_indices: indices }
+      })
+
       form.reset({
         title: parsed.title,
         description: parsed.description ?? "",
-        instructions: parsed.instructions ?? "",
         servings: parsed.servings ?? "",
         prep_time_minutes: parsed.prep_time_minutes ?? "",
         cook_time_minutes: parsed.cook_time_minutes ?? "",
         source_url: parsed.source_url ?? "",
         image_url: parsed.image_url ?? "",
         ingredients: mappedIngredients,
+        steps: mappedSteps,
       })
       setImportUrl("")
       showSuccessToast(
@@ -217,7 +260,6 @@ const AddRecipe = () => {
         requestBody: {
           title: data.title,
           description: data.description || null,
-          instructions: data.instructions || null,
           servings: data.servings ? Number(data.servings) : null,
           prep_time_minutes: data.prep_time_minutes
             ? Number(data.prep_time_minutes)
@@ -238,6 +280,11 @@ const AddRecipe = () => {
             ingredient_default_unit: i.unit as Unit,
             notes: i.notes || null,
           })),
+          steps: data.steps.map((s, idx) => ({
+            step_number: idx + 1,
+            instruction: s.instruction,
+            ingredient_indices: s.ingredient_indices,
+          })),
         },
       }),
     onSuccess: () => {
@@ -251,6 +298,14 @@ const AddRecipe = () => {
       queryClient.invalidateQueries({ queryKey: ["ingredients"] })
     },
   })
+
+  const toggleStepIngredient = (stepIndex: number, ingredientIndex: number) => {
+    const current = form.getValues(`steps.${stepIndex}.ingredient_indices`)
+    const next = current.includes(ingredientIndex)
+      ? current.filter((i) => i !== ingredientIndex)
+      : [...current, ingredientIndex]
+    form.setValue(`steps.${stepIndex}.ingredient_indices`, next)
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -385,22 +440,6 @@ const AddRecipe = () => {
                   )}
                 />
               </div>
-              <FormField
-                control={form.control}
-                name="instructions"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("form.instructions_label")}</FormLabel>
-                    <FormControl>
-                      <textarea
-                        className="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                        placeholder={t("form.instructions_placeholder")}
-                        {...field}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -445,7 +484,7 @@ const AddRecipe = () => {
                     variant="outline"
                     size="sm"
                     onClick={() =>
-                      append({
+                      appendIngredient({
                         ingredient_id: "",
                         ingredient_name: "",
                         category: "other",
@@ -459,7 +498,7 @@ const AddRecipe = () => {
                   </Button>
                 </div>
                 <div className="space-y-3">
-                  {fields.map((field, index) => {
+                  {ingredientFields.map((field, index) => {
                     const ingredientName = form.watch(
                       `ingredients.${index}.ingredient_name`,
                     )
@@ -592,7 +631,7 @@ const AddRecipe = () => {
                             type="button"
                             variant="ghost"
                             size="icon"
-                            onClick={() => remove(index)}
+                            onClick={() => removeIngredient(index)}
                             className="mt-0.5"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -613,6 +652,106 @@ const AddRecipe = () => {
                             </FormItem>
                           )}
                         />
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Steps */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <FormLabel>{t("form.steps_label")}</FormLabel>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      appendStep({ instruction: "", ingredient_indices: [] })
+                    }
+                  >
+                    <Plus className="mr-1 h-3 w-3" /> {t("form.add_step")}
+                  </Button>
+                </div>
+                <div className="space-y-3">
+                  {stepFields.map((field, stepIndex) => {
+                    const selectedIndices = form.watch(
+                      `steps.${stepIndex}.ingredient_indices`,
+                    )
+                    return (
+                      <div
+                        key={field.id}
+                        className="flex gap-3 p-3 rounded-md border bg-muted/20"
+                      >
+                        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-muted text-muted-foreground text-xs flex items-center justify-center font-semibold mt-1">
+                          {stepIndex + 1}
+                        </span>
+                        <div className="flex-1 space-y-2">
+                          <FormField
+                            control={form.control}
+                            name={`steps.${stepIndex}.instruction`}
+                            render={({ field: f }) => (
+                              <FormItem>
+                                <FormControl>
+                                  <textarea
+                                    className="flex min-h-[72px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                    placeholder={t(
+                                      "form.step_instruction_placeholder",
+                                    )}
+                                    {...f}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          {watchedIngredients.length > 0 && (
+                            <div>
+                              <p className="text-xs text-muted-foreground mb-1">
+                                {t("form.step_ingredients_hint")}
+                              </p>
+                              <div className="flex flex-wrap gap-1">
+                                {watchedIngredients.map((ing, ingIdx) => {
+                                  const label =
+                                    ing.ingredient_name ||
+                                    ingredientsData?.data.find(
+                                      (d) => d.id === ing.ingredient_id,
+                                    )?.name ||
+                                    ""
+                                  if (!label) return null
+                                  const active =
+                                    selectedIndices.includes(ingIdx)
+                                  return (
+                                    <button
+                                      key={ingIdx}
+                                      type="button"
+                                      onClick={() =>
+                                        toggleStepIngredient(stepIndex, ingIdx)
+                                      }
+                                      className="focus:outline-none"
+                                    >
+                                      <Badge
+                                        variant={active ? "default" : "outline"}
+                                        className="text-xs cursor-pointer"
+                                      >
+                                        {label}
+                                      </Badge>
+                                    </button>
+                                  )
+                                })}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeStep(stepIndex)}
+                          className="mt-0.5 flex-shrink-0"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     )
                   })}

@@ -282,3 +282,75 @@ def test_delete_recipe_not_enough_permissions(
         headers=normal_user_token_headers,
     )
     assert response.status_code == 403
+
+
+def test_create_recipe_with_steps(
+    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+) -> None:
+    ingredient = crud.create_ingredient(
+        session=db,
+        ingredient_in=IngredientCreate(
+            name="step-test-flour",
+            category=IngredientCategory.GRAINS,
+            default_unit=Unit.GRAM,
+        ),
+    )
+    data = {
+        "title": "Bread",
+        "ingredients": [
+            {"ingredient_id": str(ingredient.id), "quantity": 500.0, "unit": "g"},
+        ],
+        "steps": [
+            {
+                "step_number": 1,
+                "instruction": "Mix the flour with water.",
+                "ingredient_indices": [0],
+            },
+            {
+                "step_number": 2,
+                "instruction": "Bake at 200°C for 30 minutes.",
+                "ingredient_indices": [],
+            },
+        ],
+    }
+    response = client.post(
+        f"{settings.API_V1_STR}/recipes/",
+        headers=superuser_token_headers,
+        json=data,
+    )
+    assert response.status_code == 200
+    content = response.json()
+    assert len(content["steps"]) == 2
+    assert content["steps"][0]["step_number"] == 1
+    assert content["steps"][0]["instruction"] == "Mix the flour with water."
+    assert len(content["steps"][0]["ingredients"]) == 1
+    assert content["steps"][0]["ingredients"][0]["ingredient_name"] == "step-test-flour"
+    assert content["steps"][1]["step_number"] == 2
+    assert content["steps"][1]["ingredients"] == []
+
+
+def test_update_recipe_with_steps(
+    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+) -> None:
+    superuser = crud.get_user_by_email(session=db, email=settings.FIRST_SUPERUSER)
+    recipe = create_random_recipe(db, owner_id=superuser.id, with_ingredients=True)  # type: ignore[union-attr]
+
+    data = {
+        "steps": [
+            {
+                "step_number": 1,
+                "instruction": "First step.",
+                "ingredient_indices": [0],
+            }
+        ]
+    }
+    response = client.put(
+        f"{settings.API_V1_STR}/recipes/{recipe.id}",  # type: ignore[attr-defined]
+        headers=superuser_token_headers,
+        json=data,
+    )
+    assert response.status_code == 200
+    content = response.json()
+    assert len(content["steps"]) == 1
+    assert content["steps"][0]["instruction"] == "First step."
+    assert len(content["steps"][0]["ingredients"]) == 1

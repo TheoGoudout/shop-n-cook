@@ -13,12 +13,12 @@ interface Props {
 }
 
 const ReimportRecipe = ({ id, onSuccess }: Props) => {
-  const { t } = useTranslation("recipes")
+  const { t, i18n } = useTranslation("recipes")
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
 
   const mutation = useMutation({
-    mutationFn: () => RecipesService.reimportRecipe({ id, requestBody: {} }),
+    mutationFn: () => RecipesService.reimportRecipe({ id, requestBody: { language: i18n.language } }),
     onSuccess: () => {
       showSuccessToast(t("reimport.success"))
       onSuccess()

@@ -482,3 +482,126 @@ def test_fetch_page_fallback_plain_text() -> None:
         text, image_url = _fetch_page("https://example.com/plain")
 
     assert "Plain Recipe" in text or "plain text" in text.lower()
+
+
+# ---- reimport endpoint tests ----
+
+
+def _create_recipe_with_url(db: object, superuser_id: object, source_url: str) -> object:
+    from app import crud
+    from app.models import RecipeCreate
+
+    return crud.create_recipe(
+        session=db,
+        recipe_in=RecipeCreate(title="Old Title", source_url=source_url),
+        owner_id=superuser_id,
+    )
+
+
+def _get_superuser(db: object) -> object:
+    from app import crud
+    from app.core.config import settings
+
+    return crud.get_user_by_email(session=db, email=settings.FIRST_SUPERUSER)
+
+
+def test_reimport_recipe_success(
+    client: TestClient, superuser_token_headers: dict[str, str], db: object
+) -> None:
+    superuser = _get_superuser(db)
+    recipe = _create_recipe_with_url(db, superuser.id, "https://example.com/recipe")
+
+    updated_recipe = {**_SAMPLE_RECIPE, "title": "Reimported Pasta"}
+    llm_mock = MagicMock()
+    llm_mock.invoke.return_value = _make_llm_response(updated_recipe)
+
+    with (
+        patch(
+            "app.services.recipe_import._fetch_page",
+            return_value=("some recipe text", None),
+        ),
+        patch("app.services.recipe_import._get_llm", return_value=llm_mock),
+    ):
+        response = client.post(
+            f"{settings.API_V1_STR}/recipes/{recipe.id}/reimport",
+            headers=superuser_token_headers,
+            json={},
+        )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == str(recipe.id)
+    assert data["title"] == "Reimported Pasta"
+    assert len(data["ingredients"]) == 1
+
+
+def test_reimport_recipe_not_found(
+    client: TestClient, superuser_token_headers: dict[str, str]
+) -> None:
+    import uuid
+
+    response = client.post(
+        f"{settings.API_V1_STR}/recipes/{uuid.uuid4()}/reimport",
+        headers=superuser_token_headers,
+        json={},
+    )
+    assert response.status_code == 404
+
+
+def test_reimport_recipe_no_source_url(
+    client: TestClient, superuser_token_headers: dict[str, str], db: object
+) -> None:
+    from app import crud
+    from app.models import RecipeCreate
+
+    superuser = _get_superuser(db)
+    recipe = crud.create_recipe(
+        session=db,
+        recipe_in=RecipeCreate(title="No URL Recipe"),
+        owner_id=superuser.id,
+    )
+
+    response = client.post(
+        f"{settings.API_V1_STR}/recipes/{recipe.id}/reimport",
+        headers=superuser_token_headers,
+        json={},
+    )
+    assert response.status_code == 422
+
+
+def test_reimport_recipe_requires_superuser(
+    client: TestClient, normal_user_token_headers: dict[str, str], db: object
+) -> None:
+    superuser = _get_superuser(db)
+    recipe = _create_recipe_with_url(db, superuser.id, "https://example.com/recipe2")
+
+    response = client.post(
+        f"{settings.API_V1_STR}/recipes/{recipe.id}/reimport",
+        headers=normal_user_token_headers,
+        json={},
+    )
+    assert response.status_code == 403
+
+
+def test_reimport_recipe_llm_error_returns_503(
+    client: TestClient, superuser_token_headers: dict[str, str], db: object
+) -> None:
+    superuser = _get_superuser(db)
+    recipe = _create_recipe_with_url(db, superuser.id, "https://example.com/recipe3")
+
+    with (
+        patch(
+            "app.services.recipe_import._fetch_page",
+            return_value=("some text", None),
+        ),
+        patch(
+            "app.services.recipe_import._get_llm",
+            side_effect=ValueError("ANTHROPIC_API_KEY is not configured"),
+        ),
+    ):
+        response = client.post(
+            f"{settings.API_V1_STR}/recipes/{recipe.id}/reimport",
+            headers=superuser_token_headers,
+            json={},
+        )
+    assert response.status_code == 503

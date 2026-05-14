@@ -607,3 +607,58 @@ def test_reimport_recipe_llm_error_returns_503(
             json={},
         )
     assert response.status_code == 503
+
+
+# ---- DB cache tests ----
+
+
+def test_import_url_cache_hit_returns_existing_recipe(
+    client: TestClient, superuser_token_headers: dict[str, str], db: object
+) -> None:
+    """If the user already has a saved recipe from this URL, return it without calling LLM."""
+    superuser = _get_superuser(db)
+    _create_recipe_with_url(db, superuser.id, "https://example.com/cache-hit-test")
+
+    llm_mock = MagicMock()
+    with patch("app.services.recipe_import._get_llm", return_value=llm_mock):
+        response = client.post(
+            f"{settings.API_V1_STR}/recipes/import-url",
+            headers=superuser_token_headers,
+            json={"url": "https://example.com/cache-hit-test"},
+        )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["title"] == "Old Title"
+    assert data["source_url"] == "https://example.com/cache-hit-test"
+    llm_mock.invoke.assert_not_called()
+
+
+def test_import_url_cache_is_per_user(
+    client: TestClient,
+    superuser_token_headers: dict[str, str],
+    normal_user_token_headers: dict[str, str],
+    db: object,
+) -> None:
+    """Another user's saved recipe does not serve as a cache hit for a different user."""
+    superuser = _get_superuser(db)
+    _create_recipe_with_url(db, superuser.id, "https://example.com/cache-per-user-test")
+
+    llm_mock = MagicMock()
+    llm_mock.invoke.return_value = _make_llm_response(_SAMPLE_RECIPE)
+
+    with (
+        patch(
+            "app.services.recipe_import._fetch_page",
+            return_value=("recipe text", None),
+        ),
+        patch("app.services.recipe_import._get_llm", return_value=llm_mock),
+    ):
+        response = client.post(
+            f"{settings.API_V1_STR}/recipes/import-url",
+            headers=normal_user_token_headers,
+            json={"url": "https://example.com/cache-per-user-test"},
+        )
+
+    assert response.status_code == 200
+    assert llm_mock.invoke.call_count == 1

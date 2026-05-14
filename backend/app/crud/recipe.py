@@ -120,6 +120,17 @@ def get_recipe(*, session: Session, recipe_id: uuid.UUID) -> Recipe | None:
     return session.get(Recipe, recipe_id)
 
 
+def get_recipe_by_source_url(
+    *, session: Session, owner_id: uuid.UUID, source_url: str
+) -> Recipe | None:
+    return session.exec(
+        select(Recipe).where(
+            Recipe.owner_id == owner_id,
+            Recipe.source_url == source_url,
+        )
+    ).first()
+
+
 def get_recipes(
     *,
     session: Session,

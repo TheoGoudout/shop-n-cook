@@ -17,7 +17,7 @@ from app.models import (
     RecipeUpdate,
 )
 from app.models.user import User
-from app.services.recipe_import import ParsedRecipe, import_recipe_from_url
+from app.services.recipe_import import ParsedIngredient, ParsedRecipe, ParsedStep, import_recipe_from_url
 
 router = APIRouter(prefix="/recipes", tags=["recipes"])
 
@@ -29,6 +29,43 @@ class ImportUrlRequest(BaseModel):
 
 class ReimportRequest(BaseModel):
     language: str | None = None
+
+
+def _recipe_to_parsed(recipe: Recipe) -> ParsedRecipe:
+    """Convert a saved Recipe back to ParsedRecipe format (used as DB cache hit)."""
+    ri_map = {ri.id: ri for ri in recipe.recipe_ingredients}
+    ingredients = [
+        ParsedIngredient(
+            name=ri.ingredient.name,
+            category=ri.ingredient.category,
+            quantity=ri.quantity,
+            unit=ri.unit,
+            notes=ri.notes,
+        )
+        for ri in recipe.recipe_ingredients
+    ]
+    steps = [
+        ParsedStep(
+            instruction=step.instruction,
+            ingredient_names=[
+                ri_map[si.recipe_ingredient_id].ingredient.name
+                for si in step.step_ingredients
+                if si.recipe_ingredient_id in ri_map
+            ],
+        )
+        for step in sorted(recipe.steps, key=lambda s: s.step_number)
+    ]
+    return ParsedRecipe(
+        title=recipe.title,
+        description=recipe.description,
+        servings=recipe.servings,
+        prep_time_minutes=recipe.prep_time_minutes,
+        cook_time_minutes=recipe.cook_time_minutes,
+        source_url=recipe.source_url,
+        image_url=recipe.image_url,
+        ingredients=ingredients,
+        steps=steps,
+    )
 
 
 def _parsed_to_update(parsed: ParsedRecipe) -> RecipeUpdate:
@@ -174,15 +211,26 @@ def delete_recipe(
 @router.post("/import-url", response_model=ParsedRecipe)
 def import_recipe_url(
     *,
-    _current_user: CurrentUser,
+    session: SessionDep,
+    current_user: CurrentUser,
     body: ImportUrlRequest,
 ) -> Any:
     """Parse a recipe from a URL using AI. Returns pre-filled data for review — does NOT save.
 
+    If the current user already has a saved recipe with the same source URL, that
+    recipe's data is returned immediately without calling the LLM.
+
     Requires ANTHROPIC_API_KEY to be configured. Returns 503 if not set.
     """
+    url = str(body.url)
+    existing = crud.get_recipe_by_source_url(
+        session=session, owner_id=current_user.id, source_url=url
+    )
+    if existing:
+        return _recipe_to_parsed(existing)
+
     try:
-        parsed = import_recipe_from_url(str(body.url), language=body.language)
+        parsed = import_recipe_from_url(url, language=body.language)
     except ValueError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     except Exception as exc:

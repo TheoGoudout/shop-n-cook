@@ -11,6 +11,7 @@ from app.crud.recipe import (
     create_recipe,
     delete_recipe,
     get_recipe,
+    get_recipe_by_source_url,
     get_recipes,
     recipe_to_public,
     update_recipe,
@@ -58,6 +59,7 @@ __all__ = [
     "ingredient_has_references",
     # recipe
     "get_recipe",
+    "get_recipe_by_source_url",
     "get_recipes",
     "create_recipe",
     "update_recipe",

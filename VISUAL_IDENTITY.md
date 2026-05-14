@@ -129,8 +129,8 @@ Tailwind 4 auto-generates `font-sans` and `font-display` utility classes from th
 
 ## Logo
 
-**Icon:** `ChefHat` from lucide-react, `24×24` (h-6 w-6), `text-primary` (amber), `drop-shadow-sm`  
-**Wordmark:** `APP_NAME` in Playfair Display (`font-display`), `font-semibold`, `text-base`, `tracking-tight`  
+**Icon:** `ChefHat` from lucide-react, `24×24` (h-6 w-6), `text-primary` (amber), `drop-shadow-sm`
+**Wordmark:** `APP_NAME` in Playfair Display (`font-display`), `font-semibold`, `text-base`, `tracking-tight`
 **Gap:** `2.5` (gap-2.5) between icon and text
 
 The icon uses the amber primary color which gives the logo an immediate food/cooking signal. Drop shadow adds subtle depth without complication.

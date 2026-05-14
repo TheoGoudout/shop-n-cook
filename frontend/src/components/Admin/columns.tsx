@@ -55,7 +55,7 @@ export const columns: ColumnDef<UserTableData>[] = [
         <span
           className={cn(
             "size-2 rounded-full",
-            row.original.is_active ? "bg-green-500" : "bg-gray-400",
+            row.original.is_active ? "bg-primary" : "bg-muted-foreground/40",
           )}
         />
         <span className={row.original.is_active ? "" : "text-muted-foreground"}>

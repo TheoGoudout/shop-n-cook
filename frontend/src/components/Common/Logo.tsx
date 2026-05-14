@@ -16,14 +16,16 @@ export function Logo({
   asLink = true,
 }: LogoProps) {
   const fullContent = (
-    <div className={cn("flex items-center gap-2", className)}>
-      <ChefHat className="h-5 w-5 shrink-0 text-primary" />
-      <span className="font-bold text-sm tracking-tight">{APP_NAME}</span>
+    <div className={cn("flex items-center gap-2.5", className)}>
+      <ChefHat className="h-6 w-6 shrink-0 text-primary drop-shadow-sm" />
+      <span className="font-display font-semibold text-base tracking-tight leading-none">
+        {APP_NAME}
+      </span>
     </div>
   )
 
   const iconContent = (
-    <ChefHat className={cn("size-5 text-primary", className)} />
+    <ChefHat className={cn("size-5 text-primary drop-shadow-sm", className)} />
   )
 
   const content =
@@ -31,16 +33,18 @@ export function Logo({
       <>
         <div
           className={cn(
-            "flex items-center gap-2 group-data-[collapsible=icon]:hidden",
+            "flex items-center gap-2.5 group-data-[collapsible=icon]:hidden",
             className,
           )}
         >
-          <ChefHat className="h-5 w-5 shrink-0 text-primary" />
-          <span className="font-bold text-sm tracking-tight">{APP_NAME}</span>
+          <ChefHat className="h-6 w-6 shrink-0 text-primary drop-shadow-sm" />
+          <span className="font-display font-semibold text-base tracking-tight leading-none">
+            {APP_NAME}
+          </span>
         </div>
         <ChefHat
           className={cn(
-            "size-5 hidden group-data-[collapsible=icon]:block text-primary",
+            "size-5 hidden group-data-[collapsible=icon]:block text-primary drop-shadow-sm",
             className,
           )}
         />

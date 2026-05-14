@@ -143,7 +143,7 @@ def _get_llm() -> BaseChatModel:
             raise ValueError("OPENAI_API_KEY is not configured")
         from langchain_openai import ChatOpenAI
 
-        return ChatOpenAI(  # type: ignore[call-arg]
+        return ChatOpenAI(
             model=settings.OPENAI_MODEL,
             api_key=settings.OPENAI_API_KEY,  # type: ignore[arg-type]
             max_retries=3,

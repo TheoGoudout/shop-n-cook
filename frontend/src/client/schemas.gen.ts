@@ -103,28 +103,6 @@ export const IngredientCategorySchema = {
     title: 'IngredientCategory'
 } as const;
 
-export const IngredientCreateSchema = {
-    properties: {
-        name: {
-            type: 'string',
-            maxLength: 255,
-            minLength: 1,
-            title: 'Name'
-        },
-        category: {
-            '$ref': '#/components/schemas/IngredientCategory',
-            default: 'other'
-        },
-        default_unit: {
-            '$ref': '#/components/schemas/Unit',
-            default: 'piece'
-        }
-    },
-    type: 'object',
-    required: ['name'],
-    title: 'IngredientCreate'
-} as const;
-
 export const IngredientPublicSchema = {
     properties: {
         name: {
@@ -162,46 +140,6 @@ export const IngredientPublicSchema = {
     type: 'object',
     required: ['name', 'id'],
     title: 'IngredientPublic'
-} as const;
-
-export const IngredientUpdateSchema = {
-    properties: {
-        name: {
-            anyOf: [
-                {
-                    type: 'string',
-                    maxLength: 255,
-                    minLength: 1
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Name'
-        },
-        category: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/IngredientCategory'
-                },
-                {
-                    type: 'null'
-                }
-            ]
-        },
-        default_unit: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/Unit'
-                },
-                {
-                    type: 'null'
-                }
-            ]
-        }
-    },
-    type: 'object',
-    title: 'IngredientUpdate'
 } as const;
 
 export const IngredientsPublicSchema = {

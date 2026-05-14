@@ -6,7 +6,6 @@ import enAdmin from "./locales/en/admin.json"
 import enAuth from "./locales/en/auth.json"
 import enCommon from "./locales/en/common.json"
 import enDashboard from "./locales/en/dashboard.json"
-import enIngredients from "./locales/en/ingredients.json"
 import enNavigation from "./locales/en/navigation.json"
 import enRecipes from "./locales/en/recipes.json"
 import enSettings from "./locales/en/settings.json"
@@ -15,7 +14,6 @@ import frAdmin from "./locales/fr/admin.json"
 import frAuth from "./locales/fr/auth.json"
 import frCommon from "./locales/fr/common.json"
 import frDashboard from "./locales/fr/dashboard.json"
-import frIngredients from "./locales/fr/ingredients.json"
 import frNavigation from "./locales/fr/navigation.json"
 import frRecipes from "./locales/fr/recipes.json"
 import frSettings from "./locales/fr/settings.json"
@@ -31,7 +29,6 @@ i18n
         navigation: enNavigation,
         auth: enAuth,
         recipes: enRecipes,
-        ingredients: enIngredients,
         shopping: enShopping,
         settings: enSettings,
         admin: enAdmin,
@@ -42,7 +39,6 @@ i18n
         navigation: frNavigation,
         auth: frAuth,
         recipes: frRecipes,
-        ingredients: frIngredients,
         shopping: frShopping,
         settings: frSettings,
         admin: frAdmin,

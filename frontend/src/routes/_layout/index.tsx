@@ -7,7 +7,6 @@ import { ActiveShoppingList } from "@/components/Dashboard/ActiveShoppingList"
 import { EmptyState } from "@/components/Dashboard/EmptyState"
 import { QuickActions } from "@/components/Dashboard/QuickActions"
 import { RecentRecipes } from "@/components/Dashboard/RecentRecipes"
-import { StatsChart } from "@/components/Dashboard/StatsChart"
 import useAuth from "@/hooks/useAuth"
 import { APP_NAME } from "@/lib/config"
 
@@ -49,8 +48,6 @@ function Dashboard() {
         </h1>
         <p className="text-muted-foreground">{t("welcome")}</p>
       </div>
-
-      <StatsChart />
 
       <QuickActions />
 

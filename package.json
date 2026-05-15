@@ -2,7 +2,8 @@
   "name": "fastapi-full-stack-template",
   "private": true,
   "workspaces": [
-    "frontend"
+    "frontend",
+    "extension"
   ],
   "scripts": {
     "dev": "bun run --filter frontend dev",

@@ -54,6 +54,12 @@
     "menu_item": "Réimporter",
     "success": "Recette réimportée avec succès"
   },
+  "share": {
+    "importing": "Importation de la recette…",
+    "success": "« {{title}} » ajouté à vos recettes !",
+    "error": "L'importation a échoué. Veuillez réessayer depuis l'application.",
+    "invalid_url": "Aucune URL valide trouvée dans le contenu partagé."
+  },
   "form": {
     "title_label": "Titre",
     "title_placeholder": "ex. Spaghetti Bolognaise",

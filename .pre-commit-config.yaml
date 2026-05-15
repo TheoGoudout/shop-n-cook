@@ -13,10 +13,11 @@ repos:
         exclude: |
             (?x)^(
                 frontend/src/client/.*|
+                extension/src/client/.*|
                 backend/app/email-templates/build/.*
             )$
       - id: trailing-whitespace
-        exclude: ^frontend/src/client/.*
+        exclude: ^(frontend|extension)/src/client/.*
   - repo: local
     hooks:
       - id: local-biome-check
@@ -25,6 +26,7 @@ repos:
         language: system
         types: [text]
         files: ^frontend/
+        pass_filenames: false
 
       - id: local-extension-biome-check
         name: biome check (extension)
@@ -32,6 +34,7 @@ repos:
         language: system
         types: [text]
         files: ^extension/
+        pass_filenames: false
 
       - id: local-ruff-check
         name: ruff check

@@ -91,7 +91,7 @@ function ShareTargetPage() {
       return
     }
     importMutation.mutate(recipeUrl)
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [importMutation, navigate, showErrorToast, t, text, url]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="flex flex-col items-center gap-4 py-16 text-center">

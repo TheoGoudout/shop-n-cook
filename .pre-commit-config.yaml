@@ -26,6 +26,13 @@ repos:
         types: [text]
         files: ^frontend/
 
+      - id: local-extension-biome-check
+        name: biome check (extension)
+        entry: bun run --filter extension lint
+        language: system
+        types: [text]
+        files: ^extension/
+
       - id: local-ruff-check
         name: ruff check
         entry: uv run ruff check --force-exclude --fix --exit-non-zero-on-fix
@@ -52,4 +59,4 @@ repos:
         entry: bash ./scripts/generate-client.sh
         pass_filenames: false
         language: unsupported
-        files: ^backend/.*$|^scripts/generate-client\.sh$
+        files: ^backend/.*$|^scripts/generate-client\.sh$|^extension/openapi-ts\.config\.ts$

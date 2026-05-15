@@ -57,6 +57,12 @@ services:
 
   mailcatcher:
     image: schickling/mailcatcher
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/1080'"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 5s
     ports:
       - "1080:1080"
       - "1025:1025"

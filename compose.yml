@@ -80,6 +80,12 @@ services:
   frontend:
     image: shop-n-cook/frontend:${TAG:-latest}
     restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 10s
+      retries: 5
+      start_period: 10s
+      timeout: 5s
     build:
       context: .
       dockerfile: frontend/Dockerfile

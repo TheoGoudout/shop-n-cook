@@ -54,6 +54,12 @@
     "menu_item": "Reimport",
     "success": "Recipe reimported successfully"
   },
+  "share": {
+    "importing": "Importing recipe…",
+    "success": "\"{{title}}\" added to your recipes!",
+    "error": "Failed to import this recipe. Please try again from the app.",
+    "invalid_url": "No valid recipe URL found in the shared content."
+  },
   "form": {
     "title_label": "Title",
     "title_placeholder": "e.g. Spaghetti Bolognese",

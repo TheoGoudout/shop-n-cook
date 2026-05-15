@@ -15,6 +15,7 @@ import { Route as RecoverPasswordRouteImport } from './routes/recover-password'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LayoutRouteImport } from './routes/_layout'
 import { Route as LayoutIndexRouteImport } from './routes/_layout/index'
+import { Route as LayoutShareTargetRouteImport } from './routes/_layout/share-target'
 import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
 import { Route as LayoutAdminRouteImport } from './routes/_layout/admin'
 import { Route as LayoutShoppingListsIndexRouteImport } from './routes/_layout/shopping-lists/index'
@@ -49,6 +50,11 @@ const LayoutRoute = LayoutRouteImport.update({
 const LayoutIndexRoute = LayoutIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutShareTargetRoute = LayoutShareTargetRouteImport.update({
+  id: '/share-target',
+  path: '/share-target',
   getParentRoute: () => LayoutRoute,
 } as any)
 const LayoutSettingsRoute = LayoutSettingsRouteImport.update({
@@ -91,6 +97,7 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/admin': typeof LayoutAdminRoute
   '/settings': typeof LayoutSettingsRoute
+  '/share-target': typeof LayoutShareTargetRoute
   '/recipes/$id': typeof LayoutRecipesIdRoute
   '/shopping-lists/$id': typeof LayoutShoppingListsIdRoute
   '/recipes/': typeof LayoutRecipesIndexRoute
@@ -103,6 +110,7 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/admin': typeof LayoutAdminRoute
   '/settings': typeof LayoutSettingsRoute
+  '/share-target': typeof LayoutShareTargetRoute
   '/': typeof LayoutIndexRoute
   '/recipes/$id': typeof LayoutRecipesIdRoute
   '/shopping-lists/$id': typeof LayoutShoppingListsIdRoute
@@ -118,6 +126,7 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/_layout/admin': typeof LayoutAdminRoute
   '/_layout/settings': typeof LayoutSettingsRoute
+  '/_layout/share-target': typeof LayoutShareTargetRoute
   '/_layout/': typeof LayoutIndexRoute
   '/_layout/recipes/$id': typeof LayoutRecipesIdRoute
   '/_layout/shopping-lists/$id': typeof LayoutShoppingListsIdRoute
@@ -134,6 +143,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/admin'
     | '/settings'
+    | '/share-target'
     | '/recipes/$id'
     | '/shopping-lists/$id'
     | '/recipes/'
@@ -146,6 +156,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/admin'
     | '/settings'
+    | '/share-target'
     | '/'
     | '/recipes/$id'
     | '/shopping-lists/$id'
@@ -160,6 +171,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/_layout/admin'
     | '/_layout/settings'
+    | '/_layout/share-target'
     | '/_layout/'
     | '/_layout/recipes/$id'
     | '/_layout/shopping-lists/$id'
@@ -219,6 +231,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutIndexRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/share-target': {
+      id: '/_layout/share-target'
+      path: '/share-target'
+      fullPath: '/share-target'
+      preLoaderRoute: typeof LayoutShareTargetRouteImport
+      parentRoute: typeof LayoutRoute
+    }
     '/_layout/settings': {
       id: '/_layout/settings'
       path: '/settings'
@@ -267,6 +286,7 @@ declare module '@tanstack/react-router' {
 interface LayoutRouteChildren {
   LayoutAdminRoute: typeof LayoutAdminRoute
   LayoutSettingsRoute: typeof LayoutSettingsRoute
+  LayoutShareTargetRoute: typeof LayoutShareTargetRoute
   LayoutIndexRoute: typeof LayoutIndexRoute
   LayoutRecipesIdRoute: typeof LayoutRecipesIdRoute
   LayoutShoppingListsIdRoute: typeof LayoutShoppingListsIdRoute
@@ -277,6 +297,7 @@ interface LayoutRouteChildren {
 const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutAdminRoute: LayoutAdminRoute,
   LayoutSettingsRoute: LayoutSettingsRoute,
+  LayoutShareTargetRoute: LayoutShareTargetRoute,
   LayoutIndexRoute: LayoutIndexRoute,
   LayoutRecipesIdRoute: LayoutRecipesIdRoute,
   LayoutShoppingListsIdRoute: LayoutShoppingListsIdRoute,

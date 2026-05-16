@@ -20,6 +20,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: "autoUpdate",
+      injectRegister: "script",
       manifest: {
         name: "Shop'n'Cook",
         short_name: "Shop'n'Cook",

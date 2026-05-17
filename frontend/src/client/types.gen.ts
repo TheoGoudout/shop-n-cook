@@ -115,7 +115,7 @@ export type RecipePublic = {
     cook_time_minutes?: (number | null);
     source_url?: (string | null);
     image_url?: (string | null);
-    is_public: boolean;
+    is_public?: boolean;
     id: string;
     owner_id: string;
     owner_name?: (string | null);
@@ -358,17 +358,17 @@ export type PrivateCreateUserData = {
 export type PrivateCreateUserResponse = (UserPublic);
 
 export type RecipesReadPublicRecipesData = {
+    limit?: number;
     ownerId?: (string | null);
     search?: (string | null);
     skip?: number;
-    limit?: number;
 };
 
 export type RecipesReadPublicRecipesResponse = (RecipesPublic);
 
 export type RecipesReadRecipesData = {
-    search?: (string | null);
     limit?: number;
+    search?: (string | null);
     skip?: number;
 };
 

@@ -441,6 +441,11 @@ export const RecipeCreateSchema = {
             ],
             title: 'Image Url'
         },
+        is_public: {
+            type: 'boolean',
+            title: 'Is Public',
+            default: false
+        },
         ingredients: {
             items: {
                 '$ref': '#/components/schemas/RecipeIngredientCreate'
@@ -645,6 +650,11 @@ export const RecipePublicSchema = {
             ],
             title: 'Image Url'
         },
+        is_public: {
+            type: 'boolean',
+            title: 'Is Public',
+            default: false
+        },
         id: {
             type: 'string',
             format: 'uuid',
@@ -654,6 +664,17 @@ export const RecipePublicSchema = {
             type: 'string',
             format: 'uuid',
             title: 'Owner Id'
+        },
+        owner_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Owner Name'
         },
         created_at: {
             anyOf: [
@@ -844,6 +865,17 @@ export const RecipeUpdateSchema = {
                 }
             ],
             title: 'Image Url'
+        },
+        is_public: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Is Public'
         },
         ingredients: {
             anyOf: [

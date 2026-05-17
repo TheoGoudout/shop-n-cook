@@ -113,7 +113,7 @@ def _parsed_to_update(parsed: ParsedRecipe) -> RecipeUpdate:
 @router.get("/public", response_model=RecipesPublic)
 def read_public_recipes(
     session: SessionDep,
-    current_user: CurrentUser,
+    _current_user: CurrentUser,
     owner_id: uuid.UUID | None = None,
     search: str | None = None,
     skip: int = 0,

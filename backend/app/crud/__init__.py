@@ -10,6 +10,7 @@ from app.crud.ingredient import (
 from app.crud.recipe import (
     create_recipe,
     delete_recipe,
+    get_public_recipes,
     get_recipe,
     get_recipe_by_source_url,
     get_recipes,
@@ -61,6 +62,7 @@ __all__ = [
     "get_recipe",
     "get_recipe_by_source_url",
     "get_recipes",
+    "get_public_recipes",
     "create_recipe",
     "update_recipe",
     "delete_recipe",

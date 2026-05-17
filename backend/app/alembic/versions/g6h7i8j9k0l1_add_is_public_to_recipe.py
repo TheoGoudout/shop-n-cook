@@ -1,7 +1,7 @@
 """add_is_public_to_recipe
 
 Revision ID: g6h7i8j9k0l1
-Revises: f1a2b3c4d5e6
+Revises: b2c3d4e5f6a7
 Create Date: 2026-05-17 12:00:00.000000
 
 """
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = 'g6h7i8j9k0l1'
-down_revision = 'f1a2b3c4d5e6'
+down_revision = 'b2c3d4e5f6a7'
 branch_labels = None
 depends_on = None
 

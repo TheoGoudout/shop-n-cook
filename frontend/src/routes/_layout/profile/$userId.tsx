@@ -103,8 +103,7 @@ function UserProfile() {
       }),
   })
 
-  const displayName =
-    recipes?.data[0]?.owner_name ?? t("profile.unknown_user")
+  const displayName = recipes?.data[0]?.owner_name ?? t("profile.unknown_user")
 
   return (
     <div className="flex flex-col gap-6">

@@ -3,7 +3,7 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { IngredientsReadIngredientsData, IngredientsReadIngredientsResponse, IngredientsReadIngredientData, IngredientsReadIngredientResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, RecipesReadRecipesData, RecipesReadRecipesResponse, RecipesCreateRecipeData, RecipesCreateRecipeResponse, RecipesReadRecipeData, RecipesReadRecipeResponse, RecipesUpdateRecipeData, RecipesUpdateRecipeResponse, RecipesDeleteRecipeData, RecipesDeleteRecipeResponse, RecipesReimportRecipeData, RecipesReimportRecipeResponse, RecipesImportRecipeUrlData, RecipesImportRecipeUrlResponse, ShoppingListsReadShoppingListsData, ShoppingListsReadShoppingListsResponse, ShoppingListsCreateShoppingListData, ShoppingListsCreateShoppingListResponse, ShoppingListsReadShoppingListData, ShoppingListsReadShoppingListResponse, ShoppingListsUpdateShoppingListData, ShoppingListsUpdateShoppingListResponse, ShoppingListsDeleteShoppingListData, ShoppingListsDeleteShoppingListResponse, ShoppingListsAddItemData, ShoppingListsAddItemResponse, ShoppingListsUpdateItemData, ShoppingListsUpdateItemResponse, ShoppingListsDeleteItemData, ShoppingListsDeleteItemResponse, ShoppingListsAddRecipeData, ShoppingListsAddRecipeResponse, ShoppingListsUpdatePlannedRecipeData, ShoppingListsUpdatePlannedRecipeResponse, ShoppingListsDeletePlannedRecipeData, ShoppingListsDeletePlannedRecipeResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UserSettingsReadUserSettingsResponse, UserSettingsUpdateUserSettingsData, UserSettingsUpdateUserSettingsResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
+import type { IngredientsReadIngredientsData, IngredientsReadIngredientsResponse, IngredientsReadIngredientData, IngredientsReadIngredientResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, RecipesReadPublicRecipesData, RecipesReadPublicRecipesResponse, RecipesReadRecipesData, RecipesReadRecipesResponse, RecipesCreateRecipeData, RecipesCreateRecipeResponse, RecipesReadRecipeData, RecipesReadRecipeResponse, RecipesUpdateRecipeData, RecipesUpdateRecipeResponse, RecipesDeleteRecipeData, RecipesDeleteRecipeResponse, RecipesReimportRecipeData, RecipesReimportRecipeResponse, RecipesImportRecipeUrlData, RecipesImportRecipeUrlResponse, ShoppingListsReadShoppingListsData, ShoppingListsReadShoppingListsResponse, ShoppingListsCreateShoppingListData, ShoppingListsCreateShoppingListResponse, ShoppingListsReadShoppingListData, ShoppingListsReadShoppingListResponse, ShoppingListsUpdateShoppingListData, ShoppingListsUpdateShoppingListResponse, ShoppingListsDeleteShoppingListData, ShoppingListsDeleteShoppingListResponse, ShoppingListsAddItemData, ShoppingListsAddItemResponse, ShoppingListsUpdateItemData, ShoppingListsUpdateItemResponse, ShoppingListsDeleteItemData, ShoppingListsDeleteItemResponse, ShoppingListsAddRecipeData, ShoppingListsAddRecipeResponse, ShoppingListsUpdatePlannedRecipeData, ShoppingListsUpdatePlannedRecipeResponse, ShoppingListsDeletePlannedRecipeData, ShoppingListsDeletePlannedRecipeResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UserSettingsReadUserSettingsResponse, UserSettingsUpdateUserSettingsData, UserSettingsUpdateUserSettingsResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
 
 export class IngredientsService {
     /**
@@ -199,7 +199,7 @@ export class RecipesService {
             }
         });
     }
-
+    
     /**
      * Read Recipes
      * List recipes. Superusers see all; regular users see only their own.
@@ -247,7 +247,7 @@ export class RecipesService {
     
     /**
      * Read Recipe
-     * Get a single recipe by ID.
+     * Get a single recipe by ID. Public recipes are visible to all authenticated users.
      * @param data The data for the request.
      * @param data.id
      * @returns RecipePublic Successful Response

@@ -1,0 +1,225 @@
+name: Publish Extension
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write # needed to attach the zip to the release
+
+jobs:
+  build:
+    name: Build & Package
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Extract version from tag
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Patch manifest version
+        run: |
+          jq --arg v "${{ steps.version.outputs.version }}" '.version = $v' \
+            extension/public/manifest.json > /tmp/manifest.json
+          mv /tmp/manifest.json extension/public/manifest.json
+
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install
+        working-directory: extension
+
+      - name: Build
+        run: bun run build
+        working-directory: extension
+
+      - name: Package zip
+        run: cd extension/dist && zip -r ../../extension.zip .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: extension-zip
+          path: extension.zip
+          retention-days: 7
+
+      - name: Attach zip to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: extension.zip
+
+  publish-chrome:
+    name: Publish → Chrome Web Store
+    needs: build
+    runs-on: ubuntu-latest
+    # Also covers Vivaldi and Brave — both Chromium-based and use Chrome Web Store directly
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: extension-zip
+
+      - uses: trmcnvn/upload-google-chrome-extension@v2
+        with:
+          extension: extension.zip
+          extension-id: ${{ secrets.CHROME_EXTENSION_ID }}
+          client-id: ${{ secrets.CHROME_CLIENT_ID }}
+          client-secret: ${{ secrets.CHROME_CLIENT_SECRET }}
+          refresh-token: ${{ secrets.CHROME_REFRESH_TOKEN }}
+
+  publish-firefox:
+    name: Publish → Firefox Add-ons (AMO)
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: extension-zip
+
+      - name: Unzip extension
+        run: mkdir ext-src && cd ext-src && unzip ../extension.zip
+
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Install web-ext
+        run: bun add -g web-ext
+
+      - name: Sign & submit to AMO
+        run: |
+          web-ext sign \
+            --source-dir ext-src \
+            --api-key "${{ secrets.FIREFOX_API_KEY }}" \
+            --api-secret "${{ secrets.FIREFOX_API_SECRET }}" \
+            --id "${{ secrets.FIREFOX_EXTENSION_ID }}"
+
+  publish-edge:
+    name: Publish → Edge Add-ons
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: extension-zip
+
+      - name: Get Azure AD access token
+        id: token
+        run: |
+          TOKEN=$(curl -sf -X POST \
+            "https://login.microsoftonline.com/${{ secrets.EDGE_TENANT_ID }}/oauth2/v2.0/token" \
+            -d "client_id=${{ secrets.EDGE_CLIENT_ID }}" \
+            -d "client_secret=${{ secrets.EDGE_CLIENT_SECRET }}" \
+            -d "scope=https://api.addons.microsoftedge.microsoft.com/.default" \
+            -d "grant_type=client_credentials" \
+            | jq -r '.access_token')
+          echo "token=$TOKEN" >> "$GITHUB_OUTPUT"
+
+      - name: Upload package
+        run: |
+          curl -sf -X POST \
+            "https://api.addons.microsoftedge.microsoft.com/v1/products/${{ secrets.EDGE_PRODUCT_ID }}/submissions/draft/package" \
+            -H "Authorization: Bearer ${{ steps.token.outputs.token }}" \
+            -H "Content-Type: application/zip" \
+            --data-binary @extension.zip
+
+      - name: Publish submission
+        run: |
+          curl -sf -X POST \
+            "https://api.addons.microsoftedge.microsoft.com/v1/products/${{ secrets.EDGE_PRODUCT_ID }}/submissions" \
+            -H "Authorization: Bearer ${{ steps.token.outputs.token }}"
+
+  publish-opera:
+    name: Publish → Opera Add-ons
+    needs: build
+    runs-on: ubuntu-latest
+    # Opera has no official REST API; automation uses Puppeteer via ext-opera-upload.
+    # reCAPTCHA Enterprise may block uploads — continue-on-error prevents failing the release.
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: extension-zip
+
+      - name: Install ext-opera-upload
+        run: npm install -g ext-opera-upload
+
+      - name: Upload to Opera Add-ons
+        run: |
+          ext-opera-upload \
+            --email "${{ secrets.OPERA_EMAIL }}" \
+            --password "${{ secrets.OPERA_PASSWORD }}" \
+            --extension-id "${{ secrets.OPERA_EXTENSION_ID }}" \
+            --zip extension.zip
+        continue-on-error: true
+
+  publish-safari:
+    name: Publish → Safari (Mac App Store)
+    needs: build
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: extension-zip
+
+      - name: Unzip extension
+        run: mkdir ext-src && cd ext-src && unzip ../extension.zip
+
+      - name: Convert to Xcode project
+        run: |
+          xcrun safari-web-extension-converter ext-src \
+            --app-name "ShopNCook" \
+            --bundle-identifier com.shopncook.extension \
+            --swift \
+            --no-open
+
+      - name: Import signing certificate
+        env:
+          CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+        run: |
+          echo "$CERTIFICATE" | base64 --decode > cert.p12
+          security create-keychain -p "" build.keychain
+          security import cert.p12 -k build.keychain -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k "" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "" build.keychain
+
+      - name: Install provisioning profile
+        env:
+          PROVISIONING_PROFILE: ${{ secrets.APPLE_PROVISIONING_PROFILE }}
+        run: |
+          echo "$PROVISIONING_PROFILE" | base64 --decode > profile.mobileprovision
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          cp profile.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/
+
+      - name: Archive
+        run: |
+          xcodebuild archive \
+            -project ShopNCook/ShopNCook.xcodeproj \
+            -scheme ShopNCook \
+            -archivePath build/ShopNCook.xcarchive \
+            -allowProvisioningUpdates \
+            DEVELOPMENT_TEAM="${{ secrets.APPLE_TEAM_ID }}"
+
+      - name: Export archive
+        run: |
+          xcodebuild -exportArchive \
+            -archivePath build/ShopNCook.xcarchive \
+            -exportPath build/export \
+            -exportOptionsPlist ExportOptions.plist
+
+      - name: Set up App Store Connect API key
+        run: |
+          mkdir -p ~/.appstoreconnect/private_keys
+          echo "${{ secrets.APPLE_API_KEY_CONTENT }}" | base64 --decode \
+            > ~/.appstoreconnect/private_keys/AuthKey_${{ secrets.APPLE_API_KEY_ID }}.p8
+
+      - name: Upload to App Store Connect
+        run: |
+          xcrun altool --upload-app \
+            --type macos \
+            --file build/export/*.pkg \
+            --apiKey "${{ secrets.APPLE_API_KEY_ID }}" \
+            --apiIssuer "${{ secrets.APPLE_API_KEY_ISSUER_ID }}"

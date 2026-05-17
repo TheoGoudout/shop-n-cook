@@ -16,6 +16,7 @@ import {
 import { IngredientCategorySchema, UnitSchema } from "@/client/schemas.gen"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Dialog,
   DialogClose,
@@ -109,6 +110,7 @@ const EditRecipe = ({ recipe, onSuccess }: Props) => {
           .or(z.literal("")),
         source_url: z.string().url().optional().or(z.literal("")),
         image_url: z.string().url().optional().or(z.literal("")),
+        is_public: z.boolean().default(false),
         ingredients: z.array(ingredientSchema),
         steps: z.array(stepSchema),
       }),
@@ -153,6 +155,7 @@ const EditRecipe = ({ recipe, onSuccess }: Props) => {
       cook_time_minutes: recipe.cook_time_minutes ?? "",
       source_url: recipe.source_url ?? "",
       image_url: recipe.image_url ?? "",
+      is_public: recipe.is_public,
       ingredients: (recipe.ingredients ?? []).map((i) => ({
         ingredient_id: i.ingredient_id,
         ingredient_name: "",
@@ -203,6 +206,7 @@ const EditRecipe = ({ recipe, onSuccess }: Props) => {
             : null,
           source_url: data.source_url || null,
           image_url: data.image_url || null,
+          is_public: data.is_public,
           ingredients: data.ingredients.map((i) => ({
             ingredient_id: i.ingredient_id || null,
             ingredient_name: i.ingredient_id
@@ -372,6 +376,31 @@ const EditRecipe = ({ recipe, onSuccess }: Props) => {
                   )}
                 />
               </div>
+
+              {/* Public toggle */}
+              <FormField
+                control={form.control}
+                name="is_public"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start gap-3 rounded-lg border p-3">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        disabled={recipe.is_public}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>{t("form.make_public_label")}</FormLabel>
+                      <p className="text-xs text-muted-foreground">
+                        {recipe.is_public
+                          ? t("form.already_public")
+                          : t("form.make_public_warning")}
+                      </p>
+                    </div>
+                  </FormItem>
+                )}
+              />
 
               {/* Ingredients */}
               <div>

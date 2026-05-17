@@ -174,9 +174,37 @@ export class PrivateService {
 
 export class RecipesService {
     /**
+     * Read Public Recipes
+     * List all public recipes. Optionally filter by owner_id or search query.
+     * @param data The data for the request.
+     * @param data.ownerId
+     * @param data.search
+     * @param data.skip
+     * @param data.limit
+     * @returns RecipesPublic Successful Response
+     * @throws ApiError
+     */
+    public static readPublicRecipes(data: RecipesReadPublicRecipesData = {}): CancelablePromise<RecipesReadPublicRecipesResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/recipes/public',
+            query: {
+                owner_id: data.ownerId,
+                search: data.search,
+                skip: data.skip,
+                limit: data.limit
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+
+    /**
      * Read Recipes
      * List recipes. Superusers see all; regular users see only their own.
      * @param data The data for the request.
+     * @param data.search
      * @param data.skip
      * @param data.limit
      * @returns RecipesPublic Successful Response
@@ -187,6 +215,7 @@ export class RecipesService {
             method: 'GET',
             url: '/api/v1/recipes/',
             query: {
+                search: data.search,
                 skip: data.skip,
                 limit: data.limit
             },

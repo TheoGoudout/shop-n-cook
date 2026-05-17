@@ -1,8 +1,10 @@
 import { Link } from "@tanstack/react-router"
 import type { ColumnDef } from "@tanstack/react-table"
+import { Globe } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
 import type { RecipePublic } from "@/client"
+import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { RecipeActionsMenu } from "./RecipeActionsMenu"
 
@@ -14,13 +16,21 @@ export const useColumns = (): ColumnDef<RecipePublic>[] => {
       accessorKey: "title",
       header: t("columns.title"),
       cell: ({ row }) => (
-        <Link
-          to="/recipes/$id"
-          params={{ id: row.original.id }}
-          className="font-medium hover:underline"
-        >
-          {row.original.title}
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            to="/recipes/$id"
+            params={{ id: row.original.id }}
+            className="font-medium hover:underline"
+          >
+            {row.original.title}
+          </Link>
+          {row.original.is_public && (
+            <Badge variant="secondary" className="gap-1 text-xs">
+              <Globe className="h-3 w-3" />
+              {t("columns.public")}
+            </Badge>
+          )}
+        </div>
       ),
     },
     {

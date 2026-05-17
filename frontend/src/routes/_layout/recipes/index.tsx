@@ -1,7 +1,7 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
-import { ChefHat } from "lucide-react"
-import { Suspense } from "react"
+import { ChefHat, Search } from "lucide-react"
+import { Suspense, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import { RecipesService } from "@/client"
@@ -9,6 +9,7 @@ import { DataTable } from "@/components/Common/DataTable"
 import PendingItems from "@/components/Pending/PendingItems"
 import AddRecipe from "@/components/Recipes/AddRecipe"
 import { useColumns } from "@/components/Recipes/columns"
+import { Input } from "@/components/ui/input"
 import { APP_NAME } from "@/lib/config"
 
 function getRecipesQueryOptions() {
@@ -25,10 +26,20 @@ export const Route = createFileRoute("/_layout/recipes/")({
   }),
 })
 
-function RecipesTableContent() {
+function RecipesTableContent({ search }: { search: string }) {
   const { t } = useTranslation("recipes")
   const { data } = useSuspenseQuery(getRecipesQueryOptions())
   const columns = useColumns()
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return data.data
+    const q = search.toLowerCase()
+    return data.data.filter(
+      (r) =>
+        r.title.toLowerCase().includes(q) ||
+        (r.description ?? "").toLowerCase().includes(q),
+    )
+  }, [data.data, search])
 
   if (data.data.length === 0) {
     return (
@@ -42,11 +53,12 @@ function RecipesTableContent() {
     )
   }
 
-  return <DataTable columns={columns} data={data.data} />
+  return <DataTable columns={columns} data={filtered} />
 }
 
 function Recipes() {
   const { t } = useTranslation("recipes")
+  const [search, setSearch] = useState("")
 
   return (
     <div className="flex flex-col gap-6">
@@ -59,8 +71,17 @@ function Recipes() {
         </div>
         <AddRecipe />
       </div>
+      <div className="relative max-w-sm">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder={t("page.search_placeholder")}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="pl-9"
+        />
+      </div>
       <Suspense fallback={<PendingItems />}>
-        <RecipesTableContent />
+        <RecipesTableContent search={search} />
       </Suspense>
     </div>
   )

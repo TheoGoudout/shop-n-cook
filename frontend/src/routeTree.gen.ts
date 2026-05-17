@@ -20,8 +20,10 @@ import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
 import { Route as LayoutAdminRouteImport } from './routes/_layout/admin'
 import { Route as LayoutShoppingListsIndexRouteImport } from './routes/_layout/shopping-lists/index'
 import { Route as LayoutRecipesIndexRouteImport } from './routes/_layout/recipes/index'
+import { Route as LayoutRecipesPublicRouteImport } from './routes/_layout/recipes/public'
 import { Route as LayoutShoppingListsIdRouteImport } from './routes/_layout/shopping-lists/$id'
 import { Route as LayoutRecipesIdRouteImport } from './routes/_layout/recipes/$id'
+import { Route as LayoutProfileUserIdRouteImport } from './routes/_layout/profile/$userId'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -88,6 +90,16 @@ const LayoutRecipesIdRoute = LayoutRecipesIdRouteImport.update({
   path: '/recipes/$id',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutRecipesPublicRoute = LayoutRecipesPublicRouteImport.update({
+  id: '/recipes/public',
+  path: '/recipes/public',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutProfileUserIdRoute = LayoutProfileUserIdRouteImport.update({
+  id: '/profile/$userId',
+  path: '/profile/$userId',
+  getParentRoute: () => LayoutRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof LayoutIndexRoute
@@ -99,6 +111,8 @@ export interface FileRoutesByFullPath {
   '/settings': typeof LayoutSettingsRoute
   '/share-target': typeof LayoutShareTargetRoute
   '/recipes/$id': typeof LayoutRecipesIdRoute
+  '/recipes/public': typeof LayoutRecipesPublicRoute
+  '/profile/$userId': typeof LayoutProfileUserIdRoute
   '/shopping-lists/$id': typeof LayoutShoppingListsIdRoute
   '/recipes/': typeof LayoutRecipesIndexRoute
   '/shopping-lists/': typeof LayoutShoppingListsIndexRoute
@@ -113,6 +127,8 @@ export interface FileRoutesByTo {
   '/share-target': typeof LayoutShareTargetRoute
   '/': typeof LayoutIndexRoute
   '/recipes/$id': typeof LayoutRecipesIdRoute
+  '/recipes/public': typeof LayoutRecipesPublicRoute
+  '/profile/$userId': typeof LayoutProfileUserIdRoute
   '/shopping-lists/$id': typeof LayoutShoppingListsIdRoute
   '/recipes': typeof LayoutRecipesIndexRoute
   '/shopping-lists': typeof LayoutShoppingListsIndexRoute
@@ -129,6 +145,8 @@ export interface FileRoutesById {
   '/_layout/share-target': typeof LayoutShareTargetRoute
   '/_layout/': typeof LayoutIndexRoute
   '/_layout/recipes/$id': typeof LayoutRecipesIdRoute
+  '/_layout/recipes/public': typeof LayoutRecipesPublicRoute
+  '/_layout/profile/$userId': typeof LayoutProfileUserIdRoute
   '/_layout/shopping-lists/$id': typeof LayoutShoppingListsIdRoute
   '/_layout/recipes/': typeof LayoutRecipesIndexRoute
   '/_layout/shopping-lists/': typeof LayoutShoppingListsIndexRoute
@@ -145,6 +163,8 @@ export interface FileRouteTypes {
     | '/settings'
     | '/share-target'
     | '/recipes/$id'
+    | '/recipes/public'
+    | '/profile/$userId'
     | '/shopping-lists/$id'
     | '/recipes/'
     | '/shopping-lists/'
@@ -159,6 +179,8 @@ export interface FileRouteTypes {
     | '/share-target'
     | '/'
     | '/recipes/$id'
+    | '/recipes/public'
+    | '/profile/$userId'
     | '/shopping-lists/$id'
     | '/recipes'
     | '/shopping-lists'
@@ -174,6 +196,8 @@ export interface FileRouteTypes {
     | '/_layout/share-target'
     | '/_layout/'
     | '/_layout/recipes/$id'
+    | '/_layout/recipes/public'
+    | '/_layout/profile/$userId'
     | '/_layout/shopping-lists/$id'
     | '/_layout/recipes/'
     | '/_layout/shopping-lists/'
@@ -280,6 +304,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutRecipesIdRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/recipes/public': {
+      id: '/_layout/recipes/public'
+      path: '/recipes/public'
+      fullPath: '/recipes/public'
+      preLoaderRoute: typeof LayoutRecipesPublicRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/profile/$userId': {
+      id: '/_layout/profile/$userId'
+      path: '/profile/$userId'
+      fullPath: '/profile/$userId'
+      preLoaderRoute: typeof LayoutProfileUserIdRouteImport
+      parentRoute: typeof LayoutRoute
+    }
   }
 }
 
@@ -289,6 +327,8 @@ interface LayoutRouteChildren {
   LayoutShareTargetRoute: typeof LayoutShareTargetRoute
   LayoutIndexRoute: typeof LayoutIndexRoute
   LayoutRecipesIdRoute: typeof LayoutRecipesIdRoute
+  LayoutRecipesPublicRoute: typeof LayoutRecipesPublicRoute
+  LayoutProfileUserIdRoute: typeof LayoutProfileUserIdRoute
   LayoutShoppingListsIdRoute: typeof LayoutShoppingListsIdRoute
   LayoutRecipesIndexRoute: typeof LayoutRecipesIndexRoute
   LayoutShoppingListsIndexRoute: typeof LayoutShoppingListsIndexRoute
@@ -300,6 +340,8 @@ const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutShareTargetRoute: LayoutShareTargetRoute,
   LayoutIndexRoute: LayoutIndexRoute,
   LayoutRecipesIdRoute: LayoutRecipesIdRoute,
+  LayoutRecipesPublicRoute: LayoutRecipesPublicRoute,
+  LayoutProfileUserIdRoute: LayoutProfileUserIdRoute,
   LayoutShoppingListsIdRoute: LayoutShoppingListsIdRoute,
   LayoutRecipesIndexRoute: LayoutRecipesIndexRoute,
   LayoutShoppingListsIndexRoute: LayoutShoppingListsIndexRoute,

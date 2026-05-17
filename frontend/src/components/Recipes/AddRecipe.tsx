@@ -144,6 +144,7 @@ const AddRecipe = () => {
           .or(z.literal("")),
         source_url: z.string().url().optional().or(z.literal("")),
         image_url: z.string().url().optional().or(z.literal("")),
+        is_public: z.boolean().default(false),
         ingredients: z.array(ingredientSchema),
         steps: z.array(stepSchema),
       }),

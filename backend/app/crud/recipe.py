@@ -186,8 +186,8 @@ def get_public_recipes(
         .options(selectinload(Recipe.owner))  # type: ignore[arg-type]
     )
     count_query = (
-        select(func.count()).select_from(Recipe).where(Recipe.is_public == True)
-    )  # noqa: E712
+        select(func.count()).select_from(Recipe).where(Recipe.is_public == True)  # noqa: E712
+    )
 
     if owner_id is not None:
         query = query.where(Recipe.owner_id == owner_id)

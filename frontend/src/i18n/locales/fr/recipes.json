@@ -3,7 +3,8 @@
     "title": "Recettes",
     "subtitle": "Gérez votre collection de recettes personnelles",
     "empty_title": "Aucune recette pour l'instant",
-    "empty_subtitle": "Ajoutez votre première recette pour commencer"
+    "empty_subtitle": "Ajoutez votre première recette pour commencer",
+    "search_placeholder": "Rechercher des recettes…"
   },
   "detail": {
     "back": "Retour aux recettes",
@@ -26,7 +27,8 @@
     "ingredients": "Ingrédients",
     "no_description": "Aucune description",
     "minutes": "{{count}} min",
-    "ingredient_count": "{{count}} éléments"
+    "ingredient_count": "{{count}} éléments",
+    "public": "Public"
   },
   "add": {
     "button": "Ajouter une recette",
@@ -72,6 +74,9 @@
     "source_url_label": "URL source",
     "image_url_label": "URL de l'image",
     "url_placeholder": "https://…",
+    "make_public_label": "Rendre cette recette publique",
+    "make_public_warning": "Une fois publique, cette recette ne peut plus être rendue privée.",
+    "already_public": "Cette recette est publique et ne peut pas être rendue privée.",
     "ingredients_label": "Ingrédients",
     "add_ingredient": "Ajouter",
     "select_ingredient": "Sélectionner un ingrédient",
@@ -82,5 +87,20 @@
     "add_step": "Ajouter une étape",
     "step_instruction_placeholder": "Décrivez ce qu'il faut faire à cette étape…",
     "step_ingredients_hint": "Ingrédients utilisés à cette étape"
+  },
+  "public": {
+    "title": "Recettes de la communauté",
+    "subtitle": "Découvrez les recettes partagées par la communauté",
+    "search_placeholder": "Rechercher des recettes…",
+    "by_author": "par {{name}}",
+    "empty_title": "Aucune recette publique pour l'instant",
+    "empty_subtitle": "Soyez le premier à partager une recette avec la communauté !"
+  },
+  "profile": {
+    "back": "Retour à la communauté",
+    "recipe_count": "{{count}} recettes publiques",
+    "unknown_user": "Utilisateur inconnu",
+    "empty_title": "Aucune recette publique",
+    "empty_subtitle": "Cet utilisateur n'a pas encore partagé de recettes publiques."
   }
 }

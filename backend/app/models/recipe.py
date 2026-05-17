@@ -134,6 +134,7 @@ class RecipeBase(SQLModel):
     cook_time_minutes: int | None = Field(default=None, ge=0)
     source_url: str | None = None
     image_url: str | None = None
+    is_public: bool = Field(default=False)
 
 
 class RecipeCreate(RecipeBase):
@@ -149,6 +150,7 @@ class RecipeUpdate(SQLModel):
     cook_time_minutes: int | None = Field(default=None, ge=0)
     source_url: str | None = None
     image_url: str | None = None
+    is_public: bool | None = None
     ingredients: list[RecipeIngredientCreate] | None = None
     steps: list[RecipeStepCreate] | None = None
 
@@ -188,6 +190,7 @@ class Recipe(RecipeBase, table=True):
 class RecipePublic(RecipeBase):
     id: uuid.UUID
     owner_id: uuid.UUID
+    owner_name: str | None = None
     created_at: datetime | None = None
     ingredients: list[RecipeIngredientPublic] = []
     steps: list[RecipeStepPublic] = []

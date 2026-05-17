@@ -82,6 +82,7 @@ export type RecipeCreate = {
     cook_time_minutes?: (number | null);
     source_url?: (string | null);
     image_url?: (string | null);
+    is_public?: boolean;
     ingredients?: Array<RecipeIngredientCreate>;
     steps?: Array<RecipeStepCreate>;
 };
@@ -114,8 +115,10 @@ export type RecipePublic = {
     cook_time_minutes?: (number | null);
     source_url?: (string | null);
     image_url?: (string | null);
+    is_public?: boolean;
     id: string;
     owner_id: string;
+    owner_name?: (string | null);
     created_at?: (string | null);
     ingredients?: Array<RecipeIngredientPublic>;
     steps?: Array<RecipeStepPublic>;
@@ -152,6 +155,7 @@ export type RecipeUpdate = {
     cook_time_minutes?: (number | null);
     source_url?: (string | null);
     image_url?: (string | null);
+    is_public?: (boolean | null);
     ingredients?: (Array<RecipeIngredientCreate> | null);
     steps?: (Array<RecipeStepCreate> | null);
 };
@@ -353,8 +357,18 @@ export type PrivateCreateUserData = {
 
 export type PrivateCreateUserResponse = (UserPublic);
 
+export type RecipesReadPublicRecipesData = {
+    limit?: number;
+    ownerId?: (string | null);
+    search?: (string | null);
+    skip?: number;
+};
+
+export type RecipesReadPublicRecipesResponse = (RecipesPublic);
+
 export type RecipesReadRecipesData = {
     limit?: number;
+    search?: (string | null);
     skip?: number;
 };
 

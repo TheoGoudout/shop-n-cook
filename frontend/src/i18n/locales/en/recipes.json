@@ -3,7 +3,8 @@
     "title": "Recipes",
     "subtitle": "Manage your personal recipe collection",
     "empty_title": "No recipes yet",
-    "empty_subtitle": "Add your first recipe to get started"
+    "empty_subtitle": "Add your first recipe to get started",
+    "search_placeholder": "Search recipes…"
   },
   "detail": {
     "back": "Back to Recipes",
@@ -26,7 +27,8 @@
     "ingredients": "Ingredients",
     "no_description": "No description",
     "minutes": "{{count}} min",
-    "ingredient_count": "{{count}} items"
+    "ingredient_count": "{{count}} items",
+    "public": "Public"
   },
   "add": {
     "button": "Add Recipe",
@@ -72,6 +74,9 @@
     "source_url_label": "Source URL",
     "image_url_label": "Image URL",
     "url_placeholder": "https://…",
+    "make_public_label": "Make this recipe public",
+    "make_public_warning": "Once public, this recipe cannot be made private again.",
+    "already_public": "This recipe is public and cannot be made private.",
     "ingredients_label": "Ingredients",
     "add_ingredient": "Add",
     "select_ingredient": "Select ingredient",
@@ -82,5 +87,20 @@
     "add_step": "Add Step",
     "step_instruction_placeholder": "Describe what to do in this step…",
     "step_ingredients_hint": "Ingredients used in this step"
+  },
+  "public": {
+    "title": "Community Recipes",
+    "subtitle": "Discover recipes shared by the community",
+    "search_placeholder": "Search community recipes…",
+    "by_author": "by {{name}}",
+    "empty_title": "No public recipes yet",
+    "empty_subtitle": "Be the first to share a recipe with the community!"
+  },
+  "profile": {
+    "back": "Back to Community",
+    "recipe_count": "{{count}} public recipes",
+    "unknown_user": "Unknown user",
+    "empty_title": "No public recipes",
+    "empty_subtitle": "This user hasn't shared any public recipes yet."
   }
 }

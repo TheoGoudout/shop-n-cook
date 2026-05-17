@@ -110,28 +110,49 @@ def _parsed_to_update(parsed: ParsedRecipe) -> RecipeUpdate:
     )
 
 
+@router.get("/public", response_model=RecipesPublic)
+def read_public_recipes(
+    session: SessionDep,
+    _current_user: CurrentUser,
+    owner_id: uuid.UUID | None = None,
+    search: str | None = None,
+    skip: int = 0,
+    limit: int = 100,
+) -> Any:
+    """List all public recipes. Optionally filter by owner_id or search query."""
+    recipes, count = crud.get_public_recipes(
+        session=session, owner_id=owner_id, search=search, skip=skip, limit=limit
+    )
+    return RecipesPublic(data=[crud.recipe_to_public(r) for r in recipes], count=count)
+
+
 @router.get("/", response_model=RecipesPublic)
 def read_recipes(
     session: SessionDep,
     current_user: CurrentUser,
+    search: str | None = None,
     skip: int = 0,
     limit: int = 100,
 ) -> Any:
     """List recipes. Superusers see all; regular users see only their own."""
     owner_id = None if current_user.is_superuser else current_user.id
     recipes, count = crud.get_recipes(
-        session=session, owner_id=owner_id, skip=skip, limit=limit
+        session=session, owner_id=owner_id, search=search, skip=skip, limit=limit
     )
     return RecipesPublic(data=[crud.recipe_to_public(r) for r in recipes], count=count)
 
 
 @router.get("/{id}", response_model=RecipePublic)
 def read_recipe(session: SessionDep, current_user: CurrentUser, id: uuid.UUID) -> Any:
-    """Get a single recipe by ID."""
+    """Get a single recipe by ID. Public recipes are visible to all authenticated users."""
     recipe = crud.get_recipe(session=session, recipe_id=id)
     if not recipe:
         raise HTTPException(status_code=404, detail="Recipe not found")
-    if not current_user.is_superuser and recipe.owner_id != current_user.id:
+    if (
+        not current_user.is_superuser
+        and recipe.owner_id != current_user.id
+        and not recipe.is_public
+    ):
         raise HTTPException(status_code=403, detail="Not enough permissions")
     return crud.recipe_to_public(recipe)
 
@@ -161,6 +182,10 @@ def update_recipe(
         raise HTTPException(status_code=404, detail="Recipe not found")
     if not current_user.is_superuser and recipe.owner_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
+    if recipe.is_public and recipe_in.is_public is False:
+        raise HTTPException(
+            status_code=422, detail="Cannot make a public recipe private"
+        )
     recipe = crud.update_recipe(session=session, db_recipe=recipe, recipe_in=recipe_in)
     return crud.recipe_to_public(recipe)
 

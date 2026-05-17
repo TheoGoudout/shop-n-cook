@@ -16,6 +16,7 @@ import {
 import { IngredientCategorySchema, UnitSchema } from "@/client/schemas.gen"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Dialog,
   DialogClose,
@@ -78,6 +79,7 @@ const _formSchema = z.object({
     .or(z.literal("")),
   source_url: z.string().url().optional().or(z.literal("")),
   image_url: z.string().url().optional().or(z.literal("")),
+  is_public: z.boolean().default(false),
   ingredients: z.array(_ingredientSchema),
   steps: z.array(_stepSchema),
 })
@@ -142,6 +144,7 @@ const AddRecipe = () => {
           .or(z.literal("")),
         source_url: z.string().url().optional().or(z.literal("")),
         image_url: z.string().url().optional().or(z.literal("")),
+        is_public: z.boolean().default(false),
         ingredients: z.array(ingredientSchema),
         steps: z.array(stepSchema),
       }),
@@ -170,6 +173,7 @@ const AddRecipe = () => {
       cook_time_minutes: "",
       source_url: "",
       image_url: "",
+      is_public: false,
       ingredients: [],
       steps: [],
     },
@@ -269,6 +273,7 @@ const AddRecipe = () => {
             : null,
           source_url: data.source_url || null,
           image_url: data.image_url || null,
+          is_public: data.is_public,
           ingredients: data.ingredients.map((i) => ({
             ingredient_id: i.ingredient_id || null,
             ingredient_name: i.ingredient_id
@@ -474,6 +479,28 @@ const AddRecipe = () => {
                   )}
                 />
               </div>
+
+              {/* Public toggle */}
+              <FormField
+                control={form.control}
+                name="is_public"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start gap-3 rounded-lg border p-3">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>{t("form.make_public_label")}</FormLabel>
+                      <p className="text-xs text-muted-foreground">
+                        {t("form.make_public_warning")}
+                      </p>
+                    </div>
+                  </FormItem>
+                )}
+              />
 
               {/* Ingredients */}
               <div>

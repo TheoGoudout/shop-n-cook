@@ -79,6 +79,13 @@ services:
         - VITE_PROJECT_NAME=${PROJECT_NAME?Variable not set}
         - NODE_ENV=development
 
+  landing:
+    restart: "no"
+    ports:
+      - "8080:80"
+    environment:
+      FRONTEND_URL: ${FRONTEND_HOST?Variable not set}
+
   playwright:
     build:
       context: .

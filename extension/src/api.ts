@@ -35,6 +35,7 @@ export function parsedRecipeToCreate(parsed: ParsedRecipe): RecipeCreate {
     cook_time_minutes: parsed.cook_time_minutes,
     source_url: parsed.source_url,
     image_url: parsed.image_url,
+    import_consent: true,
     ingredients,
     steps,
   }

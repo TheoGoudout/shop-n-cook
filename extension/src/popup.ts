@@ -101,14 +101,25 @@ function renderLogin(main: HTMLElement, error?: string) {
 
 function renderAuthenticated(main: HTMLElement, baseUrl: string) {
   main.innerHTML = `
-    <p class="hint">Click the button to import the recipe from the current page.</p>
-    <button class="import-btn" id="import-btn">
+    <div class="consent-box">
+      <label class="consent-label">
+        <input type="checkbox" id="import-consent" />
+        <span>The recipe is sourced from a third-party website. By importing, you confirm you have the right to store and reformat this content for personal use and will respect the original author's intellectual property rights. This app does not claim any rights over imported content and always links back to the original source.</span>
+      </label>
+    </div>
+    <button class="import-btn" id="import-btn" disabled>
       <span>⬇</span>
       <span>Import Recipe</span>
     </button>
     <p class="hint">${escapeHtml(baseUrl)}</p>
   `
-  main.querySelector("#import-btn")!.addEventListener("click", handleImport)
+  const consentCheckbox =
+    main.querySelector<HTMLInputElement>("#import-consent")!
+  const importBtn = main.querySelector<HTMLButtonElement>("#import-btn")!
+  consentCheckbox.addEventListener("change", () => {
+    importBtn.disabled = !consentCheckbox.checked
+  })
+  importBtn.addEventListener("click", handleImport)
 }
 
 function renderImporting(main: HTMLElement) {

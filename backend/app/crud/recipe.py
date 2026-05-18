@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime, timezone
 
 from sqlalchemy.orm import selectinload
 from sqlmodel import Session, col, func, or_, select
@@ -214,6 +215,8 @@ def create_recipe(
 ) -> Recipe:
     recipe_data = recipe_in.model_dump(exclude={"ingredients", "steps"})
     db_recipe = Recipe(**recipe_data, owner_id=owner_id)
+    if db_recipe.import_consent:
+        db_recipe.import_consent_at = datetime.now(timezone.utc)
     session.add(db_recipe)
     session.flush()
 

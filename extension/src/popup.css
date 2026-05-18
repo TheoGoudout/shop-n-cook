@@ -152,6 +152,31 @@ button:disabled {
 }
 
 /* States */
+.consent-box {
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.consent-label {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  font-size: 11px;
+  line-height: 1.5;
+  color: #78350f;
+  cursor: pointer;
+}
+
+.consent-label input[type="checkbox"] {
+  flex-shrink: 0;
+  margin-top: 2px;
+  accent-color: #6366f1;
+  width: 14px;
+  height: 14px;
+}
+
 .import-btn {
   display: flex;
   align-items: center;

@@ -3,6 +3,7 @@ import {
   createFileRoute,
   Link as RouterLink,
   redirect,
+  useNavigate,
 } from "@tanstack/react-router"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
@@ -36,6 +37,9 @@ type FormData = z.infer<typeof formSchema>
 
 export const Route = createFileRoute("/login")({
   component: Login,
+  validateSearch: z.object({
+    redirect: z.string().optional(),
+  }),
   beforeLoad: async () => {
     if (isLoggedIn()) {
       throw redirect({
@@ -55,6 +59,8 @@ export const Route = createFileRoute("/login")({
 function Login() {
   const { t } = useTranslation("auth")
   const { loginMutation } = useAuth()
+  const { redirect: redirectTo } = Route.useSearch()
+  const navigate = useNavigate()
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     mode: "onBlur",
@@ -67,7 +73,15 @@ function Login() {
 
   const onSubmit = (data: FormData) => {
     if (loginMutation.isPending) return
-    loginMutation.mutate(data)
+    loginMutation.mutate(data, {
+      onSuccess: () => {
+        if (redirectTo?.startsWith("/")) {
+          window.location.replace(redirectTo)
+        } else {
+          navigate({ to: "/" })
+        }
+      },
+    })
   }
 
   return (

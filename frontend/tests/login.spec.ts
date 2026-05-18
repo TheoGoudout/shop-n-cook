@@ -103,7 +103,7 @@ test("Logged-out user cannot access protected routes", async ({ page }) => {
   await page.waitForURL("/login")
 
   await page.goto("/settings")
-  await page.waitForURL("/login")
+  await page.waitForURL(/\/login/)
 })
 
 test("Redirects to /login when token is wrong", async ({ page }) => {

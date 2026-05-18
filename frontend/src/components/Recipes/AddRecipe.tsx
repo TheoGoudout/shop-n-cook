@@ -47,12 +47,12 @@ import {
 import useCustomToast from "@/hooks/useCustomToast"
 import { handleError } from "@/utils"
 
-const _stepSchema = z.object({
+const baseStepSchema = z.object({
   instruction: z.string().min(1),
   ingredient_indices: z.array(z.number()),
 })
 
-const _ingredientSchema = z.object({
+const baseIngredientSchema = z.object({
   ingredient_id: z.string().optional(),
   ingredient_name: z.string().optional(),
   category: z.string().min(1),
@@ -61,7 +61,7 @@ const _ingredientSchema = z.object({
   notes: z.string().optional(),
 })
 
-const _formSchema = z.object({
+const baseFormSchema = z.object({
   title: z.string(),
   description: z.string().optional(),
   servings: z.coerce.number().int().positive().optional().or(z.literal("")),
@@ -81,11 +81,11 @@ const _formSchema = z.object({
   image_url: z.string().url().optional().or(z.literal("")),
   is_public: z.boolean().default(false),
   import_consent: z.boolean().default(false),
-  ingredients: z.array(_ingredientSchema),
-  steps: z.array(_stepSchema),
+  ingredients: z.array(baseIngredientSchema),
+  steps: z.array(baseStepSchema),
 })
 
-type FormData = z.infer<typeof _formSchema>
+type FormData = z.infer<typeof baseFormSchema>
 
 const AddRecipe = () => {
   const { t } = useTranslation("recipes")

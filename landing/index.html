@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shop n Cook — Your kitchen, organized.</title>
+  <meta name="description" content="Manage recipes, build shopping lists, and import recipes with AI — all in one place.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #FDFAF5;
+      --fg:          #2A1F18;
+      --fg-muted:    #7A6B60;
+      --primary:     #B36200;
+      --primary-fg:  #1A1008;
+      --card:        #F9F6F0;
+      --border:      #E4D8CA;
+      --accent:      #E8F5E2;
+      --accent-fg:   #1A4020;
+      --radius:      0.625rem;
+    }
+
+    body {
+      font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+      background-color: var(--bg);
+      color: var(--fg);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ── */
+    header {
+      padding: 1.25rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.625rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo-icon { color: var(--primary); filter: drop-shadow(0 1px 2px rgba(0,0,0,.10)); }
+
+    .logo-text {
+      font-family: "Playfair Display", Georgia, serif;
+      font-weight: 600;
+      font-size: 1.0625rem;
+      letter-spacing: -0.02em;
+      color: var(--fg);
+    }
+
+    /* ── Main ── */
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 4rem 1.5rem 5rem;
+    }
+
+    /* ── Hero ── */
+    .hero { max-width: 38rem; margin-bottom: 4rem; }
+
+    h1 {
+      font-family: "Playfair Display", Georgia, serif;
+      font-size: clamp(2.25rem, 6vw, 3.75rem);
+      font-weight: 700;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      color: var(--fg);
+      margin-bottom: 1.125rem;
+    }
+
+    .tagline {
+      font-size: 1.0625rem;
+      color: var(--fg-muted);
+      line-height: 1.75;
+      margin-bottom: 2.25rem;
+    }
+
+    .cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background-color: var(--primary);
+      color: var(--primary-fg);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.9375rem;
+      padding: 0.8125rem 1.875rem;
+      border-radius: var(--radius);
+      transition: opacity 0.15s ease;
+      letter-spacing: -0.01em;
+    }
+
+    .cta:hover { opacity: 0.85; }
+
+    /* ── Features ── */
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+      gap: 1rem;
+      width: 100%;
+      max-width: 56rem;
+    }
+
+    .feature {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.375rem 1.25rem;
+      text-align: left;
+    }
+
+    .feature-icon {
+      width: 2.25rem;
+      height: 2.25rem;
+      background: var(--accent);
+      color: var(--accent-fg);
+      border-radius: calc(var(--radius) - 2px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 0.875rem;
+      font-size: 1.125rem;
+      line-height: 1;
+    }
+
+    .feature h3 {
+      font-weight: 600;
+      font-size: 0.9375rem;
+      color: var(--fg);
+      margin-bottom: 0.3125rem;
+    }
+
+    .feature p {
+      font-size: 0.8125rem;
+      color: var(--fg-muted);
+      line-height: 1.65;
+    }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 1.375rem 2rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.8125rem;
+      color: var(--fg-muted);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <svg class="logo-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M6 13.87A4 4 0 0 1 7.41 6a5.11 5.11 0 0 1 1.05-1.54 5 5 0 0 1 7.08 0A5.11 5.11 0 0 1 16.59 6 4 4 0 0 1 18 13.87V21H6Z"/>
+      <line x1="6" x2="18" y1="17" y2="17"/>
+    </svg>
+    <span class="logo-text">Shop n Cook</span>
+  </header>
+
+  <main>
+    <div class="hero">
+      <h1>Your kitchen,<br>organized.</h1>
+      <p class="tagline">
+        Manage recipes, build shopping lists, and import recipes with AI —
+        all in one place.
+      </p>
+      <a href="${FRONTEND_URL}" class="cta">
+        Open the App
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
+        </svg>
+      </a>
+    </div>
+
+    <div class="features">
+      <div class="feature">
+        <div class="feature-icon" aria-hidden="true">🍳</div>
+        <h3>Recipe Management</h3>
+        <p>Create and organize recipes with structured ingredient lists and quantities.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon" aria-hidden="true">✨</div>
+        <h3>AI Recipe Import</h3>
+        <p>Import any recipe from the web automatically — just paste a URL.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon" aria-hidden="true">🛒</div>
+        <h3>Shopping Lists</h3>
+        <p>Build lists from your recipes and track items as you shop.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon" aria-hidden="true">📱</div>
+        <h3>Works Everywhere</h3>
+        <p>Install as a PWA on mobile or desktop, or use the browser extension.</p>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <p>&copy; <script>document.write(new Date().getFullYear())</script> Shop n Cook</p>
+  </footer>
+
+</body>
+</html>

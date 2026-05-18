@@ -94,5 +94,20 @@ services:
         - VITE_PROJECT_NAME=${PROJECT_NAME:-Shop n Cook}
         - NODE_ENV=production
 
+  landing:
+    image: shop-n-cook/landing:${TAG:-latest}
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 10s
+      retries: 5
+      start_period: 10s
+      timeout: 5s
+    build:
+      context: .
+      dockerfile: landing/Dockerfile
+    environment:
+      - FRONTEND_URL=${SERVICE_URL_FRONTEND:-}
+
 volumes:
   app-db-data:

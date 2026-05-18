@@ -28,6 +28,7 @@ These are resolved automatically by Coolify — no manual configuration needed. 
 |---|---|---|
 | `SERVICE_URL_FRONTEND` | `FRONTEND_HOST` | HTTPS URL of the frontend service |
 | `SERVICE_URL_BACKEND` | `API_URL` | HTTPS URL of the backend service (build-time) |
+| `SERVICE_URL_LANDING` | — | HTTPS URL of the landing page service |
 | `SERVICE_PASSWORD_SECRET` | `SECRET_KEY` | Auto-generated JWT signing secret |
 | `SERVICE_PASSWORD_DB` | `POSTGRES_PASSWORD` | Auto-generated database password |
 | `SERVICE_USER_DB` | `POSTGRES_USER` | Auto-generated database username |
@@ -67,5 +68,14 @@ The production stack is defined in `compose.yml`. It includes:
 - `prestart` — Runs database migrations (`alembic upgrade head`) on startup
 - `backend` — FastAPI application
 - `frontend` — React application (built as a static Nginx container)
+- `landing` — Standalone landing page container (static Nginx); links to the frontend via `FRONTEND_URL`
 
 No reverse proxy is included in the Compose files — Coolify handles routing and HTTPS termination.
+
+### Landing Page
+
+The landing page (`landing/`) is a standalone static HTML container served by Nginx. On startup the container runs `envsubst` to inject `FRONTEND_URL` into the HTML template, so the "Open the App" button links to the live frontend.
+
+In Coolify, `FRONTEND_URL` is automatically set to `SERVICE_URL_FRONTEND`. Locally it reads `FRONTEND_HOST` from your `.env` file (default: `http://localhost:5173`).
+
+Local URL: `http://localhost:8080`

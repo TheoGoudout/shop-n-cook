@@ -1,6 +1,6 @@
 # Shop n Cook - Frontend
 
-The frontend is built with [Vite](https://vitejs.dev/), [React](https://reactjs.org/), [TypeScript](https://www.typescriptlang.org/), [TanStack Query](https://tanstack.com/query), [TanStack Router](https://tanstack.com/router) and [Tailwind CSS](https://tailwindcss.com/).
+The frontend is built with [Vite](https://vitejs.dev/), [React](https://reactjs.org/), [TypeScript](https://www.typescriptlang.org/), [TanStack Query](https://tanstack.com/query), [TanStack Router](https://tanstack.com/router), [Tailwind CSS](https://tailwindcss.com/), [i18next](https://www.i18next.com/) for internationalization, and [vite-plugin-pwa](https://vite-pwa-org.netlify.app) for PWA support.
 
 ## Requirements
 
@@ -51,7 +51,7 @@ But it would be only to clean them up, leaving them won't really have any effect
 bash ./scripts/generate-client.sh
 ```
 
-* Commit the changes.
+This script generates the OpenAPI client for **both** the frontend and the browser extension, then runs the linter. Commit all generated changes together.
 
 ### Manually
 
@@ -88,14 +88,16 @@ The frontend code is structured as follows:
 * `frontend/src/client` - The generated OpenAPI client (auto-generated from backend OpenAPI schema).
 * `frontend/src/components` - The different components of the frontend:
   * `Recipes/` - Recipe list, detail, create/edit forms, and AI import modal.
-  * `Ingredients/` - Ingredient catalog management.
   * `ShoppingLists/` - Shopping list cards and item tracking.
   * `Dashboard/` - Stats overview and bar chart (Recharts).
   * `UserSettings/` - Household settings form.
   * `Admin/` - Admin user management panel.
+  * `Sidebar/` - App sidebar layout and navigation components.
+  * `Pending/` - Loading skeleton placeholder components.
   * `Common/` - Shared UI components (dialogs, tables, etc.).
   * `ui/` - shadcn/ui base components.
 * `frontend/src/hooks` - Custom React hooks.
+* `frontend/src/i18n` - Internationalization setup and locale files (English and French).
 * `frontend/src/routes` - The different routes of the frontend which include the pages.
 
 ## End-to-End Testing with Playwright

@@ -4,13 +4,7 @@ Shop n Cook is deployed via [Coolify](https://coolify.io), a self-hosted PaaS th
 
 ## Automated Deployment
 
-Pushing to the `master` branch triggers an automatic deployment via the GitHub Actions workflow in `.github/workflows/deploy.yml`. The workflow sends a webhook request to Coolify, which pulls the latest code and redeploys the stack.
-
-### Required GitHub Secret
-
-| Secret | Description |
-|--------|-------------|
-| `COOLIFY_DEPLOY_WEBHOOK` | The deploy webhook URL from your Coolify application settings |
+Pushing to the `master` branch triggers an automatic deployment. Coolify watches the repository via its GitHub App integration and redeploys the stack on every push to `master` — no GitHub Actions workflow or manual webhook configuration is required.
 
 ## Environment Variables
 

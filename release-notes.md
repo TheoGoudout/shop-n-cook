@@ -2,8 +2,19 @@
 
 ## Latest Changes
 
+### Features
+
+* Add browser extension for one-click recipe import (Chrome, Firefox, Edge, Opera, Safari)
+* Add PWA support — installable as a Progressive Web App with web share target for mobile recipe import
+* Add public/private recipes — public recipes are accessible without an account
+* Add user profile pages listing each user's public recipes
+* Add recipe search by title and description
+* Add internationalization — interface available in English and French with automatic browser language detection
+
 ### Internal
 
+* ci: automate extension publishing to all major browser stores on GitHub release (pre-release → test channels, release → public)
+* ci: replace `deploy.yml` GitHub Actions workflow with Coolify GitHub App for continuous deployment
 * ci: migrate deployment from Traefik self-hosted to Coolify
 * ci: remove `.env` from repo; add `.env.example` for CI and local setup
 * fix: add `PROJECT_NAME` to `compose.yml` environment

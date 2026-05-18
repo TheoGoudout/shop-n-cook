@@ -13,27 +13,38 @@ A full-stack web application for managing recipes, ingredients, and shopping lis
   - TypeScript, hooks, [Vite](https://vitejs.dev), and other parts of a modern frontend stack.
   - [Tailwind CSS](https://tailwindcss.com) and [shadcn/ui](https://ui.shadcn.com) for components.
   - [Recharts](https://recharts.org) for dashboard data visualizations.
+  - [i18next](https://www.i18next.com) for internationalization (English and French).
+  - [vite-plugin-pwa](https://vite-pwa-org.netlify.app) for Progressive Web App support.
   - An automatically generated frontend client (OpenAPI-TS).
   - [Playwright](https://playwright.dev) for End-to-End testing.
   - Dark mode support.
+- A [browser extension](./extension/) for one-click recipe import (Chrome, Firefox, Edge, Opera, Safari).
+  - Built with TypeScript and [Bun](https://bun.sh), sharing the same OpenAPI-generated client.
+  - Published automatically to all major browser stores on each GitHub release.
 - [Docker Compose](https://www.docker.com) for development and production.
 - Secure password hashing by default.
 - JWT (JSON Web Token) authentication.
 - Email-based password recovery.
 - [Mailcatcher](https://mailcatcher.me) for local email testing during development.
 - Tests with [Pytest](https://pytest.org).
-- CI (continuous integration) and CD (continuous deployment) based on GitHub Actions + [Coolify](https://coolify.io).
+- CI (continuous integration) with GitHub Actions; CD via [Coolify](https://coolify.io) GitHub App.
 
 ## Application Features
 
-### Ingredient Catalog
-Manage a catalog of ingredients with categories (vegetable, fruit, dairy, meat, etc.) and units (g, ml, tbsp, etc.).
-
 ### Recipe Management
-Create and manage recipes with structured ingredient lists (quantities, units, notes). Supports full CRUD operations.
+Create and manage recipes with structured ingredient lists (quantities, units, notes). Supports full CRUD operations. Recipes can be marked public or private — public recipes are accessible without an account.
 
 ### AI Recipe Import
 Import recipes automatically from any URL. The backend fetches the page, parses it with an LLM, and returns a structured recipe ready to save. Supports Anthropic, OpenAI, and Google Gemini as AI providers.
+
+### Recipe Search
+Search recipes by title and description from the recipe list.
+
+### Browser Extension
+Import recipes into Shop n Cook with one click while browsing the web. Available for Chrome, Firefox, Edge, Opera, and Safari.
+
+### PWA & Web Share Target
+Install the app as a Progressive Web App on mobile or desktop. On mobile, you can share any recipe URL directly to Shop n Cook via the system share sheet to trigger an instant import.
 
 ### Shopping List Management
 Create shopping lists from your recipes. Adding a recipe to a list automatically populates it with the required ingredients. Track item completion as you shop.
@@ -41,8 +52,14 @@ Create shopping lists from your recipes. Adding a recipe to a list automatically
 ### Household Settings
 Configure household size, shopping frequency (daily, weekly, monthly), and budget preferences per user.
 
+### Profile Pages
+Each user has a public profile page listing their public recipes.
+
 ### Dashboard
 A stats overview showing total counts for recipes, ingredients, and shopping lists, with a bar chart visualization.
+
+### Internationalization
+The interface is available in English and French, with automatic language detection from the browser.
 
 ## Quick Start
 

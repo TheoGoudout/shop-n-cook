@@ -113,7 +113,8 @@ function renderAuthenticated(main: HTMLElement, baseUrl: string) {
     </button>
     <p class="hint">${escapeHtml(baseUrl)}</p>
   `
-  const consentCheckbox = main.querySelector<HTMLInputElement>("#import-consent")!
+  const consentCheckbox =
+    main.querySelector<HTMLInputElement>("#import-consent")!
   const importBtn = main.querySelector<HTMLButtonElement>("#import-btn")!
   consentCheckbox.addEventListener("change", () => {
     importBtn.disabled = !consentCheckbox.checked

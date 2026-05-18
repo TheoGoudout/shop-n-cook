@@ -495,7 +495,9 @@ def _create_recipe_with_url(
 
     return crud.create_recipe(
         session=db,
-        recipe_in=RecipeCreate(title="Old Title", source_url=source_url),
+        recipe_in=RecipeCreate(
+            title="Old Title", source_url=source_url, import_consent=True
+        ),
         owner_id=superuser_id,
     )
 

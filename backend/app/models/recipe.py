@@ -145,9 +145,7 @@ class RecipeCreate(RecipeBase):
     @model_validator(mode="after")
     def check_import_consent(self) -> "RecipeCreate":
         if self.source_url and not self.import_consent:
-            raise ValueError(
-                "import_consent is required when source_url is provided"
-            )
+            raise ValueError("import_consent is required when source_url is provided")
         return self
 
 

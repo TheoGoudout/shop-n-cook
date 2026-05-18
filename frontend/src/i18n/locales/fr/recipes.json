@@ -38,7 +38,9 @@
     "success": "Recette créée avec succès",
     "import_success": "Recette importée avec succès.",
     "import_partial": "Recette importée. {{count}} ingrédient(s) seront créés automatiquement.",
-    "import_error": "Impossible d'importer la recette. Vérifiez l'URL et réessayez."
+    "import_error": "Impossible d'importer la recette. Vérifiez l'URL et réessayez.",
+    "import_consent_label": "La recette que vous êtes sur le point d'importer provient d'un site tiers. En continuant, vous confirmez que vous avez le droit d'importer, de stocker et de reformater ce contenu pour un usage personnel, et que vous respecterez les droits de propriété intellectuelle de l'auteur original. Cette application ne revendique aucun droit sur le contenu importé et renvoie toujours vers la source originale.",
+    "import_consent_required": "Vous devez confirmer votre consentement avant d'importer."
   },
   "edit": {
     "menu_item": "Modifier",
@@ -60,7 +62,12 @@
     "importing": "Importation de la recette…",
     "success": "« {{title}} » ajouté à vos recettes !",
     "error": "L'importation a échoué. Veuillez réessayer depuis l'application.",
-    "invalid_url": "Aucune URL valide trouvée dans le contenu partagé."
+    "invalid_url": "Aucune URL valide trouvée dans le contenu partagé.",
+    "consent_title": "Consentement d'importation",
+    "consent_description": "Avant d'enregistrer cette recette, veuillez confirmer ce qui suit :",
+    "consent_label": "La recette que vous êtes sur le point d'importer provient d'un site tiers. En continuant, vous confirmez que vous avez le droit d'importer, de stocker et de reformater ce contenu pour un usage personnel, et que vous respecterez les droits de propriété intellectuelle de l'auteur original. Cette application ne revendique aucun droit sur le contenu importé et renvoie toujours vers la source originale.",
+    "consent_confirm": "Enregistrer la recette",
+    "consent_cancel": "Annuler"
   },
   "form": {
     "title_label": "Titre",

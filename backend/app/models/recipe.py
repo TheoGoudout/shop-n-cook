@@ -140,6 +140,15 @@ class RecipeBase(SQLModel):
 class RecipeCreate(RecipeBase):
     ingredients: list[RecipeIngredientCreate] = []
     steps: list[RecipeStepCreate] = []
+    import_consent: bool = Field(default=False)
+
+    @model_validator(mode="after")
+    def check_import_consent(self) -> "RecipeCreate":
+        if self.source_url and not self.import_consent:
+            raise ValueError(
+                "import_consent is required when source_url is provided"
+            )
+        return self
 
 
 class RecipeUpdate(SQLModel):
@@ -167,6 +176,11 @@ class Recipe(RecipeBase, table=True):
     )
     created_at: datetime | None = Field(
         default_factory=get_datetime_utc,
+        sa_type=DateTime(timezone=True),  # type: ignore
+    )
+    import_consent: bool = Field(default=False)
+    import_consent_at: datetime | None = Field(
+        default=None,
         sa_type=DateTime(timezone=True),  # type: ignore
     )
     owner: "User" = Relationship(back_populates="recipes")

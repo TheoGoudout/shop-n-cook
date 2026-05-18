@@ -85,6 +85,7 @@ export type RecipeCreate = {
     is_public?: boolean;
     ingredients?: Array<RecipeIngredientCreate>;
     steps?: Array<RecipeStepCreate>;
+    import_consent?: boolean;
 };
 
 export type RecipeIngredientCreate = {

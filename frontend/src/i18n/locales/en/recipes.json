@@ -38,7 +38,9 @@
     "success": "Recipe created successfully",
     "import_success": "Recipe imported successfully.",
     "import_partial": "Recipe imported. {{count}} ingredient(s) will be created automatically.",
-    "import_error": "Failed to import recipe. Check the URL and try again."
+    "import_error": "Failed to import recipe. Check the URL and try again.",
+    "import_consent_label": "The recipe you are about to import is sourced from a third-party website. By proceeding, you confirm that you have the right to import, store, and reformat this content for personal use, and that you will respect the original author's intellectual property rights. This app does not claim any rights over imported content and always links back to the original source.",
+    "import_consent_required": "You must confirm consent before importing."
   },
   "edit": {
     "menu_item": "Edit",
@@ -60,7 +62,12 @@
     "importing": "Importing recipe…",
     "success": "\"{{title}}\" added to your recipes!",
     "error": "Failed to import this recipe. Please try again from the app.",
-    "invalid_url": "No valid recipe URL found in the shared content."
+    "invalid_url": "No valid recipe URL found in the shared content.",
+    "consent_title": "Import Consent",
+    "consent_description": "Before saving this recipe, please confirm the following:",
+    "consent_label": "The recipe you are about to import is sourced from a third-party website. By proceeding, you confirm that you have the right to import, store, and reformat this content for personal use, and that you will respect the original author's intellectual property rights. This app does not claim any rights over imported content and always links back to the original source.",
+    "consent_confirm": "Save Recipe",
+    "consent_cancel": "Cancel"
   },
   "form": {
     "title_label": "Title",

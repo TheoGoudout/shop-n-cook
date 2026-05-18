@@ -80,6 +80,7 @@ const _formSchema = z.object({
   source_url: z.string().url().optional().or(z.literal("")),
   image_url: z.string().url().optional().or(z.literal("")),
   is_public: z.boolean().default(false),
+  import_consent: z.boolean().default(false),
   ingredients: z.array(_ingredientSchema),
   steps: z.array(_stepSchema),
 })
@@ -121,33 +122,44 @@ const AddRecipe = () => {
 
   const formSchema = useMemo(
     () =>
-      z.object({
-        title: z.string().min(1, { message: t("form.title_required") }),
-        description: z.string().optional(),
-        servings: z.coerce
-          .number()
-          .int()
-          .positive()
-          .optional()
-          .or(z.literal("")),
-        prep_time_minutes: z.coerce
-          .number()
-          .int()
-          .min(0)
-          .optional()
-          .or(z.literal("")),
-        cook_time_minutes: z.coerce
-          .number()
-          .int()
-          .min(0)
-          .optional()
-          .or(z.literal("")),
-        source_url: z.string().url().optional().or(z.literal("")),
-        image_url: z.string().url().optional().or(z.literal("")),
-        is_public: z.boolean().default(false),
-        ingredients: z.array(ingredientSchema),
-        steps: z.array(stepSchema),
-      }),
+      z
+        .object({
+          title: z.string().min(1, { message: t("form.title_required") }),
+          description: z.string().optional(),
+          servings: z.coerce
+            .number()
+            .int()
+            .positive()
+            .optional()
+            .or(z.literal("")),
+          prep_time_minutes: z.coerce
+            .number()
+            .int()
+            .min(0)
+            .optional()
+            .or(z.literal("")),
+          cook_time_minutes: z.coerce
+            .number()
+            .int()
+            .min(0)
+            .optional()
+            .or(z.literal("")),
+          source_url: z.string().url().optional().or(z.literal("")),
+          image_url: z.string().url().optional().or(z.literal("")),
+          is_public: z.boolean().default(false),
+          import_consent: z.boolean().default(false),
+          ingredients: z.array(ingredientSchema),
+          steps: z.array(stepSchema),
+        })
+        .superRefine((data, ctx) => {
+          if (data.source_url && !data.import_consent) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: t("add.import_consent_required"),
+              path: ["import_consent"],
+            })
+          }
+        }),
     [t, ingredientSchema, stepSchema],
   )
 
@@ -174,6 +186,7 @@ const AddRecipe = () => {
       source_url: "",
       image_url: "",
       is_public: false,
+      import_consent: false,
       ingredients: [],
       steps: [],
     },
@@ -242,6 +255,8 @@ const AddRecipe = () => {
         cook_time_minutes: parsed.cook_time_minutes ?? "",
         source_url: parsed.source_url ?? "",
         image_url: parsed.image_url ?? "",
+        is_public: false,
+        import_consent: false,
         ingredients: mappedIngredients,
         steps: mappedSteps,
       })
@@ -274,6 +289,7 @@ const AddRecipe = () => {
           source_url: data.source_url || null,
           image_url: data.image_url || null,
           is_public: data.is_public,
+          import_consent: !!data.source_url && data.import_consent,
           ingredients: data.ingredients.map((i) => ({
             ingredient_id: i.ingredient_id || null,
             ingredient_name: i.ingredient_id
@@ -501,6 +517,30 @@ const AddRecipe = () => {
                   </FormItem>
                 )}
               />
+
+              {/* Import consent — only when source URL is present */}
+              {form.watch("source_url") && (
+                <FormField
+                  control={form.control}
+                  name="import_consent"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950/20">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel className="text-sm font-medium leading-snug cursor-pointer">
+                          {t("add.import_consent_label")}
+                        </FormLabel>
+                        <FormMessage />
+                      </div>
+                    </FormItem>
+                  )}
+                />
+              )}
 
               {/* Ingredients */}
               <div>

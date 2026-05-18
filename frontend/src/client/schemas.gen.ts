@@ -461,6 +461,11 @@ export const RecipeCreateSchema = {
             type: 'array',
             title: 'Steps',
             default: []
+        },
+        import_consent: {
+            type: 'boolean',
+            title: 'Import Consent',
+            default: false
         }
     },
     type: 'object',

@@ -3,7 +3,7 @@ import { parsedRecipeToCreate } from "./api"
 import { LoginService, OpenAPI, RecipesService, UsersService } from "./client"
 import { clearAuthData, getAuthData, saveAuthData } from "./storage"
 
-const DEFAULT_BASE_URL = "https://app.shop-n-cook.com"
+const DEFAULT_BASE_URL = __API_URL__
 
 type State =
   | { kind: "loading" }

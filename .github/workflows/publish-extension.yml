@@ -71,9 +71,9 @@ jobs:
         with:
           name: extension-zip
 
-      - uses: trmcnvn/upload-google-chrome-extension@v2
+      - uses: fregante/chrome-webstore-upload-action@v2
         with:
-          extension: extension.zip
+          file-path: extension.zip
           extension-id: ${{ secrets.CHROME_EXTENSION_ID }}
           client-id: ${{ secrets.CHROME_CLIENT_ID }}
           client-secret: ${{ secrets.CHROME_CLIENT_SECRET }}
@@ -108,8 +108,7 @@ jobs:
             --source-dir ext-src \
             --channel "$CHANNEL" \
             --api-key "${{ secrets.FIREFOX_API_KEY }}" \
-            --api-secret "${{ secrets.FIREFOX_API_SECRET }}" \
-            --id "${{ secrets.FIREFOX_EXTENSION_ID }}"
+            --api-secret "${{ secrets.FIREFOX_API_SECRET }}"
 
   publish-edge:
     name: Publish → Edge Add-ons

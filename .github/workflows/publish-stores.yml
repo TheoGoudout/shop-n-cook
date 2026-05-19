@@ -128,7 +128,7 @@ jobs:
         if: github.event_name == 'release'
         run: |
           echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" \
-            | base64 -d > bubblewrap/android.keystore
+            | tr -d '[:space:]' | base64 -d > bubblewrap/android.keystore
 
       - name: Bump version
         if: github.event_name == 'release'
@@ -148,6 +148,7 @@ jobs:
           chmod +x gradlew
           ./gradlew bundleRelease \
             -Pandroid.injected.signing.store.file="$(pwd)/android.keystore" \
+            -Pandroid.injected.signing.store.type=PKCS12 \
             -Pandroid.injected.signing.store.password="${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" \
             -Pandroid.injected.signing.key.alias="${{ vars.ANDROID_KEY_ALIAS }}" \
             -Pandroid.injected.signing.key.password="${{ secrets.ANDROID_KEY_PASSWORD }}"
@@ -250,7 +251,8 @@ jobs:
           dotnet-version: '8.x'
 
       - name: Install Microsoft Store CLI
-        run: dotnet tool install --global Microsoft.Store.CLI
+        shell: pwsh
+        run: winget install Microsoft.MSStoreCLI --accept-source-agreements --accept-package-agreements
 
       - name: Package MSIX
         shell: pwsh

@@ -1,0 +1,260 @@
+# Publishes the PWA as a native app to Google Play, App Store, and Windows Store.
+#
+# Triggers:
+#   - Stable release  → production track on all stores
+#   - Pre-release     → beta/TestFlight/flight track on all stores
+#
+# One-time setup required before this workflow runs:
+#
+#   ANDROID (Trusted Web Activity via Bubblewrap)
+#     1. npm i -g @bubblewrap/cli
+#     2. mkdir bubblewrap && cd bubblewrap
+#        bubblewrap init --manifest https://<your-domain>/manifest.webmanifest
+#     3. Commit the generated project (git add bubblewrap/ — keystore is gitignored)
+#     4. keytool -list -v -keystore bubblewrap/android.keystore → copy SHA-256 fingerprint
+#        → paste into frontend/public/.well-known/assetlinks.json
+#     5. base64 -w0 bubblewrap/android.keystore → save as secret ANDROID_KEYSTORE_BASE64
+#     6. Create Google Play service account with "Release manager" role
+#        → save JSON as secret GOOGLE_PLAY_SERVICE_ACCOUNT_JSON
+#
+#   iOS (PWABuilder-generated WKWebView app)
+#     1. Go to pwabuilder.com → enter your URL → Download → iOS
+#     2. Unzip into ios/ and commit
+#     3. In Apple Developer Portal: create App ID, provisioning profile, distribution cert
+#        base64 -w0 cert.p12  → APPLE_CERTIFICATE_BASE64
+#        base64 -w0 app.mobileprovision → APPLE_PROVISIONING_PROFILE_BASE64
+#     4. In App Store Connect: create API key (Admin role)
+#        base64 -w0 AuthKey_XXXX.p8 → APPLE_API_KEY_BASE64
+#
+#   WINDOWS (MSIX via PWABuilder)
+#     1. Go to pwabuilder.com → enter your URL → Download → Windows
+#     2. Unzip into windows/ and commit
+#     3. Purchase a code-signing cert (.pfx) or use Azure Trusted Signing
+#        base64 -w0 cert.pfx → WINDOWS_CERTIFICATE_BASE64
+#     4. Register an Azure AD app in Partner Center with "Manager" role
+#        → save tenant/seller/client IDs and secret
+#
+# Required secrets (Settings → Secrets → Actions):
+#   ANDROID_KEYSTORE_BASE64             Base64-encoded .keystore file
+#   ANDROID_KEYSTORE_PASSWORD           Keystore store password
+#   ANDROID_KEY_PASSWORD                Signing key password
+#   GOOGLE_PLAY_SERVICE_ACCOUNT_JSON    Google Play service account JSON
+#   APPLE_CERTIFICATE_BASE64            Base64-encoded .p12 distribution certificate
+#   APPLE_CERTIFICATE_PASSWORD          Certificate password
+#   APPLE_PROVISIONING_PROFILE_BASE64   Base64-encoded .mobileprovision
+#   APPLE_API_KEY_ID                    App Store Connect API key ID (e.g. ABC123DEF4)
+#   APPLE_API_KEY_ISSUER                App Store Connect issuer UUID
+#   APPLE_API_KEY_BASE64                Base64-encoded .p8 key file
+#   WINDOWS_CERTIFICATE_BASE64          Base64-encoded .pfx code-signing certificate
+#   WINDOWS_CERTIFICATE_PASSWORD        PFX password
+#   AZURE_TENANT_ID                     Azure AD tenant ID
+#   AZURE_SELLER_ID                     Partner Center seller ID
+#   AZURE_CLIENT_ID                     Azure AD app client ID
+#   AZURE_CLIENT_SECRET                 Azure AD app client secret
+#
+# Required repository variables (Settings → Variables → Actions):
+#   PWA_URL               Deployed PWA URL, e.g. https://app.shop-n-cook.goudout.com
+#   ANDROID_PACKAGE_NAME  e.g. com.shopncook.app
+#   ANDROID_KEY_ALIAS     Signing key alias inside the keystore
+#   IOS_BUNDLE_ID         e.g. com.shopncook.app
+#   IOS_TEAM_ID           Apple Developer Team ID
+#   WINDOWS_PRODUCT_ID    Product ID from Partner Center dashboard
+#   WINDOWS_FLIGHT_ID     Flight (package) ID for pre-release builds
+
+name: Publish to App Stores
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  # ── Shared metadata ────────────────────────────────────────────────────────
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      version:       ${{ steps.version.outputs.version }}
+      version_code:  ${{ steps.version.outputs.version_code }}
+      android_track: ${{ steps.track.outputs.android_track }}
+      ios_lane:      ${{ steps.track.outputs.ios_lane }}
+      windows_beta:  ${{ steps.track.outputs.windows_beta }}
+    steps:
+      - name: Parse semver from tag
+        id: version
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          VERSION="${TAG#v}"
+          MAJOR=$(echo "$VERSION" | cut -d. -f1)
+          MINOR=$(echo "$VERSION" | cut -d. -f2)
+          PATCH=$(echo "$VERSION" | cut -d. -f3)
+          PATCH=${PATCH:-0}
+          VERSION_CODE=$((MAJOR * 10000 + MINOR * 100 + PATCH))
+          echo "version=$VERSION"           >> "$GITHUB_OUTPUT"
+          echo "version_code=$VERSION_CODE" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve store tracks
+        id: track
+        run: |
+          if [ "${{ github.event.release.prerelease }}" = "true" ]; then
+            echo "android_track=beta"       >> "$GITHUB_OUTPUT"
+            echo "ios_lane=beta"            >> "$GITHUB_OUTPUT"
+            echo "windows_beta=true"        >> "$GITHUB_OUTPUT"
+          else
+            echo "android_track=production" >> "$GITHUB_OUTPUT"
+            echo "ios_lane=release"         >> "$GITHUB_OUTPUT"
+            echo "windows_beta=false"       >> "$GITHUB_OUTPUT"
+          fi
+
+  # ── Android ────────────────────────────────────────────────────────────────
+  android:
+    needs: prepare
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Decode keystore
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" \
+            | base64 -d > bubblewrap/android.keystore
+
+      - name: Bump version
+        working-directory: bubblewrap/app
+        run: |
+          sed -i \
+            "s/versionCode [0-9]*/versionCode ${{ needs.prepare.outputs.version_code }}/" \
+            build.gradle
+          sed -i \
+            "s/versionName \"[^\"]*\"/versionName \"${{ needs.prepare.outputs.version }}\"/" \
+            build.gradle
+
+      - name: Build signed AAB
+        working-directory: bubblewrap
+        run: |
+          chmod +x gradlew
+          ./gradlew bundleRelease \
+            -Pandroid.injected.signing.store.file="$(pwd)/android.keystore" \
+            -Pandroid.injected.signing.store.password="${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" \
+            -Pandroid.injected.signing.key.alias="${{ vars.ANDROID_KEY_ALIAS }}" \
+            -Pandroid.injected.signing.key.password="${{ secrets.ANDROID_KEY_PASSWORD }}"
+
+      - name: Upload to Google Play (${{ needs.prepare.outputs.android_track }})
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: ${{ vars.ANDROID_PACKAGE_NAME }}
+          releaseFiles: bubblewrap/app/build/outputs/bundle/release/app-release.aab
+          track: ${{ needs.prepare.outputs.android_track }}
+          releaseName: ${{ github.event.release.name }}
+          releaseNotes: |
+            en-US=${{ github.event.release.body }}
+
+  # ── iOS ────────────────────────────────────────────────────────────────────
+  ios:
+    needs: prepare
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+          bundler-cache: true
+          working-directory: ios
+
+      - name: Import distribution certificate
+        env:
+          CERT_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
+          CERT_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          KEYCHAIN_PASSWORD: tmp-${{ github.run_id }}
+        run: |
+          KEYCHAIN="$RUNNER_TEMP/build.keychain"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          echo "$CERT_BASE64" | base64 -d > "$RUNNER_TEMP/cert.p12"
+          security import "$RUNNER_TEMP/cert.p12" \
+            -P "$CERT_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN"
+          security set-key-partition-list \
+            -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security list-keychains -d user -s "$KEYCHAIN" \
+            "$(security list-keychains -d user | head -1 | tr -d '"')"
+
+      - name: Install provisioning profile
+        run: |
+          PP_PATH="$RUNNER_TEMP/profile.mobileprovision"
+          echo "${{ secrets.APPLE_PROVISIONING_PROFILE_BASE64 }}" \
+            | base64 -d > "$PP_PATH"
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          cp "$PP_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/
+
+      - name: Build and upload via Fastlane (${{ needs.prepare.outputs.ios_lane }})
+        working-directory: ios
+        env:
+          APP_STORE_CONNECT_API_KEY_ID:        ${{ secrets.APPLE_API_KEY_ID }}
+          APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APPLE_API_KEY_ISSUER }}
+          APP_STORE_CONNECT_API_KEY_CONTENT:   ${{ secrets.APPLE_API_KEY_BASE64 }}
+          BUNDLE_ID:                           ${{ vars.IOS_BUNDLE_ID }}
+          TEAM_ID:                             ${{ vars.IOS_TEAM_ID }}
+        run: bundle exec fastlane ${{ needs.prepare.outputs.ios_lane }}
+
+  # ── Windows ────────────────────────────────────────────────────────────────
+  windows:
+    needs: prepare
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.x'
+
+      - name: Install Microsoft Store CLI
+        run: dotnet tool install --global Microsoft.Store.CLI
+
+      - name: Package MSIX
+        shell: pwsh
+        run: |
+          $makeAppx = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin" `
+            -Recurse -Filter "makeappx.exe" |
+            Sort-Object FullName -Descending |
+            Select-Object -First 1 -ExpandProperty FullName
+          & $makeAppx pack /d windows /p "$env:RUNNER_TEMP\ShopNCook.msix" /nv
+
+      - name: Sign MSIX
+        shell: pwsh
+        env:
+          CERT_BASE64: ${{ secrets.WINDOWS_CERTIFICATE_BASE64 }}
+          CERT_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+        run: |
+          $certPath = "$env:RUNNER_TEMP\cert.pfx"
+          [IO.File]::WriteAllBytes($certPath, [Convert]::FromBase64String($env:CERT_BASE64))
+          $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin" `
+            -Recurse -Filter "signtool.exe" |
+            Sort-Object FullName -Descending |
+            Select-Object -First 1 -ExpandProperty FullName
+          & $signtool sign /fd SHA256 /p $env:CERT_PASSWORD /f $certPath `
+            "$env:RUNNER_TEMP\ShopNCook.msix"
+
+      - name: Authenticate Store CLI
+        shell: pwsh
+        run: |
+          msstore reconfigure `
+            --tenantId     "${{ secrets.AZURE_TENANT_ID }}" `
+            --sellerId     "${{ secrets.AZURE_SELLER_ID }}" `
+            --clientId     "${{ secrets.AZURE_CLIENT_ID }}" `
+            --clientSecret "${{ secrets.AZURE_CLIENT_SECRET }}"
+
+      - name: Publish to Windows Store
+        shell: pwsh
+        run: |
+          $msix      = "$env:RUNNER_TEMP\ShopNCook.msix"
+          $productId = "${{ vars.WINDOWS_PRODUCT_ID }}"
+          if ("${{ needs.prepare.outputs.windows_beta }}" -eq "true") {
+            msstore publish -i $msix --id $productId --flightId "${{ vars.WINDOWS_FLIGHT_ID }}"
+          } else {
+            msstore publish -i $msix --id $productId
+          }

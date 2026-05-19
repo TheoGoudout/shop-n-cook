@@ -1,10 +1,9 @@
 from app.crud.ingredient import (
     create_ingredient,
-    delete_ingredient,
     get_ingredient,
     get_ingredient_by_name,
     get_ingredients,
-    ingredient_has_references,
+    get_or_create_ingredient,
     update_ingredient,
 )
 from app.crud.recipe import (
@@ -41,6 +40,13 @@ from app.crud.user_settings import (
 )
 
 __all__ = [
+    # ingredient catalog
+    "get_ingredient",
+    "get_ingredient_by_name",
+    "get_ingredients",
+    "get_or_create_ingredient",
+    "create_ingredient",
+    "update_ingredient",
     # user
     "create_user",
     "update_user",
@@ -50,14 +56,6 @@ __all__ = [
     "get_user_settings",
     "get_or_create_user_settings",
     "update_user_settings",
-    # ingredient
-    "get_ingredient",
-    "get_ingredient_by_name",
-    "get_ingredients",
-    "create_ingredient",
-    "update_ingredient",
-    "delete_ingredient",
-    "ingredient_has_references",
     # recipe
     "get_recipe",
     "get_recipe_by_source_url",

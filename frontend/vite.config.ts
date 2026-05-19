@@ -8,7 +8,9 @@ import pkg from "./package.json"
 
 export default defineConfig(({ mode }) => ({
   define: {
-    __APP_VERSION__: JSON.stringify(mode === "development" ? "dev" : pkg.version),
+    __APP_VERSION__: JSON.stringify(
+      mode === "development" ? "dev" : pkg.version,
+    ),
   },
   resolve: {
     alias: {

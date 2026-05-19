@@ -8,7 +8,6 @@ from app.core.config import settings
 from app.core.db import engine, init_db
 from app.main import app
 from app.models import (
-    Ingredient,
     Recipe,
     RecipeIngredient,
     ShoppingList,
@@ -28,7 +27,6 @@ def db() -> Generator[Session, None, None]:
         session.execute(delete(ShoppingList))
         session.execute(delete(RecipeIngredient))
         session.execute(delete(Recipe))
-        session.execute(delete(Ingredient))
         session.execute(delete(User))
         session.commit()
 

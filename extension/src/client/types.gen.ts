@@ -20,17 +20,27 @@ export type ImportUrlRequest = {
 
 export type IngredientCategory = 'produce' | 'dairy' | 'meat' | 'seafood' | 'grains' | 'pantry' | 'spices' | 'beverages' | 'frozen' | 'bakery' | 'other';
 
-export type IngredientPublic = {
+export type IngredientCreate = {
     name: string;
     category?: IngredientCategory;
-    default_unit?: Unit;
+    image_url?: (string | null);
+};
+
+export type IngredientPublic = {
     id: string;
-    created_at?: (string | null);
+    name: string;
+    category: IngredientCategory;
+    image_url: (string | null);
 };
 
 export type IngredientsPublic = {
     data: Array<IngredientPublic>;
     count: number;
+};
+
+export type IngredientUpdate = {
+    category?: (IngredientCategory | null);
+    image_url?: (string | null);
 };
 
 export type Message = {
@@ -44,7 +54,6 @@ export type NewPassword = {
 
 export type ParsedIngredient = {
     name: string;
-    category: IngredientCategory;
     quantity: number;
     unit: Unit;
     notes?: (string | null);
@@ -89,20 +98,15 @@ export type RecipeCreate = {
 };
 
 export type RecipeIngredientCreate = {
+    ingredient_name: string;
     quantity: number;
     unit: Unit;
     notes?: (string | null);
-    ingredient_id?: (string | null);
-    ingredient_name?: (string | null);
-    ingredient_category?: IngredientCategory;
-    ingredient_default_unit?: Unit;
 };
 
 export type RecipeIngredientPublic = {
     id: string;
-    ingredient_id: string;
     ingredient_name: string;
-    ingredient_category: IngredientCategory;
     quantity: number;
     unit: Unit;
     notes?: (string | null);
@@ -174,18 +178,16 @@ export type ShoppingListCreate = {
 };
 
 export type ShoppingListItemCreate = {
+    name: string;
     quantity: number;
     unit: Unit;
     is_checked?: boolean;
     notes?: (string | null);
-    ingredient_id: string;
 };
 
 export type ShoppingListItemPublic = {
     id: string;
-    ingredient_id: string;
-    ingredient_name: string;
-    ingredient_category: IngredientCategory;
+    name: string;
     quantity: number;
     unit: Unit;
     is_checked: boolean;
@@ -312,19 +314,30 @@ export type ValidationError = {
 };
 
 export type IngredientsReadIngredientsData = {
-    category?: (IngredientCategory | null);
     limit?: number;
-    search?: (string | null);
     skip?: number;
 };
 
 export type IngredientsReadIngredientsResponse = (IngredientsPublic);
 
-export type IngredientsReadIngredientData = {
+export type IngredientsCreateIngredientData = {
+    requestBody: IngredientCreate;
+};
+
+export type IngredientsCreateIngredientResponse = (IngredientPublic);
+
+export type IngredientsUpdateIngredientData = {
+    id: string;
+    requestBody: IngredientUpdate;
+};
+
+export type IngredientsUpdateIngredientResponse = (IngredientPublic);
+
+export type IngredientsFetchIngredientImageData = {
     id: string;
 };
 
-export type IngredientsReadIngredientResponse = (IngredientPublic);
+export type IngredientsFetchIngredientImageResponse = (IngredientPublic);
 
 export type LoginLoginAccessTokenData = {
     formData: Body_login_login_access_token;

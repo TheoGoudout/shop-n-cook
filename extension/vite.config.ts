@@ -9,7 +9,9 @@ function extensionBuildPlugin(): Plugin {
     apply: "build",
     closeBundle() {
       const distDir = resolve(__dirname, "dist")
-      const manifest = JSON.parse(readFileSync(`${distDir}/manifest.json`, "utf8"))
+      const manifest = JSON.parse(
+        readFileSync(`${distDir}/manifest.json`, "utf8"),
+      )
 
       // In CI, VITE_APP_VERSION is not set and the manifest version comes from
       // the committed manifest.json (already correct). Only update locally.
@@ -20,7 +22,10 @@ function extensionBuildPlugin(): Plugin {
 
       if (this.meta.watchMode) {
         manifest.background = { service_worker: "dev-reload.js" }
-        writeFileSync(`${distDir}/manifest.json`, JSON.stringify(manifest, null, 2))
+        writeFileSync(
+          `${distDir}/manifest.json`,
+          JSON.stringify(manifest, null, 2),
+        )
 
         writeFileSync(`${distDir}/build-time.txt`, Date.now().toString())
         writeFileSync(
@@ -28,7 +33,10 @@ function extensionBuildPlugin(): Plugin {
           `let t=null;async function p(){try{const r=await fetch(chrome.runtime.getURL("build-time.txt")+"?_="+Date.now());const s=await r.text();if(t===null)t=s;else if(t!==s){chrome.runtime.reload();return;}}catch(_){}setTimeout(p,1000);}p();`,
         )
       } else {
-        writeFileSync(`${distDir}/manifest.json`, JSON.stringify(manifest, null, 2))
+        writeFileSync(
+          `${distDir}/manifest.json`,
+          JSON.stringify(manifest, null, 2),
+        )
       }
     },
   }
@@ -40,8 +48,12 @@ export default defineConfig(({ mode }) => {
   return {
     define: {
       __API_URL__: JSON.stringify(env.API_URL ?? "https://api.shop-n-cook.com"),
-      __FRONTEND_URL__: JSON.stringify(env.FRONTEND_HOST ?? "https://app.shop-n-cook.com"),
-      __APP_VERSION__: JSON.stringify(mode === "development" ? "dev" : pkg.version),
+      __FRONTEND_URL__: JSON.stringify(
+        env.FRONTEND_HOST ?? "https://app.shop-n-cook.com",
+      ),
+      __APP_VERSION__: JSON.stringify(
+        mode === "development" ? "dev" : pkg.version,
+      ),
     },
     plugins: [extensionBuildPlugin()],
     build: {

@@ -1,7 +1,7 @@
 import uuid
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from pydantic import BaseModel, HttpUrl
 
 from app import crud
@@ -17,6 +17,7 @@ from app.models import (
     RecipeUpdate,
 )
 from app.models.user import User
+from app.services.ingredient_image import fetch_and_update_ingredient_image
 from app.services.recipe_import import (
     ParsedIngredient,
     ParsedRecipe,
@@ -41,8 +42,7 @@ def _recipe_to_parsed(recipe: Recipe) -> ParsedRecipe:
     ri_map = {ri.id: ri for ri in recipe.recipe_ingredients}
     ingredients = [
         ParsedIngredient(
-            name=ri.ingredient.name,
-            category=ri.ingredient.category,
+            name=ri.ingredient_name,
             quantity=ri.quantity,
             unit=ri.unit,
             notes=ri.notes,
@@ -53,7 +53,7 @@ def _recipe_to_parsed(recipe: Recipe) -> ParsedRecipe:
         ParsedStep(
             instruction=step.instruction,
             ingredient_names=[
-                ri_map[si.recipe_ingredient_id].ingredient.name
+                ri_map[si.recipe_ingredient_id].ingredient_name
                 for si in step.step_ingredients
                 if si.recipe_ingredient_id in ri_map
             ],
@@ -78,7 +78,6 @@ def _parsed_to_update(parsed: ParsedRecipe) -> RecipeUpdate:
     ingredients = [
         RecipeIngredientCreate(
             ingredient_name=ing.name,
-            ingredient_category=ing.category,
             quantity=ing.quantity,
             unit=ing.unit,
             notes=ing.notes,
@@ -157,13 +156,33 @@ def read_recipe(session: SessionDep, current_user: CurrentUser, id: uuid.UUID) -
     return crud.recipe_to_public(recipe)
 
 
+def _sync_ingredient_catalog(
+    session: SessionDep,
+    background_tasks: BackgroundTasks,
+    ingredient_names: list[str],
+) -> None:
+    for name in ingredient_names:
+        ingredient, created = crud.get_or_create_ingredient(session=session, name=name)
+        if created:
+            background_tasks.add_task(fetch_and_update_ingredient_image, ingredient.id)
+
+
 @router.post("/", response_model=RecipePublic)
 def create_recipe(
-    *, session: SessionDep, current_user: CurrentUser, recipe_in: RecipeCreate
+    *,
+    session: SessionDep,
+    current_user: CurrentUser,
+    recipe_in: RecipeCreate,
+    background_tasks: BackgroundTasks,
 ) -> Any:
     """Create a new recipe. Ingredients are added in the same request."""
     recipe = crud.create_recipe(
         session=session, recipe_in=recipe_in, owner_id=current_user.id
+    )
+    _sync_ingredient_catalog(
+        session,
+        background_tasks,
+        [i.ingredient_name for i in recipe_in.ingredients or []],
     )
     return crud.recipe_to_public(recipe)
 
@@ -175,6 +194,7 @@ def update_recipe(
     current_user: CurrentUser,
     id: uuid.UUID,
     recipe_in: RecipeUpdate,
+    background_tasks: BackgroundTasks,
 ) -> Any:
     """Update a recipe. If `ingredients` is provided the list is fully replaced."""
     recipe: Recipe | None = crud.get_recipe(session=session, recipe_id=id)
@@ -187,6 +207,11 @@ def update_recipe(
             status_code=422, detail="Cannot make a public recipe private"
         )
     recipe = crud.update_recipe(session=session, db_recipe=recipe, recipe_in=recipe_in)
+    _sync_ingredient_catalog(
+        session,
+        background_tasks,
+        [i.ingredient_name for i in recipe_in.ingredients or []],
+    )
     return crud.recipe_to_public(recipe)
 
 

@@ -9,7 +9,6 @@ from app.models import (
     ShoppingListItemCreate,
     Unit,
 )
-from tests.utils.ingredient import create_random_ingredient
 from tests.utils.recipe import create_random_recipe
 from tests.utils.shopping_list import create_random_shopping_list
 from tests.utils.user import create_random_user
@@ -119,38 +118,20 @@ def test_add_item_to_shopping_list(
 ) -> None:
     superuser = crud.get_user_by_email(session=db, email=settings.FIRST_SUPERUSER)
     sl = create_random_shopping_list(db, owner_id=superuser.id)  # type: ignore[union-attr]
-    ingredient = create_random_ingredient(db)
     response = client.post(
         f"{settings.API_V1_STR}/shopping-lists/{sl.id}/items",  # type: ignore[attr-defined]
         headers=superuser_token_headers,
         json={
-            "ingredient_id": str(ingredient.id),
-            "quantity": 2.0,
-            "unit": Unit.PIECE.value,
+            "name": "Toilet paper",
+            "quantity": 4.0,
+            "unit": Unit.PACKAGE.value,
         },
     )
     assert response.status_code == 200
     items = response.json()["items"]
     assert len(items) == 1
-    assert items[0]["ingredient_name"] == ingredient.name
-    assert items[0]["quantity"] == 2.0
-
-
-def test_add_item_ingredient_not_found(
-    client: TestClient, superuser_token_headers: dict[str, str], db: Session
-) -> None:
-    superuser = crud.get_user_by_email(session=db, email=settings.FIRST_SUPERUSER)
-    sl = create_random_shopping_list(db, owner_id=superuser.id)  # type: ignore[union-attr]
-    response = client.post(
-        f"{settings.API_V1_STR}/shopping-lists/{sl.id}/items",  # type: ignore[attr-defined]
-        headers=superuser_token_headers,
-        json={
-            "ingredient_id": str(uuid.uuid4()),
-            "quantity": 1.0,
-            "unit": Unit.PIECE.value,
-        },
-    )
-    assert response.status_code == 404
+    assert items[0]["name"] == "Toilet paper"
+    assert items[0]["quantity"] == 4.0
 
 
 def test_update_item_is_checked(
@@ -158,13 +139,11 @@ def test_update_item_is_checked(
 ) -> None:
     superuser = crud.get_user_by_email(session=db, email=settings.FIRST_SUPERUSER)
     sl = create_random_shopping_list(db, owner_id=superuser.id)  # type: ignore[union-attr]
-    ingredient = create_random_ingredient(db)
-    # add item
     sl = crud.add_item_to_shopping_list(
         session=db,
         shopping_list=sl,  # type: ignore[arg-type]
         item_in=ShoppingListItemCreate(
-            ingredient_id=ingredient.id,
+            name="Milk",
             quantity=1.0,
             unit=Unit.PIECE,
         ),
@@ -184,12 +163,11 @@ def test_delete_item(
 ) -> None:
     superuser = crud.get_user_by_email(session=db, email=settings.FIRST_SUPERUSER)
     sl = create_random_shopping_list(db, owner_id=superuser.id)  # type: ignore[union-attr]
-    ingredient = create_random_ingredient(db)
     sl = crud.add_item_to_shopping_list(
         session=db,
         shopping_list=sl,  # type: ignore[arg-type]
         item_in=ShoppingListItemCreate(
-            ingredient_id=ingredient.id,
+            name="Butter",
             quantity=1.0,
             unit=Unit.PIECE,
         ),
@@ -259,13 +237,10 @@ def test_update_item_not_in_list(
     superuser = crud.get_user_by_email(session=db, email=settings.FIRST_SUPERUSER)
     sl1 = create_random_shopping_list(db, owner_id=superuser.id)  # type: ignore[union-attr]
     sl2 = create_random_shopping_list(db, owner_id=superuser.id)  # type: ignore[union-attr]
-    ingredient = create_random_ingredient(db)
     sl2 = crud.add_item_to_shopping_list(
         session=db,
         shopping_list=sl2,  # type: ignore[arg-type]
-        item_in=ShoppingListItemCreate(
-            ingredient_id=ingredient.id, quantity=1.0, unit=Unit.PIECE
-        ),
+        item_in=ShoppingListItemCreate(name="Sugar", quantity=1.0, unit=Unit.PIECE),
     )
     item_id = sl2.items[0].id  # type: ignore[attr-defined]
     # Use sl1's id but sl2's item_id → 404
@@ -284,13 +259,10 @@ def test_delete_item_not_in_list(
     superuser = crud.get_user_by_email(session=db, email=settings.FIRST_SUPERUSER)
     sl1 = create_random_shopping_list(db, owner_id=superuser.id)  # type: ignore[union-attr]
     sl2 = create_random_shopping_list(db, owner_id=superuser.id)  # type: ignore[union-attr]
-    ingredient = create_random_ingredient(db)
     sl2 = crud.add_item_to_shopping_list(
         session=db,
         shopping_list=sl2,  # type: ignore[arg-type]
-        item_in=ShoppingListItemCreate(
-            ingredient_id=ingredient.id, quantity=1.0, unit=Unit.PIECE
-        ),
+        item_in=ShoppingListItemCreate(name="Salt", quantity=1.0, unit=Unit.PIECE),
     )
     item_id = sl2.items[0].id  # type: ignore[attr-defined]
     response = client.delete(

@@ -1,19 +1,13 @@
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Pencil, Plus, Trash2 } from "lucide-react"
 import { useMemo, useState } from "react"
 import { type Resolver, useFieldArray, useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { z } from "zod"
 
-import {
-  type IngredientCategory,
-  IngredientsService,
-  type RecipePublic,
-  RecipesService,
-  type Unit,
-} from "@/client"
-import { IngredientCategorySchema, UnitSchema } from "@/client/schemas.gen"
+import { type RecipePublic, RecipesService, type Unit } from "@/client"
+import { UnitSchema } from "@/client/schemas.gen"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -58,19 +52,14 @@ const EditRecipe = ({ recipe, onSuccess }: Props) => {
 
   const ingredientSchema = useMemo(
     () =>
-      z
-        .object({
-          ingredient_id: z.string().optional(),
-          ingredient_name: z.string().optional(),
-          category: z.string().min(1),
-          quantity: z.coerce.number().positive(),
-          unit: z.string().min(1),
-          notes: z.string().optional(),
-        })
-        .refine((d) => d.ingredient_id || d.ingredient_name, {
-          message: t("form.ingredient_required"),
-          path: ["ingredient_id"],
-        }),
+      z.object({
+        ingredient_name: z
+          .string()
+          .min(1, { message: t("form.ingredient_required") }),
+        quantity: z.coerce.number().positive(),
+        unit: z.string().min(1),
+        notes: z.string().optional(),
+      }),
     [t],
   )
 
@@ -123,12 +112,6 @@ const EditRecipe = ({ recipe, onSuccess }: Props) => {
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
 
-  const { data: ingredientsData } = useQuery({
-    queryKey: ["ingredients"],
-    queryFn: () => IngredientsService.readIngredients({ limit: 500 }),
-    enabled: isOpen,
-  })
-
   // Build initial steps: map recipe_ingredient_id → index in recipe.ingredients
   const initialSteps = useMemo(() => {
     const riList = recipe.ingredients ?? []
@@ -157,9 +140,7 @@ const EditRecipe = ({ recipe, onSuccess }: Props) => {
       image_url: recipe.image_url ?? "",
       is_public: recipe.is_public,
       ingredients: (recipe.ingredients ?? []).map((i) => ({
-        ingredient_id: i.ingredient_id,
-        ingredient_name: "",
-        category: i.ingredient_category,
+        ingredient_name: i.ingredient_name,
         quantity: i.quantity,
         unit: i.unit,
         notes: i.notes ?? "",
@@ -208,14 +189,9 @@ const EditRecipe = ({ recipe, onSuccess }: Props) => {
           image_url: data.image_url || null,
           is_public: data.is_public,
           ingredients: data.ingredients.map((i) => ({
-            ingredient_id: i.ingredient_id || null,
-            ingredient_name: i.ingredient_id
-              ? null
-              : (i.ingredient_name ?? null),
-            ingredient_category: i.category as IngredientCategory,
+            ingredient_name: i.ingredient_name,
             quantity: i.quantity,
             unit: i.unit as Unit,
-            ingredient_default_unit: i.unit as Unit,
             notes: i.notes || null,
           })),
           steps: data.steps.map((s, idx) => ({
@@ -234,7 +210,6 @@ const EditRecipe = ({ recipe, onSuccess }: Props) => {
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["recipes"] })
       queryClient.invalidateQueries({ queryKey: ["recipe", recipe.id] })
-      queryClient.invalidateQueries({ queryKey: ["ingredients"] })
     },
   })
 
@@ -412,9 +387,7 @@ const EditRecipe = ({ recipe, onSuccess }: Props) => {
                     size="sm"
                     onClick={() =>
                       appendIngredient({
-                        ingredient_id: "",
                         ingredient_name: "",
-                        category: "other",
                         quantity: 1,
                         unit: "piece",
                         notes: "",
@@ -425,163 +398,98 @@ const EditRecipe = ({ recipe, onSuccess }: Props) => {
                   </Button>
                 </div>
                 <div className="space-y-3">
-                  {ingredientFields.map((field, index) => {
-                    const ingredientName = form.watch(
-                      `ingredients.${index}.ingredient_name`,
-                    )
-                    const ingredientId = form.watch(
-                      `ingredients.${index}.ingredient_id`,
-                    )
-                    const isNew = !ingredientId && !!ingredientName
-
-                    return (
-                      <div key={field.id} className="flex flex-col gap-1">
-                        <div className="flex gap-2 items-start">
-                          <FormField
-                            control={form.control}
-                            name={`ingredients.${index}.ingredient_id`}
-                            render={({ field: f }) => (
-                              <FormItem className="flex-1">
-                                <Select
-                                  onValueChange={(val) => {
-                                    f.onChange(val)
-                                    form.setValue(
-                                      `ingredients.${index}.ingredient_name`,
-                                      "",
-                                    )
-                                  }}
-                                  value={f.value}
-                                >
-                                  <FormControl>
-                                    <SelectTrigger>
-                                      {isNew ? (
-                                        <span className="flex items-center gap-2 text-sm">
-                                          <span>{ingredientName}</span>
-                                          <Badge
-                                            variant="secondary"
-                                            className="text-xs"
-                                          >
-                                            {tCommon("new")}
-                                          </Badge>
-                                        </span>
-                                      ) : (
-                                        <SelectValue
-                                          placeholder={t(
-                                            "form.select_ingredient",
-                                          )}
-                                        />
-                                      )}
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    {ingredientsData?.data.map((ing) => (
-                                      <SelectItem key={ing.id} value={ing.id}>
-                                        {ing.name}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name={`ingredients.${index}.category`}
-                            render={({ field: f }) => (
-                              <FormItem className="w-24">
-                                <Select
-                                  onValueChange={f.onChange}
-                                  value={f.value}
-                                >
-                                  <FormControl>
-                                    <SelectTrigger>
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    {IngredientCategorySchema.enum.map((c) => (
-                                      <SelectItem key={c} value={c}>
-                                        {c}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name={`ingredients.${index}.quantity`}
-                            render={({ field: f }) => (
-                              <FormItem className="w-20">
-                                <FormControl>
-                                  <Input
-                                    type="number"
-                                    min={0.01}
-                                    step="any"
-                                    placeholder={t("form.qty_placeholder")}
-                                    {...f}
-                                  />
-                                </FormControl>
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name={`ingredients.${index}.unit`}
-                            render={({ field: f }) => (
-                              <FormItem className="w-24">
-                                <Select
-                                  onValueChange={f.onChange}
-                                  value={f.value}
-                                >
-                                  <FormControl>
-                                    <SelectTrigger>
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    {UnitSchema.enum.map((u) => (
-                                      <SelectItem key={u} value={u}>
-                                        {tCommon(`unit_labels.${u}`, {
-                                          defaultValue: u,
-                                        })}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </FormItem>
-                            )}
-                          />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => removeIngredient(index)}
-                            className="mt-0.5"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
+                  {ingredientFields.map((field, index) => (
+                    <div key={field.id} className="flex flex-col gap-1">
+                      <div className="flex gap-2 items-start">
                         <FormField
                           control={form.control}
-                          name={`ingredients.${index}.notes`}
+                          name={`ingredients.${index}.ingredient_name`}
                           render={({ field: f }) => (
-                            <FormItem className="pr-10">
+                            <FormItem className="flex-1">
                               <FormControl>
                                 <Input
-                                  placeholder={t("form.notes_placeholder")}
-                                  className="h-7 text-xs text-muted-foreground"
+                                  placeholder={t(
+                                    "form.ingredient_name_placeholder",
+                                    { defaultValue: "Ingredient name" },
+                                  )}
+                                  {...f}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name={`ingredients.${index}.quantity`}
+                          render={({ field: f }) => (
+                            <FormItem className="w-20">
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  min={0.01}
+                                  step="any"
+                                  placeholder={t("form.qty_placeholder")}
                                   {...f}
                                 />
                               </FormControl>
                             </FormItem>
                           )}
                         />
+                        <FormField
+                          control={form.control}
+                          name={`ingredients.${index}.unit`}
+                          render={({ field: f }) => (
+                            <FormItem className="w-24">
+                              <Select
+                                onValueChange={f.onChange}
+                                value={f.value}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {UnitSchema.enum.map((u) => (
+                                    <SelectItem key={u} value={u}>
+                                      {tCommon(`unit_labels.${u}`, {
+                                        defaultValue: u,
+                                      })}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </FormItem>
+                          )}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeIngredient(index)}
+                          className="mt-0.5"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
-                    )
-                  })}
+                      <FormField
+                        control={form.control}
+                        name={`ingredients.${index}.notes`}
+                        render={({ field: f }) => (
+                          <FormItem className="pr-10">
+                            <FormControl>
+                              <Input
+                                placeholder={t("form.notes_placeholder")}
+                                className="h-7 text-xs text-muted-foreground"
+                                {...f}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  ))}
                 </div>
               </div>
 
@@ -639,12 +547,7 @@ const EditRecipe = ({ recipe, onSuccess }: Props) => {
                               </p>
                               <div className="flex flex-wrap gap-1">
                                 {watchedIngredients.map((ing, ingIdx) => {
-                                  const label =
-                                    ing.ingredient_name ||
-                                    ingredientsData?.data.find(
-                                      (d) => d.id === ing.ingredient_id,
-                                    )?.name ||
-                                    ""
+                                  const label = ing.ingredient_name
                                   if (!label) return null
                                   const active =
                                     selectedIndices.includes(ingIdx)

@@ -7,7 +7,7 @@ from sqlalchemy import DateTime
 from sqlmodel import Field, Relationship, SQLModel
 
 from app.models.base import get_datetime_utc
-from app.models.ingredient import Ingredient, IngredientCategory, Unit
+from app.models.ingredient import Unit
 
 if TYPE_CHECKING:
     from app.models.user import User
@@ -19,29 +19,19 @@ if TYPE_CHECKING:
 
 
 class RecipeIngredientBase(SQLModel):
+    ingredient_name: str = Field(min_length=1, max_length=255)
     quantity: float = Field(gt=0)
     unit: Unit
     notes: str | None = Field(default=None, max_length=255)
 
 
 class RecipeIngredientCreate(RecipeIngredientBase):
-    ingredient_id: uuid.UUID | None = None
-    ingredient_name: str | None = Field(default=None, min_length=1, max_length=255)
-    ingredient_category: IngredientCategory = Field(default=IngredientCategory.OTHER)
-    ingredient_default_unit: Unit = Field(default=Unit.PIECE)
-
-    @model_validator(mode="after")
-    def check_ingredient_source(self) -> "RecipeIngredientCreate":
-        if self.ingredient_id is None and not self.ingredient_name:
-            raise ValueError("Either ingredient_id or ingredient_name must be provided")
-        return self
+    pass
 
 
 class RecipeIngredientPublic(SQLModel):
     id: uuid.UUID
-    ingredient_id: uuid.UUID
     ingredient_name: str
-    ingredient_category: IngredientCategory
     quantity: float
     unit: Unit
     notes: str | None = None
@@ -57,11 +47,7 @@ class RecipeIngredient(RecipeIngredientBase, table=True):
     recipe_id: uuid.UUID = Field(
         foreign_key="recipe.id", nullable=False, ondelete="CASCADE"
     )
-    ingredient_id: uuid.UUID = Field(
-        foreign_key="ingredient.id", nullable=False, ondelete="RESTRICT"
-    )
     recipe: "Recipe" = Relationship(back_populates="recipe_ingredients")
-    ingredient: Ingredient = Relationship(sa_relationship_kwargs={"lazy": "selectin"})
 
 
 # --------------------------------------------------------------------------- #

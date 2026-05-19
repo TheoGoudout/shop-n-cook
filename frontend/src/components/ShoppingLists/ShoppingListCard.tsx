@@ -13,13 +13,11 @@ import { useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import {
-  IngredientsService,
   RecipesService,
   type ShoppingListItemPublic,
   type ShoppingListPublic,
   ShoppingListsService,
 } from "@/client"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -84,18 +82,12 @@ export function ShoppingListCard({ list }: Props) {
   const [addRecipeOpen, setAddRecipeOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [renameOpen, setRenameOpen] = useState(false)
-  const [selectedIngredient, setSelectedIngredient] = useState("")
+  const [itemName, setItemName] = useState("")
   const [quantity, setQuantity] = useState("1")
   const [unit, setUnit] = useState("piece")
   const [selectedRecipe, setSelectedRecipe] = useState("")
   const [servings, setServings] = useState("")
   const [newName, setNewName] = useState(list.name)
-
-  const { data: ingredientsData } = useQuery({
-    queryKey: ["ingredients"],
-    queryFn: () => IngredientsService.readIngredients({ limit: 500 }),
-    enabled: addItemOpen,
-  })
 
   const { data: recipesData } = useQuery({
     queryKey: ["recipes"],
@@ -133,7 +125,7 @@ export function ShoppingListCard({ list }: Props) {
       ShoppingListsService.addItem({
         id: list.id,
         requestBody: {
-          ingredient_id: selectedIngredient,
+          name: itemName.trim(),
           quantity: Number(quantity),
           unit: unit as ShoppingListItemPublic["unit"],
         },
@@ -141,7 +133,7 @@ export function ShoppingListCard({ list }: Props) {
     onSuccess: () => {
       showSuccessToast(t("add_item_dialog.success"))
       setAddItemOpen(false)
-      setSelectedIngredient("")
+      setItemName("")
       setQuantity("1")
       setUnit("piece")
     },
@@ -280,7 +272,7 @@ export function ShoppingListCard({ list }: Props) {
                 <span
                   className={`flex-1 text-sm ${item.is_checked ? "line-through text-muted-foreground" : ""}`}
                 >
-                  {item.ingredient_name}
+                  {item.name}
                   <span className="text-muted-foreground ml-1">
                     {converted.quantity}{" "}
                     {tCommon(`unit_labels.${converted.unit}`, {
@@ -288,11 +280,6 @@ export function ShoppingListCard({ list }: Props) {
                     })}
                   </span>
                 </span>
-                <Badge variant="outline" className="text-xs capitalize">
-                  {tCommon(`categories.${item.ingredient_category}`, {
-                    defaultValue: item.ingredient_category,
-                  })}
-                </Badge>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -356,23 +343,15 @@ export function ShoppingListCard({ list }: Props) {
               <p className="text-sm font-medium mb-1">
                 {t("add_item_dialog.ingredient_label")}
               </p>
-              <Select
-                value={selectedIngredient}
-                onValueChange={setSelectedIngredient}
-              >
-                <SelectTrigger>
-                  <SelectValue
-                    placeholder={t("add_item_dialog.select_ingredient")}
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {ingredientsData?.data.map((ing) => (
-                    <SelectItem key={ing.id} value={ing.id}>
-                      {ing.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <input
+                type="text"
+                value={itemName}
+                onChange={(e) => setItemName(e.target.value)}
+                placeholder={t("add_item_dialog.item_name_placeholder", {
+                  defaultValue: "e.g. Toilet paper, Milk…",
+                })}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              />
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div>
@@ -416,7 +395,7 @@ export function ShoppingListCard({ list }: Props) {
             <LoadingButton
               onClick={() => addItemMutation.mutate()}
               loading={addItemMutation.isPending}
-              disabled={!selectedIngredient}
+              disabled={!itemName.trim()}
             >
               {t("add_item_dialog.submit")}
             </LoadingButton>

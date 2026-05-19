@@ -5,11 +5,7 @@ from sqlmodel import Session
 
 from app import crud
 from app.core.config import settings
-from app.models import (
-    IngredientCategory,
-    IngredientCreate,
-    Unit,
-)
+from app.models import Unit
 from tests.utils.recipe import create_random_recipe
 from tests.utils.user import create_random_user
 
@@ -32,21 +28,13 @@ def test_create_recipe(
 
 
 def test_create_recipe_with_ingredients(
-    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+    client: TestClient, superuser_token_headers: dict[str, str]
 ) -> None:
-    ingredient = crud.create_ingredient(
-        session=db,
-        ingredient_in=IngredientCreate(
-            name="garlic-test",
-            category=IngredientCategory.PRODUCE,
-            default_unit=Unit.CLOVE,
-        ),
-    )
     data = {
         "title": "Garlic Bread",
         "ingredients": [
             {
-                "ingredient_id": str(ingredient.id),
+                "ingredient_name": "garlic",
                 "quantity": 3.0,
                 "unit": Unit.CLOVE.value,
             }
@@ -60,61 +48,8 @@ def test_create_recipe_with_ingredients(
     assert response.status_code == 200
     content = response.json()
     assert len(content["ingredients"]) == 1
-    assert content["ingredients"][0]["ingredient_name"] == "garlic-test"
+    assert content["ingredients"][0]["ingredient_name"] == "garlic"
     assert content["ingredients"][0]["quantity"] == 3.0
-
-
-def test_create_recipe_with_ingredient_name_auto_creates(
-    client: TestClient, superuser_token_headers: dict[str, str]
-) -> None:
-    """Passing ingredient_name instead of ingredient_id should create the ingredient."""
-    data = {
-        "title": "Auto Ingredient Recipe",
-        "ingredients": [
-            {
-                "ingredient_name": "auto-created-ingredient-xyz",
-                "quantity": 1.0,
-                "unit": Unit.PIECE.value,
-            }
-        ],
-    }
-    response = client.post(
-        f"{settings.API_V1_STR}/recipes/",
-        headers=superuser_token_headers,
-        json=data,
-    )
-    assert response.status_code == 200
-    content = response.json()
-    assert len(content["ingredients"]) == 1
-    assert content["ingredients"][0]["ingredient_name"] == "auto-created-ingredient-xyz"
-
-
-def test_create_recipe_with_ingredient_name_reuses_existing(
-    client: TestClient, superuser_token_headers: dict[str, str], db: Session
-) -> None:
-    """ingredient_name should match existing ingredient case-insensitively, not duplicate it."""
-    existing = crud.create_ingredient(
-        session=db,
-        ingredient_in=IngredientCreate(name="Existing-Dedup-Ingredient"),
-    )
-    data = {
-        "title": "Dedup Recipe",
-        "ingredients": [
-            {
-                "ingredient_name": "existing-dedup-ingredient",  # lowercase
-                "quantity": 2.0,
-                "unit": Unit.GRAM.value,
-            }
-        ],
-    }
-    response = client.post(
-        f"{settings.API_V1_STR}/recipes/",
-        headers=superuser_token_headers,
-        json=data,
-    )
-    assert response.status_code == 200
-    content = response.json()
-    assert content["ingredients"][0]["ingredient_id"] == str(existing.id)
 
 
 def test_create_recipe_requires_auth(client: TestClient) -> None:
@@ -197,19 +132,10 @@ def test_update_recipe_replace_ingredients(
     recipe = create_random_recipe(db, owner_id=superuser.id, with_ingredients=True)  # type: ignore[union-attr]
     assert len(recipe.recipe_ingredients) == 2  # type: ignore[attr-defined]
 
-    # Replace with a single new ingredient
-    ingredient = crud.create_ingredient(
-        session=db,
-        ingredient_in=IngredientCreate(
-            name="replacement-ingredient",
-            category=IngredientCategory.OTHER,
-            default_unit=Unit.GRAM,
-        ),
-    )
     data = {
         "ingredients": [
             {
-                "ingredient_id": str(ingredient.id),
+                "ingredient_name": "flour",
                 "quantity": 200.0,
                 "unit": Unit.GRAM.value,
             }
@@ -285,20 +211,12 @@ def test_delete_recipe_not_enough_permissions(
 
 
 def test_create_recipe_with_steps(
-    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+    client: TestClient, superuser_token_headers: dict[str, str]
 ) -> None:
-    ingredient = crud.create_ingredient(
-        session=db,
-        ingredient_in=IngredientCreate(
-            name="step-test-flour",
-            category=IngredientCategory.GRAINS,
-            default_unit=Unit.GRAM,
-        ),
-    )
     data = {
         "title": "Bread",
         "ingredients": [
-            {"ingredient_id": str(ingredient.id), "quantity": 500.0, "unit": "g"},
+            {"ingredient_name": "flour", "quantity": 500.0, "unit": "g"},
         ],
         "steps": [
             {
@@ -324,7 +242,7 @@ def test_create_recipe_with_steps(
     assert content["steps"][0]["step_number"] == 1
     assert content["steps"][0]["instruction"] == "Mix the flour with water."
     assert len(content["steps"][0]["ingredients"]) == 1
-    assert content["steps"][0]["ingredients"][0]["ingredient_name"] == "step-test-flour"
+    assert content["steps"][0]["ingredients"][0]["ingredient_name"] == "flour"
     assert content["steps"][1]["step_number"] == 2
     assert content["steps"][1]["ingredients"] == []
 

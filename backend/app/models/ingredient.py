@@ -1,25 +1,7 @@
 import uuid
-from datetime import datetime
 from enum import Enum
 
-from sqlalchemy import DateTime
 from sqlmodel import Field, SQLModel
-
-from app.models.base import get_datetime_utc
-
-
-class IngredientCategory(str, Enum):
-    PRODUCE = "produce"
-    DAIRY = "dairy"
-    MEAT = "meat"
-    SEAFOOD = "seafood"
-    GRAINS = "grains"
-    PANTRY = "pantry"
-    SPICES = "spices"
-    BEVERAGES = "beverages"
-    FROZEN = "frozen"
-    BAKERY = "bakery"
-    OTHER = "other"
 
 
 class Unit(str, Enum):
@@ -43,48 +25,43 @@ class Unit(str, Enum):
     PACKAGE = "package"
 
 
-# --------------------------------------------------------------------------- #
-# Ingredient schemas                                                           #
-# --------------------------------------------------------------------------- #
+class IngredientCategory(str, Enum):
+    PRODUCE = "produce"
+    DAIRY = "dairy"
+    MEAT = "meat"
+    SEAFOOD = "seafood"
+    GRAINS = "grains"
+    PANTRY = "pantry"
+    SPICES = "spices"
+    BEVERAGES = "beverages"
+    FROZEN = "frozen"
+    BAKERY = "bakery"
+    OTHER = "other"
 
 
-class IngredientBase(SQLModel):
-    name: str = Field(min_length=1, max_length=255)
+class Ingredient(SQLModel, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    name: str = Field(max_length=255, unique=True, index=True)
     category: IngredientCategory = Field(default=IngredientCategory.OTHER)
-    default_unit: Unit = Field(default=Unit.PIECE)
+    image_url: str | None = Field(default=None, max_length=2048)
 
 
-class IngredientCreate(IngredientBase):
-    pass
+class IngredientPublic(SQLModel):
+    id: uuid.UUID
+    name: str
+    category: IngredientCategory
+    image_url: str | None
+
+
+class IngredientCreate(SQLModel):
+    name: str = Field(min_length=1, max_length=255)
+    category: IngredientCategory = IngredientCategory.OTHER
+    image_url: str | None = None
 
 
 class IngredientUpdate(SQLModel):
-    name: str | None = Field(default=None, min_length=1, max_length=255)
     category: IngredientCategory | None = None
-    default_unit: Unit | None = None
-
-
-# --------------------------------------------------------------------------- #
-# Ingredient table model                                                       #
-# --------------------------------------------------------------------------- #
-
-
-class Ingredient(IngredientBase, table=True):
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    created_at: datetime | None = Field(
-        default_factory=get_datetime_utc,
-        sa_type=DateTime(timezone=True),  # type: ignore
-    )
-
-
-# --------------------------------------------------------------------------- #
-# Ingredient response schemas                                                  #
-# --------------------------------------------------------------------------- #
-
-
-class IngredientPublic(IngredientBase):
-    id: uuid.UUID
-    created_at: datetime | None = None
+    image_url: str | None = None
 
 
 class IngredientsPublic(SQLModel):

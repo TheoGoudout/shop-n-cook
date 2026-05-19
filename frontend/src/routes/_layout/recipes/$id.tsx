@@ -9,6 +9,7 @@ import { RecipeActionsMenu } from "@/components/Recipes/RecipeActionsMenu"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useIngredientCatalog } from "@/hooks/useIngredientCatalog"
 import { useUnitSystem } from "@/hooks/useUnitSystem"
 import { APP_NAME } from "@/lib/config"
 
@@ -32,6 +33,7 @@ function RecipeDetailContent() {
   const { convert } = useUnitSystem()
   const { id } = Route.useParams()
   const { data: recipe } = useSuspenseQuery(getRecipeQueryOptions(id))
+  const catalog = useIngredientCatalog()
 
   const totalTime =
     (recipe.prep_time_minutes ?? 0) + (recipe.cook_time_minutes ?? 0)
@@ -119,10 +121,22 @@ function RecipeDetailContent() {
             <ul className="space-y-2">
               {(recipe.ingredients ?? []).map((ing) => {
                 const converted = convert(ing.quantity, ing.unit)
+                const catalogEntry = catalog.get(
+                  ing.ingredient_name.toLowerCase(),
+                )
                 return (
                   <li key={ing.id} className="text-sm">
                     <div className="flex items-center justify-between">
-                      <span className="font-medium">{ing.ingredient_name}</span>
+                      <div className="flex items-center gap-2 font-medium">
+                        {catalogEntry?.image_url && (
+                          <img
+                            src={catalogEntry.image_url}
+                            alt={ing.ingredient_name}
+                            className="w-5 h-5 rounded object-cover shrink-0"
+                          />
+                        )}
+                        <span>{ing.ingredient_name}</span>
+                      </div>
                       <div className="flex items-center gap-2">
                         <span className="text-muted-foreground">
                           {converted.quantity}{" "}
@@ -130,11 +144,6 @@ function RecipeDetailContent() {
                             defaultValue: converted.unit,
                           })}
                         </span>
-                        <Badge variant="outline" className="text-xs capitalize">
-                          {tCommon(`categories.${ing.ingredient_category}`, {
-                            defaultValue: ing.ingredient_category,
-                          })}
-                        </Badge>
                       </div>
                     </div>
                     {ing.notes && (

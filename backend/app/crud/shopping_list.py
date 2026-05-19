@@ -23,9 +23,7 @@ from app.models.recipe import RecipeIngredient
 def _ri_to_public(ri: RecipeIngredient) -> RecipeIngredientPublic:
     return RecipeIngredientPublic(
         id=ri.id,
-        ingredient_id=ri.ingredient_id,
-        ingredient_name=ri.ingredient.name,
-        ingredient_category=ri.ingredient.category,
+        ingredient_name=ri.ingredient_name,
         quantity=ri.quantity,
         unit=ri.unit,
         notes=ri.notes,
@@ -47,9 +45,7 @@ def _sl_recipe_to_public(slr: ShoppingListRecipe) -> ShoppingListRecipePublic:
 def _item_to_public(item: ShoppingListItem) -> ShoppingListItemPublic:
     return ShoppingListItemPublic(
         id=item.id,
-        ingredient_id=item.ingredient_id,
-        ingredient_name=item.ingredient.name,
-        ingredient_category=item.ingredient.category,
+        name=item.name,
         quantity=item.quantity,
         unit=item.unit,
         is_checked=item.is_checked,
@@ -136,7 +132,7 @@ def add_item_to_shopping_list(
 ) -> ShoppingList:
     item = ShoppingListItem(
         shopping_list_id=shopping_list.id,
-        ingredient_id=item_in.ingredient_id,
+        name=item_in.name,
         quantity=item_in.quantity,
         unit=item_in.unit,
         is_checked=item_in.is_checked,
@@ -210,35 +206,34 @@ def add_recipe_to_shopping_list(
     """Add all recipe ingredients to the shopping list (scaled by servings).
 
     A ShoppingListRecipe tracking record is always created.
-    Items with the same ingredient + unit are aggregated (quantities summed).
+    Items with the same name + unit are aggregated (quantities summed).
     """
     target_servings = servings or recipe.servings or 1
     original_servings = recipe.servings or 1
     scale = target_servings / original_servings
 
-    # Track this recipe in the list
     sl_recipe = ShoppingListRecipe(
         shopping_list_id=shopping_list.id,
         recipe_id=recipe.id,
         servings_planned=target_servings,
     )
     session.add(sl_recipe)
-    session.flush()  # get sl_recipe.id
+    session.flush()
 
-    existing: dict[tuple[uuid.UUID, str], ShoppingListItem] = {
-        (item.ingredient_id, item.unit): item for item in shopping_list.items
+    existing: dict[tuple[str, str], ShoppingListItem] = {
+        (item.name.lower(), item.unit): item for item in shopping_list.items
     }
 
     for ri in recipe.recipe_ingredients:
         scaled_qty = ri.quantity * scale
-        key = (ri.ingredient_id, ri.unit)
+        key = (ri.ingredient_name.lower(), ri.unit)
         if key in existing:
             existing[key].quantity += scaled_qty
             session.add(existing[key])
         else:
             new_item = ShoppingListItem(
                 shopping_list_id=shopping_list.id,
-                ingredient_id=ri.ingredient_id,
+                name=ri.ingredient_name,
                 quantity=scaled_qty,
                 unit=ri.unit,
             )

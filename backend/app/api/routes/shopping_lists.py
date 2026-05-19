@@ -1,7 +1,7 @@
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, BackgroundTasks, HTTPException
 
 from app import crud
 from app.api.deps import CurrentUser, SessionDep
@@ -21,6 +21,7 @@ from app.models import (
     ShoppingListsPublic,
     ShoppingListUpdate,
 )
+from app.services.ingredient_image import fetch_and_update_ingredient_image
 
 router = APIRouter(prefix="/shopping-lists", tags=["shopping-lists"])
 
@@ -113,15 +114,16 @@ def add_item(
     current_user: CurrentUser,
     id: uuid.UUID,
     item_in: ShoppingListItemCreate,
+    background_tasks: BackgroundTasks,
 ) -> Any:
-    """Add an ingredient item to a shopping list."""
+    """Add an item to a shopping list."""
     sl = crud.get_shopping_list(session=session, shopping_list_id=id)
     sl = _check_list_access(sl, current_user, id)
-    ingredient = crud.get_ingredient(
-        session=session, ingredient_id=item_in.ingredient_id
+    ingredient, created = crud.get_or_create_ingredient(
+        session=session, name=item_in.name
     )
-    if not ingredient:
-        raise HTTPException(status_code=404, detail="Ingredient not found")
+    if created:
+        background_tasks.add_task(fetch_and_update_ingredient_image, ingredient.id)
     sl = crud.add_item_to_shopping_list(
         session=session,
         shopping_list=sl,

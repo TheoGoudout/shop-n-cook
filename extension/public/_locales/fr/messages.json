@@ -1,4 +1,6 @@
 {
   "appName": { "message": "Shop'n'Cook" },
-  "appDescription": { "message": "Importez des recettes dans Shop'n'Cook en un clic" }
+  "appDescription": {
+    "message": "Importez des recettes dans Shop'n'Cook en un clic"
+  }
 }

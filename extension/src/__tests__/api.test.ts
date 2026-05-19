@@ -12,11 +12,10 @@ describe("parsedRecipeToCreate", () => {
     source_url: "https://example.com/pasta",
     image_url: "https://example.com/pasta.jpg",
     ingredients: [
-      { name: "spaghetti", category: "grains", quantity: 200, unit: "g" },
-      { name: "eggs", category: "dairy", quantity: 3, unit: "piece" },
+      { name: "spaghetti", quantity: 200, unit: "g" },
+      { name: "eggs", quantity: 3, unit: "piece" },
       {
         name: "pancetta",
-        category: "meat",
         quantity: 100,
         unit: "g",
         notes: "diced",
@@ -51,7 +50,6 @@ describe("parsedRecipeToCreate", () => {
     expect(result.ingredients).toHaveLength(3)
     expect(result.ingredients?.[0]).toMatchObject({
       ingredient_name: "spaghetti",
-      ingredient_category: "grains",
       quantity: 200,
       unit: "g",
     })

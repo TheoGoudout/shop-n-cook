@@ -4,8 +4,6 @@ from sqlmodel import Session
 
 from app import crud
 from app.models import (
-    IngredientCategory,
-    IngredientCreate,
     RecipeCreate,
     RecipeIngredientCreate,
     Unit,
@@ -23,19 +21,10 @@ def create_random_recipe(
     ingredients: list[RecipeIngredientCreate] = []
 
     if with_ingredients:
-        # Create two ingredients and reference them
         for name in [random_lower_string(), random_lower_string()]:
-            ingredient = crud.create_ingredient(
-                session=db,
-                ingredient_in=IngredientCreate(
-                    name=name,
-                    category=IngredientCategory.OTHER,
-                    default_unit=Unit.PIECE,
-                ),
-            )
             ingredients.append(
                 RecipeIngredientCreate(
-                    ingredient_id=ingredient.id,
+                    ingredient_name=name,
                     quantity=1.0,
                     unit=Unit.PIECE,
                 )

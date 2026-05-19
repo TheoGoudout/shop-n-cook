@@ -29,6 +29,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import useCustomToast from "@/hooks/useCustomToast"
+import { useIngredientCatalog } from "@/hooks/useIngredientCatalog"
 import { useUnitSystem } from "@/hooks/useUnitSystem"
 import { APP_NAME } from "@/lib/config"
 import { handleError } from "@/utils"
@@ -57,18 +58,7 @@ function formatDate(d: string) {
   })
 }
 
-/** Group items by ingredient_category, sorted by category name */
-function groupByCategory(items: ShoppingListItemPublic[]) {
-  const map = new Map<string, ShoppingListItemPublic[]>()
-  for (const item of items) {
-    const cat = item.ingredient_category
-    if (!map.has(cat)) map.set(cat, [])
-    map.get(cat)!.push(item)
-  }
-  return [...map.entries()].sort(([a], [b]) => a.localeCompare(b))
-}
-
-/** For an ingredient, compute per-recipe quantity contributions based on planned_recipes */
+/** For an item, compute per-recipe quantity contributions based on planned_recipes */
 function recipeBreakdown(
   item: ShoppingListItemPublic,
   planned: ShoppingListRecipePublic[],
@@ -77,7 +67,9 @@ function recipeBreakdown(
   for (const pr of planned) {
     const scale = pr.servings_planned / Math.max(pr.recipe_servings ?? 1, 1)
     const ri = pr.ingredients?.find(
-      (i) => i.ingredient_id === item.ingredient_id && i.unit === item.unit,
+      (i) =>
+        i.ingredient_name.toLowerCase() === item.name.toLowerCase() &&
+        i.unit === item.unit,
     )
     if (ri) {
       results.push({
@@ -98,6 +90,7 @@ function ShoppingTab({ list }: { list: ShoppingListPublic }) {
   const { convert } = useUnitSystem()
   const queryClient = useQueryClient()
   const { showErrorToast } = useCustomToast()
+  const catalog = useIngredientCatalog()
   const id = list.id
   const planned = list.planned_recipes ?? []
   const items = list.items ?? []
@@ -131,7 +124,6 @@ function ShoppingTab({ list }: { list: ShoppingListPublic }) {
     )
   }
 
-  const grouped = groupByCategory(items)
   const checkedCount = items.filter((i) => i.is_checked).length
 
   return (
@@ -142,73 +134,79 @@ function ShoppingTab({ list }: { list: ShoppingListPublic }) {
           total: items.length,
         })}
       </p>
-      {grouped.map(([category, catItems]) => (
-        <Card key={category}>
-          <CardHeader className="py-3 px-4">
-            <CardTitle className="text-sm capitalize text-muted-foreground font-medium tracking-wide">
-              {tCommon(`categories.${category}`, { defaultValue: category })}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 pb-3 space-y-2">
-            {catItems.map((item) => {
-              const breakdown = recipeBreakdown(item, planned)
-              const converted = convert(item.quantity, item.unit)
-              return (
-                <div key={item.id} className="group">
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      checked={item.is_checked}
-                      onCheckedChange={(c) =>
-                        checkMutation.mutate({
-                          itemId: item.id,
-                          checked: Boolean(c),
-                        })
-                      }
+      <Card>
+        <CardHeader className="py-3 px-4">
+          <CardTitle className="text-sm text-muted-foreground font-medium tracking-wide">
+            {t("detail.items_label", { defaultValue: "Items" })}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="px-4 pb-3 space-y-2">
+          {items.map((item) => {
+            const breakdown = recipeBreakdown(item, planned)
+            const converted = convert(item.quantity, item.unit)
+            const catalogEntry = catalog.get(item.name.toLowerCase())
+            return (
+              <div key={item.id} className="group">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={item.is_checked}
+                    onCheckedChange={(c) =>
+                      checkMutation.mutate({
+                        itemId: item.id,
+                        checked: Boolean(c),
+                      })
+                    }
+                  />
+                  {catalogEntry?.image_url && (
+                    <img
+                      src={catalogEntry.image_url}
+                      alt={item.name}
+                      className="w-5 h-5 rounded object-cover shrink-0"
                     />
-                    <span
-                      className={`flex-1 text-sm font-medium ${item.is_checked ? "line-through text-muted-foreground" : ""}`}
-                    >
-                      {item.ingredient_name}
-                    </span>
-                    <span className="text-sm text-muted-foreground">
-                      {converted.quantity}{" "}
-                      {tCommon(`unit_labels.${converted.unit}`, {
-                        defaultValue: converted.unit,
-                      })}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 opacity-0 group-hover:opacity-100"
-                      onClick={() => removeItemMutation.mutate(item.id)}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
-                  {breakdown.length > 1 && (
-                    <div className="ml-6 mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5">
-                      {breakdown.map((b) => {
-                        const convertedB = convert(b.quantity, b.unit)
-                        return (
-                          <span
-                            key={b.title}
-                            className="text-xs text-muted-foreground"
-                          >
-                            {b.title}: {convertedB.quantity}{" "}
-                            {tCommon(`unit_labels.${convertedB.unit}`, {
-                              defaultValue: convertedB.unit,
-                            })}
-                          </span>
-                        )
-                      })}
-                    </div>
                   )}
+                  <span
+                    className={`flex-1 text-sm font-medium ${item.is_checked ? "line-through text-muted-foreground" : ""}`}
+                  >
+                    {item.name}
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    {converted.quantity}{" "}
+                    {tCommon(`unit_labels.${converted.unit}`, {
+                      defaultValue: converted.unit,
+                    })}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 opacity-0 group-hover:opacity-100"
+                    onClick={() => removeItemMutation.mutate(item.id)}
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
                 </div>
-              )
-            })}
-          </CardContent>
-        </Card>
-      ))}
+                {breakdown.length > 1 && (
+                  <div className="ml-6 mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5">
+                    {breakdown.map((b) => {
+                      const convertedB = convert(b.quantity, b.unit)
+                      return (
+                        <span
+                          key={b.title}
+                          className="text-xs text-muted-foreground"
+                        >
+                          {b.title}: {convertedB.quantity}{" "}
+                          {tCommon(`unit_labels.${convertedB.unit}`, {
+                            defaultValue: convertedB.unit,
+                          })}
+                        </span>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </CardContent>
+      </Card>
     </div>
   )
 }

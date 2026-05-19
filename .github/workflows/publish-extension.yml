@@ -127,9 +127,14 @@ jobs:
             -H "x-goog-api-version: 2" \
             -H "Content-Type: application/json" \
             -d "{\"target\":\"$PUBLISH_TARGET\"}")
-          STATUS=$(echo "$RESULT" | jq -r '.status[0]')
-          # ITEM_PENDING_REVIEW is normal for extensions requesting broad host permissions
-          if [ "$STATUS" != "OK" ] && [ "$STATUS" != "ITEM_PENDING_REVIEW" ]; then
+          STATUS=$(echo "$RESULT" | jq -r '.status[0] // ""')
+          ERROR=$(echo "$RESULT" | jq -r '.error.message // ""')
+          # ITEM_PENDING_REVIEW = submitted for review (normal for broad-permission extensions)
+          # "in review" error = previous submission still under review; new package uploaded as draft
+          if [ "$STATUS" = "OK" ] || [ "$STATUS" = "ITEM_PENDING_REVIEW" ] || \
+             echo "$ERROR" | grep -qi "in review"; then
+            echo "Submitted: $STATUS $ERROR"
+          else
             echo "Publish failed: $RESULT"
             exit 1
           fi

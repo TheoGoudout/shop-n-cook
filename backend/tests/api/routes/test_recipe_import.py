@@ -535,6 +535,36 @@ def test_reimport_recipe_success(
     assert len(data["ingredients"]) == 1
 
 
+def test_reimport_recipe_syncs_ingredient_catalog(
+    client: TestClient, superuser_token_headers: dict[str, str], db: object
+) -> None:
+    from app import crud
+
+    superuser = _get_superuser(db)
+    recipe = _create_recipe_with_url(db, superuser.id, "https://example.com/recipe-sync")
+
+    updated_recipe = {**_SAMPLE_RECIPE, "title": "Catalog Sync Test"}
+    llm_mock = MagicMock()
+    llm_mock.invoke.return_value = _make_llm_response(updated_recipe)
+
+    with (
+        patch(
+            "app.services.recipe_import._fetch_page",
+            return_value=("some recipe text", None),
+        ),
+        patch("app.services.recipe_import._get_llm", return_value=llm_mock),
+    ):
+        response = client.post(
+            f"{settings.API_V1_STR}/recipes/{recipe.id}/reimport",
+            headers=superuser_token_headers,
+            json={},
+        )
+
+    assert response.status_code == 200
+    ingredient = crud.get_ingredient_by_name(session=db, name="pasta")
+    assert ingredient is not None
+
+
 def test_reimport_recipe_not_found(
     client: TestClient, superuser_token_headers: dict[str, str]
 ) -> None:

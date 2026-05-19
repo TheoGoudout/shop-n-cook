@@ -337,7 +337,7 @@ async function handleImport() {
 
 async function borrowWebAppToken(): Promise<string | null> {
   try {
-    const tabs = await chrome.tabs.query({ url: `${DEFAULT_BASE_URL}/*` })
+    const tabs = await chrome.tabs.query({ url: `${__FRONTEND_URL__}/*` })
     if (!tabs.length || !tabs[0].id) return null
     const results = await chrome.scripting.executeScript({
       target: { tabId: tabs[0].id },

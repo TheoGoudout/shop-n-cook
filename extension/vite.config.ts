@@ -9,6 +9,7 @@ export default defineConfig(({ mode }) => {
   return {
     define: {
       __API_URL__: JSON.stringify(env.API_URL ?? "https://api.shop-n-cook.com"),
+      __FRONTEND_URL__: JSON.stringify(env.FRONTEND_HOST ?? "https://app.shop-n-cook.com"),
     },
     build: {
       outDir: "dist",

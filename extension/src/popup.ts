@@ -201,7 +201,7 @@ function renderSuccess(
   const actionsRow = el("div", "actions-row")
 
   const link = el("a")
-  link.href = `${baseUrl}/recipes/${recipeId}`
+  link.href = `${__FRONTEND_URL__}/recipes/${recipeId}`
   link.target = "_blank"
   link.rel = "noopener noreferrer"
   const openBtn = el("button", "btn-secondary")
@@ -324,8 +324,9 @@ async function handleImport() {
       return
     }
 
+    const language = await borrowWebAppLanguage()
     const parsed = await RecipesService.importRecipeUrl({
-      requestBody: { url },
+      requestBody: { url, language },
     })
     const recipeCreate = parsedRecipeToCreate(parsed)
     const saved = await RecipesService.createRecipe({
@@ -343,6 +344,20 @@ async function handleImport() {
     const message =
       err instanceof Error ? err.message : "An unexpected error occurred."
     render({ kind: "error", email, baseUrl, message })
+  }
+}
+
+async function borrowWebAppLanguage(): Promise<string | null> {
+  try {
+    const tabs = await chrome.tabs.query({ url: `${__FRONTEND_URL__}/*` })
+    if (!tabs.length || !tabs[0].id) return null
+    const results = await chrome.scripting.executeScript({
+      target: { tabId: tabs[0].id },
+      func: () => localStorage.getItem("i18n-language"),
+    })
+    return (results[0]?.result as string | null) ?? null
+  } catch {
+    return null
   }
 }
 

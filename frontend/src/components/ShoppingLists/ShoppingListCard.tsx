@@ -347,7 +347,9 @@ export function ShoppingListCard({ list }: Props) {
                 type="text"
                 value={itemName}
                 onChange={(e) => setItemName(e.target.value)}
-                placeholder={t("add_item_dialog.item_name_placeholder", { defaultValue: "e.g. Toilet paper, Milk…" })}
+                placeholder={t("add_item_dialog.item_name_placeholder", {
+                  defaultValue: "e.g. Toilet paper, Milk…",
+                })}
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
             </div>

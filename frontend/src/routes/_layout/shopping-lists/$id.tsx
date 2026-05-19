@@ -66,7 +66,9 @@ function recipeBreakdown(
   for (const pr of planned) {
     const scale = pr.servings_planned / Math.max(pr.recipe_servings ?? 1, 1)
     const ri = pr.ingredients?.find(
-      (i) => i.ingredient_name.toLowerCase() === item.name.toLowerCase() && i.unit === item.unit,
+      (i) =>
+        i.ingredient_name.toLowerCase() === item.name.toLowerCase() &&
+        i.unit === item.unit,
     )
     if (ri) {
       results.push({

@@ -6,11 +6,7 @@ import { type Resolver, useFieldArray, useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { z } from "zod"
 
-import {
-  type RecipePublic,
-  RecipesService,
-  type Unit,
-} from "@/client"
+import { type RecipePublic, RecipesService, type Unit } from "@/client"
 import { UnitSchema } from "@/client/schemas.gen"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -57,7 +53,9 @@ const EditRecipe = ({ recipe, onSuccess }: Props) => {
   const ingredientSchema = useMemo(
     () =>
       z.object({
-        ingredient_name: z.string().min(1, { message: t("form.ingredient_required") }),
+        ingredient_name: z
+          .string()
+          .min(1, { message: t("form.ingredient_required") }),
         quantity: z.coerce.number().positive(),
         unit: z.string().min(1),
         notes: z.string().optional(),
@@ -403,93 +401,95 @@ const EditRecipe = ({ recipe, onSuccess }: Props) => {
                   {ingredientFields.map((field, index) => (
                     <div key={field.id} className="flex flex-col gap-1">
                       <div className="flex gap-2 items-start">
-                          <FormField
-                            control={form.control}
-                            name={`ingredients.${index}.ingredient_name`}
-                            render={({ field: f }) => (
-                              <FormItem className="flex-1">
-                                <FormControl>
-                                  <Input
-                                    placeholder={t("form.ingredient_name_placeholder", { defaultValue: "Ingredient name" })}
-                                    {...f}
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name={`ingredients.${index}.quantity`}
-                            render={({ field: f }) => (
-                              <FormItem className="w-20">
-                                <FormControl>
-                                  <Input
-                                    type="number"
-                                    min={0.01}
-                                    step="any"
-                                    placeholder={t("form.qty_placeholder")}
-                                    {...f}
-                                  />
-                                </FormControl>
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name={`ingredients.${index}.unit`}
-                            render={({ field: f }) => (
-                              <FormItem className="w-24">
-                                <Select
-                                  onValueChange={f.onChange}
-                                  value={f.value}
-                                >
-                                  <FormControl>
-                                    <SelectTrigger>
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    {UnitSchema.enum.map((u) => (
-                                      <SelectItem key={u} value={u}>
-                                        {tCommon(`unit_labels.${u}`, {
-                                          defaultValue: u,
-                                        })}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </FormItem>
-                            )}
-                          />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => removeIngredient(index)}
-                            className="mt-0.5"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
                         <FormField
                           control={form.control}
-                          name={`ingredients.${index}.notes`}
+                          name={`ingredients.${index}.ingredient_name`}
                           render={({ field: f }) => (
-                            <FormItem className="pr-10">
+                            <FormItem className="flex-1">
                               <FormControl>
                                 <Input
-                                  placeholder={t("form.notes_placeholder")}
-                                  className="h-7 text-xs text-muted-foreground"
+                                  placeholder={t(
+                                    "form.ingredient_name_placeholder",
+                                    { defaultValue: "Ingredient name" },
+                                  )}
+                                  {...f}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name={`ingredients.${index}.quantity`}
+                          render={({ field: f }) => (
+                            <FormItem className="w-20">
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  min={0.01}
+                                  step="any"
+                                  placeholder={t("form.qty_placeholder")}
                                   {...f}
                                 />
                               </FormControl>
                             </FormItem>
                           )}
                         />
+                        <FormField
+                          control={form.control}
+                          name={`ingredients.${index}.unit`}
+                          render={({ field: f }) => (
+                            <FormItem className="w-24">
+                              <Select
+                                onValueChange={f.onChange}
+                                value={f.value}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {UnitSchema.enum.map((u) => (
+                                    <SelectItem key={u} value={u}>
+                                      {tCommon(`unit_labels.${u}`, {
+                                        defaultValue: u,
+                                      })}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </FormItem>
+                          )}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeIngredient(index)}
+                          className="mt-0.5"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
-                    )
-                  )}
+                      <FormField
+                        control={form.control}
+                        name={`ingredients.${index}.notes`}
+                        render={({ field: f }) => (
+                          <FormItem className="pr-10">
+                            <FormControl>
+                              <Input
+                                placeholder={t("form.notes_placeholder")}
+                                className="h-7 text-xs text-muted-foreground"
+                                {...f}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  ))}
                 </div>
               </div>
 

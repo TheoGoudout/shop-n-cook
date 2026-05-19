@@ -87,7 +87,9 @@ const AddRecipe = () => {
   const ingredientSchema = useMemo(
     () =>
       z.object({
-        ingredient_name: z.string().min(1, { message: t("form.ingredient_required") }),
+        ingredient_name: z
+          .string()
+          .min(1, { message: t("form.ingredient_required") }),
         quantity: z.coerce.number().positive(),
         unit: z.string().min(1),
         notes: z.string().optional(),
@@ -202,7 +204,10 @@ const AddRecipe = () => {
       }))
 
       const nameToIdx = new Map(
-        mappedIngredients.map((mi, idx) => [mi.ingredient_name.toLowerCase(), idx]),
+        mappedIngredients.map((mi, idx) => [
+          mi.ingredient_name.toLowerCase(),
+          idx,
+        ]),
       )
 
       const mappedSteps = (parsed.steps ?? []).map((ps) => {
@@ -528,7 +533,10 @@ const AddRecipe = () => {
                             <FormItem className="flex-1">
                               <FormControl>
                                 <Input
-                                  placeholder={t("form.ingredient_name_placeholder", { defaultValue: "Ingredient name" })}
+                                  placeholder={t(
+                                    "form.ingredient_name_placeholder",
+                                    { defaultValue: "Ingredient name" },
+                                  )}
                                   {...f}
                                 />
                               </FormControl>
@@ -666,7 +674,8 @@ const AddRecipe = () => {
                                 {watchedIngredients.map((ing, ingIdx) => {
                                   const label = ing.ingredient_name
                                   if (!label) return null
-                                  const active = selectedIndices.includes(ingIdx)
+                                  const active =
+                                    selectedIndices.includes(ingIdx)
                                   return (
                                     <button
                                       key={ingIdx}

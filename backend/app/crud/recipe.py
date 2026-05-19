@@ -8,7 +8,6 @@ from app.models import (
     Recipe,
     RecipeCreate,
     RecipeIngredient,
-    RecipeIngredientCreate,
     RecipeIngredientPublic,
     RecipePublic,
     RecipeStep,

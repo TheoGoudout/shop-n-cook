@@ -33,9 +33,10 @@ def fetch_image_from_openfoodfacts(name: str) -> str | None:
 
 
 def fetch_and_update_ingredient_image(ingredient_id: uuid.UUID) -> None:
+    from sqlmodel import Session
+
     from app.core.db import engine
     from app.models.ingredient import Ingredient
-    from sqlmodel import Session
 
     with Session(engine) as session:
         ingredient = session.get(Ingredient, ingredient_id)

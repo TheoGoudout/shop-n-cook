@@ -6,7 +6,6 @@ from pydantic import BaseModel, HttpUrl
 
 from app import crud
 from app.api.deps import CurrentUser, SessionDep, get_current_active_superuser
-from app.services.ingredient_image import fetch_and_update_ingredient_image
 from app.models import (
     Message,
     Recipe,
@@ -18,6 +17,7 @@ from app.models import (
     RecipeUpdate,
 )
 from app.models.user import User
+from app.services.ingredient_image import fetch_and_update_ingredient_image
 from app.services.recipe_import import (
     ParsedIngredient,
     ParsedRecipe,
@@ -180,7 +180,9 @@ def create_recipe(
         session=session, recipe_in=recipe_in, owner_id=current_user.id
     )
     _sync_ingredient_catalog(
-        session, background_tasks, [i.ingredient_name for i in recipe_in.ingredients or []]
+        session,
+        background_tasks,
+        [i.ingredient_name for i in recipe_in.ingredients or []],
     )
     return crud.recipe_to_public(recipe)
 
@@ -206,7 +208,9 @@ def update_recipe(
         )
     recipe = crud.update_recipe(session=session, db_recipe=recipe, recipe_in=recipe_in)
     _sync_ingredient_catalog(
-        session, background_tasks, [i.ingredient_name for i in recipe_in.ingredients or []]
+        session,
+        background_tasks,
+        [i.ingredient_name for i in recipe_in.ingredients or []],
     )
     return crud.recipe_to_public(recipe)
 

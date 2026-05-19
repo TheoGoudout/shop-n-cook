@@ -11,9 +11,7 @@ def get_ingredient_by_name(session: Session, name: str) -> Ingredient | None:
     ).first()
 
 
-def get_or_create_ingredient(
-    session: Session, name: str
-) -> tuple[Ingredient, bool]:
+def get_or_create_ingredient(session: Session, name: str) -> tuple[Ingredient, bool]:
     existing = get_ingredient_by_name(session, name)
     if existing:
         return existing, False

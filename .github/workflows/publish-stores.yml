@@ -66,6 +66,9 @@ name: Publish to App Stores
 on:
   release:
     types: [published]
+  push:
+    branches: [master]
+  workflow_dispatch:
 
 jobs:
   # ── Shared metadata ────────────────────────────────────────────────────────
@@ -81,13 +84,18 @@ jobs:
       - name: Parse semver from tag
         id: version
         run: |
-          TAG="${{ github.event.release.tag_name }}"
-          VERSION="${TAG#v}"
-          MAJOR=$(echo "$VERSION" | cut -d. -f1)
-          MINOR=$(echo "$VERSION" | cut -d. -f2)
-          PATCH=$(echo "$VERSION" | cut -d. -f3)
-          PATCH=${PATCH:-0}
-          VERSION_CODE=$((MAJOR * 10000 + MINOR * 100 + PATCH))
+          if [ "${{ github.event_name }}" = "release" ]; then
+            TAG="${{ github.event.release.tag_name }}"
+            VERSION="${TAG#v}"
+            MAJOR=$(echo "$VERSION" | cut -d. -f1)
+            MINOR=$(echo "$VERSION" | cut -d. -f2)
+            PATCH=$(echo "$VERSION" | cut -d. -f3)
+            PATCH=${PATCH:-0}
+            VERSION_CODE=$((MAJOR * 10000 + MINOR * 100 + PATCH))
+          else
+            VERSION="0.0.0"
+            VERSION_CODE=0
+          fi
           echo "version=$VERSION"           >> "$GITHUB_OUTPUT"
           echo "version_code=$VERSION_CODE" >> "$GITHUB_OUTPUT"
 
@@ -117,11 +125,13 @@ jobs:
           distribution: 'temurin'
 
       - name: Decode keystore
+        if: github.event_name == 'release'
         run: |
           echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" \
             | base64 -d > bubblewrap/android.keystore
 
       - name: Bump version
+        if: github.event_name == 'release'
         working-directory: bubblewrap/app
         run: |
           sed -i \
@@ -132,6 +142,7 @@ jobs:
             build.gradle
 
       - name: Build signed AAB
+        if: github.event_name == 'release'
         working-directory: bubblewrap
         run: |
           chmod +x gradlew
@@ -141,7 +152,31 @@ jobs:
             -Pandroid.injected.signing.key.alias="${{ vars.ANDROID_KEY_ALIAS }}" \
             -Pandroid.injected.signing.key.password="${{ secrets.ANDROID_KEY_PASSWORD }}"
 
+      - name: Build debug APK
+        if: github.event_name != 'release'
+        working-directory: bubblewrap
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Upload AAB artifact
+        if: github.event_name == 'release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-aab
+          path: bubblewrap/app/build/outputs/bundle/release/app-release.aab
+          retention-days: 7
+
+      - name: Upload debug APK artifact
+        if: github.event_name != 'release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-debug-apk
+          path: bubblewrap/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 7
+
       - name: Upload to Google Play (${{ needs.prepare.outputs.android_track }})
+        if: github.event_name == 'release'
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
@@ -156,6 +191,7 @@ jobs:
   ios:
     needs: prepare
     runs-on: macos-latest
+    if: github.event_name == 'release'
     steps:
       - uses: actions/checkout@v4
 
@@ -205,6 +241,7 @@ jobs:
   windows:
     needs: prepare
     runs-on: windows-latest
+    if: github.event_name == 'release'
     steps:
       - uses: actions/checkout@v4
 

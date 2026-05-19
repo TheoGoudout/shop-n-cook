@@ -3,6 +3,9 @@ name: Publish Extension
 on:
   release:
     types: [released, prereleased]
+  push:
+    branches: [master]
+  workflow_dispatch:
 
 permissions:
   contents: write # needed to attach the zip to the release
@@ -18,7 +21,12 @@ jobs:
 
       - name: Extract version from tag
         id: version
-        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=0.0.0" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Patch manifest version
         run: |
@@ -40,7 +48,7 @@ jobs:
         run: cd extension/dist && zip -r ../../extension.zip .
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
           name: extension-zip
           path: extension.zip
@@ -55,6 +63,7 @@ jobs:
     name: Publish → Chrome Web Store
     needs: build
     runs-on: ubuntu-latest
+    if: github.event_name == 'release'
     # Also covers Vivaldi and Brave — both Chromium-based and use Chrome Web Store directly
     steps:
       - uses: actions/download-artifact@v4
@@ -75,6 +84,7 @@ jobs:
     name: Publish → Firefox Add-ons (AMO)
     needs: build
     runs-on: ubuntu-latest
+    if: github.event_name == 'release'
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -104,6 +114,7 @@ jobs:
     name: Publish → Edge Add-ons
     needs: build
     runs-on: ubuntu-latest
+    if: github.event_name == 'release'
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -142,7 +153,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     # Opera has no staging channel — skip on pre-releases entirely.
-    if: ${{ !github.event.release.prerelease }}
+    if: github.event_name == 'release' && !github.event.release.prerelease
     # Opera has no official REST API; automation uses Puppeteer via ext-opera-upload.
     # reCAPTCHA Enterprise may block uploads — continue-on-error prevents failing the release.
     steps:
@@ -166,6 +177,7 @@ jobs:
     name: Publish → Safari (Mac App Store)
     needs: build
     runs-on: macos-latest
+    if: github.event_name == 'release'
     # pre-release and full release follow the same upload path.
     # Every build lands in TestFlight first; App Store review must be submitted manually
     # from App Store Connect — there is no API to trigger it automatically.

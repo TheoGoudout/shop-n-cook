@@ -225,6 +225,7 @@ def reimport_recipe(
     _current_user: Annotated[User, Depends(get_current_active_superuser)],
     id: uuid.UUID,
     body: ReimportRequest,
+    background_tasks: BackgroundTasks,
 ) -> Any:
     """Re-fetch and re-parse a recipe from its source URL. Superuser only.
 
@@ -246,8 +247,12 @@ def reimport_recipe(
         raise HTTPException(
             status_code=422, detail=f"Failed to parse recipe: {exc}"
         ) from exc
-    recipe = crud.update_recipe(
-        session=session, db_recipe=recipe, recipe_in=_parsed_to_update(parsed)
+    recipe_in = _parsed_to_update(parsed)
+    recipe = crud.update_recipe(session=session, db_recipe=recipe, recipe_in=recipe_in)
+    _sync_ingredient_catalog(
+        session,
+        background_tasks,
+        [i.ingredient_name for i in recipe_in.ingredients or []],
     )
     return crud.recipe_to_public(recipe)
 

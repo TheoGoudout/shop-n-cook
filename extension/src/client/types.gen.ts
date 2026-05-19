@@ -18,6 +18,31 @@ export type ImportUrlRequest = {
     language?: (string | null);
 };
 
+export type IngredientCategory = 'produce' | 'dairy' | 'meat' | 'seafood' | 'grains' | 'pantry' | 'spices' | 'beverages' | 'frozen' | 'bakery' | 'other';
+
+export type IngredientCreate = {
+    name: string;
+    category?: IngredientCategory;
+    image_url?: (string | null);
+};
+
+export type IngredientPublic = {
+    id: string;
+    name: string;
+    category: IngredientCategory;
+    image_url: (string | null);
+};
+
+export type IngredientsPublic = {
+    data: Array<IngredientPublic>;
+    count: number;
+};
+
+export type IngredientUpdate = {
+    category?: (IngredientCategory | null);
+    image_url?: (string | null);
+};
+
 export type Message = {
     message: string;
 };
@@ -287,6 +312,32 @@ export type ValidationError = {
         [key: string]: unknown;
     };
 };
+
+export type IngredientsReadIngredientsData = {
+    limit?: number;
+    skip?: number;
+};
+
+export type IngredientsReadIngredientsResponse = (IngredientsPublic);
+
+export type IngredientsCreateIngredientData = {
+    requestBody: IngredientCreate;
+};
+
+export type IngredientsCreateIngredientResponse = (IngredientPublic);
+
+export type IngredientsUpdateIngredientData = {
+    id: string;
+    requestBody: IngredientUpdate;
+};
+
+export type IngredientsUpdateIngredientResponse = (IngredientPublic);
+
+export type IngredientsFetchIngredientImageData = {
+    id: string;
+};
+
+export type IngredientsFetchIngredientImageResponse = (IngredientPublic);
 
 export type LoginLoginAccessTokenData = {
     formData: Body_login_login_access_token;

@@ -4,7 +4,15 @@
 from sqlmodel import SQLModel  # noqa: F401 — re-exported for alembic env.py
 
 from app.models.base import Message, get_datetime_utc
-from app.models.ingredient import Unit
+from app.models.ingredient import (
+    Ingredient,
+    IngredientCategory,
+    IngredientCreate,
+    IngredientPublic,
+    IngredientsPublic,
+    IngredientUpdate,
+    Unit,
+)
 from app.models.recipe import (
     Recipe,
     RecipeBase,
@@ -80,6 +88,13 @@ __all__ = [
     "UserSettings",
     "UserSettingsPublic",
     "UserSettingsUpdate",
+    # ingredient catalog
+    "Ingredient",
+    "IngredientCategory",
+    "IngredientCreate",
+    "IngredientUpdate",
+    "IngredientPublic",
+    "IngredientsPublic",
     # unit enum (shared by recipe and shopping list)
     "Unit",
     # recipe

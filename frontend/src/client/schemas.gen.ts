@@ -97,6 +97,119 @@ export const ImportUrlRequestSchema = {
     title: 'ImportUrlRequest'
 } as const;
 
+export const IngredientCategorySchema = {
+    type: 'string',
+    enum: ['produce', 'dairy', 'meat', 'seafood', 'grains', 'pantry', 'spices', 'beverages', 'frozen', 'bakery', 'other'],
+    title: 'IngredientCategory'
+} as const;
+
+export const IngredientCreateSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            maxLength: 255,
+            minLength: 1,
+            title: 'Name'
+        },
+        category: {
+            '$ref': '#/components/schemas/IngredientCategory',
+            default: 'other'
+        },
+        image_url: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Image Url'
+        }
+    },
+    type: 'object',
+    required: ['name'],
+    title: 'IngredientCreate'
+} as const;
+
+export const IngredientPublicSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        name: {
+            type: 'string',
+            title: 'Name'
+        },
+        category: {
+            '$ref': '#/components/schemas/IngredientCategory'
+        },
+        image_url: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Image Url'
+        }
+    },
+    type: 'object',
+    required: ['id', 'name', 'category', 'image_url'],
+    title: 'IngredientPublic'
+} as const;
+
+export const IngredientUpdateSchema = {
+    properties: {
+        category: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/IngredientCategory'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        image_url: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Image Url'
+        }
+    },
+    type: 'object',
+    title: 'IngredientUpdate'
+} as const;
+
+export const IngredientsPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/IngredientPublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'IngredientsPublic'
+} as const;
+
 export const MessageSchema = {
     properties: {
         message: {

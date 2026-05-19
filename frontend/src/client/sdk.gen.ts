@@ -3,7 +3,97 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, RecipesReadPublicRecipesData, RecipesReadPublicRecipesResponse, RecipesReadRecipesData, RecipesReadRecipesResponse, RecipesCreateRecipeData, RecipesCreateRecipeResponse, RecipesReadRecipeData, RecipesReadRecipeResponse, RecipesUpdateRecipeData, RecipesUpdateRecipeResponse, RecipesDeleteRecipeData, RecipesDeleteRecipeResponse, RecipesReimportRecipeData, RecipesReimportRecipeResponse, RecipesImportRecipeUrlData, RecipesImportRecipeUrlResponse, ShoppingListsReadShoppingListsData, ShoppingListsReadShoppingListsResponse, ShoppingListsCreateShoppingListData, ShoppingListsCreateShoppingListResponse, ShoppingListsReadShoppingListData, ShoppingListsReadShoppingListResponse, ShoppingListsUpdateShoppingListData, ShoppingListsUpdateShoppingListResponse, ShoppingListsDeleteShoppingListData, ShoppingListsDeleteShoppingListResponse, ShoppingListsAddItemData, ShoppingListsAddItemResponse, ShoppingListsUpdateItemData, ShoppingListsUpdateItemResponse, ShoppingListsDeleteItemData, ShoppingListsDeleteItemResponse, ShoppingListsAddRecipeData, ShoppingListsAddRecipeResponse, ShoppingListsUpdatePlannedRecipeData, ShoppingListsUpdatePlannedRecipeResponse, ShoppingListsDeletePlannedRecipeData, ShoppingListsDeletePlannedRecipeResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UserSettingsReadUserSettingsResponse, UserSettingsUpdateUserSettingsData, UserSettingsUpdateUserSettingsResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
+import type { IngredientsReadIngredientsData, IngredientsReadIngredientsResponse, IngredientsCreateIngredientData, IngredientsCreateIngredientResponse, IngredientsUpdateIngredientData, IngredientsUpdateIngredientResponse, IngredientsFetchIngredientImageData, IngredientsFetchIngredientImageResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, RecipesReadPublicRecipesData, RecipesReadPublicRecipesResponse, RecipesReadRecipesData, RecipesReadRecipesResponse, RecipesCreateRecipeData, RecipesCreateRecipeResponse, RecipesReadRecipeData, RecipesReadRecipeResponse, RecipesUpdateRecipeData, RecipesUpdateRecipeResponse, RecipesDeleteRecipeData, RecipesDeleteRecipeResponse, RecipesReimportRecipeData, RecipesReimportRecipeResponse, RecipesImportRecipeUrlData, RecipesImportRecipeUrlResponse, ShoppingListsReadShoppingListsData, ShoppingListsReadShoppingListsResponse, ShoppingListsCreateShoppingListData, ShoppingListsCreateShoppingListResponse, ShoppingListsReadShoppingListData, ShoppingListsReadShoppingListResponse, ShoppingListsUpdateShoppingListData, ShoppingListsUpdateShoppingListResponse, ShoppingListsDeleteShoppingListData, ShoppingListsDeleteShoppingListResponse, ShoppingListsAddItemData, ShoppingListsAddItemResponse, ShoppingListsUpdateItemData, ShoppingListsUpdateItemResponse, ShoppingListsDeleteItemData, ShoppingListsDeleteItemResponse, ShoppingListsAddRecipeData, ShoppingListsAddRecipeResponse, ShoppingListsUpdatePlannedRecipeData, ShoppingListsUpdatePlannedRecipeResponse, ShoppingListsDeletePlannedRecipeData, ShoppingListsDeletePlannedRecipeResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UserSettingsReadUserSettingsResponse, UserSettingsUpdateUserSettingsData, UserSettingsUpdateUserSettingsResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
+
+export class IngredientsService {
+    /**
+     * Read Ingredients
+     * List all ingredients in the catalog.
+     * @param data The data for the request.
+     * @param data.skip
+     * @param data.limit
+     * @returns IngredientsPublic Successful Response
+     * @throws ApiError
+     */
+    public static readIngredients(data: IngredientsReadIngredientsData = {}): CancelablePromise<IngredientsReadIngredientsResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/ingredients/',
+            query: {
+                skip: data.skip,
+                limit: data.limit
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Create Ingredient
+     * Create an ingredient catalog entry. Superuser only.
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns IngredientPublic Successful Response
+     * @throws ApiError
+     */
+    public static createIngredient(data: IngredientsCreateIngredientData): CancelablePromise<IngredientsCreateIngredientResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/ingredients/',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Update Ingredient
+     * Update an ingredient's category or image. Superuser only.
+     * @param data The data for the request.
+     * @param data.id
+     * @param data.requestBody
+     * @returns IngredientPublic Successful Response
+     * @throws ApiError
+     */
+    public static updateIngredient(data: IngredientsUpdateIngredientData): CancelablePromise<IngredientsUpdateIngredientResponse> {
+        return __request(OpenAPI, {
+            method: 'PATCH',
+            url: '/api/v1/ingredients/{id}',
+            path: {
+                id: data.id
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Fetch Ingredient Image
+     * Trigger an Open Food Facts image fetch for this ingredient. Superuser only.
+     * @param data The data for the request.
+     * @param data.id
+     * @returns IngredientPublic Successful Response
+     * @throws ApiError
+     */
+    public static fetchIngredientImage(data: IngredientsFetchIngredientImageData): CancelablePromise<IngredientsFetchIngredientImageResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/ingredients/{id}/fetch-image',
+            path: {
+                id: data.id
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+}
 
 export class LoginService {
     /**

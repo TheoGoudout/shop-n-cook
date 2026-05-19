@@ -1,3 +1,11 @@
+from app.crud.ingredient import (
+    create_ingredient,
+    get_ingredient,
+    get_ingredient_by_name,
+    get_ingredients,
+    get_or_create_ingredient,
+    update_ingredient,
+)
 from app.crud.recipe import (
     create_recipe,
     delete_recipe,
@@ -32,6 +40,13 @@ from app.crud.user_settings import (
 )
 
 __all__ = [
+    # ingredient catalog
+    "get_ingredient",
+    "get_ingredient_by_name",
+    "get_ingredients",
+    "get_or_create_ingredient",
+    "create_ingredient",
+    "update_ingredient",
     # user
     "create_user",
     "update_user",

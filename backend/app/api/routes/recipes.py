@@ -1,11 +1,12 @@
 import uuid
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from pydantic import BaseModel, HttpUrl
 
 from app import crud
 from app.api.deps import CurrentUser, SessionDep, get_current_active_superuser
+from app.services.ingredient_image import fetch_and_update_ingredient_image
 from app.models import (
     Message,
     Recipe,
@@ -155,13 +156,31 @@ def read_recipe(session: SessionDep, current_user: CurrentUser, id: uuid.UUID) -
     return crud.recipe_to_public(recipe)
 
 
+def _sync_ingredient_catalog(
+    session: SessionDep,
+    background_tasks: BackgroundTasks,
+    ingredient_names: list[str],
+) -> None:
+    for name in ingredient_names:
+        ingredient, created = crud.get_or_create_ingredient(session=session, name=name)
+        if created:
+            background_tasks.add_task(fetch_and_update_ingredient_image, ingredient.id)
+
+
 @router.post("/", response_model=RecipePublic)
 def create_recipe(
-    *, session: SessionDep, current_user: CurrentUser, recipe_in: RecipeCreate
+    *,
+    session: SessionDep,
+    current_user: CurrentUser,
+    recipe_in: RecipeCreate,
+    background_tasks: BackgroundTasks,
 ) -> Any:
     """Create a new recipe. Ingredients are added in the same request."""
     recipe = crud.create_recipe(
         session=session, recipe_in=recipe_in, owner_id=current_user.id
+    )
+    _sync_ingredient_catalog(
+        session, background_tasks, [i.ingredient_name for i in recipe_in.ingredients or []]
     )
     return crud.recipe_to_public(recipe)
 
@@ -173,6 +192,7 @@ def update_recipe(
     current_user: CurrentUser,
     id: uuid.UUID,
     recipe_in: RecipeUpdate,
+    background_tasks: BackgroundTasks,
 ) -> Any:
     """Update a recipe. If `ingredients` is provided the list is fully replaced."""
     recipe: Recipe | None = crud.get_recipe(session=session, recipe_id=id)
@@ -185,6 +205,9 @@ def update_recipe(
             status_code=422, detail="Cannot make a public recipe private"
         )
     recipe = crud.update_recipe(session=session, db_recipe=recipe, recipe_in=recipe_in)
+    _sync_ingredient_catalog(
+        session, background_tasks, [i.ingredient_name for i in recipe_in.ingredients or []]
+    )
     return crud.recipe_to_public(recipe)
 
 

@@ -29,6 +29,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import useCustomToast from "@/hooks/useCustomToast"
+import { useIngredientCatalog } from "@/hooks/useIngredientCatalog"
 import { useUnitSystem } from "@/hooks/useUnitSystem"
 import { APP_NAME } from "@/lib/config"
 import { handleError } from "@/utils"
@@ -89,6 +90,7 @@ function ShoppingTab({ list }: { list: ShoppingListPublic }) {
   const { convert } = useUnitSystem()
   const queryClient = useQueryClient()
   const { showErrorToast } = useCustomToast()
+  const catalog = useIngredientCatalog()
   const id = list.id
   const planned = list.planned_recipes ?? []
   const items = list.items ?? []
@@ -142,6 +144,7 @@ function ShoppingTab({ list }: { list: ShoppingListPublic }) {
           {items.map((item) => {
             const breakdown = recipeBreakdown(item, planned)
             const converted = convert(item.quantity, item.unit)
+            const catalogEntry = catalog.get(item.name.toLowerCase())
             return (
               <div key={item.id} className="group">
                 <div className="flex items-center gap-2">
@@ -154,6 +157,13 @@ function ShoppingTab({ list }: { list: ShoppingListPublic }) {
                       })
                     }
                   />
+                  {catalogEntry?.image_url && (
+                    <img
+                      src={catalogEntry.image_url}
+                      alt={item.name}
+                      className="w-5 h-5 rounded object-cover shrink-0"
+                    />
+                  )}
                   <span
                     className={`flex-1 text-sm font-medium ${item.is_checked ? "line-through text-muted-foreground" : ""}`}
                   >

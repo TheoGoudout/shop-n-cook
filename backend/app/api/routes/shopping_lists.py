@@ -1,10 +1,11 @@
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, BackgroundTasks, HTTPException
 
 from app import crud
 from app.api.deps import CurrentUser, SessionDep
+from app.services.ingredient_image import fetch_and_update_ingredient_image
 from app.crud.shopping_list import _item_to_public, _sl_recipe_to_public
 from app.models import (
     Message,
@@ -113,10 +114,14 @@ def add_item(
     current_user: CurrentUser,
     id: uuid.UUID,
     item_in: ShoppingListItemCreate,
+    background_tasks: BackgroundTasks,
 ) -> Any:
     """Add an item to a shopping list."""
     sl = crud.get_shopping_list(session=session, shopping_list_id=id)
     sl = _check_list_access(sl, current_user, id)
+    ingredient, created = crud.get_or_create_ingredient(session=session, name=item_in.name)
+    if created:
+        background_tasks.add_task(fetch_and_update_ingredient_image, ingredient.id)
     sl = crud.add_item_to_shopping_list(
         session=session,
         shopping_list=sl,

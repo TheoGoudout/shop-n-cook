@@ -80,6 +80,9 @@ jobs:
       android_track: ${{ steps.track.outputs.android_track }}
       ios_lane:      ${{ steps.track.outputs.ios_lane }}
       windows_beta:  ${{ steps.track.outputs.windows_beta }}
+      has_android:   ${{ steps.check.outputs.has_android }}
+      has_ios:       ${{ steps.check.outputs.has_ios }}
+      has_windows:   ${{ steps.check.outputs.has_windows }}
     steps:
       - name: Parse semver from tag
         id: version
@@ -112,10 +115,23 @@ jobs:
             echo "windows_beta=false"       >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Check secret availability
+        id: check
+        env:
+          ANDROID_KEYSTORE_BASE64:          ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+          APPLE_CERTIFICATE_BASE64:         ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
+          WINDOWS_CERTIFICATE_BASE64:       ${{ secrets.WINDOWS_CERTIFICATE_BASE64 }}
+        run: |
+          echo "has_android=$([ -n "$ANDROID_KEYSTORE_BASE64" ] && [ -n "$GOOGLE_PLAY_SERVICE_ACCOUNT_JSON" ] && echo true || echo false)" >> $GITHUB_OUTPUT
+          echo "has_ios=$([ -n "$APPLE_CERTIFICATE_BASE64" ] && echo true || echo false)" >> $GITHUB_OUTPUT
+          echo "has_windows=$([ -n "$WINDOWS_CERTIFICATE_BASE64" ] && echo true || echo false)" >> $GITHUB_OUTPUT
+
   # ── Android ────────────────────────────────────────────────────────────────
   android:
     needs: prepare
     runs-on: ubuntu-latest
+    if: github.event_name != 'release' || needs.prepare.outputs.has_android == 'true'
     steps:
       - uses: actions/checkout@v4
 
@@ -129,6 +145,25 @@ jobs:
         run: |
           echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" \
             | tr -d '[:space:]' | base64 -d > bubblewrap/android.keystore
+
+      - name: Convert keystore to legacy PKCS12
+        if: github.event_name == 'release'
+        working-directory: bubblewrap
+        env:
+          STORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          # bundletool ships its own Bouncy Castle that chokes on newer AES-256 PKCS12 files;
+          # re-key to the legacy 3DES format that all BC versions can read.
+          keytool -importkeystore \
+            -srckeystore android.keystore \
+            -srcstoretype PKCS12 \
+            -srcstorepass "$STORE_PASS" \
+            -destkeystore android-legacy.keystore \
+            -deststoretype PKCS12 \
+            -deststorepass "$STORE_PASS" \
+            -noprompt \
+            -J-Dkeystore.pkcs12.legacy
+          mv android-legacy.keystore android.keystore
 
       - name: Bump version
         if: github.event_name == 'release'
@@ -192,7 +227,7 @@ jobs:
   ios:
     needs: prepare
     runs-on: macos-latest
-    if: github.event_name == 'release'
+    if: github.event_name == 'release' && needs.prepare.outputs.has_ios == 'true'
     steps:
       - uses: actions/checkout@v4
 
@@ -242,17 +277,18 @@ jobs:
   windows:
     needs: prepare
     runs-on: windows-latest
-    if: github.event_name == 'release'
+    if: github.event_name == 'release' && needs.prepare.outputs.has_windows == 'true'
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '8.x'
-
       - name: Install Microsoft Store CLI
         shell: pwsh
-        run: winget install Microsoft.MSStoreCLI --accept-source-agreements --accept-package-agreements
+        run: |
+          $release = Invoke-RestMethod "https://api.github.com/repos/microsoft/msstore-cli/releases/latest"
+          $url = ($release.assets | Where-Object { $_.name -match 'win-x64' -and $_.name -match '\.zip$' }).browser_download_url
+          Invoke-WebRequest -Uri $url -OutFile "$env:RUNNER_TEMP\msstore.zip"
+          Expand-Archive -Path "$env:RUNNER_TEMP\msstore.zip" -DestinationPath "$env:RUNNER_TEMP\msstore"
+          Add-Content -Path $env:GITHUB_PATH -Value "$env:RUNNER_TEMP\msstore"
 
       - name: Package MSIX
         shell: pwsh

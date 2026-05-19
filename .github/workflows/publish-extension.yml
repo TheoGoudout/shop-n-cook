@@ -15,7 +15,12 @@ jobs:
     name: Build & Package
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.version.outputs.version }}
+      version:  ${{ steps.version.outputs.version }}
+      chrome:   ${{ steps.check.outputs.chrome }}
+      firefox:  ${{ steps.check.outputs.firefox }}
+      edge:     ${{ steps.check.outputs.edge }}
+      opera:    ${{ steps.check.outputs.opera }}
+      safari:   ${{ steps.check.outputs.safari }}
     steps:
       - uses: actions/checkout@v6
 
@@ -47,6 +52,21 @@ jobs:
       - name: Package zip
         run: cd extension/dist && zip -r ../../extension.zip .
 
+      - name: Check secret availability
+        id: check
+        env:
+          CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
+          FIREFOX_API_KEY:     ${{ secrets.FIREFOX_API_KEY }}
+          EDGE_PRODUCT_ID:     ${{ secrets.EDGE_PRODUCT_ID }}
+          OPERA_EMAIL:         ${{ secrets.OPERA_EMAIL }}
+          APPLE_CERTIFICATE:   ${{ secrets.APPLE_CERTIFICATE }}
+        run: |
+          echo "chrome=$([ -n "$CHROME_EXTENSION_ID" ] && echo true || echo false)" >> $GITHUB_OUTPUT
+          echo "firefox=$([ -n "$FIREFOX_API_KEY" ] && echo true || echo false)" >> $GITHUB_OUTPUT
+          echo "edge=$([ -n "$EDGE_PRODUCT_ID" ] && echo true || echo false)" >> $GITHUB_OUTPUT
+          echo "opera=$([ -n "$OPERA_EMAIL" ] && echo true || echo false)" >> $GITHUB_OUTPUT
+          echo "safari=$([ -n "$APPLE_CERTIFICATE" ] && echo true || echo false)" >> $GITHUB_OUTPUT
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
@@ -64,28 +84,59 @@ jobs:
     name: Publish → Chrome Web Store
     needs: build
     runs-on: ubuntu-latest
-    if: github.event_name == 'release'
+    if: github.event_name == 'release' && needs.build.outputs.chrome == 'true'
     # Also covers Vivaldi and Brave — both Chromium-based and use Chrome Web Store directly
     steps:
       - uses: actions/download-artifact@v4
         with:
           name: extension-zip
 
-      - uses: fregante/chrome-webstore-upload-action@v2
-        with:
-          file-path: extension.zip
-          extension-id: ${{ secrets.CHROME_EXTENSION_ID }}
-          client-id: ${{ secrets.CHROME_CLIENT_ID }}
-          client-secret: ${{ secrets.CHROME_CLIENT_SECRET }}
-          refresh-token: ${{ secrets.CHROME_REFRESH_TOKEN }}
-          # pre-release → visible only to trusted testers; full release → public
-          publish-target: ${{ github.event.release.prerelease && 'trustedTesters' || 'default' }}
+      - name: Get OAuth access token
+        id: token
+        env:
+          CLIENT_ID:     ${{ secrets.CHROME_CLIENT_ID }}
+          CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
+          REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
+        run: |
+          TOKEN=$(curl -sf -X POST "https://oauth2.googleapis.com/token" \
+            -d "client_id=$CLIENT_ID&client_secret=$CLIENT_SECRET&refresh_token=$REFRESH_TOKEN&grant_type=refresh_token" \
+            | jq -r '.access_token')
+          echo "token=$TOKEN" >> "$GITHUB_OUTPUT"
+
+      - name: Upload package
+        env:
+          EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
+          TOKEN:        ${{ steps.token.outputs.token }}
+        run: |
+          curl -sf -X PUT \
+            "https://www.googleapis.com/upload/chromewebstore/v1.1/items/$EXTENSION_ID" \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "x-goog-api-version: 2" \
+            -T extension.zip
+
+      - name: Publish submission
+        env:
+          EXTENSION_ID:   ${{ secrets.CHROME_EXTENSION_ID }}
+          TOKEN:          ${{ steps.token.outputs.token }}
+          PUBLISH_TARGET: ${{ github.event.release.prerelease && 'trustedTesters' || 'default' }}
+        run: |
+          RESULT=$(curl -s -X POST \
+            "https://www.googleapis.com/chromewebstore/v1.1/items/$EXTENSION_ID/publish" \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "x-goog-api-version: 2" \
+            -H "Content-Type: application/json" \
+            -d "{\"target\":\"$PUBLISH_TARGET\"}")
+          STATUS=$(echo "$RESULT" | jq -r '.status[0]')
+          if [ "$STATUS" != "OK" ]; then
+            echo "Publish failed: $RESULT"
+            exit 1
+          fi
 
   publish-firefox:
     name: Publish → Firefox Add-ons (AMO)
     needs: build
     runs-on: ubuntu-latest
-    if: github.event_name == 'release'
+    if: github.event_name == 'release' && needs.build.outputs.firefox == 'true'
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -93,6 +144,13 @@ jobs:
 
       - name: Unzip extension
         run: mkdir ext-src && cd ext-src && unzip ../extension.zip
+
+      - name: Fix manifest version for Firefox
+        run: |
+          # Firefox requires numeric-only versions (x.y.z.w); convert e.g. 1.1.0-rc2 → 1.1.0.2
+          FF_VERSION=$(echo "${{ needs.build.outputs.version }}" | sed 's/-rc\([0-9]*\)$/.\1/')
+          jq --arg v "$FF_VERSION" '.version = $v' ext-src/manifest.json > /tmp/manifest.json
+          mv /tmp/manifest.json ext-src/manifest.json
 
       - uses: oven-sh/setup-bun@v2
 
@@ -114,7 +172,7 @@ jobs:
     name: Publish → Edge Add-ons
     needs: build
     runs-on: ubuntu-latest
-    if: github.event_name == 'release'
+    if: github.event_name == 'release' && needs.build.outputs.edge == 'true'
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -153,7 +211,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     # Opera has no staging channel — skip on pre-releases entirely.
-    if: github.event_name == 'release' && !github.event.release.prerelease
+    if: github.event_name == 'release' && !github.event.release.prerelease && needs.build.outputs.opera == 'true'
     # Opera has no official REST API; automation uses Puppeteer via ext-opera-upload.
     # reCAPTCHA Enterprise may block uploads — continue-on-error prevents failing the release.
     steps:
@@ -177,7 +235,7 @@ jobs:
     name: Publish → Safari (Mac App Store)
     needs: build
     runs-on: macos-latest
-    if: github.event_name == 'release'
+    if: github.event_name == 'release' && needs.build.outputs.safari == 'true'
     # pre-release and full release follow the same upload path.
     # Every build lands in TestFlight first; App Store review must be submitted manually
     # from App Store Connect — there is no API to trigger it automatically.

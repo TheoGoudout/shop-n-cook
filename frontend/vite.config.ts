@@ -22,12 +22,14 @@ export default defineConfig({
       registerType: "autoUpdate",
       injectRegister: "script",
       manifest: {
+        id: "/",
         name: "Shop'n'Cook",
         short_name: "Shop'n'Cook",
         description: "Your personal recipe and shopping list manager",
         theme_color: "#6366f1",
         background_color: "#ffffff",
         display: "standalone",
+        orientation: "portrait",
         start_url: "/",
         icons: [
           { src: "/icons/pwa-192.png", sizes: "192x192", type: "image/png" },
@@ -37,6 +39,22 @@ export default defineConfig({
             sizes: "512x512",
             type: "image/png",
             purpose: "maskable",
+          },
+        ],
+        screenshots: [
+          {
+            src: "/screenshots/screenshot-mobile.png",
+            sizes: "1080x1920",
+            type: "image/png",
+            form_factor: "narrow",
+            label: "Shop'n'Cook - Recipes & Shopping List",
+          },
+          {
+            src: "/screenshots/screenshot-desktop.png",
+            sizes: "1920x1080",
+            type: "image/png",
+            form_factor: "wide",
+            label: "Shop'n'Cook - Recipes & Shopping List",
           },
         ],
         share_target: {

@@ -27,7 +27,6 @@ services:
       prestart:
         condition: service_completed_successfully
     environment: &backend-required-env
-      - APP_VERSION=${TAG:-dev}
       - PROJECT_NAME=${PROJECT_NAME:-Shop n Cook}
       - FRONTEND_HOST=${SERVICE_URL_FRONTEND:-}
       - ENVIRONMENT=${ENVIRONMENT:-production}
@@ -93,7 +92,6 @@ services:
       args:
         - VITE_API_URL=${SERVICE_URL_BACKEND:-}
         - VITE_PROJECT_NAME=${PROJECT_NAME:-Shop n Cook}
-        - VITE_APP_VERSION=${TAG:-dev}
         - NODE_ENV=production
 
   landing:

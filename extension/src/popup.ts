@@ -291,6 +291,17 @@ async function handleLogin() {
 
 async function handleLogout() {
   await clearAuthData()
+  // Best-effort: also clear the token from the frontend tab so the user
+  // is logged out there too. Fails silently if no tab is open.
+  try {
+    const tabs = await chrome.tabs.query({ url: `${__FRONTEND_URL__}/*` })
+    if (tabs.length && tabs[0].id) {
+      await chrome.scripting.executeScript({
+        target: { tabId: tabs[0].id },
+        func: () => localStorage.removeItem("access_token"),
+      })
+    }
+  } catch { /* ignore */ }
   render({ kind: "login" })
 }
 

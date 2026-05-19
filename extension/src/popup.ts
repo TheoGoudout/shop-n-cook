@@ -408,7 +408,7 @@ async function init() {
 
 const versionFooter = document.getElementById("version-footer")
 if (versionFooter) {
-  versionFooter.textContent = `v${__APP_VERSION__}`
+  versionFooter.textContent = __APP_VERSION__
   versionFooter.setAttribute(
     "style",
     "text-align:center;padding:4px 0 8px;color:#9ca3af;font-size:10px;font-family:monospace;",

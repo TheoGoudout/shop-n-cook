@@ -8,7 +8,7 @@ export function Footer() {
       <div className="flex items-center justify-center">
         <p className="text-muted-foreground text-sm">
           {APP_NAME} — {currentYear} —{" "}
-          <span className="font-mono text-xs">v{__APP_VERSION__}</span>
+          <span className="font-mono text-xs">{__APP_VERSION__}</span>
         </p>
       </div>
     </footer>

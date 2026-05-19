@@ -8,5 +8,7 @@ COPY ./landing/nginx.conf /etc/nginx/conf.d/default.conf
 # Stored as a template so FRONTEND_URL can be injected at container startup.
 COPY ./landing/index.html /usr/share/nginx/html/index.html.template
 
+COPY ./landing/privacy.html /usr/share/nginx/html/privacy.html
+
 COPY ./landing/docker-entrypoint.sh /docker-entrypoint.d/40-envsubst-html.sh
 RUN chmod +x /docker-entrypoint.d/40-envsubst-html.sh

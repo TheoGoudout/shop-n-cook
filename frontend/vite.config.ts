@@ -44,14 +44,14 @@ export default defineConfig({
         screenshots: [
           {
             src: "/screenshots/screenshot-mobile.png",
-            sizes: "1080x1920",
+            sizes: "1290x2796",
             type: "image/png",
             form_factor: "narrow",
             label: "Shop'n'Cook - Recipes & Shopping List",
           },
           {
             src: "/screenshots/screenshot-desktop.png",
-            sizes: "1920x1080",
+            sizes: "1840x932",
             type: "image/png",
             form_factor: "wide",
             label: "Shop'n'Cook - Recipes & Shopping List",
@@ -67,6 +67,7 @@ export default defineConfig({
         navigateFallback: "/index.html",
         navigateFallbackDenylist: [/^\/api/],
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+        globIgnores: ["screenshots/**"],
       },
     }),
   ],

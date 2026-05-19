@@ -3,6 +3,8 @@ import { parsedRecipeToCreate } from "./api"
 import { LoginService, OpenAPI, RecipesService, UsersService } from "./client"
 import { clearAuthData, getAuthData, saveAuthData } from "./storage"
 
+const DEFAULT_BASE_URL = "https://app.shop-n-cook.com"
+
 type State =
   | { kind: "loading" }
   | { kind: "login"; error?: string }
@@ -87,17 +89,19 @@ function renderLogin(main: HTMLElement, error?: string) {
   const urlInput = el("input")
   urlInput.id = "base-url"
   urlInput.type = "url"
-  urlInput.placeholder = "http://localhost:8000"
-  urlInput.value = "http://localhost:8000"
+  urlInput.autocomplete = "url"
+  urlInput.value = DEFAULT_BASE_URL
 
   const emailInput = el("input")
   emailInput.id = "email"
   emailInput.type = "email"
+  emailInput.autocomplete = "username"
   emailInput.placeholder = "you@example.com"
 
   const passwordInput = el("input")
   passwordInput.id = "password"
   passwordInput.type = "password"
+  passwordInput.autocomplete = "current-password"
   passwordInput.placeholder = "••••••••"
 
   const loginBtn = el("button", "btn-primary")
@@ -108,9 +112,21 @@ function renderLogin(main: HTMLElement, error?: string) {
     if (e.key === "Enter") handleLogin()
   })
 
+  const advancedContent = el("div", "advanced-content")
+  advancedContent.hidden = true
+  advancedContent.appendChild(formGroup("Server URL", urlInput))
+
+  const advancedToggle = el("button", "btn-ghost advanced-toggle")
+  advancedToggle.type = "button"
+  advancedToggle.textContent = "Advanced ▸"
+  advancedToggle.addEventListener("click", () => {
+    const expanded = !advancedContent.hidden
+    advancedContent.hidden = expanded
+    advancedToggle.textContent = expanded ? "Advanced ▸" : "Advanced ▾"
+  })
+
   append(
     main,
-    formGroup("Server URL", urlInput),
     formGroup("Email", emailInput),
     formGroup("Password", passwordInput),
   )
@@ -121,7 +137,7 @@ function renderLogin(main: HTMLElement, error?: string) {
     main.appendChild(errDiv)
   }
 
-  main.appendChild(loginBtn)
+  append(main, loginBtn, advancedToggle, advancedContent)
 }
 
 function renderAuthenticated(main: HTMLElement, baseUrl: string) {
@@ -319,25 +335,53 @@ async function handleImport() {
   }
 }
 
+async function borrowWebAppToken(): Promise<string | null> {
+  try {
+    const tabs = await chrome.tabs.query({ url: `${DEFAULT_BASE_URL}/*` })
+    if (!tabs.length || !tabs[0].id) return null
+    const results = await chrome.scripting.executeScript({
+      target: { tabId: tabs[0].id },
+      func: () => localStorage.getItem("access_token"),
+    })
+    return (results[0]?.result as string | null) ?? null
+  } catch {
+    return null
+  }
+}
+
 async function init() {
   render({ kind: "loading" })
 
   const auth = await getAuthData()
-  if (!auth) {
-    render({ kind: "login" })
+
+  if (auth) {
+    OpenAPI.BASE = auth.baseUrl
+    OpenAPI.TOKEN = auth.token
+    try {
+      const user = await UsersService.readUserMe()
+      render({ kind: "authenticated", email: user.email, baseUrl: auth.baseUrl })
+    } catch {
+      await clearAuthData()
+      render({ kind: "login", error: "Session expired. Please sign in again." })
+    }
     return
   }
 
-  OpenAPI.BASE = auth.baseUrl
-  OpenAPI.TOKEN = auth.token
-
-  try {
-    const user = await UsersService.readUserMe()
-    render({ kind: "authenticated", email: user.email, baseUrl: auth.baseUrl })
-  } catch {
-    await clearAuthData()
-    render({ kind: "login", error: "Session expired. Please sign in again." })
+  const borrowed = await borrowWebAppToken()
+  if (borrowed) {
+    OpenAPI.BASE = DEFAULT_BASE_URL
+    OpenAPI.TOKEN = borrowed
+    try {
+      const user = await UsersService.readUserMe()
+      await saveAuthData({ baseUrl: DEFAULT_BASE_URL, token: borrowed, email: user.email })
+      render({ kind: "authenticated", email: user.email, baseUrl: DEFAULT_BASE_URL })
+    } catch {
+      render({ kind: "login" })
+    }
+    return
   }
+
+  render({ kind: "login" })
 }
 
 init()

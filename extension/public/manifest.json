@@ -3,6 +3,11 @@
   "name": "Shop'n'Cook",
   "version": "1.0.0",
   "description": "Import recipes into Shop'n'Cook with one click",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
@@ -24,6 +29,6 @@
       "strict_min_version": "142.0"
     }
   },
-  "permissions": ["activeTab", "storage"],
+  "permissions": ["activeTab", "scripting", "storage"],
   "host_permissions": ["<all_urls>"]
 }

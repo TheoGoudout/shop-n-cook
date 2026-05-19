@@ -25,6 +25,10 @@ if settings.all_cors_origins:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.all_cors_origins,
+        # Browser extensions have a chrome-extension:// or moz-extension:// origin
+        # that cannot be listed in allow_origins (not valid HTTP URLs). Allowing them
+        # via regex lets the companion extension make credentialed requests.
+        allow_origin_regex=r"chrome-extension://[a-z]{32}|moz-extension://[\w-]+",
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

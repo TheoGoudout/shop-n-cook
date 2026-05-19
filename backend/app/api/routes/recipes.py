@@ -17,7 +17,7 @@ from app.models import (
     RecipeUpdate,
 )
 from app.models.user import User
-from app.services.ingredient_image import fetch_and_update_ingredient_image
+from app.services.ingredient_image import fetch_and_update_ingredients_batch
 from app.services.recipe_import import (
     ParsedIngredient,
     ParsedRecipe,
@@ -161,10 +161,13 @@ def _sync_ingredient_catalog(
     background_tasks: BackgroundTasks,
     ingredient_names: list[str],
 ) -> None:
+    new_ids = []
     for name in ingredient_names:
         ingredient, created = crud.get_or_create_ingredient(session=session, name=name)
         if created:
-            background_tasks.add_task(fetch_and_update_ingredient_image, ingredient.id)
+            new_ids.append(ingredient.id)
+    if new_ids:
+        background_tasks.add_task(fetch_and_update_ingredients_batch, new_ids)
 
 
 @router.post("/", response_model=RecipePublic)

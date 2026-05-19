@@ -116,6 +116,7 @@ jobs:
   android:
     needs: prepare
     runs-on: ubuntu-latest
+    if: github.event_name == 'release' || hashFiles('bubblewrap/gradlew') != ''
     steps:
       - uses: actions/checkout@v4
 

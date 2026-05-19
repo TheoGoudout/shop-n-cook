@@ -1,4 +1,5 @@
 import "./popup.css"
+import { getLang, setLang, t } from "./i18n"
 import { parsedRecipeToCreate } from "./api"
 import { LoginService, OpenAPI, RecipesService, UsersService } from "./client"
 import { clearAuthData, getAuthData, saveAuthData } from "./storage"
@@ -60,7 +61,7 @@ function render(state: State) {
     const emailSpan = el("span")
     emailSpan.textContent = state.email
     const logoutBtn = el("button", "btn-ghost")
-    logoutBtn.textContent = "Logout"
+    logoutBtn.textContent = t("logout")
     logoutBtn.addEventListener("click", handleLogout)
     append(userInfo, emailSpan, logoutBtn)
     header.appendChild(userInfo)
@@ -81,7 +82,7 @@ function render(state: State) {
 function renderLoading(main: HTMLElement) {
   const div = el("div")
   div.setAttribute("style", "text-align:center;padding:20px;color:#9ca3af;")
-  div.textContent = "Loading…"
+  div.textContent = t("loading")
   main.appendChild(div)
 }
 
@@ -89,7 +90,7 @@ function renderLogin(main: HTMLElement, error?: string) {
   const urlInput = el("input")
   urlInput.id = "base-url"
   urlInput.type = "url"
-  urlInput.autocomplete = "url"
+  urlInput.setAttribute("autocomplete", "url")
   urlInput.value = DEFAULT_BASE_URL
 
   const emailInput = el("input")
@@ -106,7 +107,7 @@ function renderLogin(main: HTMLElement, error?: string) {
 
   const loginBtn = el("button", "btn-primary")
   loginBtn.id = "login-btn"
-  loginBtn.textContent = "Sign in"
+  loginBtn.textContent = t("signIn")
   loginBtn.addEventListener("click", handleLogin)
   passwordInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter") handleLogin()
@@ -114,21 +115,23 @@ function renderLogin(main: HTMLElement, error?: string) {
 
   const advancedContent = el("div", "advanced-content")
   advancedContent.hidden = true
-  advancedContent.appendChild(formGroup("Server URL", urlInput))
+  advancedContent.appendChild(formGroup(t("serverUrl"), urlInput))
 
   const advancedToggle = el("button", "btn-ghost advanced-toggle")
   advancedToggle.type = "button"
-  advancedToggle.textContent = "Advanced ▸"
+  advancedToggle.textContent = t("advancedCollapsed")
   advancedToggle.addEventListener("click", () => {
     const expanded = !advancedContent.hidden
     advancedContent.hidden = expanded
-    advancedToggle.textContent = expanded ? "Advanced ▸" : "Advanced ▾"
+    advancedToggle.textContent = expanded
+      ? t("advancedCollapsed")
+      : t("advancedExpanded")
   })
 
   append(
     main,
-    formGroup("Email", emailInput),
-    formGroup("Password", passwordInput),
+    formGroup(t("email"), emailInput),
+    formGroup(t("password"), passwordInput),
   )
 
   if (error) {
@@ -147,8 +150,7 @@ function renderAuthenticated(main: HTMLElement, baseUrl: string) {
   checkbox.type = "checkbox"
   checkbox.id = "import-consent"
   const consentText = el("span")
-  consentText.textContent =
-    "The recipe is sourced from a third-party website. By importing, you confirm you have the right to store and reformat this content for personal use and will respect the original author's intellectual property rights. This app does not claim any rights over imported content and always links back to the original source."
+  consentText.textContent = t("consentText")
   append(label, checkbox, consentText)
   consentBox.appendChild(label)
 
@@ -158,7 +160,7 @@ function renderAuthenticated(main: HTMLElement, baseUrl: string) {
   const arrowSpan = el("span")
   arrowSpan.textContent = "⬇"
   const importLabel = el("span")
-  importLabel.textContent = "Import Recipe"
+  importLabel.textContent = t("importRecipe")
   append(importBtn, arrowSpan, importLabel)
 
   checkbox.addEventListener("change", () => {
@@ -174,13 +176,13 @@ function renderAuthenticated(main: HTMLElement, baseUrl: string) {
 
 function renderImporting(main: HTMLElement) {
   const hint = el("p", "hint")
-  hint.textContent = "Analyzing the page with AI…"
+  hint.textContent = t("analyzingPage")
 
   const importBtn = el("button", "import-btn")
   importBtn.disabled = true
   const spinner = el("span", "spinner")
   const importLabel = el("span")
-  importLabel.textContent = "Importing…"
+  importLabel.textContent = t("importing")
   append(importBtn, spinner, importLabel)
 
   append(main, hint, importBtn)
@@ -188,7 +190,7 @@ function renderImporting(main: HTMLElement) {
 
 function renderSuccess(
   main: HTMLElement,
-  baseUrl: string,
+  _baseUrl: string,
   title: string,
   recipeId: string,
 ) {
@@ -205,12 +207,12 @@ function renderSuccess(
   link.target = "_blank"
   link.rel = "noopener noreferrer"
   const openBtn = el("button", "btn-secondary")
-  openBtn.textContent = "Open in app ↗"
+  openBtn.textContent = t("openInApp")
   link.appendChild(openBtn)
 
   const anotherBtn = el("button", "btn-secondary")
   anotherBtn.id = "import-another-btn"
-  anotherBtn.textContent = "Import another"
+  anotherBtn.textContent = t("importAnother")
   anotherBtn.addEventListener("click", () => {
     if (currentState.kind === "success") {
       render({
@@ -231,7 +233,7 @@ function renderError(main: HTMLElement, message: string) {
 
   const retryBtn = el("button", "btn-primary")
   retryBtn.id = "retry-btn"
-  retryBtn.textContent = "Try again"
+  retryBtn.textContent = t("tryAgain")
   retryBtn.addEventListener("click", () => {
     if (currentState.kind === "error") {
       render({
@@ -257,14 +259,14 @@ async function handleLogin() {
   ).trim()
 
   if (!baseUrl || !email || !password) {
-    render({ kind: "login", error: "Please fill in all fields." })
+    render({ kind: "login", error: t("errorFillAllFields") })
     return
   }
 
   const loginBtn = document.querySelector<HTMLButtonElement>("#login-btn")
   if (loginBtn) {
     loginBtn.disabled = true
-    loginBtn.textContent = "Signing in…"
+    loginBtn.textContent = t("signingIn")
   }
 
   try {
@@ -284,7 +286,7 @@ async function handleLogin() {
   } catch {
     render({
       kind: "login",
-      error: "Login failed. Check your credentials and server URL.",
+      error: t("errorLoginFailed"),
     })
   }
 }
@@ -319,14 +321,13 @@ async function handleImport() {
         kind: "error",
         email,
         baseUrl,
-        message: "Cannot import from this page. Navigate to a recipe URL first.",
+        message: t("errorNotARecipePage"),
       })
       return
     }
 
-    const language = await borrowWebAppLanguage()
     const parsed = await RecipesService.importRecipeUrl({
-      requestBody: { url, language },
+      requestBody: { url, language: getLang() },
     })
     const recipeCreate = parsedRecipeToCreate(parsed)
     const saved = await RecipesService.createRecipe({
@@ -342,36 +343,26 @@ async function handleImport() {
     })
   } catch (err) {
     const message =
-      err instanceof Error ? err.message : "An unexpected error occurred."
+      err instanceof Error ? err.message : t("errorUnexpected")
     render({ kind: "error", email, baseUrl, message })
   }
 }
 
-async function borrowWebAppLanguage(): Promise<string | null> {
+async function borrowFromWebApp(): Promise<{ token: string | null; language: string | null }> {
   try {
     const tabs = await chrome.tabs.query({ url: `${__FRONTEND_URL__}/*` })
-    if (!tabs.length || !tabs[0].id) return null
+    if (!tabs.length || !tabs[0].id) return { token: null, language: null }
     const results = await chrome.scripting.executeScript({
       target: { tabId: tabs[0].id },
-      func: () => localStorage.getItem("i18n-language"),
+      func: () => ({
+        token: localStorage.getItem("access_token"),
+        language: localStorage.getItem("i18n-language"),
+      }),
     })
-    return (results[0]?.result as string | null) ?? null
+    const result = results[0]?.result as { token: string | null; language: string | null } | null
+    return result ?? { token: null, language: null }
   } catch {
-    return null
-  }
-}
-
-async function borrowWebAppToken(): Promise<string | null> {
-  try {
-    const tabs = await chrome.tabs.query({ url: `${__FRONTEND_URL__}/*` })
-    if (!tabs.length || !tabs[0].id) return null
-    const results = await chrome.scripting.executeScript({
-      target: { tabId: tabs[0].id },
-      func: () => localStorage.getItem("access_token"),
-    })
-    return (results[0]?.result as string | null) ?? null
-  } catch {
-    return null
+    return { token: null, language: null }
   }
 }
 
@@ -385,15 +376,20 @@ async function init() {
     OpenAPI.TOKEN = auth.token
     try {
       const user = await UsersService.readUserMe()
+      // Borrow language from web app to match user's preference there
+      const { language } = await borrowFromWebApp()
+      if (language) setLang(language)
       render({ kind: "authenticated", email: user.email, baseUrl: auth.baseUrl })
     } catch {
       await clearAuthData()
-      render({ kind: "login", error: "Session expired. Please sign in again." })
+      render({ kind: "login", error: t("errorSessionExpired") })
     }
     return
   }
 
-  const borrowed = await borrowWebAppToken()
+  const { token: borrowed, language } = await borrowFromWebApp()
+  if (language) setLang(language)
+
   if (borrowed) {
     OpenAPI.BASE = DEFAULT_BASE_URL
     OpenAPI.TOKEN = borrowed

@@ -1,0 +1,49 @@
+default_platform(:ios)
+
+platform :ios do
+  before_all do
+    setup_ci if ENV["CI"]
+  end
+
+  desc "Build and upload to TestFlight (pre-release)"
+  lane :beta do
+    build_app(
+      workspace: Dir.glob("{,*/}*.xcworkspace").first,
+      scheme:    ENV.fetch("IOS_SCHEME", "ShopNCook"),
+      configuration: "Release",
+      export_method: "app-store",
+      clean: true
+    )
+    upload_to_testflight(
+      api_key: api_key_from_env,
+      skip_waiting_for_build_processing: true,
+      notify_external_testers: false
+    )
+  end
+
+  desc "Build and submit to App Store (stable release)"
+  lane :release do
+    build_app(
+      workspace: Dir.glob("{,*/}*.xcworkspace").first,
+      scheme:    ENV.fetch("IOS_SCHEME", "ShopNCook"),
+      configuration: "Release",
+      export_method: "app-store",
+      clean: true
+    )
+    upload_to_app_store(
+      api_key: api_key_from_env,
+      submit_for_review: false,
+      automatic_release: false,
+      force: true,
+      precheck_include_in_app_purchases: false
+    )
+  end
+
+  private_lane :api_key_from_env do
+    app_store_connect_api_key(
+      key_id:      ENV["APP_STORE_CONNECT_API_KEY_ID"],
+      issuer_id:   ENV["APP_STORE_CONNECT_API_KEY_ISSUER_ID"],
+      key_content: Base64.strict_decode64(ENV["APP_STORE_CONNECT_API_KEY_CONTENT"])
+    )
+  end
+end

@@ -1,0 +1,2 @@
+app_identifier(ENV["BUNDLE_ID"] || "com.shopncook.app")
+team_id(ENV["TEAM_ID"])

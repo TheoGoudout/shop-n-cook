@@ -55,7 +55,7 @@ android {
     namespace "com.shopncook.app"
     defaultConfig {
         applicationId "com.shopncook.app"
-        minSdkVersion 19
+        minSdkVersion 21
         targetSdkVersion 35
         versionCode 5
         versionName "5"

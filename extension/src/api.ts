@@ -9,8 +9,6 @@ export function parsedRecipeToCreate(parsed: ParsedRecipe): RecipeCreate {
   const ingredients: RecipeIngredientCreate[] = (parsed.ingredients ?? []).map(
     (ing) => ({
       ingredient_name: ing.name,
-      ingredient_category: ing.category,
-      ingredient_default_unit: ing.unit,
       quantity: ing.quantity,
       unit: ing.unit,
       notes: ing.notes,

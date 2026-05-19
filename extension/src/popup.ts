@@ -1,7 +1,7 @@
 import "./popup.css"
-import { getLang, setLang, t } from "./i18n"
 import { parsedRecipeToCreate } from "./api"
 import { LoginService, OpenAPI, RecipesService, UsersService } from "./client"
+import { getLang, setLang, t } from "./i18n"
 import { clearAuthData, getAuthData, saveAuthData } from "./storage"
 
 const DEFAULT_BASE_URL = __API_URL__
@@ -70,12 +70,24 @@ function render(state: State) {
   main.textContent = ""
 
   switch (state.kind) {
-    case "loading":      renderLoading(main);                           break
-    case "login":        renderLogin(main, state.error);                break
-    case "authenticated": renderAuthenticated(main, state.baseUrl);     break
-    case "importing":    renderImporting(main);                         break
-    case "success":      renderSuccess(main, state.baseUrl, state.title, state.recipeId); break
-    case "error":        renderError(main, state.message);              break
+    case "loading":
+      renderLoading(main)
+      break
+    case "login":
+      renderLogin(main, state.error)
+      break
+    case "authenticated":
+      renderAuthenticated(main, state.baseUrl)
+      break
+    case "importing":
+      renderImporting(main)
+      break
+    case "success":
+      renderSuccess(main, state.baseUrl, state.title, state.recipeId)
+      break
+    case "error":
+      renderError(main, state.message)
+      break
   }
 }
 
@@ -303,7 +315,9 @@ async function handleLogout() {
         func: () => localStorage.removeItem("access_token"),
       })
     }
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   render({ kind: "login" })
 }
 
@@ -342,13 +356,15 @@ async function handleImport() {
       recipeId: String(saved.id),
     })
   } catch (err) {
-    const message =
-      err instanceof Error ? err.message : t("errorUnexpected")
+    const message = err instanceof Error ? err.message : t("errorUnexpected")
     render({ kind: "error", email, baseUrl, message })
   }
 }
 
-async function borrowFromWebApp(): Promise<{ token: string | null; language: string | null }> {
+async function borrowFromWebApp(): Promise<{
+  token: string | null
+  language: string | null
+}> {
   try {
     const tabs = await chrome.tabs.query({ url: `${__FRONTEND_URL__}/*` })
     if (!tabs.length || !tabs[0].id) return { token: null, language: null }
@@ -359,7 +375,10 @@ async function borrowFromWebApp(): Promise<{ token: string | null; language: str
         language: localStorage.getItem("i18n-language"),
       }),
     })
-    const result = results[0]?.result as { token: string | null; language: string | null } | null
+    const result = results[0]?.result as {
+      token: string | null
+      language: string | null
+    } | null
     return result ?? { token: null, language: null }
   } catch {
     return { token: null, language: null }
@@ -379,7 +398,11 @@ async function init() {
       // Borrow language from web app to match user's preference there
       const { language } = await borrowFromWebApp()
       if (language) setLang(language)
-      render({ kind: "authenticated", email: user.email, baseUrl: auth.baseUrl })
+      render({
+        kind: "authenticated",
+        email: user.email,
+        baseUrl: auth.baseUrl,
+      })
     } catch {
       await clearAuthData()
       render({ kind: "login", error: t("errorSessionExpired") })
@@ -395,8 +418,16 @@ async function init() {
     OpenAPI.TOKEN = borrowed
     try {
       const user = await UsersService.readUserMe()
-      await saveAuthData({ baseUrl: DEFAULT_BASE_URL, token: borrowed, email: user.email })
-      render({ kind: "authenticated", email: user.email, baseUrl: DEFAULT_BASE_URL })
+      await saveAuthData({
+        baseUrl: DEFAULT_BASE_URL,
+        token: borrowed,
+        email: user.email,
+      })
+      render({
+        kind: "authenticated",
+        email: user.email,
+        baseUrl: DEFAULT_BASE_URL,
+      })
     } catch {
       render({ kind: "login" })
     }

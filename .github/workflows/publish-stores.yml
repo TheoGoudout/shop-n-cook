@@ -92,7 +92,7 @@ jobs:
             VERSION="${TAG#v}"
             MAJOR=$(echo "$VERSION" | cut -d. -f1)
             MINOR=$(echo "$VERSION" | cut -d. -f2)
-            PATCH=$(echo "$VERSION" | cut -d. -f3)
+            PATCH=$(echo "$VERSION" | cut -d. -f3 | cut -d- -f1)
             PATCH=${PATCH:-0}
             VERSION_CODE=$((MAJOR * 10000 + MINOR * 100 + PATCH))
           else

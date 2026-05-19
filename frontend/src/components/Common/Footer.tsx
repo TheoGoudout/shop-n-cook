@@ -7,7 +7,8 @@ export function Footer() {
     <footer className="border-t py-4 px-6">
       <div className="flex items-center justify-center">
         <p className="text-muted-foreground text-sm">
-          {APP_NAME} — {currentYear}
+          {APP_NAME} — {currentYear} —{" "}
+          <span className="font-mono text-xs">v{__APP_VERSION__}</span>
         </p>
       </div>
     </footer>

@@ -14,6 +14,7 @@ RUN bun install
 COPY ./frontend /app/frontend
 ARG VITE_API_URL
 ARG VITE_PROJECT_NAME
+ARG VITE_APP_VERSION
 
 RUN bun run build
 

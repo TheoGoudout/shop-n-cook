@@ -48,6 +48,8 @@ jobs:
       - name: Build
         run: bun run build
         working-directory: extension
+        env:
+          VITE_APP_VERSION: ${{ steps.version.outputs.version }}
 
       - name: Package zip
         run: cd extension/dist && zip -r ../../extension.zip .

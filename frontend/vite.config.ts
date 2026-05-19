@@ -1,3 +1,4 @@
+import { execSync } from "node:child_process"
 import path from "node:path"
 import tailwindcss from "@tailwindcss/vite"
 import { tanstackRouter } from "@tanstack/router-plugin/vite"
@@ -5,7 +6,23 @@ import react from "@vitejs/plugin-react-swc"
 import { defineConfig } from "vite"
 import { VitePWA } from "vite-plugin-pwa"
 
+function getVersion(): string {
+  if (process.env.VITE_APP_VERSION) return process.env.VITE_APP_VERSION
+  try {
+    return execSync("git describe --tags --always", {
+      stdio: ["pipe", "pipe", "pipe"],
+    })
+      .toString()
+      .trim()
+  } catch {
+    return "dev"
+  }
+}
+
 export default defineConfig({
+  define: {
+    __APP_VERSION__: JSON.stringify(getVersion()),
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

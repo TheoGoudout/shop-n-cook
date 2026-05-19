@@ -101,6 +101,7 @@ jobs:
           TOKEN=$(curl -sf -X POST "https://oauth2.googleapis.com/token" \
             -d "client_id=$CLIENT_ID&client_secret=$CLIENT_SECRET&refresh_token=$REFRESH_TOKEN&grant_type=refresh_token" \
             | jq -r '.access_token')
+          echo "::add-mask::$TOKEN"
           echo "token=$TOKEN" >> "$GITHUB_OUTPUT"
 
       - name: Upload package
@@ -127,7 +128,8 @@ jobs:
             -H "Content-Type: application/json" \
             -d "{\"target\":\"$PUBLISH_TARGET\"}")
           STATUS=$(echo "$RESULT" | jq -r '.status[0]')
-          if [ "$STATUS" != "OK" ]; then
+          # ITEM_PENDING_REVIEW is normal for extensions requesting broad host permissions
+          if [ "$STATUS" != "OK" ] && [ "$STATUS" != "ITEM_PENDING_REVIEW" ]; then
             echo "Publish failed: $RESULT"
             exit 1
           fi

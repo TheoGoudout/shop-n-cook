@@ -24,20 +24,9 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Extract version from tag
+      - name: Extract version from manifest
         id: version
-        run: |
-          if [ "${{ github.event_name }}" = "release" ]; then
-            echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
-          else
-            echo "version=0.0.0" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Patch manifest version
-        run: |
-          jq --arg v "${{ steps.version.outputs.version }}" '.version = $v' \
-            extension/public/manifest.json > /tmp/manifest.json
-          mv /tmp/manifest.json extension/public/manifest.json
+        run: echo "version=$(jq -r '.version' extension/public/manifest.json)" >> "$GITHUB_OUTPUT"
 
       - uses: oven-sh/setup-bun@v2
 
@@ -48,8 +37,6 @@ jobs:
       - name: Build
         run: bun run build
         working-directory: extension
-        env:
-          VITE_APP_VERSION: ${{ steps.version.outputs.version }}
 
       - name: Package zip
         run: cd extension/dist && zip -r ../../extension.zip .

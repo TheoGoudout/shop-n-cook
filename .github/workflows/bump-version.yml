@@ -1,0 +1,56 @@
+name: Bump Version
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release (e.g. 1.2.0 or 1.2.0-rc1)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  bump:
+    name: Bump version files and tag
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute manifest version (strip pre-release suffix)
+        id: v
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          MANIFEST_VERSION=$(echo "$VERSION" | sed 's/-.*$//')
+          echo "version=$VERSION"                   >> "$GITHUB_OUTPUT"
+          echo "manifest_version=$MANIFEST_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Update backend/pyproject.toml
+        run: |
+          sed -i 's/^version = .*/version = "${{ steps.v.outputs.version }}"/' backend/pyproject.toml
+
+      - name: Update frontend/package.json
+        run: |
+          jq --arg v "${{ steps.v.outputs.version }}" '.version = $v' \
+            frontend/package.json > /tmp/pkg.json && mv /tmp/pkg.json frontend/package.json
+
+      - name: Update extension/package.json
+        run: |
+          jq --arg v "${{ steps.v.outputs.version }}" '.version = $v' \
+            extension/package.json > /tmp/pkg.json && mv /tmp/pkg.json extension/package.json
+
+      - name: Update extension/public/manifest.json
+        run: |
+          jq --arg v "${{ steps.v.outputs.manifest_version }}" '.version = $v' \
+            extension/public/manifest.json > /tmp/manifest.json && mv /tmp/manifest.json extension/public/manifest.json
+
+      - name: Commit, tag and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add backend/pyproject.toml frontend/package.json extension/package.json extension/public/manifest.json
+          git commit -m "chore: bump version to ${{ steps.v.outputs.version }}"
+          git tag "v${{ steps.v.outputs.version }}"
+          git push origin HEAD:master --follow-tags

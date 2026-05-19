@@ -541,7 +541,9 @@ def test_reimport_recipe_syncs_ingredient_catalog(
     from app import crud
 
     superuser = _get_superuser(db)
-    recipe = _create_recipe_with_url(db, superuser.id, "https://example.com/recipe-sync")
+    recipe = _create_recipe_with_url(
+        db, superuser.id, "https://example.com/recipe-sync"
+    )
 
     updated_recipe = {**_SAMPLE_RECIPE, "title": "Catalog Sync Test"}
     llm_mock = MagicMock()

@@ -248,9 +248,7 @@ def reimport_recipe(
             status_code=422, detail=f"Failed to parse recipe: {exc}"
         ) from exc
     recipe_in = _parsed_to_update(parsed)
-    recipe = crud.update_recipe(
-        session=session, db_recipe=recipe, recipe_in=recipe_in
-    )
+    recipe = crud.update_recipe(session=session, db_recipe=recipe, recipe_in=recipe_in)
     _sync_ingredient_catalog(
         session,
         background_tasks,

@@ -97,70 +97,6 @@ export const ImportUrlRequestSchema = {
     title: 'ImportUrlRequest'
 } as const;
 
-export const IngredientCategorySchema = {
-    type: 'string',
-    enum: ['produce', 'dairy', 'meat', 'seafood', 'grains', 'pantry', 'spices', 'beverages', 'frozen', 'bakery', 'other'],
-    title: 'IngredientCategory'
-} as const;
-
-export const IngredientPublicSchema = {
-    properties: {
-        name: {
-            type: 'string',
-            maxLength: 255,
-            minLength: 1,
-            title: 'Name'
-        },
-        category: {
-            '$ref': '#/components/schemas/IngredientCategory',
-            default: 'other'
-        },
-        default_unit: {
-            '$ref': '#/components/schemas/Unit',
-            default: 'piece'
-        },
-        id: {
-            type: 'string',
-            format: 'uuid',
-            title: 'Id'
-        },
-        created_at: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'date-time'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Created At'
-        }
-    },
-    type: 'object',
-    required: ['name', 'id'],
-    title: 'IngredientPublic'
-} as const;
-
-export const IngredientsPublicSchema = {
-    properties: {
-        data: {
-            items: {
-                '$ref': '#/components/schemas/IngredientPublic'
-            },
-            type: 'array',
-            title: 'Data'
-        },
-        count: {
-            type: 'integer',
-            title: 'Count'
-        }
-    },
-    type: 'object',
-    required: ['data', 'count'],
-    title: 'IngredientsPublic'
-} as const;
-
 export const MessageSchema = {
     properties: {
         message: {
@@ -197,9 +133,6 @@ export const ParsedIngredientSchema = {
             type: 'string',
             title: 'Name'
         },
-        category: {
-            '$ref': '#/components/schemas/IngredientCategory'
-        },
         quantity: {
             type: 'number',
             title: 'Quantity'
@@ -220,7 +153,7 @@ export const ParsedIngredientSchema = {
         }
     },
     type: 'object',
-    required: ['name', 'category', 'quantity', 'unit'],
+    required: ['name', 'quantity', 'unit'],
     title: 'ParsedIngredient'
 } as const;
 
@@ -475,6 +408,12 @@ export const RecipeCreateSchema = {
 
 export const RecipeIngredientCreateSchema = {
     properties: {
+        ingredient_name: {
+            type: 'string',
+            maxLength: 255,
+            minLength: 1,
+            title: 'Ingredient Name'
+        },
         quantity: {
             type: 'number',
             exclusiveMinimum: 0,
@@ -494,43 +433,10 @@ export const RecipeIngredientCreateSchema = {
                 }
             ],
             title: 'Notes'
-        },
-        ingredient_id: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'uuid'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Ingredient Id'
-        },
-        ingredient_name: {
-            anyOf: [
-                {
-                    type: 'string',
-                    maxLength: 255,
-                    minLength: 1
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Ingredient Name'
-        },
-        ingredient_category: {
-            '$ref': '#/components/schemas/IngredientCategory',
-            default: 'other'
-        },
-        ingredient_default_unit: {
-            '$ref': '#/components/schemas/Unit',
-            default: 'piece'
         }
     },
     type: 'object',
-    required: ['quantity', 'unit'],
+    required: ['ingredient_name', 'quantity', 'unit'],
     title: 'RecipeIngredientCreate'
 } as const;
 
@@ -541,17 +447,9 @@ export const RecipeIngredientPublicSchema = {
             format: 'uuid',
             title: 'Id'
         },
-        ingredient_id: {
-            type: 'string',
-            format: 'uuid',
-            title: 'Ingredient Id'
-        },
         ingredient_name: {
             type: 'string',
             title: 'Ingredient Name'
-        },
-        ingredient_category: {
-            '$ref': '#/components/schemas/IngredientCategory'
         },
         quantity: {
             type: 'number',
@@ -573,7 +471,7 @@ export const RecipeIngredientPublicSchema = {
         }
     },
     type: 'object',
-    required: ['id', 'ingredient_id', 'ingredient_name', 'ingredient_category', 'quantity', 'unit'],
+    required: ['id', 'ingredient_name', 'quantity', 'unit'],
     title: 'RecipeIngredientPublic'
 } as const;
 
@@ -998,6 +896,12 @@ export const ShoppingListCreateSchema = {
 
 export const ShoppingListItemCreateSchema = {
     properties: {
+        name: {
+            type: 'string',
+            maxLength: 255,
+            minLength: 1,
+            title: 'Name'
+        },
         quantity: {
             type: 'number',
             exclusiveMinimum: 0,
@@ -1022,15 +926,10 @@ export const ShoppingListItemCreateSchema = {
                 }
             ],
             title: 'Notes'
-        },
-        ingredient_id: {
-            type: 'string',
-            format: 'uuid',
-            title: 'Ingredient Id'
         }
     },
     type: 'object',
-    required: ['quantity', 'unit', 'ingredient_id'],
+    required: ['name', 'quantity', 'unit'],
     title: 'ShoppingListItemCreate'
 } as const;
 
@@ -1041,17 +940,9 @@ export const ShoppingListItemPublicSchema = {
             format: 'uuid',
             title: 'Id'
         },
-        ingredient_id: {
+        name: {
             type: 'string',
-            format: 'uuid',
-            title: 'Ingredient Id'
-        },
-        ingredient_name: {
-            type: 'string',
-            title: 'Ingredient Name'
-        },
-        ingredient_category: {
-            '$ref': '#/components/schemas/IngredientCategory'
+            title: 'Name'
         },
         quantity: {
             type: 'number',
@@ -1077,7 +968,7 @@ export const ShoppingListItemPublicSchema = {
         }
     },
     type: 'object',
-    required: ['id', 'ingredient_id', 'ingredient_name', 'ingredient_category', 'quantity', 'unit', 'is_checked'],
+    required: ['id', 'name', 'quantity', 'unit', 'is_checked'],
     title: 'ShoppingListItemPublic'
 } as const;
 

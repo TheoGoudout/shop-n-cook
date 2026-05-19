@@ -33,7 +33,6 @@ _SAMPLE_RECIPE = {
     "ingredients": [
         {
             "name": "pasta",
-            "category": "grains",
             "quantity": 200.0,
             "unit": "g",
             "notes": None,
@@ -164,21 +163,18 @@ def test_import_recipe_filters_null_quantity_ingredients(
         "ingredients": [
             {
                 "name": "pasta",
-                "category": "grains",
                 "quantity": 200.0,
                 "unit": "g",
                 "notes": None,
             },
             {
                 "name": "maple syrup",
-                "category": "pantry",
                 "quantity": None,
                 "unit": None,
                 "notes": "to serve",
             },
             {
                 "name": "butter",
-                "category": "dairy",
                 "quantity": None,
                 "unit": None,
                 "notes": "to serve",

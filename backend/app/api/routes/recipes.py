@@ -41,8 +41,7 @@ def _recipe_to_parsed(recipe: Recipe) -> ParsedRecipe:
     ri_map = {ri.id: ri for ri in recipe.recipe_ingredients}
     ingredients = [
         ParsedIngredient(
-            name=ri.ingredient.name,
-            category=ri.ingredient.category,
+            name=ri.ingredient_name,
             quantity=ri.quantity,
             unit=ri.unit,
             notes=ri.notes,
@@ -53,7 +52,7 @@ def _recipe_to_parsed(recipe: Recipe) -> ParsedRecipe:
         ParsedStep(
             instruction=step.instruction,
             ingredient_names=[
-                ri_map[si.recipe_ingredient_id].ingredient.name
+                ri_map[si.recipe_ingredient_id].ingredient_name
                 for si in step.step_ingredients
                 if si.recipe_ingredient_id in ri_map
             ],
@@ -78,7 +77,6 @@ def _parsed_to_update(parsed: ParsedRecipe) -> RecipeUpdate:
     ingredients = [
         RecipeIngredientCreate(
             ingredient_name=ing.name,
-            ingredient_category=ing.category,
             quantity=ing.quantity,
             unit=ing.unit,
             notes=ing.notes,

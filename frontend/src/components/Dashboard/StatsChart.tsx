@@ -1,5 +1,5 @@
 import { useQueries } from "@tanstack/react-query"
-import { ChefHat, FlaskConical, ShoppingCart } from "lucide-react"
+import { ChefHat, ShoppingCart } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import {
   Bar,
@@ -12,11 +12,7 @@ import {
   YAxis,
 } from "recharts"
 
-import {
-  IngredientsService,
-  RecipesService,
-  ShoppingListsService,
-} from "@/client"
+import { RecipesService, ShoppingListsService } from "@/client"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 const CHART_COLORS = [
@@ -30,7 +26,6 @@ export function StatsChart() {
 
   const statsMeta = [
     { labelKey: "stats.recipes", icon: ChefHat },
-    { labelKey: "stats.ingredients", icon: FlaskConical },
     { labelKey: "stats.shopping_lists", icon: ShoppingCart },
   ]
 
@@ -39,10 +34,6 @@ export function StatsChart() {
       {
         queryKey: ["stats", "recipes"],
         queryFn: () => RecipesService.readRecipes({ limit: 1 }),
-      },
-      {
-        queryKey: ["stats", "ingredients"],
-        queryFn: () => IngredientsService.readIngredients({ limit: 1 }),
       },
       {
         queryKey: ["stats", "shopping-lists"],

@@ -130,11 +130,6 @@ function RecipeDetailContent() {
                             defaultValue: converted.unit,
                           })}
                         </span>
-                        <Badge variant="outline" className="text-xs capitalize">
-                          {tCommon(`categories.${ing.ingredient_category}`, {
-                            defaultValue: ing.ingredient_category,
-                          })}
-                        </Badge>
                       </div>
                     </div>
                     {ing.notes && (

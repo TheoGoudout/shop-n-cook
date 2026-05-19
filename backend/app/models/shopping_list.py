@@ -6,7 +6,7 @@ from sqlalchemy import DateTime
 from sqlmodel import Field, Relationship, SQLModel
 
 from app.models.base import get_datetime_utc
-from app.models.ingredient import Ingredient, IngredientCategory, Unit
+from app.models.ingredient import Unit
 from app.models.recipe import Recipe, RecipeIngredientPublic
 
 if TYPE_CHECKING:
@@ -61,6 +61,7 @@ class ShoppingListRecipe(ShoppingListRecipeBase, table=True):
 
 
 class ShoppingListItemBase(SQLModel):
+    name: str = Field(min_length=1, max_length=255)
     quantity: float = Field(gt=0)
     unit: Unit
     is_checked: bool = False
@@ -68,7 +69,7 @@ class ShoppingListItemBase(SQLModel):
 
 
 class ShoppingListItemCreate(ShoppingListItemBase):
-    ingredient_id: uuid.UUID
+    pass
 
 
 class ShoppingListItemUpdate(SQLModel):
@@ -80,9 +81,7 @@ class ShoppingListItemUpdate(SQLModel):
 
 class ShoppingListItemPublic(SQLModel):
     id: uuid.UUID
-    ingredient_id: uuid.UUID
-    ingredient_name: str
-    ingredient_category: IngredientCategory
+    name: str
     quantity: float
     unit: Unit
     is_checked: bool
@@ -99,11 +98,7 @@ class ShoppingListItem(ShoppingListItemBase, table=True):
     shopping_list_id: uuid.UUID = Field(
         foreign_key="shoppinglist.id", nullable=False, ondelete="CASCADE"
     )
-    ingredient_id: uuid.UUID = Field(
-        foreign_key="ingredient.id", nullable=False, ondelete="RESTRICT"
-    )
     shopping_list: "ShoppingList" = Relationship(back_populates="items")
-    ingredient: Ingredient = Relationship(sa_relationship_kwargs={"lazy": "selectin"})
 
 
 # --------------------------------------------------------------------------- #

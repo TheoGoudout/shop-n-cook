@@ -1,19 +1,10 @@
-# Import order matters: user first (no deps), then ingredient,
-# then recipe/shopping_list (import ingredient + user). This ensures SQLModel
-# registers all table models before Alembic or the engine resolves relationships.
+# Import order matters: user first (no deps), then ingredient (Unit enum),
+# then recipe/shopping_list. This ensures SQLModel registers all table models
+# before Alembic or the engine resolves relationships.
 from sqlmodel import SQLModel  # noqa: F401 — re-exported for alembic env.py
 
 from app.models.base import Message, get_datetime_utc
-from app.models.ingredient import (
-    Ingredient,
-    IngredientBase,
-    IngredientCategory,
-    IngredientCreate,
-    IngredientPublic,
-    IngredientsPublic,
-    IngredientUpdate,
-    Unit,
-)
+from app.models.ingredient import Unit
 from app.models.recipe import (
     Recipe,
     RecipeBase,
@@ -89,15 +80,8 @@ __all__ = [
     "UserSettings",
     "UserSettingsPublic",
     "UserSettingsUpdate",
-    # ingredient
-    "IngredientCategory",
+    # unit enum (shared by recipe and shopping list)
     "Unit",
-    "IngredientBase",
-    "IngredientCreate",
-    "IngredientUpdate",
-    "Ingredient",
-    "IngredientPublic",
-    "IngredientsPublic",
     # recipe
     "RecipeIngredientCreate",
     "RecipeIngredientPublic",

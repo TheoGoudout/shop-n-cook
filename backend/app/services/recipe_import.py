@@ -18,12 +18,11 @@ from langchain_core.rate_limiters import InMemoryRateLimiter
 from pydantic import BaseModel
 
 from app.core.config import settings
-from app.models.ingredient import IngredientCategory, Unit
+from app.models.ingredient import Unit
 
 
 class ParsedIngredient(BaseModel):
     name: str
-    category: IngredientCategory
     quantity: float
     unit: Unit
     notes: str | None = None
@@ -46,7 +45,6 @@ class ParsedRecipe(BaseModel):
     image_url: str | None = None
 
 
-_CATEGORIES = ", ".join(c.value for c in IngredientCategory)
 _UNITS = ", ".join(u.value for u in Unit)
 
 
@@ -79,7 +77,6 @@ Return ONLY a valid JSON object with this exact structure:
   "ingredients": [
     {{
       "name": "ingredient name",
-      "category": "string (use one of: {_CATEGORIES})",
       "quantity": numeric value,
       "unit": "unit string (use one of: {_UNITS})",
       "notes": "optional preparation note or null"

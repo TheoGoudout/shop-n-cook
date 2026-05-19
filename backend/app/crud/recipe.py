@@ -4,10 +4,7 @@ from datetime import datetime, timezone
 from sqlalchemy.orm import selectinload
 from sqlmodel import Session, col, func, or_, select
 
-from app.crud.ingredient import get_ingredient_by_name
 from app.models import (
-    Ingredient,
-    IngredientCreate,
     Recipe,
     RecipeCreate,
     RecipeIngredient,
@@ -27,9 +24,7 @@ from app.models.user import User
 def _ri_to_public(ri: RecipeIngredient) -> RecipeIngredientPublic:
     return RecipeIngredientPublic(
         id=ri.id,
-        ingredient_id=ri.ingredient_id,
-        ingredient_name=ri.ingredient.name,
-        ingredient_category=ri.ingredient.category,
+        ingredient_name=ri.ingredient_name,
         quantity=ri.quantity,
         unit=ri.unit,
         notes=ri.notes,
@@ -44,7 +39,7 @@ def _step_to_public(step: RecipeStep) -> RecipeStepPublic:
         ingredients=[
             RecipeStepIngredientPublic(
                 recipe_ingredient_id=si.recipe_ingredient_id,
-                ingredient_name=si.recipe_ingredient.ingredient.name,
+                ingredient_name=si.recipe_ingredient.ingredient_name,
             )
             for si in step.step_ingredients
         ],
@@ -77,28 +72,6 @@ def recipe_to_public(recipe: Recipe, owner: User | None = None) -> RecipePublic:
             key=lambda s: s.step_number,
         ),
     )
-
-
-def _resolve_ingredient_id(
-    *, session: Session, ing_in: RecipeIngredientCreate
-) -> uuid.UUID:
-    """Return the ingredient ID, creating the ingredient by name if it doesn't exist."""
-    if ing_in.ingredient_id is not None:
-        return ing_in.ingredient_id
-    assert ing_in.ingredient_name is not None  # guaranteed by model validator
-    existing = get_ingredient_by_name(session=session, name=ing_in.ingredient_name)
-    if existing:
-        return existing.id
-    new_ingredient = Ingredient.model_validate(
-        IngredientCreate(
-            name=ing_in.ingredient_name,
-            category=ing_in.ingredient_category,
-            default_unit=ing_in.ingredient_default_unit,
-        )
-    )
-    session.add(new_ingredient)
-    session.flush()
-    return new_ingredient.id
 
 
 def _create_steps(
@@ -224,7 +197,7 @@ def create_recipe(
     for ing_in in recipe_in.ingredients:
         ri = RecipeIngredient(
             recipe_id=db_recipe.id,
-            ingredient_id=_resolve_ingredient_id(session=session, ing_in=ing_in),
+            ingredient_name=ing_in.ingredient_name,
             quantity=ing_in.quantity,
             unit=ing_in.unit,
             notes=ing_in.notes,
@@ -256,7 +229,6 @@ def update_recipe(
     )
     db_recipe.sqlmodel_update(update_data)
 
-    # Determine the current RI list (used for step index resolution)
     ri_list: list[RecipeIngredient] = list(db_recipe.recipe_ingredients)
 
     if recipe_in.ingredients is not None:
@@ -267,7 +239,7 @@ def update_recipe(
         for ing_in in recipe_in.ingredients:
             ri = RecipeIngredient(
                 recipe_id=db_recipe.id,
-                ingredient_id=_resolve_ingredient_id(session=session, ing_in=ing_in),
+                ingredient_name=ing_in.ingredient_name,
                 quantity=ing_in.quantity,
                 unit=ing_in.unit,
                 notes=ing_in.notes,

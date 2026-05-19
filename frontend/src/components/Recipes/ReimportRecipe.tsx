@@ -26,6 +26,7 @@ const ReimportRecipe = ({ id, onSuccess }: Props) => {
     onSuccess: () => {
       showSuccessToast(t("reimport.success"))
       onSuccess()
+      window.location.reload()
     },
     onError: handleError.bind(showErrorToast),
     onSettled: () => queryClient.invalidateQueries({ queryKey: ["recipes"] }),

@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Pencil, Plus, Trash2 } from "lucide-react"
 import { useMemo, useState } from "react"
 import { type Resolver, useFieldArray, useForm } from "react-hook-form"
@@ -489,7 +489,7 @@ const EditRecipe = ({ recipe, onSuccess }: Props) => {
                         />
                       </div>
                     )
-                  ))}
+                  )}
                 </div>
               </div>
 

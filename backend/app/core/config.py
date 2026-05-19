@@ -1,11 +1,15 @@
+import os
 import secrets
 import warnings
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as _pkg_version
 from typing import Annotated, Any, Literal
 
 from pydantic import (
     AnyUrl,
     BeforeValidator,
     EmailStr,
+    Field,
     HttpUrl,
     PostgresDsn,
     computed_field,
@@ -13,6 +17,15 @@ from pydantic import (
 )
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing_extensions import Self
+
+
+def _get_version() -> str:
+    if os.getenv("ENVIRONMENT", "local") == "local":
+        return "dev"
+    try:
+        return _pkg_version("app")
+    except PackageNotFoundError:
+        return "dev"
 
 
 def unescape_env_string(v: Any) -> Any:
@@ -41,7 +54,7 @@ class Settings(BaseSettings):
         env_ignore_empty=True,
         extra="ignore",
     )
-    APP_VERSION: str = "dev"
+    APP_VERSION: str = Field(default_factory=_get_version)
     API_V1_STR: str = "/api/v1"
     SECRET_KEY: str = secrets.token_urlsafe(32)
     # 60 minutes * 24 hours * 8 days = 8 days

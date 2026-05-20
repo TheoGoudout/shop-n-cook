@@ -1,3 +1,4 @@
+import logging
 import uuid
 from typing import Annotated, Any
 
@@ -12,6 +13,8 @@ from app.models.ingredient import (
     IngredientUpdate,
 )
 from app.services.ingredient_image import fetch_and_update_ingredient_image
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/ingredients", tags=["ingredients"])
 
@@ -78,5 +81,11 @@ def fetch_ingredient_image(
     ingredient = crud.get_ingredient(session=session, ingredient_id=id)
     if not ingredient:
         raise HTTPException(status_code=404, detail="Ingredient not found")
+    logger.info(
+        "Queuing image fetch for ingredient %r (id=%s, current image=%s)",
+        ingredient.name,
+        ingredient.id,
+        "set" if ingredient.image_url else "missing",
+    )
     background_tasks.add_task(fetch_and_update_ingredient_image, ingredient.id)
     return IngredientPublic.model_validate(ingredient)

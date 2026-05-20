@@ -42,6 +42,7 @@ class IngredientCategory(str, Enum):
 class Ingredient(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     name: str = Field(max_length=255, unique=True, index=True)
+    name_en: str | None = Field(default=None, max_length=255)
     category: IngredientCategory = Field(default=IngredientCategory.OTHER)
     image_url: str | None = Field(default=None, max_length=2048)
 
@@ -49,6 +50,7 @@ class Ingredient(SQLModel, table=True):
 class IngredientPublic(SQLModel):
     id: uuid.UUID
     name: str
+    name_en: str | None
     category: IngredientCategory
     image_url: str | None
 

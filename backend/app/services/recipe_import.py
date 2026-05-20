@@ -47,6 +47,7 @@ class ParsedRecipe(BaseModel):
 
 
 _UNITS = ", ".join(u.value for u in Unit)
+_CATEGORIES = ", ".join(c.value for c in IngredientCategory)
 
 
 def _build_system_prompt(language: str | None = None) -> str:
@@ -81,7 +82,7 @@ Return ONLY a valid JSON object with this exact structure:
       "quantity": numeric value,
       "unit": "unit string (use one of: {_UNITS})",
       "notes": "optional preparation note or null",
-      "category": "one of: produce, dairy, meat, seafood, grains, pantry, spices, beverages, frozen, bakery, other"
+      "category": "one of: {_CATEGORIES}"
     }}
   ],
   "steps": [
@@ -100,7 +101,7 @@ Rules:
 - If quantity is fractional (e.g. 1/2), convert to decimal (0.5)
 - If no unit applies, use "piece"
 - Only include ingredients with a measurable quantity — skip garnishes, serving suggestions, or "to taste"/"to serve" items that have no defined amount
-- For each ingredient, set "category" to the most appropriate value from: produce, dairy, meat, seafood, grains, pantry, spices, beverages, frozen, bakery, other
+- For each ingredient, set "category" to the most appropriate value from: {_CATEGORIES}
 {lang_rule}
 - Do not include any text outside the JSON object"""
 

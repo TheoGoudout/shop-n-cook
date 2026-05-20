@@ -6,31 +6,8 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
-_PEXELS_SEARCH_URL = "https://api.pexels.com/v1/search"
-
-_NEGATIVE_WORDS = {
-    "basket",
-    "bowl",
-    "plate",
-    "dish",
-    "meal",
-    "recipe",
-    "person",
-    "people",
-    "man",
-    "woman",
-    "girl",
-    "boy",
-    "child",
-    "hands",
-    "market",
-    "store",
-    "shop",
-    "supermarket",
-    "cooking",
-    "chef",
-    "baking",
-}
+_SPOONACULAR_SEARCH_URL = "https://api.spoonacular.com/food/ingredients/search"
+_SPOONACULAR_IMAGE_BASE = "https://spoonacular.com/cdn/ingredients_250x250"
 
 _BATCH_CATEGORY_PROMPT = (
     "Classify each of the following food ingredients into exactly one of these categories: "
@@ -41,46 +18,33 @@ _BATCH_CATEGORY_PROMPT = (
 )
 
 
-def _score_photo(alt: str, name: str) -> int:
-    words = set(alt.lower().split())
-    score = 0
-    if name.lower() in words:
-        score += 3
-    score -= 2 * len(words & _NEGATIVE_WORDS)
-    return score
-
-
-def fetch_image_from_pexels(name: str) -> str | None:
+def fetch_image_from_spoonacular(name: str) -> str | None:
     from app.core.config import settings
 
-    if not settings.PEXELS_API_KEY:
-        logger.warning("PEXELS_API_KEY not set; skipping image fetch for %r", name)
+    if not settings.SPOONACULAR_API_KEY:
+        logger.warning("SPOONACULAR_API_KEY not set; skipping image fetch for %r", name)
         return None
-    logger.info("Fetching Pexels image for %r", name)
+    logger.info("Fetching Spoonacular image for %r", name)
     try:
         resp = httpx.get(
-            _PEXELS_SEARCH_URL,
-            params={
-                "query": f"{name} food ingredient",
-                "per_page": 15,
-                "orientation": "square",
-            },
-            headers={"Authorization": settings.PEXELS_API_KEY},
+            _SPOONACULAR_SEARCH_URL,
+            params={"query": name, "number": 1, "apiKey": settings.SPOONACULAR_API_KEY},
             timeout=10,
         )
         resp.raise_for_status()
-        photos = resp.json().get("photos", [])
-        logger.info("Pexels returned %d photos for %r", len(photos), name)
-        if not photos:
-            logger.warning("No Pexels photos found for %r", name)
+        results = resp.json().get("results", [])
+        logger.info("Spoonacular returned %d result(s) for %r", len(results), name)
+        if not results:
+            logger.warning("No Spoonacular results found for %r", name)
             return None
-        best = max(photos, key=lambda p: _score_photo(p.get("alt", ""), name))
-        src = best.get("src", {})
-        url = src.get("medium") or src.get("large") or None
-        logger.info("Selected Pexels image for %r: %s", name, url)
+        image = results[0].get("image")
+        if not image:
+            return None
+        url = f"{_SPOONACULAR_IMAGE_BASE}/{image}"
+        logger.info("Selected Spoonacular image for %r: %s", name, url)
         return url
     except Exception:
-        logger.exception("Failed to fetch image from Pexels for %r", name)
+        logger.exception("Failed to fetch image from Spoonacular for %r", name)
         return None
 
 
@@ -121,9 +85,9 @@ def _suggest_categories_batch(names: list[str]) -> dict[str, str]:
 def fetch_and_update_ingredients_batch(
     ingredient_ids: list[uuid.UUID], *, force_image: bool = False
 ) -> None:
-    """Fetch Pexels images and suggest categories for a list of ingredients.
+    """Fetch Spoonacular images and suggest categories for a list of ingredients.
 
-    Makes a single LLM call for all category suggestions, then individual Pexels
+    Makes a single LLM call for all category suggestions, then individual Spoonacular
     API calls per ingredient. Only updates fields that are still at their default,
     unless force_image=True which overwrites any existing image_url.
     """
@@ -189,7 +153,7 @@ def fetch_and_update_ingredients_batch(
                     logger.warning("No category suggested for %r", ingredient.name)
 
         for ingredient in needs_image:
-            url = fetch_image_from_pexels(ingredient.name)
+            url = fetch_image_from_spoonacular(ingredient.name)
             if url:
                 logger.info("Updating image_url for %r", ingredient.name)
                 ingredient.image_url = url

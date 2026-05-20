@@ -32,66 +32,67 @@ def _make_ingredient(
     return ing
 
 
-# ---- fetch_image_from_pexels ----
+# ---- fetch_image_from_spoonacular ----
 
 
 def test_fetch_image_no_api_key(caplog: pytest.LogCaptureFixture) -> None:
     from app.core.config import settings
-    from app.services.ingredient_image import fetch_image_from_pexels
+    from app.services.ingredient_image import fetch_image_from_spoonacular
 
-    with patch.object(settings, "PEXELS_API_KEY", None):
-        result = fetch_image_from_pexels("tomato")
-
-    assert result is None
-    assert "PEXELS_API_KEY not set" in caplog.text
-
-
-def test_fetch_image_returns_medium_url() -> None:
-    from app.core.config import settings
-    from app.services.ingredient_image import fetch_image_from_pexels
-
-    photo = {"alt": "fresh tomato", "src": {"medium": "https://example.com/tomato.jpg"}}
-    mock_resp = MagicMock()
-    mock_resp.json.return_value = {"photos": [photo]}
-
-    with (
-        patch.object(settings, "PEXELS_API_KEY", "fake-key"),
-        patch("httpx.get", return_value=mock_resp),
-    ):
-        result = fetch_image_from_pexels("tomato")
-
-    assert result == "https://example.com/tomato.jpg"
-
-
-def test_fetch_image_no_photos(caplog: pytest.LogCaptureFixture) -> None:
-    from app.core.config import settings
-    from app.services.ingredient_image import fetch_image_from_pexels
-
-    mock_resp = MagicMock()
-    mock_resp.json.return_value = {"photos": []}
-
-    with (
-        patch.object(settings, "PEXELS_API_KEY", "fake-key"),
-        patch("httpx.get", return_value=mock_resp),
-    ):
-        result = fetch_image_from_pexels("tomato")
+    with patch.object(settings, "SPOONACULAR_API_KEY", None):
+        result = fetch_image_from_spoonacular("tomato")
 
     assert result is None
-    assert "No Pexels photos found" in caplog.text
+    assert "SPOONACULAR_API_KEY not set" in caplog.text
+
+
+def test_fetch_image_returns_url() -> None:
+    from app.core.config import settings
+    from app.services.ingredient_image import fetch_image_from_spoonacular
+
+    mock_resp = MagicMock()
+    mock_resp.json.return_value = {
+        "results": [{"id": 11529, "name": "tomato", "image": "tomato.png"}]
+    }
+
+    with (
+        patch.object(settings, "SPOONACULAR_API_KEY", "fake-key"),
+        patch("httpx.get", return_value=mock_resp),
+    ):
+        result = fetch_image_from_spoonacular("tomato")
+
+    assert result == "https://spoonacular.com/cdn/ingredients_250x250/tomato.png"
+
+
+def test_fetch_image_no_results(caplog: pytest.LogCaptureFixture) -> None:
+    from app.core.config import settings
+    from app.services.ingredient_image import fetch_image_from_spoonacular
+
+    mock_resp = MagicMock()
+    mock_resp.json.return_value = {"results": []}
+
+    with (
+        patch.object(settings, "SPOONACULAR_API_KEY", "fake-key"),
+        patch("httpx.get", return_value=mock_resp),
+    ):
+        result = fetch_image_from_spoonacular("tomato")
+
+    assert result is None
+    assert "No Spoonacular results found" in caplog.text
 
 
 def test_fetch_image_http_error(caplog: pytest.LogCaptureFixture) -> None:
     from app.core.config import settings
-    from app.services.ingredient_image import fetch_image_from_pexels
+    from app.services.ingredient_image import fetch_image_from_spoonacular
 
     with (
-        patch.object(settings, "PEXELS_API_KEY", "fake-key"),
+        patch.object(settings, "SPOONACULAR_API_KEY", "fake-key"),
         patch("httpx.get", side_effect=Exception("connection error")),
     ):
-        result = fetch_image_from_pexels("tomato")
+        result = fetch_image_from_spoonacular("tomato")
 
     assert result is None
-    assert "Failed to fetch image from Pexels" in caplog.text
+    assert "Failed to fetch image from Spoonacular" in caplog.text
 
 
 # ---- fetch_and_update_ingredients_batch ----
@@ -134,11 +135,11 @@ def test_batch_no_updates_needed(caplog: pytest.LogCaptureFixture) -> None:
 
 
 def test_batch_force_image_fetches_even_with_existing_image() -> None:
-    """force_image=True should call fetch_image_from_pexels even if image already set."""
+    """force_image=True should call fetch_image_from_spoonacular even if image already set."""
     from app.services.ingredient_image import fetch_and_update_ingredients_batch
 
     ing = _make_ingredient(image_url="https://existing.com/old.jpg")
-    new_url = "https://example.com/new.jpg"
+    new_url = "https://spoonacular.com/cdn/ingredients_250x250/garlic.png"
 
     mock_session = MagicMock()
     mock_session.get.return_value = ing
@@ -146,7 +147,7 @@ def test_batch_force_image_fetches_even_with_existing_image() -> None:
     with (
         patch("sqlmodel.Session", return_value=_session_ctx(mock_session)),
         patch(
-            "app.services.ingredient_image.fetch_image_from_pexels",
+            "app.services.ingredient_image.fetch_image_from_spoonacular",
             return_value=new_url,
         ) as mock_fetch,
         patch(
@@ -162,7 +163,7 @@ def test_batch_force_image_fetches_even_with_existing_image() -> None:
 
 
 def test_batch_no_image_url_obtained(caplog: pytest.LogCaptureFixture) -> None:
-    """When Pexels returns None the warning is logged."""
+    """When Spoonacular returns None the warning is logged."""
     from app.services.ingredient_image import fetch_and_update_ingredients_batch
 
     ing = _make_ingredient()
@@ -172,7 +173,8 @@ def test_batch_no_image_url_obtained(caplog: pytest.LogCaptureFixture) -> None:
     with (
         patch("sqlmodel.Session", return_value=_session_ctx(mock_session)),
         patch(
-            "app.services.ingredient_image.fetch_image_from_pexels", return_value=None
+            "app.services.ingredient_image.fetch_image_from_spoonacular",
+            return_value=None,
         ),
         patch(
             "app.services.ingredient_image._suggest_categories_batch", return_value={}
@@ -194,7 +196,8 @@ def test_batch_category_suggested(caplog: pytest.LogCaptureFixture) -> None:
     with (
         patch("sqlmodel.Session", return_value=_session_ctx(mock_session)),
         patch(
-            "app.services.ingredient_image.fetch_image_from_pexels", return_value=None
+            "app.services.ingredient_image.fetch_image_from_spoonacular",
+            return_value=None,
         ),
         patch(
             "app.services.ingredient_image._suggest_categories_batch",

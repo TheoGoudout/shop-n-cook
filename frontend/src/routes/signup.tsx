@@ -54,7 +54,9 @@ function SignUp() {
   const formSchema = z
     .object({
       email: z.email(),
-      full_name: z.string().min(1, { message: t("validation.full_name_required") }),
+      full_name: z
+        .string()
+        .min(1, { message: t("validation.full_name_required") }),
       password: z
         .string()
         .min(1, { message: t("validation.password_required") })

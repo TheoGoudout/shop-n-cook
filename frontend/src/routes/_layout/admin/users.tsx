@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next"
 
 import { type UserPublic, UsersService } from "@/client"
 import AddUser from "@/components/Admin/AddUser"
-import { useUserColumns, type UserTableData } from "@/components/Admin/columns"
+import { type UserTableData, useUserColumns } from "@/components/Admin/columns"
 import { DataTable } from "@/components/Common/DataTable"
 import PendingUsers from "@/components/Pending/PendingUsers"
 import useAuth from "@/hooks/useAuth"

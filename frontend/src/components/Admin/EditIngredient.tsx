@@ -147,7 +147,9 @@ const EditIngredient = ({ ingredient, onSuccess }: EditIngredientProps) => {
                 name="image_url"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t("ingredient.image_url", { ns: "admin" })}</FormLabel>
+                    <FormLabel>
+                      {t("ingredient.image_url", { ns: "admin" })}
+                    </FormLabel>
                     <FormControl>
                       <Input placeholder="https://..." {...field} />
                     </FormControl>

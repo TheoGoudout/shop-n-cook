@@ -67,10 +67,13 @@ const EditUser = ({ user, onSuccess }: EditUserProps) => {
       is_superuser: z.boolean().optional(),
       is_active: z.boolean().optional(),
     })
-    .refine((data) => !data.password || data.password === data.confirm_password, {
-      message: tAuth("validation.passwords_mismatch"),
-      path: ["confirm_password"],
-    })
+    .refine(
+      (data) => !data.password || data.password === data.confirm_password,
+      {
+        message: tAuth("validation.passwords_mismatch"),
+        path: ["confirm_password"],
+      },
+    )
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -120,7 +123,9 @@ const EditUser = ({ user, onSuccess }: EditUserProps) => {
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <DialogHeader>
               <DialogTitle>{t("edit.dialog_title")}</DialogTitle>
-              <DialogDescription>{t("edit.dialog_description")}</DialogDescription>
+              <DialogDescription>
+                {t("edit.dialog_description")}
+              </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <FormField

@@ -22,7 +22,10 @@ export function useUserColumns(): ColumnDef<UserTableData>[] {
         return (
           <div className="flex items-center gap-2">
             <span
-              className={cn("font-medium", !fullName && "text-muted-foreground")}
+              className={cn(
+                "font-medium",
+                !fullName && "text-muted-foreground",
+              )}
             >
               {fullName || t("columns.na")}
             </span>

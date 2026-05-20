@@ -31,22 +31,10 @@ const searchSchema = z.object({
   token: z.string().catch(""),
 })
 
-const formSchema = z
-  .object({
-    new_password: z
-      .string()
-      .min(1, { message: "Password is required" })
-      .min(8, { message: "Password must be at least 8 characters" }),
-    confirm_password: z
-      .string()
-      .min(1, { message: "Password confirmation is required" }),
-  })
-  .refine((data) => data.new_password === data.confirm_password, {
-    message: "The passwords don't match",
-    path: ["confirm_password"],
-  })
-
-type FormData = z.infer<typeof formSchema>
+type FormData = {
+  new_password: string
+  confirm_password: string
+}
 
 export const Route = createFileRoute("/reset-password")({
   component: ResetPassword,
@@ -73,6 +61,21 @@ function ResetPassword() {
   const { token } = Route.useSearch()
   const { showSuccessToast, showErrorToast } = useCustomToast()
   const navigate = useNavigate()
+
+  const formSchema = z
+    .object({
+      new_password: z
+        .string()
+        .min(1, { message: t("validation.password_required") })
+        .min(8, { message: t("validation.password_min") }),
+      confirm_password: z
+        .string()
+        .min(1, { message: t("validation.confirm_required") }),
+    })
+    .refine((data) => data.new_password === data.confirm_password, {
+      message: t("validation.passwords_mismatch"),
+      path: ["confirm_password"],
+    })
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),

@@ -25,15 +25,10 @@ import { PasswordInput } from "@/components/ui/password-input"
 import useAuth, { isLoggedIn } from "@/hooks/useAuth"
 import { APP_NAME } from "@/lib/config"
 
-const formSchema = z.object({
-  username: z.email(),
-  password: z
-    .string()
-    .min(1, { message: "Password is required" })
-    .min(8, { message: "Password must be at least 8 characters" }),
-}) satisfies z.ZodType<AccessToken>
-
-type FormData = z.infer<typeof formSchema>
+type FormData = {
+  username: string
+  password: string
+}
 
 export const Route = createFileRoute("/login")({
   component: Login,
@@ -61,6 +56,15 @@ function Login() {
   const { loginMutation } = useAuth()
   const { redirect: redirectTo } = Route.useSearch()
   const navigate = useNavigate()
+
+  const formSchema = z.object({
+    username: z.email(),
+    password: z
+      .string()
+      .min(1, { message: t("validation.password_required") })
+      .min(8, { message: t("validation.password_min") }),
+  }) satisfies z.ZodType<AccessToken>
+
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     mode: "onBlur",

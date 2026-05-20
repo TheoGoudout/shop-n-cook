@@ -90,7 +90,7 @@ const EditIngredient = ({ ingredient, onSuccess }: EditIngredientProps) => {
         },
       }),
     onSuccess: () => {
-      showSuccessToast("Ingredient updated successfully")
+      showSuccessToast(t("ingredient.updated", { ns: "admin" }))
       setIsOpen(false)
       onSuccess()
     },
@@ -147,7 +147,9 @@ const EditIngredient = ({ ingredient, onSuccess }: EditIngredientProps) => {
                 name="image_url"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Image URL</FormLabel>
+                    <FormLabel>
+                      {t("ingredient.image_url", { ns: "admin" })}
+                    </FormLabel>
                     <FormControl>
                       <Input placeholder="https://..." {...field} />
                     </FormControl>

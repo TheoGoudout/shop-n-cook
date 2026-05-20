@@ -11,23 +11,47 @@
     "full_name": "Full Name",
     "email": "Email",
     "role": "Role",
-    "status": "Status"
+    "status": "Status",
+    "you": "You",
+    "na": "N/A",
+    "active": "Active",
+    "inactive": "Inactive",
+    "superuser": "Superuser",
+    "user_role": "User"
   },
   "add": {
     "button": "Add User",
     "dialog_title": "Add User",
-    "dialog_description": "Create a new user account.",
+    "dialog_description": "Fill in the form below to add a new user to the system.",
     "success": "User created successfully"
   },
   "edit": {
-    "menu_item": "Edit",
+    "menu_item": "Edit User",
     "dialog_title": "Edit User",
+    "dialog_description": "Update the user details below.",
     "success": "User updated successfully"
   },
   "delete": {
-    "menu_item": "Delete",
+    "menu_item": "Delete User",
     "dialog_title": "Delete User",
-    "dialog_description": "This user will be permanently deleted.",
-    "success": "User deleted successfully"
+    "dialog_description": "All items associated with this user will also be permanently deleted. Are you sure? You will not be able to undo this action.",
+    "success": "The user was deleted successfully"
+  },
+  "forms": {
+    "email_label": "Email",
+    "full_name_label": "Full Name",
+    "set_password_label": "Set Password",
+    "confirm_password_label": "Confirm Password",
+    "is_superuser_label": "Is superuser?",
+    "is_active_label": "Is active?",
+    "email_placeholder": "Email",
+    "full_name_placeholder": "Full name",
+    "password_placeholder": "Password"
+  },
+  "ingredient": {
+    "fetch_image": "Fetch Image",
+    "fetch_image_queued": "Image fetch queued",
+    "updated": "Ingredient updated successfully",
+    "image_url": "Image URL"
   }
 }

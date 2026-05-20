@@ -11,23 +11,47 @@
     "full_name": "Nom complet",
     "email": "E-mail",
     "role": "Rôle",
-    "status": "Statut"
+    "status": "Statut",
+    "you": "Vous",
+    "na": "N/A",
+    "active": "Actif",
+    "inactive": "Inactif",
+    "superuser": "Superutilisateur",
+    "user_role": "Utilisateur"
   },
   "add": {
     "button": "Ajouter un utilisateur",
     "dialog_title": "Ajouter un utilisateur",
-    "dialog_description": "Créez un nouveau compte utilisateur.",
+    "dialog_description": "Remplissez le formulaire ci-dessous pour ajouter un nouvel utilisateur.",
     "success": "Utilisateur créé avec succès"
   },
   "edit": {
-    "menu_item": "Modifier",
+    "menu_item": "Modifier l'utilisateur",
     "dialog_title": "Modifier l'utilisateur",
+    "dialog_description": "Mettez à jour les informations de l'utilisateur ci-dessous.",
     "success": "Utilisateur mis à jour avec succès"
   },
   "delete": {
-    "menu_item": "Supprimer",
+    "menu_item": "Supprimer l'utilisateur",
     "dialog_title": "Supprimer l'utilisateur",
-    "dialog_description": "Cet utilisateur sera définitivement supprimé.",
-    "success": "Utilisateur supprimé avec succès"
+    "dialog_description": "Tous les éléments associés à cet utilisateur seront également supprimés définitivement. Êtes-vous sûr(e) ? Cette action est irréversible.",
+    "success": "L'utilisateur a été supprimé avec succès"
+  },
+  "forms": {
+    "email_label": "E-mail",
+    "full_name_label": "Nom complet",
+    "set_password_label": "Définir un mot de passe",
+    "confirm_password_label": "Confirmer le mot de passe",
+    "is_superuser_label": "Est superutilisateur ?",
+    "is_active_label": "Est actif ?",
+    "email_placeholder": "E-mail",
+    "full_name_placeholder": "Nom complet",
+    "password_placeholder": "Mot de passe"
+  },
+  "ingredient": {
+    "fetch_image": "Récupérer l'image",
+    "fetch_image_queued": "Récupération de l'image en file d'attente",
+    "updated": "Ingrédient mis à jour avec succès",
+    "image_url": "URL de l'image"
   }
 }

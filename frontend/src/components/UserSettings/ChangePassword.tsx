@@ -18,30 +18,36 @@ import { PasswordInput } from "@/components/ui/password-input"
 import useCustomToast from "@/hooks/useCustomToast"
 import { handleError } from "@/utils"
 
-const formSchema = z
-  .object({
-    current_password: z
-      .string()
-      .min(1, { message: "Password is required" })
-      .min(8, { message: "Password must be at least 8 characters" }),
-    new_password: z
-      .string()
-      .min(1, { message: "Password is required" })
-      .min(8, { message: "Password must be at least 8 characters" }),
-    confirm_password: z
-      .string()
-      .min(1, { message: "Password confirmation is required" }),
-  })
-  .refine((data) => data.new_password === data.confirm_password, {
-    message: "The passwords don't match",
-    path: ["confirm_password"],
-  })
-
-type FormData = z.infer<typeof formSchema>
+type FormData = {
+  current_password: string
+  new_password: string
+  confirm_password: string
+}
 
 const ChangePassword = () => {
   const { t } = useTranslation("settings")
+  const { t: tAuth } = useTranslation("auth")
   const { showSuccessToast, showErrorToast } = useCustomToast()
+
+  const formSchema = z
+    .object({
+      current_password: z
+        .string()
+        .min(1, { message: tAuth("validation.password_required") })
+        .min(8, { message: tAuth("validation.password_min") }),
+      new_password: z
+        .string()
+        .min(1, { message: tAuth("validation.password_required") })
+        .min(8, { message: tAuth("validation.password_min") }),
+      confirm_password: z
+        .string()
+        .min(1, { message: tAuth("validation.confirm_required") }),
+    })
+    .refine((data) => data.new_password === data.confirm_password, {
+      message: tAuth("validation.passwords_mismatch"),
+      path: ["confirm_password"],
+    })
+
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     mode: "onSubmit",

@@ -16,10 +16,7 @@ import {
 import { useUnitSystem } from "@/hooks/useUnitSystem"
 import type { UnitSystem } from "@/lib/units"
 
-const LANGUAGES = [
-  { value: "en", label: "English" },
-  { value: "fr", label: "Français" },
-]
+const LANGUAGE_CODES = ["en", "fr"] as const
 
 export function AppPreferences() {
   const { t, i18n } = useTranslation("settings")
@@ -45,9 +42,9 @@ export function AppPreferences() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {LANGUAGES.map((lang) => (
-                  <SelectItem key={lang.value} value={lang.value}>
-                    {lang.label}
+                {LANGUAGE_CODES.map((code) => (
+                  <SelectItem key={code} value={code}>
+                    {t(`preferences.languages.${code}`)}
                   </SelectItem>
                 ))}
               </SelectContent>

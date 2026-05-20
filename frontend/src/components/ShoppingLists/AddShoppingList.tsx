@@ -63,13 +63,11 @@ function getDefaultListDefaults() {
   }
 }
 
-const formSchema = z.object({
-  name: z.string().min(1, { message: "Name is required" }),
-  start_date: z.string().optional(),
-  end_date: z.string().optional(),
-})
-
-type FormData = z.infer<typeof formSchema>
+type FormData = {
+  name: string
+  start_date?: string
+  end_date?: string
+}
 
 const AddShoppingList = () => {
   const { t } = useTranslation("shopping")
@@ -77,6 +75,12 @@ const AddShoppingList = () => {
   const [isOpen, setIsOpen] = useState(false)
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
+
+  const formSchema = z.object({
+    name: z.string().min(1, { message: t("add_list.name_required") }),
+    start_date: z.string().optional(),
+    end_date: z.string().optional(),
+  })
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),

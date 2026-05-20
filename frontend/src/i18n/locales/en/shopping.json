@@ -44,6 +44,7 @@
   "add_item_dialog": {
     "title": "Add Item",
     "ingredient_label": "Ingredient",
+    "item_name_placeholder": "e.g. Toilet paper, Milk…",
     "quantity_label": "Quantity",
     "unit_label": "Unit",
     "select_ingredient": "Select ingredient",

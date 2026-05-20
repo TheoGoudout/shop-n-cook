@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { EllipsisVertical, RefreshCw } from "lucide-react"
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 
 import type { IngredientPublic } from "@/client"
 import { IngredientsService } from "@/client"
@@ -25,12 +26,13 @@ export const IngredientActionsMenu = ({
   const [open, setOpen] = useState(false)
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
+  const { t } = useTranslation("admin")
 
   const fetchImageMutation = useMutation({
     mutationFn: () =>
       IngredientsService.fetchIngredientImage({ id: ingredient.id }),
     onSuccess: () => {
-      showSuccessToast("Image fetch queued")
+      showSuccessToast(t("ingredient.fetch_image_queued"))
     },
     onError: handleError.bind(showErrorToast),
     onSettled: () => {
@@ -52,7 +54,7 @@ export const IngredientActionsMenu = ({
         />
         <DropdownMenuItem onClick={() => fetchImageMutation.mutate()}>
           <RefreshCw />
-          Fetch Image
+          {t("ingredient.fetch_image")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

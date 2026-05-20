@@ -25,9 +25,45 @@
   "new": "new",
   "done": "Done",
   "source": "Source",
+  "tagline": "Your kitchen, organized.",
+  "no_results": "No results found.",
   "toast": {
     "success": "Success!",
     "error": "Something went wrong!"
+  },
+  "table": {
+    "showing": "Showing",
+    "to": "to",
+    "of": "of",
+    "entries": "entries",
+    "rows_per_page": "Rows per page",
+    "page": "Page",
+    "go_first": "Go to first page",
+    "go_previous": "Go to previous page",
+    "go_next": "Go to next page",
+    "go_last": "Go to last page"
+  },
+  "pagination": {
+    "previous": "Previous",
+    "next": "Next",
+    "more_pages": "More pages",
+    "go_previous": "Go to previous page",
+    "go_next": "Go to next page"
+  },
+  "password": {
+    "show": "Show password",
+    "hide": "Hide password"
+  },
+  "error": {
+    "title": "Error",
+    "oops": "Oops!",
+    "message": "Something went wrong. Please try again.",
+    "go_home": "Go Home"
+  },
+  "not_found": {
+    "oops": "Oops!",
+    "message": "The page you are looking for was not found.",
+    "go_back": "Go Back"
   },
   "unit_labels": {
     "g": "g",

@@ -25,9 +25,45 @@
   "new": "nouveau",
   "done": "Terminé",
   "source": "Source",
+  "tagline": "Votre cuisine, organisée.",
+  "no_results": "Aucun résultat trouvé.",
   "toast": {
     "success": "Succès !",
     "error": "Une erreur est survenue !"
+  },
+  "table": {
+    "showing": "Affichage de",
+    "to": "à",
+    "of": "sur",
+    "entries": "entrées",
+    "rows_per_page": "Lignes par page",
+    "page": "Page",
+    "go_first": "Aller à la première page",
+    "go_previous": "Aller à la page précédente",
+    "go_next": "Aller à la page suivante",
+    "go_last": "Aller à la dernière page"
+  },
+  "pagination": {
+    "previous": "Précédent",
+    "next": "Suivant",
+    "more_pages": "Plus de pages",
+    "go_previous": "Aller à la page précédente",
+    "go_next": "Aller à la page suivante"
+  },
+  "password": {
+    "show": "Afficher le mot de passe",
+    "hide": "Masquer le mot de passe"
+  },
+  "error": {
+    "title": "Erreur",
+    "oops": "Oups !",
+    "message": "Une erreur est survenue. Veuillez réessayer.",
+    "go_home": "Retour à l'accueil"
+  },
+  "not_found": {
+    "oops": "Oups !",
+    "message": "La page que vous recherchez est introuvable.",
+    "go_back": "Retour"
   },
   "unit_labels": {
     "g": "g",

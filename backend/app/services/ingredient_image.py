@@ -70,7 +70,7 @@ def _enrich_ingredients_batch(names: list[str]) -> dict[str, dict[str, str]]:
         end = content.rfind("}") + 1
         if start < 0 or end <= start:
             raise ValueError("No JSON object in response")
-        raw: dict[str, dict] = json.loads(content[start:end])
+        raw: dict[str, dict[str, str]] = json.loads(content[start:end])
         valid_categories = {c.value for c in IngredientCategory}
         result: dict[str, dict[str, str]] = {}
         for name, info in raw.items():
@@ -168,9 +168,7 @@ def fetch_and_update_ingredients_batch(
                     logger.warning("No category suggested for %r", ingredient.name)
                 name_en = info.get("name_en")
                 if name_en and not ingredient.name_en:
-                    logger.info(
-                        "Setting name_en for %r: %r", ingredient.name, name_en
-                    )
+                    logger.info("Setting name_en for %r: %r", ingredient.name, name_en)
                     ingredient.name_en = name_en
                 elif not name_en:
                     logger.warning("No English name obtained for %r", ingredient.name)

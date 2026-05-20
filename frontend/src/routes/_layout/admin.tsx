@@ -1,4 +1,10 @@
-import { createFileRoute, Outlet, redirect, useLocation, useNavigate } from "@tanstack/react-router"
+import {
+  createFileRoute,
+  Outlet,
+  redirect,
+  useLocation,
+  useNavigate,
+} from "@tanstack/react-router"
 
 import { UsersService } from "@/client"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"

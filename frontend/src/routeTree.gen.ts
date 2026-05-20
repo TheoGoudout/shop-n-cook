@@ -20,10 +20,13 @@ import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
 import { Route as LayoutAdminRouteImport } from './routes/_layout/admin'
 import { Route as LayoutShoppingListsIndexRouteImport } from './routes/_layout/shopping-lists/index'
 import { Route as LayoutRecipesIndexRouteImport } from './routes/_layout/recipes/index'
+import { Route as LayoutAdminIndexRouteImport } from './routes/_layout/admin/index'
 import { Route as LayoutShoppingListsIdRouteImport } from './routes/_layout/shopping-lists/$id'
 import { Route as LayoutRecipesPublicRouteImport } from './routes/_layout/recipes/public'
 import { Route as LayoutRecipesIdRouteImport } from './routes/_layout/recipes/$id'
 import { Route as LayoutProfileUserIdRouteImport } from './routes/_layout/profile/$userId'
+import { Route as LayoutAdminUsersRouteImport } from './routes/_layout/admin/users'
+import { Route as LayoutAdminIngredientsRouteImport } from './routes/_layout/admin/ingredients'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -80,6 +83,11 @@ const LayoutRecipesIndexRoute = LayoutRecipesIndexRouteImport.update({
   path: '/recipes/',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutAdminIndexRoute = LayoutAdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => LayoutAdminRoute,
+} as any)
 const LayoutShoppingListsIdRoute = LayoutShoppingListsIdRouteImport.update({
   id: '/shopping-lists/$id',
   path: '/shopping-lists/$id',
@@ -100,6 +108,16 @@ const LayoutProfileUserIdRoute = LayoutProfileUserIdRouteImport.update({
   path: '/profile/$userId',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutAdminUsersRoute = LayoutAdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => LayoutAdminRoute,
+} as any)
+const LayoutAdminIngredientsRoute = LayoutAdminIngredientsRouteImport.update({
+  id: '/ingredients',
+  path: '/ingredients',
+  getParentRoute: () => LayoutAdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof LayoutIndexRoute
@@ -107,13 +125,16 @@ export interface FileRoutesByFullPath {
   '/recover-password': typeof RecoverPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
-  '/admin': typeof LayoutAdminRoute
+  '/admin': typeof LayoutAdminRouteWithChildren
   '/settings': typeof LayoutSettingsRoute
   '/share-target': typeof LayoutShareTargetRoute
+  '/admin/ingredients': typeof LayoutAdminIngredientsRoute
+  '/admin/users': typeof LayoutAdminUsersRoute
   '/profile/$userId': typeof LayoutProfileUserIdRoute
   '/recipes/$id': typeof LayoutRecipesIdRoute
   '/recipes/public': typeof LayoutRecipesPublicRoute
   '/shopping-lists/$id': typeof LayoutShoppingListsIdRoute
+  '/admin/': typeof LayoutAdminIndexRoute
   '/recipes/': typeof LayoutRecipesIndexRoute
   '/shopping-lists/': typeof LayoutShoppingListsIndexRoute
 }
@@ -122,14 +143,16 @@ export interface FileRoutesByTo {
   '/recover-password': typeof RecoverPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
-  '/admin': typeof LayoutAdminRoute
   '/settings': typeof LayoutSettingsRoute
   '/share-target': typeof LayoutShareTargetRoute
   '/': typeof LayoutIndexRoute
+  '/admin/ingredients': typeof LayoutAdminIngredientsRoute
+  '/admin/users': typeof LayoutAdminUsersRoute
   '/profile/$userId': typeof LayoutProfileUserIdRoute
   '/recipes/$id': typeof LayoutRecipesIdRoute
   '/recipes/public': typeof LayoutRecipesPublicRoute
   '/shopping-lists/$id': typeof LayoutShoppingListsIdRoute
+  '/admin': typeof LayoutAdminIndexRoute
   '/recipes': typeof LayoutRecipesIndexRoute
   '/shopping-lists': typeof LayoutShoppingListsIndexRoute
 }
@@ -140,14 +163,17 @@ export interface FileRoutesById {
   '/recover-password': typeof RecoverPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
-  '/_layout/admin': typeof LayoutAdminRoute
+  '/_layout/admin': typeof LayoutAdminRouteWithChildren
   '/_layout/settings': typeof LayoutSettingsRoute
   '/_layout/share-target': typeof LayoutShareTargetRoute
   '/_layout/': typeof LayoutIndexRoute
+  '/_layout/admin/ingredients': typeof LayoutAdminIngredientsRoute
+  '/_layout/admin/users': typeof LayoutAdminUsersRoute
   '/_layout/profile/$userId': typeof LayoutProfileUserIdRoute
   '/_layout/recipes/$id': typeof LayoutRecipesIdRoute
   '/_layout/recipes/public': typeof LayoutRecipesPublicRoute
   '/_layout/shopping-lists/$id': typeof LayoutShoppingListsIdRoute
+  '/_layout/admin/': typeof LayoutAdminIndexRoute
   '/_layout/recipes/': typeof LayoutRecipesIndexRoute
   '/_layout/shopping-lists/': typeof LayoutShoppingListsIndexRoute
 }
@@ -162,10 +188,13 @@ export interface FileRouteTypes {
     | '/admin'
     | '/settings'
     | '/share-target'
+    | '/admin/ingredients'
+    | '/admin/users'
     | '/profile/$userId'
     | '/recipes/$id'
     | '/recipes/public'
     | '/shopping-lists/$id'
+    | '/admin/'
     | '/recipes/'
     | '/shopping-lists/'
   fileRoutesByTo: FileRoutesByTo
@@ -174,14 +203,16 @@ export interface FileRouteTypes {
     | '/recover-password'
     | '/reset-password'
     | '/signup'
-    | '/admin'
     | '/settings'
     | '/share-target'
     | '/'
+    | '/admin/ingredients'
+    | '/admin/users'
     | '/profile/$userId'
     | '/recipes/$id'
     | '/recipes/public'
     | '/shopping-lists/$id'
+    | '/admin'
     | '/recipes'
     | '/shopping-lists'
   id:
@@ -195,10 +226,13 @@ export interface FileRouteTypes {
     | '/_layout/settings'
     | '/_layout/share-target'
     | '/_layout/'
+    | '/_layout/admin/ingredients'
+    | '/_layout/admin/users'
     | '/_layout/profile/$userId'
     | '/_layout/recipes/$id'
     | '/_layout/recipes/public'
     | '/_layout/shopping-lists/$id'
+    | '/_layout/admin/'
     | '/_layout/recipes/'
     | '/_layout/shopping-lists/'
   fileRoutesById: FileRoutesById
@@ -290,6 +324,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutRecipesIndexRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/admin/': {
+      id: '/_layout/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof LayoutAdminIndexRouteImport
+      parentRoute: typeof LayoutAdminRoute
+    }
     '/_layout/shopping-lists/$id': {
       id: '/_layout/shopping-lists/$id'
       path: '/shopping-lists/$id'
@@ -318,11 +359,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutProfileUserIdRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/admin/users': {
+      id: '/_layout/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof LayoutAdminUsersRouteImport
+      parentRoute: typeof LayoutAdminRoute
+    }
+    '/_layout/admin/ingredients': {
+      id: '/_layout/admin/ingredients'
+      path: '/ingredients'
+      fullPath: '/admin/ingredients'
+      preLoaderRoute: typeof LayoutAdminIngredientsRouteImport
+      parentRoute: typeof LayoutAdminRoute
+    }
   }
 }
 
+interface LayoutAdminRouteChildren {
+  LayoutAdminIngredientsRoute: typeof LayoutAdminIngredientsRoute
+  LayoutAdminUsersRoute: typeof LayoutAdminUsersRoute
+  LayoutAdminIndexRoute: typeof LayoutAdminIndexRoute
+}
+
+const LayoutAdminRouteChildren: LayoutAdminRouteChildren = {
+  LayoutAdminIngredientsRoute: LayoutAdminIngredientsRoute,
+  LayoutAdminUsersRoute: LayoutAdminUsersRoute,
+  LayoutAdminIndexRoute: LayoutAdminIndexRoute,
+}
+
+const LayoutAdminRouteWithChildren = LayoutAdminRoute._addFileChildren(
+  LayoutAdminRouteChildren,
+)
+
 interface LayoutRouteChildren {
-  LayoutAdminRoute: typeof LayoutAdminRoute
+  LayoutAdminRoute: typeof LayoutAdminRouteWithChildren
   LayoutSettingsRoute: typeof LayoutSettingsRoute
   LayoutShareTargetRoute: typeof LayoutShareTargetRoute
   LayoutIndexRoute: typeof LayoutIndexRoute
@@ -335,7 +406,7 @@ interface LayoutRouteChildren {
 }
 
 const LayoutRouteChildren: LayoutRouteChildren = {
-  LayoutAdminRoute: LayoutAdminRoute,
+  LayoutAdminRoute: LayoutAdminRouteWithChildren,
   LayoutSettingsRoute: LayoutSettingsRoute,
   LayoutShareTargetRoute: LayoutShareTargetRoute,
   LayoutIndexRoute: LayoutIndexRoute,

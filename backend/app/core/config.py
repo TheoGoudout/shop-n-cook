@@ -128,6 +128,9 @@ class Settings(BaseSettings):
     GOOGLE_API_KEY: str | None = None
     GOOGLE_MODEL: str = "gemini-2.0-flash"
 
+    # Pexels ingredient images (https://www.pexels.com/api/)
+    PEXELS_API_KEY: str | None = None
+
     # LangSmith tracing (optional)
     LANGCHAIN_TRACING_V2: bool = False
     LANGCHAIN_API_KEY: str | None = None

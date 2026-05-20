@@ -6,7 +6,7 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
-_OFF_SEARCH_URL = "https://world.openfoodfacts.org/cgi/search.pl"
+_PEXELS_SEARCH_URL = "https://api.pexels.com/v1/search"
 
 _BATCH_CATEGORY_PROMPT = (
     "Classify each of the following food ingredients into exactly one of these categories: "
@@ -17,27 +17,27 @@ _BATCH_CATEGORY_PROMPT = (
 )
 
 
-def fetch_image_from_openfoodfacts(name: str) -> str | None:
+def fetch_image_from_pexels(name: str) -> str | None:
+    from app.core.config import settings
+
+    if not settings.PEXELS_API_KEY:
+        logger.warning("PEXELS_API_KEY not set; skipping image fetch for %r", name)
+        return None
     try:
         resp = httpx.get(
-            _OFF_SEARCH_URL,
-            params={
-                "search_terms": name,
-                "action": "process",
-                "json": "1",
-                "page_size": "1",
-            },
+            _PEXELS_SEARCH_URL,
+            params={"query": name, "per_page": 1, "orientation": "square"},
+            headers={"Authorization": settings.PEXELS_API_KEY},
             timeout=10,
-            headers={"User-Agent": "ShopNCook/1.0"},
         )
         resp.raise_for_status()
-        products = resp.json().get("products", [])
-        if not products:
+        photos = resp.json().get("photos", [])
+        if not photos:
             return None
-        product = products[0]
-        return product.get("image_front_url") or product.get("image_url") or None
+        src = photos[0].get("src", {})
+        return src.get("medium") or src.get("large") or None
     except Exception:
-        logger.warning("Failed to fetch image from Open Food Facts for %r", name)
+        logger.warning("Failed to fetch image from Pexels for %r", name)
         return None
 
 
@@ -76,9 +76,9 @@ def _suggest_categories_batch(names: list[str]) -> dict[str, str]:
 
 
 def fetch_and_update_ingredients_batch(ingredient_ids: list[uuid.UUID]) -> None:
-    """Fetch OFF images and suggest categories for a list of ingredients.
+    """Fetch Pexels images and suggest categories for a list of ingredients.
 
-    Makes a single LLM call for all category suggestions, then individual OFF
+    Makes a single LLM call for all category suggestions, then individual Pexels
     API calls per ingredient. Only updates fields that are still at their default.
     """
     from sqlmodel import Session
@@ -109,7 +109,7 @@ def fetch_and_update_ingredients_batch(ingredient_ids: list[uuid.UUID]) -> None:
                     ingredient.category = cat  # type: ignore[assignment]
 
         for ingredient in needs_image:
-            url = fetch_image_from_openfoodfacts(ingredient.name)
+            url = fetch_image_from_pexels(ingredient.name)
             if url:
                 ingredient.image_url = url
 

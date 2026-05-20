@@ -33,11 +33,12 @@ export const IngredientActionsMenu = ({
       IngredientsService.fetchIngredientImage({ id: ingredient.id }),
     onSuccess: () => {
       showSuccessToast(t("ingredient.fetch_image_queued"))
+      // Background task needs time to complete; refresh after a short delay
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ["ingredient-catalog"] })
+      }, 3000)
     },
     onError: handleError.bind(showErrorToast),
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["ingredient-catalog"] })
-    },
   })
 
   return (

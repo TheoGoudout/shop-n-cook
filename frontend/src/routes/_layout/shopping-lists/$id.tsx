@@ -168,7 +168,7 @@ function ShoppingTab({ list }: { list: ShoppingListPublic }) {
             <img
               src={catalogEntry.image_url}
               alt={item.name}
-              className="w-10 h-10 rounded-md object-cover shrink-0"
+              className="w-10 h-10 rounded-md object-contain shrink-0 bg-muted p-0.5"
             />
           )}
           <span

@@ -7,7 +7,7 @@ from sqlalchemy import DateTime
 from sqlmodel import Field, Relationship, SQLModel
 
 from app.models.base import get_datetime_utc
-from app.models.ingredient import Unit
+from app.models.ingredient import IngredientCategory, Unit
 
 if TYPE_CHECKING:
     from app.models.user import User
@@ -26,7 +26,7 @@ class RecipeIngredientBase(SQLModel):
 
 
 class RecipeIngredientCreate(RecipeIngredientBase):
-    pass
+    category: IngredientCategory | None = None
 
 
 class RecipeIngredientPublic(SQLModel):

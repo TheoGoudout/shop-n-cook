@@ -82,6 +82,7 @@ def _parsed_to_update(parsed: ParsedRecipe) -> RecipeUpdate:
             quantity=ing.quantity,
             unit=ing.unit,
             notes=ing.notes,
+            category=ing.category,
         )
         for ing in parsed.ingredients
     ]
@@ -160,13 +161,26 @@ def read_recipe(session: SessionDep, current_user: CurrentUser, id: uuid.UUID) -
 def _sync_ingredient_catalog(
     session: SessionDep,
     background_tasks: BackgroundTasks,
-    ingredient_names: list[str],
+    ingredients: list[RecipeIngredientCreate],
 ) -> None:
     ids_to_update = []
-    for name in ingredient_names:
-        ingredient, created = crud.get_or_create_ingredient(session=session, name=name)
-        if created or ingredient.category == IngredientCategory.OTHER:
+    needs_commit = False
+    for ing in ingredients:
+        ingredient, created = crud.get_or_create_ingredient(
+            session=session, name=ing.ingredient_name
+        )
+        if (
+            ing.category is not None
+            and ing.category != IngredientCategory.OTHER
+            and ingredient.category == IngredientCategory.OTHER
+        ):
+            ingredient.category = ing.category
+            session.add(ingredient)
+            needs_commit = True
+        if created or ingredient.category == IngredientCategory.OTHER or not ingredient.image_url:
             ids_to_update.append(ingredient.id)
+    if needs_commit:
+        session.commit()
     if ids_to_update:
         background_tasks.add_task(fetch_and_update_ingredients_batch, ids_to_update)
 
@@ -183,11 +197,7 @@ def create_recipe(
     recipe = crud.create_recipe(
         session=session, recipe_in=recipe_in, owner_id=current_user.id
     )
-    _sync_ingredient_catalog(
-        session,
-        background_tasks,
-        [i.ingredient_name for i in recipe_in.ingredients or []],
-    )
+    _sync_ingredient_catalog(session, background_tasks, recipe_in.ingredients or [])
     return crud.recipe_to_public(recipe)
 
 
@@ -211,11 +221,7 @@ def update_recipe(
             status_code=422, detail="Cannot make a public recipe private"
         )
     recipe = crud.update_recipe(session=session, db_recipe=recipe, recipe_in=recipe_in)
-    _sync_ingredient_catalog(
-        session,
-        background_tasks,
-        [i.ingredient_name for i in recipe_in.ingredients or []],
-    )
+    _sync_ingredient_catalog(session, background_tasks, recipe_in.ingredients or [])
     return crud.recipe_to_public(recipe)
 
 
@@ -250,11 +256,7 @@ def reimport_recipe(
         ) from exc
     recipe_in = _parsed_to_update(parsed)
     recipe = crud.update_recipe(session=session, db_recipe=recipe, recipe_in=recipe_in)
-    _sync_ingredient_catalog(
-        session,
-        background_tasks,
-        [i.ingredient_name for i in recipe_in.ingredients or []],
-    )
+    _sync_ingredient_catalog(session, background_tasks, recipe_in.ingredients or [])
     return crud.recipe_to_public(recipe)
 
 

@@ -18,7 +18,8 @@
     "meals_empty": "No recipes planned yet. Go back and use \"Add recipe\" on the shopping list.",
     "recipes_count": "{{count}} recipes",
     "scaled_from": "· scaled from {{count}} servings",
-    "ingredients_count": "{{count}} ingredients"
+    "ingredients_count": "{{count}} ingredients",
+    "done": "Done"
   },
   "card": {
     "items_count": "{{checked}}/{{total}} items",

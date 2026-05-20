@@ -24,6 +24,7 @@
   "recipe": "Recette",
   "new": "nouveau",
   "done": "Terminé",
+  "none": "Aucun",
   "source": "Source",
   "tagline": "Votre cuisine, organisée.",
   "no_results": "Aucun résultat trouvé.",

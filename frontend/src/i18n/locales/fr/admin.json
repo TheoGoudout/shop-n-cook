@@ -5,7 +5,12 @@
   },
   "ingredients": {
     "title": "Ingrédients",
-    "subtitle": "Gérez le catalogue d'ingrédients"
+    "subtitle": "Gérez le catalogue d'ingrédients",
+    "empty": "Aucun ingrédient dans le catalogue pour l'instant."
+  },
+  "tabs": {
+    "users": "Utilisateurs",
+    "ingredients": "Ingrédients"
   },
   "columns": {
     "full_name": "Nom complet",
@@ -57,6 +62,8 @@
     "deduplicate_confirm_title": "Dédupliquer les ingrédients ?",
     "deduplicate_confirm_description": "Les entrées du catalogue en double seront fusionnées et toutes les recettes et listes de courses seront mises à jour avec le nom canonique. Cette action est irréversible.",
     "deduplicate_success": "{{count}} doublon(s) supprimé(s)",
-    "deduplicate_none": "Aucun doublon trouvé"
+    "deduplicate_none": "Aucun doublon trouvé",
+    "edit": "Modifier",
+    "edit_title": "Modifier : {{name}}"
   }
 }

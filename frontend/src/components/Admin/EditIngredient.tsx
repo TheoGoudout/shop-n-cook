@@ -107,13 +107,15 @@ const EditIngredient = ({ ingredient, onSuccess }: EditIngredientProps) => {
         onClick={() => setIsOpen(true)}
       >
         <Pencil />
-        Edit
+        {t("ingredient.edit", { ns: "admin" })}
       </DropdownMenuItem>
       <DialogContent className="sm:max-w-md">
         <Form {...form}>
           <form onSubmit={form.handleSubmit((d) => mutation.mutate(d))}>
             <DialogHeader>
-              <DialogTitle>Edit: {ingredient.name}</DialogTitle>
+              <DialogTitle>
+                {t("ingredient.edit_title", { ns: "admin", name: ingredient.name })}
+              </DialogTitle>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <FormField

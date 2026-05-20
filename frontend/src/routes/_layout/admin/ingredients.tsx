@@ -98,7 +98,7 @@ function IngredientsTableContent() {
   if (ingredients.length === 0) {
     return (
       <p className="text-sm text-muted-foreground italic py-8 text-center">
-        No ingredients in the catalog yet.
+        {t("ingredients.empty", { ns: "admin" })}
       </p>
     )
   }
@@ -112,7 +112,7 @@ function IngredientsTableContent() {
             <th className="text-left font-medium p-3">{t("name")}</th>
             <th className="text-left font-medium p-3">{t("category")}</th>
             <th className="text-left font-medium p-3 hidden sm:table-cell">
-              Image URL
+              {t("ingredient.image_url", { ns: "admin" })}
             </th>
             <th className="p-3 w-12">
               <span className="sr-only">{t("actions")}</span>
@@ -157,7 +157,7 @@ function IngredientsTableContent() {
                     </a>
                   ) : (
                     <span className="text-xs text-muted-foreground italic">
-                      None
+                      {t("none")}
                     </span>
                   )}
                 </td>

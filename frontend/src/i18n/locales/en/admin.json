@@ -5,7 +5,12 @@
   },
   "ingredients": {
     "title": "Ingredients",
-    "subtitle": "Manage the ingredient catalog"
+    "subtitle": "Manage the ingredient catalog",
+    "empty": "No ingredients in the catalog yet."
+  },
+  "tabs": {
+    "users": "Users",
+    "ingredients": "Ingredients"
   },
   "columns": {
     "full_name": "Full Name",
@@ -57,6 +62,8 @@
     "deduplicate_confirm_title": "Deduplicate ingredients?",
     "deduplicate_confirm_description": "Duplicate catalog entries will be merged and all recipes and shopping lists will be updated to use the canonical name. This cannot be undone.",
     "deduplicate_success": "{{count}} duplicate(s) removed",
-    "deduplicate_none": "No duplicates found"
+    "deduplicate_none": "No duplicates found",
+    "edit": "Edit",
+    "edit_title": "Edit: {{name}}"
   }
 }

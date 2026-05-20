@@ -101,7 +101,9 @@
     "search_placeholder": "Search community recipes…",
     "by_author": "by {{name}}",
     "empty_title": "No public recipes yet",
-    "empty_subtitle": "Be the first to share a recipe with the community!"
+    "empty_subtitle": "Be the first to share a recipe with the community!",
+    "recipe_count_one": "{{count}} recipe",
+    "recipe_count_other": "{{count}} recipes"
   },
   "profile": {
     "back": "Back to Community",

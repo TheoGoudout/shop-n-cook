@@ -101,7 +101,9 @@
     "search_placeholder": "Rechercher des recettes…",
     "by_author": "par {{name}}",
     "empty_title": "Aucune recette publique pour l'instant",
-    "empty_subtitle": "Soyez le premier à partager une recette avec la communauté !"
+    "empty_subtitle": "Soyez le premier à partager une recette avec la communauté !",
+    "recipe_count_one": "{{count}} recette",
+    "recipe_count_other": "{{count}} recettes"
   },
   "profile": {
     "back": "Retour à la communauté",

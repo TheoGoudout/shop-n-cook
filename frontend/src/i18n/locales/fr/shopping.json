@@ -18,7 +18,8 @@
     "meals_empty": "Aucune recette planifiée pour l'instant. Revenez en arrière et utilisez « Ajouter une recette » sur la liste de courses.",
     "recipes_count": "{{count}} recettes",
     "scaled_from": "· mis à l'échelle depuis {{count}} portions",
-    "ingredients_count": "{{count}} ingrédients"
+    "ingredients_count": "{{count}} ingrédients",
+    "done": "Terminé"
   },
   "card": {
     "items_count": "{{checked}}/{{total}} articles",

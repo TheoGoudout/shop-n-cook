@@ -128,6 +128,9 @@ class Settings(BaseSettings):
     GOOGLE_API_KEY: str | None = None
     GOOGLE_MODEL: str = "gemini-2.0-flash"
 
+    # Unsplash ingredient images (https://unsplash.com/developers)
+    UNSPLASH_ACCESS_KEY: str | None = None
+
     # LangSmith tracing (optional)
     LANGCHAIN_TRACING_V2: bool = False
     LANGCHAIN_API_KEY: str | None = None

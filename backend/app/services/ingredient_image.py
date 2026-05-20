@@ -6,7 +6,7 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
-_OFF_SEARCH_URL = "https://world.openfoodfacts.org/cgi/search.pl"
+_UNSPLASH_SEARCH_URL = "https://api.unsplash.com/search/photos"
 
 _BATCH_CATEGORY_PROMPT = (
     "Classify each of the following food ingredients into exactly one of these categories: "
@@ -17,27 +17,30 @@ _BATCH_CATEGORY_PROMPT = (
 )
 
 
-def fetch_image_from_openfoodfacts(name: str) -> str | None:
+def fetch_image_from_unsplash(name: str) -> str | None:
+    from app.core.config import settings
+
+    if not settings.UNSPLASH_ACCESS_KEY:
+        logger.warning("UNSPLASH_ACCESS_KEY not set; skipping image fetch for %r", name)
+        return None
     try:
         resp = httpx.get(
-            _OFF_SEARCH_URL,
-            params={
-                "search_terms": name,
-                "action": "process",
-                "json": "1",
-                "page_size": "1",
+            _UNSPLASH_SEARCH_URL,
+            params={"query": name, "per_page": 1, "orientation": "squarish"},
+            headers={
+                "Authorization": f"Client-ID {settings.UNSPLASH_ACCESS_KEY}",
+                "Accept-Version": "v1",
             },
             timeout=10,
-            headers={"User-Agent": "ShopNCook/1.0"},
         )
         resp.raise_for_status()
-        products = resp.json().get("products", [])
-        if not products:
+        results = resp.json().get("results", [])
+        if not results:
             return None
-        product = products[0]
-        return product.get("image_front_url") or product.get("image_url") or None
+        urls = results[0].get("urls", {})
+        return urls.get("small") or urls.get("regular") or None
     except Exception:
-        logger.warning("Failed to fetch image from Open Food Facts for %r", name)
+        logger.warning("Failed to fetch image from Unsplash for %r", name)
         return None
 
 
@@ -109,7 +112,7 @@ def fetch_and_update_ingredients_batch(ingredient_ids: list[uuid.UUID]) -> None:
                     ingredient.category = cat  # type: ignore[assignment]
 
         for ingredient in needs_image:
-            url = fetch_image_from_openfoodfacts(ingredient.name)
+            url = fetch_image_from_unsplash(ingredient.name)
             if url:
                 ingredient.image_url = url
 

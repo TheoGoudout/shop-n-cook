@@ -18,7 +18,7 @@ from langchain_core.rate_limiters import InMemoryRateLimiter
 from pydantic import BaseModel
 
 from app.core.config import settings
-from app.models.ingredient import Unit
+from app.models.ingredient import IngredientCategory, Unit
 
 
 class ParsedIngredient(BaseModel):
@@ -26,6 +26,7 @@ class ParsedIngredient(BaseModel):
     quantity: float
     unit: Unit
     notes: str | None = None
+    category: IngredientCategory = IngredientCategory.OTHER
 
 
 class ParsedStep(BaseModel):
@@ -46,6 +47,7 @@ class ParsedRecipe(BaseModel):
 
 
 _UNITS = ", ".join(u.value for u in Unit)
+_CATEGORIES = ", ".join(c.value for c in IngredientCategory)
 
 
 def _build_system_prompt(language: str | None = None) -> str:
@@ -79,7 +81,8 @@ Return ONLY a valid JSON object with this exact structure:
       "name": "ingredient name",
       "quantity": numeric value,
       "unit": "unit string (use one of: {_UNITS})",
-      "notes": "optional preparation note or null"
+      "notes": "optional preparation note or null",
+      "category": "one of: {_CATEGORIES}"
     }}
   ],
   "steps": [
@@ -98,6 +101,7 @@ Rules:
 - If quantity is fractional (e.g. 1/2), convert to decimal (0.5)
 - If no unit applies, use "piece"
 - Only include ingredients with a measurable quantity — skip garnishes, serving suggestions, or "to taste"/"to serve" items that have no defined amount
+- For each ingredient, set "category" to the most appropriate value from: {_CATEGORIES}
 {lang_rule}
 - Do not include any text outside the JSON object"""
 
@@ -130,7 +134,7 @@ def _get_llm() -> BaseChatModel:
             api_key=settings.ANTHROPIC_API_KEY,  # type: ignore[arg-type]
             max_retries=2,
             timeout=60,
-            max_tokens=2048,
+            max_tokens=2560,
             temperature=0,
             rate_limiter=rate_limiter,
         )

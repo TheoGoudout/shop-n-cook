@@ -263,6 +263,10 @@ export const ParsedIngredientSchema = {
                 }
             ],
             title: 'Notes'
+        },
+        category: {
+            '$ref': '#/components/schemas/IngredientCategory',
+            default: 'other'
         }
     },
     type: 'object',
@@ -546,6 +550,16 @@ export const RecipeIngredientCreateSchema = {
                 }
             ],
             title: 'Notes'
+        },
+        category: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/IngredientCategory'
+                },
+                {
+                    type: 'null'
+                }
+            ]
         }
     },
     type: 'object',

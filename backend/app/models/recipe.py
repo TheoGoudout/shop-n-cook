@@ -27,6 +27,7 @@ class RecipeIngredientBase(SQLModel):
 
 class RecipeIngredientCreate(RecipeIngredientBase):
     category: IngredientCategory | None = None
+    name_en: str | None = None
 
 
 class RecipeIngredientPublic(SQLModel):

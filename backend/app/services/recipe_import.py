@@ -23,6 +23,7 @@ from app.models.ingredient import IngredientCategory, Unit
 
 class ParsedIngredient(BaseModel):
     name: str
+    name_en: str | None = None
     quantity: float
     unit: Unit
     notes: str | None = None
@@ -79,6 +80,7 @@ Return ONLY a valid JSON object with this exact structure:
   "ingredients": [
     {{
       "name": "ingredient name",
+      "name_en": "ingredient name in English",
       "quantity": numeric value,
       "unit": "unit string (use one of: {_UNITS})",
       "notes": "optional preparation note or null",
@@ -102,6 +104,7 @@ Rules:
 - If no unit applies, use "piece"
 - Only include ingredients with a measurable quantity — skip garnishes, serving suggestions, or "to taste"/"to serve" items that have no defined amount
 - For each ingredient, set "category" to the most appropriate value from: {_CATEGORIES}
+- For "name_en": always use the English name regardless of the interface language (if the name is already in English, repeat it unchanged)
 {lang_rule}
 - Do not include any text outside the JSON object"""
 

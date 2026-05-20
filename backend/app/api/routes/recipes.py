@@ -79,6 +79,7 @@ def _parsed_to_update(parsed: ParsedRecipe) -> RecipeUpdate:
     ingredients = [
         RecipeIngredientCreate(
             ingredient_name=ing.name,
+            name_en=ing.name_en,
             quantity=ing.quantity,
             unit=ing.unit,
             notes=ing.notes,
@@ -169,12 +170,18 @@ def _sync_ingredient_catalog(
         ingredient, created = crud.get_or_create_ingredient(
             session=session, name=ing.ingredient_name
         )
+        changed = False
         if (
             ing.category is not None
             and ing.category != IngredientCategory.OTHER
             and ingredient.category == IngredientCategory.OTHER
         ):
             ingredient.category = ing.category
+            changed = True
+        if ing.name_en and not ingredient.name_en:
+            ingredient.name_en = ing.name_en
+            changed = True
+        if changed:
             session.add(ingredient)
             needs_commit = True
         if (

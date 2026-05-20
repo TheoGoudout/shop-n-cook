@@ -29,6 +29,7 @@ export type IngredientCreate = {
 export type IngredientPublic = {
     id: string;
     name: string;
+    name_en: (string | null);
     category: IngredientCategory;
     image_url: (string | null);
 };
@@ -54,6 +55,7 @@ export type NewPassword = {
 
 export type ParsedIngredient = {
     name: string;
+    name_en?: (string | null);
     quantity: number;
     unit: Unit;
     notes?: (string | null);
@@ -104,6 +106,7 @@ export type RecipeIngredientCreate = {
     unit: Unit;
     notes?: (string | null);
     category?: (IngredientCategory | null);
+    name_en?: (string | null);
 };
 
 export type RecipeIngredientPublic = {

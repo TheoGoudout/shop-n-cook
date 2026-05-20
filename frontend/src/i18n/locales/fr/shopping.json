@@ -44,6 +44,7 @@
   "add_item_dialog": {
     "title": "Ajouter un article",
     "ingredient_label": "Ingrédient",
+    "item_name_placeholder": "Ex. : Papier toilette, Lait…",
     "quantity_label": "Quantité",
     "unit_label": "Unité",
     "select_ingredient": "Sélectionner un ingrédient",

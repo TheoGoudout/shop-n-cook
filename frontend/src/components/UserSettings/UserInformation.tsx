@@ -22,12 +22,10 @@ import useCustomToast from "@/hooks/useCustomToast"
 import { cn } from "@/lib/utils"
 import { handleError } from "@/utils"
 
-const formSchema = z.object({
-  full_name: z.string().max(30).optional(),
-  email: z.email({ message: "Invalid email address" }),
-})
-
-type FormData = z.infer<typeof formSchema>
+type FormData = {
+  full_name?: string
+  email: string
+}
 
 const UserInformation = () => {
   const { t } = useTranslation("settings")
@@ -35,6 +33,11 @@ const UserInformation = () => {
   const { showSuccessToast, showErrorToast } = useCustomToast()
   const [editMode, setEditMode] = useState(false)
   const { user: currentUser } = useAuth()
+
+  const formSchema = z.object({
+    full_name: z.string().max(30).optional(),
+    email: z.email({ message: t("user_info.email_invalid") }),
+  })
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),

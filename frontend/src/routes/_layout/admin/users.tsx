@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next"
 
 import { type UserPublic, UsersService } from "@/client"
 import AddUser from "@/components/Admin/AddUser"
-import { columns, type UserTableData } from "@/components/Admin/columns"
+import { useUserColumns, type UserTableData } from "@/components/Admin/columns"
 import { DataTable } from "@/components/Common/DataTable"
 import PendingUsers from "@/components/Pending/PendingUsers"
 import useAuth from "@/hooks/useAuth"
@@ -28,6 +28,7 @@ export const Route = createFileRoute("/_layout/admin/users")({
 function UsersTableContent() {
   const { user: currentUser } = useAuth()
   const { data: users } = useSuspenseQuery(getUsersQueryOptions())
+  const columns = useUserColumns()
 
   const tableData: UserTableData[] = users.data.map((user: UserPublic) => ({
     ...user,

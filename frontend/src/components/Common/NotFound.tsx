@@ -1,7 +1,10 @@
 import { Link } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 
 const NotFound = () => {
+  const { t } = useTranslation("common")
+
   return (
     <div
       className="flex min-h-screen items-center justify-center flex-col p-4"
@@ -12,16 +15,16 @@ const NotFound = () => {
           <span className="text-6xl md:text-8xl font-bold leading-none mb-4">
             404
           </span>
-          <span className="text-2xl font-bold mb-2">Oops!</span>
+          <span className="text-2xl font-bold mb-2">{t("not_found.oops")}</span>
         </div>
       </div>
 
       <p className="text-lg text-muted-foreground mb-4 text-center z-10">
-        The page you are looking for was not found.
+        {t("not_found.message")}
       </p>
       <div className="z-10">
         <Link to="/">
-          <Button className="mt-4">Go Back</Button>
+          <Button className="mt-4">{t("not_found.go_back")}</Button>
         </Link>
       </div>
     </div>

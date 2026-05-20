@@ -22,24 +22,12 @@ import { PasswordInput } from "@/components/ui/password-input"
 import useAuth, { isLoggedIn } from "@/hooks/useAuth"
 import { APP_NAME } from "@/lib/config"
 
-const formSchema = z
-  .object({
-    email: z.email(),
-    full_name: z.string().min(1, { message: "Full Name is required" }),
-    password: z
-      .string()
-      .min(1, { message: "Password is required" })
-      .min(8, { message: "Password must be at least 8 characters" }),
-    confirm_password: z
-      .string()
-      .min(1, { message: "Password confirmation is required" }),
-  })
-  .refine((data) => data.password === data.confirm_password, {
-    message: "The passwords don't match",
-    path: ["confirm_password"],
-  })
-
-type FormData = z.infer<typeof formSchema>
+type FormData = {
+  email: string
+  full_name: string
+  password: string
+  confirm_password: string
+}
 
 export const Route = createFileRoute("/signup")({
   component: SignUp,
@@ -62,6 +50,24 @@ export const Route = createFileRoute("/signup")({
 function SignUp() {
   const { t } = useTranslation("auth")
   const { signUpMutation } = useAuth()
+
+  const formSchema = z
+    .object({
+      email: z.email(),
+      full_name: z.string().min(1, { message: t("validation.full_name_required") }),
+      password: z
+        .string()
+        .min(1, { message: t("validation.password_required") })
+        .min(8, { message: t("validation.password_min") }),
+      confirm_password: z
+        .string()
+        .min(1, { message: t("validation.confirm_required") }),
+    })
+    .refine((data) => data.password === data.confirm_password, {
+      message: t("validation.passwords_mismatch"),
+      path: ["confirm_password"],
+    })
+
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     mode: "onBlur",

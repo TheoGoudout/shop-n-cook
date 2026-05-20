@@ -8,6 +8,30 @@ logger = logging.getLogger(__name__)
 
 _PEXELS_SEARCH_URL = "https://api.pexels.com/v1/search"
 
+_NEGATIVE_WORDS = {
+    "basket",
+    "bowl",
+    "plate",
+    "dish",
+    "meal",
+    "recipe",
+    "person",
+    "people",
+    "man",
+    "woman",
+    "girl",
+    "boy",
+    "child",
+    "hands",
+    "market",
+    "store",
+    "shop",
+    "supermarket",
+    "cooking",
+    "chef",
+    "baking",
+}
+
 _BATCH_CATEGORY_PROMPT = (
     "Classify each of the following food ingredients into exactly one of these categories: "
     "produce, dairy, meat, seafood, grains, pantry, spices, beverages, frozen, bakery, other.\n\n"
@@ -15,6 +39,15 @@ _BATCH_CATEGORY_PROMPT = (
     "and the value is its category.\n\n"
     "Ingredients:\n{names_list}"
 )
+
+
+def _score_photo(alt: str, name: str) -> int:
+    words = set(alt.lower().split())
+    score = 0
+    if name.lower() in words:
+        score += 3
+    score -= 2 * len(words & _NEGATIVE_WORDS)
+    return score
 
 
 def fetch_image_from_pexels(name: str) -> str | None:
@@ -26,7 +59,11 @@ def fetch_image_from_pexels(name: str) -> str | None:
     try:
         resp = httpx.get(
             _PEXELS_SEARCH_URL,
-            params={"query": name, "per_page": 1, "orientation": "square"},
+            params={
+                "query": f"{name} food ingredient",
+                "per_page": 15,
+                "orientation": "square",
+            },
             headers={"Authorization": settings.PEXELS_API_KEY},
             timeout=10,
         )
@@ -34,7 +71,8 @@ def fetch_image_from_pexels(name: str) -> str | None:
         photos = resp.json().get("photos", [])
         if not photos:
             return None
-        src = photos[0].get("src", {})
+        best = max(photos, key=lambda p: _score_photo(p.get("alt", ""), name))
+        src = best.get("src", {})
         return src.get("medium") or src.get("large") or None
     except Exception:
         logger.warning("Failed to fetch image from Pexels for %r", name)

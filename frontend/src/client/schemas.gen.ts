@@ -143,6 +143,17 @@ export const IngredientPublicSchema = {
             type: 'string',
             title: 'Name'
         },
+        name_en: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name En'
+        },
         category: {
             '$ref': '#/components/schemas/IngredientCategory'
         },
@@ -159,7 +170,7 @@ export const IngredientPublicSchema = {
         }
     },
     type: 'object',
-    required: ['id', 'name', 'category', 'image_url'],
+    required: ['id', 'name', 'name_en', 'category', 'image_url'],
     title: 'IngredientPublic'
 } as const;
 
@@ -245,6 +256,17 @@ export const ParsedIngredientSchema = {
         name: {
             type: 'string',
             title: 'Name'
+        },
+        name_en: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name En'
         },
         quantity: {
             type: 'number',
@@ -560,6 +582,17 @@ export const RecipeIngredientCreateSchema = {
                     type: 'null'
                 }
             ]
+        },
+        name_en: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name En'
         }
     },
     type: 'object',

@@ -1,7 +1,11 @@
 {
-  "page": {
+  "users": {
     "title": "Utilisateurs",
     "subtitle": "Gérez les comptes utilisateurs et les permissions"
+  },
+  "ingredients": {
+    "title": "Ingrédients",
+    "subtitle": "Gérez le catalogue d'ingrédients"
   },
   "columns": {
     "full_name": "Nom complet",

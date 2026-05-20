@@ -1,7 +1,11 @@
 {
-  "page": {
+  "users": {
     "title": "Users",
     "subtitle": "Manage user accounts and permissions"
+  },
+  "ingredients": {
+    "title": "Ingredients",
+    "subtitle": "Manage the ingredient catalog"
   },
   "columns": {
     "full_name": "Full Name",

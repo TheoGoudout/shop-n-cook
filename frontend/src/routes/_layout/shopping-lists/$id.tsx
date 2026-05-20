@@ -84,6 +84,20 @@ function recipeBreakdown(
 
 // ---- Shopping tab ---- //
 
+const CATEGORY_ORDER = [
+  "produce",
+  "dairy",
+  "meat",
+  "seafood",
+  "grains",
+  "pantry",
+  "spices",
+  "beverages",
+  "frozen",
+  "bakery",
+  "other",
+] as const
+
 function ShoppingTab({ list }: { list: ShoppingListPublic }) {
   const { t } = useTranslation("shopping")
   const { t: tCommon } = useTranslation("common")
@@ -126,6 +140,79 @@ function ShoppingTab({ list }: { list: ShoppingListPublic }) {
 
   const checkedCount = items.filter((i) => i.is_checked).length
 
+  const grouped = CATEGORY_ORDER.map((cat) => ({
+    category: cat,
+    items: items.filter(
+      (item) =>
+        (catalog.get(item.name.toLowerCase())?.category ?? "other") === cat,
+    ),
+  })).filter((g) => g.items.length > 0)
+
+  const renderItem = (item: ShoppingListItemPublic) => {
+    const breakdown = recipeBreakdown(item, planned)
+    const converted = convert(item.quantity, item.unit)
+    const catalogEntry = catalog.get(item.name.toLowerCase())
+    return (
+      <div key={item.id} className="group">
+        <div className="flex items-center gap-2">
+          <Checkbox
+            checked={item.is_checked}
+            onCheckedChange={(c) =>
+              checkMutation.mutate({
+                itemId: item.id,
+                checked: Boolean(c),
+              })
+            }
+          />
+          {catalogEntry?.image_url && (
+            <img
+              src={catalogEntry.image_url}
+              alt={item.name}
+              className="w-5 h-5 rounded object-cover shrink-0"
+            />
+          )}
+          <span
+            className={`flex-1 text-sm font-medium ${item.is_checked ? "line-through text-muted-foreground" : ""}`}
+          >
+            {item.name}
+          </span>
+          <span className="text-sm text-muted-foreground">
+            {converted.quantity}{" "}
+            {tCommon(`unit_labels.${converted.unit}`, {
+              defaultValue: converted.unit,
+            })}
+          </span>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 opacity-0 group-hover:opacity-100"
+            onClick={() => removeItemMutation.mutate(item.id)}
+          >
+            <Trash2 className="h-3 w-3" />
+          </Button>
+        </div>
+        {breakdown.length > 1 && (
+          <div className="ml-6 mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5">
+            {breakdown.map((b) => {
+              const convertedB = convert(b.quantity, b.unit)
+              return (
+                <span
+                  key={b.title}
+                  className="text-xs text-muted-foreground"
+                >
+                  {b.title}: {convertedB.quantity}{" "}
+                  {tCommon(`unit_labels.${convertedB.unit}`, {
+                    defaultValue: convertedB.unit,
+                  })}
+                </span>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
@@ -134,79 +221,20 @@ function ShoppingTab({ list }: { list: ShoppingListPublic }) {
           total: items.length,
         })}
       </p>
-      <Card>
-        <CardHeader className="py-3 px-4">
-          <CardTitle className="text-sm text-muted-foreground font-medium tracking-wide">
-            {t("detail.items_label", { defaultValue: "Items" })}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="px-4 pb-3 space-y-2">
-          {items.map((item) => {
-            const breakdown = recipeBreakdown(item, planned)
-            const converted = convert(item.quantity, item.unit)
-            const catalogEntry = catalog.get(item.name.toLowerCase())
-            return (
-              <div key={item.id} className="group">
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    checked={item.is_checked}
-                    onCheckedChange={(c) =>
-                      checkMutation.mutate({
-                        itemId: item.id,
-                        checked: Boolean(c),
-                      })
-                    }
-                  />
-                  {catalogEntry?.image_url && (
-                    <img
-                      src={catalogEntry.image_url}
-                      alt={item.name}
-                      className="w-5 h-5 rounded object-cover shrink-0"
-                    />
-                  )}
-                  <span
-                    className={`flex-1 text-sm font-medium ${item.is_checked ? "line-through text-muted-foreground" : ""}`}
-                  >
-                    {item.name}
-                  </span>
-                  <span className="text-sm text-muted-foreground">
-                    {converted.quantity}{" "}
-                    {tCommon(`unit_labels.${converted.unit}`, {
-                      defaultValue: converted.unit,
-                    })}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 opacity-0 group-hover:opacity-100"
-                    onClick={() => removeItemMutation.mutate(item.id)}
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
-                </div>
-                {breakdown.length > 1 && (
-                  <div className="ml-6 mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5">
-                    {breakdown.map((b) => {
-                      const convertedB = convert(b.quantity, b.unit)
-                      return (
-                        <span
-                          key={b.title}
-                          className="text-xs text-muted-foreground"
-                        >
-                          {b.title}: {convertedB.quantity}{" "}
-                          {tCommon(`unit_labels.${convertedB.unit}`, {
-                            defaultValue: convertedB.unit,
-                          })}
-                        </span>
-                      )
-                    })}
-                  </div>
-                )}
-              </div>
-            )
-          })}
-        </CardContent>
-      </Card>
+      <div className="space-y-4">
+        {grouped.map(({ category, items: groupItems }) => (
+          <Card key={category}>
+            <CardHeader className="py-3 px-4">
+              <CardTitle className="text-sm text-muted-foreground font-medium tracking-wide">
+                {tCommon(`categories.${category}`, { defaultValue: category })}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-3 space-y-2">
+              {groupItems.map(renderItem)}
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   )
 }

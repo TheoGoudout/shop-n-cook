@@ -124,6 +124,7 @@ function RecipeDetailContent() {
                 const catalogEntry = catalog.get(
                   ing.ingredient_name.toLowerCase(),
                 )
+                const category = catalogEntry?.category ?? "other"
                 return (
                   <li key={ing.id} className="text-sm">
                     <div className="flex items-center justify-between">
@@ -136,6 +137,11 @@ function RecipeDetailContent() {
                           />
                         )}
                         <span>{ing.ingredient_name}</span>
+                        <Badge variant="outline" className="text-xs font-normal">
+                          {tCommon(`categories.${category}`, {
+                            defaultValue: category,
+                          })}
+                        </Badge>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-muted-foreground">

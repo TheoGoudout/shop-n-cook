@@ -58,10 +58,10 @@ function IngredientsTableContent() {
                     <img
                       src={ingredient.image_url}
                       alt={ingredient.name}
-                      className="w-10 h-10 rounded-md object-contain bg-muted p-0.5"
+                      className="w-10 h-10 rounded-md object-contain shrink-0 bg-muted p-0.5"
                     />
                   ) : (
-                    <div className="w-10 h-10 rounded-md bg-muted flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-md shrink-0 bg-muted flex items-center justify-center">
                       <Package className="h-4 w-4 text-muted-foreground" />
                     </div>
                   )}

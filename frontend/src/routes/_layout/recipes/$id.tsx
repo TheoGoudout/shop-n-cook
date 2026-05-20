@@ -137,7 +137,10 @@ function RecipeDetailContent() {
                           />
                         )}
                         <span>{ing.ingredient_name}</span>
-                        <Badge variant="outline" className="text-xs font-normal">
+                        <Badge
+                          variant="outline"
+                          className="text-xs font-normal"
+                        >
                           {tCommon(`categories.${category}`, {
                             defaultValue: category,
                           })}

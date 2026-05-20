@@ -196,10 +196,7 @@ function ShoppingTab({ list }: { list: ShoppingListPublic }) {
             {breakdown.map((b) => {
               const convertedB = convert(b.quantity, b.unit)
               return (
-                <span
-                  key={b.title}
-                  className="text-xs text-muted-foreground"
-                >
+                <span key={b.title} className="text-xs text-muted-foreground">
                   {b.title}: {convertedB.quantity}{" "}
                   {tCommon(`unit_labels.${convertedB.unit}`, {
                     defaultValue: convertedB.unit,

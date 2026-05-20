@@ -177,7 +177,11 @@ def _sync_ingredient_catalog(
             ingredient.category = ing.category
             session.add(ingredient)
             needs_commit = True
-        if created or ingredient.category == IngredientCategory.OTHER or not ingredient.image_url:
+        if (
+            created
+            or ingredient.category == IngredientCategory.OTHER
+            or not ingredient.image_url
+        ):
             ids_to_update.append(ingredient.id)
     if needs_commit:
         session.commit()

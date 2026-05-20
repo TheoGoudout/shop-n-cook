@@ -57,6 +57,7 @@ export type ParsedIngredient = {
     quantity: number;
     unit: Unit;
     notes?: (string | null);
+    category?: IngredientCategory;
 };
 
 export type ParsedRecipe = {
@@ -102,6 +103,7 @@ export type RecipeIngredientCreate = {
     quantity: number;
     unit: Unit;
     notes?: (string | null);
+    category?: (IngredientCategory | null);
 };
 
 export type RecipeIngredientPublic = {

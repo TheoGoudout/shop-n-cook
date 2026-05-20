@@ -9,10 +9,27 @@ logger = logging.getLogger(__name__)
 _PEXELS_SEARCH_URL = "https://api.pexels.com/v1/search"
 
 _NEGATIVE_WORDS = {
-    "basket", "bowl", "plate", "dish", "meal", "recipe",
-    "person", "people", "man", "woman", "girl", "boy", "child", "hands",
-    "market", "store", "shop", "supermarket",
-    "cooking", "chef", "baking",
+    "basket",
+    "bowl",
+    "plate",
+    "dish",
+    "meal",
+    "recipe",
+    "person",
+    "people",
+    "man",
+    "woman",
+    "girl",
+    "boy",
+    "child",
+    "hands",
+    "market",
+    "store",
+    "shop",
+    "supermarket",
+    "cooking",
+    "chef",
+    "baking",
 }
 
 _BATCH_CATEGORY_PROMPT = (
@@ -42,7 +59,11 @@ def fetch_image_from_pexels(name: str) -> str | None:
     try:
         resp = httpx.get(
             _PEXELS_SEARCH_URL,
-            params={"query": f"{name} food ingredient", "per_page": 15, "orientation": "square"},
+            params={
+                "query": f"{name} food ingredient",
+                "per_page": 15,
+                "orientation": "square",
+            },
             headers={"Authorization": settings.PEXELS_API_KEY},
             timeout=10,
         )

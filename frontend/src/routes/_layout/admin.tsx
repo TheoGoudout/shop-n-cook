@@ -5,6 +5,7 @@ import {
   useLocation,
   useNavigate,
 } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 
 import { UsersService } from "@/client"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -26,6 +27,7 @@ export const Route = createFileRoute("/_layout/admin")({
 function AdminLayout() {
   const navigate = useNavigate()
   const location = useLocation()
+  const { t } = useTranslation("admin")
   const activeTab = location.pathname.endsWith("ingredients")
     ? "ingredients"
     : "users"
@@ -37,8 +39,8 @@ function AdminLayout() {
         onValueChange={(val) => navigate({ to: `/admin/${val}` })}
       >
         <TabsList>
-          <TabsTrigger value="users">Users</TabsTrigger>
-          <TabsTrigger value="ingredients">Ingredients</TabsTrigger>
+          <TabsTrigger value="users">{t("tabs.users")}</TabsTrigger>
+          <TabsTrigger value="ingredients">{t("tabs.ingredients")}</TabsTrigger>
         </TabsList>
         <div className="mt-4">
           <Outlet />

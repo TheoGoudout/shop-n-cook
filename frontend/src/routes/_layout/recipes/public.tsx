@@ -149,7 +149,7 @@ function PublicRecipes() {
       ) : (
         <>
           <Badge variant="secondary" className="w-fit">
-            {data.count} {data.count === 1 ? "recipe" : "recipes"}
+            {t("public.recipe_count", { count: data.count })}
           </Badge>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {data.data.map((recipe) => (

@@ -325,7 +325,7 @@ function MealsTab({ list }: { list: ShoppingListPublic }) {
                   </Badge>
                   {pr.is_prepared && (
                     <Badge variant="outline" className="text-xs text-green-600">
-                      {t("detail.done", { defaultValue: "Done" })}
+                      {t("detail.done")}
                     </Badge>
                   )}
                 </div>

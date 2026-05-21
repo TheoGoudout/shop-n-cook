@@ -24,6 +24,7 @@
   "recipe": "Recipe",
   "new": "new",
   "done": "Done",
+  "none": "None",
   "source": "Source",
   "tagline": "Your kitchen, organized.",
   "no_results": "No results found.",

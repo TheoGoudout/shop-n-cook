@@ -2,9 +2,9 @@ import uuid
 
 from sqlmodel import Session, col, func, select
 
+from app.crud.recipe import recipe_ingredient_to_public
 from app.models import (
     Recipe,
-    RecipeIngredientPublic,
     ShoppingList,
     ShoppingListCreate,
     ShoppingListItem,
@@ -17,17 +17,6 @@ from app.models import (
     ShoppingListRecipeUpdate,
     ShoppingListUpdate,
 )
-from app.models.recipe import RecipeIngredient
-
-
-def _ri_to_public(ri: RecipeIngredient) -> RecipeIngredientPublic:
-    return RecipeIngredientPublic(
-        id=ri.id,
-        ingredient_name=ri.ingredient_name,
-        quantity=ri.quantity,
-        unit=ri.unit,
-        notes=ri.notes,
-    )
 
 
 def _sl_recipe_to_public(slr: ShoppingListRecipe) -> ShoppingListRecipePublic:
@@ -38,7 +27,9 @@ def _sl_recipe_to_public(slr: ShoppingListRecipe) -> ShoppingListRecipePublic:
         recipe_servings=slr.recipe.servings,
         servings_planned=slr.servings_planned,
         is_prepared=slr.is_prepared,
-        ingredients=[_ri_to_public(ri) for ri in slr.recipe.recipe_ingredients],
+        ingredients=[
+            recipe_ingredient_to_public(ri) for ri in slr.recipe.recipe_ingredients
+        ],
     )
 
 

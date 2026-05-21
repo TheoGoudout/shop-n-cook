@@ -1,285 +1,54 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import i18n from "i18next"
-import { Download, Loader2, Plus, Trash2 } from "lucide-react"
+import { Plus } from "lucide-react"
 import { useMemo, useState } from "react"
-import { type Resolver, useFieldArray, useForm } from "react-hook-form"
+import { type Resolver, useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
-import { z } from "zod"
 
-import { type IngredientCategory, RecipesService, type Unit } from "@/client"
-import { UnitSchema } from "@/client/schemas.gen"
-import { Badge } from "@/components/ui/badge"
+import { RecipesService } from "@/client"
 import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { LoadingButton } from "@/components/ui/loading-button"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import useCustomToast from "@/hooks/useCustomToast"
 import { handleError } from "@/utils"
 
-const baseStepSchema = z.object({
-  instruction: z.string().min(1),
-  ingredient_indices: z.array(z.number()),
-})
-
-const baseIngredientSchema = z.object({
-  ingredient_name: z.string().min(1),
-  quantity: z.coerce.number().positive(),
-  unit: z.string().min(1),
-  notes: z.string().optional(),
-  name_en: z.string().nullable().optional(),
-  category: z.string().nullable().optional(),
-})
-
-const baseFormSchema = z.object({
-  title: z.string(),
-  description: z.string().optional(),
-  servings: z.coerce.number().int().positive().optional().or(z.literal("")),
-  prep_time_minutes: z.coerce
-    .number()
-    .int()
-    .min(0)
-    .optional()
-    .or(z.literal("")),
-  cook_time_minutes: z.coerce
-    .number()
-    .int()
-    .min(0)
-    .optional()
-    .or(z.literal("")),
-  source_url: z.string().url().optional().or(z.literal("")),
-  image_url: z.string().url().optional().or(z.literal("")),
-  is_public: z.boolean().default(false),
-  import_consent: z.boolean().default(false),
-  ingredients: z.array(baseIngredientSchema),
-  steps: z.array(baseStepSchema),
-})
-
-type FormData = z.infer<typeof baseFormSchema>
+import { RecipeForm } from "./RecipeForm"
+import { RecipeImportPanel } from "./RecipeImportPanel"
+import {
+  createRecipeFormSchema,
+  defaultCreateValues,
+  type RecipeFormValues,
+  toRecipeCreatePayload,
+} from "./recipeFormSchema"
 
 const AddRecipe = () => {
   const { t } = useTranslation("recipes")
-  const { t: tCommon } = useTranslation("common")
-
-  const ingredientSchema = useMemo(
-    () =>
-      z.object({
-        ingredient_name: z
-          .string()
-          .min(1, { message: t("form.ingredient_required") }),
-        quantity: z.coerce.number().positive(),
-        unit: z.string().min(1),
-        notes: z.string().optional(),
-        name_en: z.string().nullable().optional(),
-        category: z.string().nullable().optional(),
-      }),
-    [t],
-  )
-
-  const stepSchema = useMemo(
-    () =>
-      z.object({
-        instruction: z
-          .string()
-          .min(1, { message: t("form.step_instruction_placeholder") }),
-        ingredient_indices: z.array(z.number()),
-      }),
-    [t],
-  )
-
-  const formSchema = useMemo(
-    () =>
-      z
-        .object({
-          title: z.string().min(1, { message: t("form.title_required") }),
-          description: z.string().optional(),
-          servings: z.coerce
-            .number()
-            .int()
-            .positive()
-            .optional()
-            .or(z.literal("")),
-          prep_time_minutes: z.coerce
-            .number()
-            .int()
-            .min(0)
-            .optional()
-            .or(z.literal("")),
-          cook_time_minutes: z.coerce
-            .number()
-            .int()
-            .min(0)
-            .optional()
-            .or(z.literal("")),
-          source_url: z.string().url().optional().or(z.literal("")),
-          image_url: z.string().url().optional().or(z.literal("")),
-          is_public: z.boolean().default(false),
-          import_consent: z.boolean().default(false),
-          ingredients: z.array(ingredientSchema),
-          steps: z.array(stepSchema),
-        })
-        .superRefine((data, ctx) => {
-          if (data.source_url && !data.import_consent) {
-            ctx.addIssue({
-              code: z.ZodIssueCode.custom,
-              message: t("add.import_consent_required"),
-              path: ["import_consent"],
-            })
-          }
-        }),
-    [t, ingredientSchema, stepSchema],
-  )
-
   const [isOpen, setIsOpen] = useState(false)
-  const [importUrl, setImportUrl] = useState("")
-  const [isImporting, setIsImporting] = useState(false)
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
 
-  const form = useForm<FormData>({
-    resolver: zodResolver(formSchema) as Resolver<FormData>,
-    defaultValues: {
-      title: "",
-      description: "",
-      servings: "",
-      prep_time_minutes: "",
-      cook_time_minutes: "",
-      source_url: "",
-      image_url: "",
-      is_public: false,
-      import_consent: false,
-      ingredients: [],
-      steps: [],
-    },
+  const formSchema = useMemo(
+    () => createRecipeFormSchema(t, { requireImportConsent: true }),
+    [t],
+  )
+
+  const form = useForm<RecipeFormValues>({
+    resolver: zodResolver(formSchema) as Resolver<RecipeFormValues>,
+    defaultValues: defaultCreateValues,
   })
 
-  const {
-    fields: ingredientFields,
-    append: appendIngredient,
-    remove: removeIngredient,
-  } = useFieldArray({ control: form.control, name: "ingredients" })
-
-  const {
-    fields: stepFields,
-    append: appendStep,
-    remove: removeStep,
-  } = useFieldArray({ control: form.control, name: "steps" })
-
-  const watchedIngredients = form.watch("ingredients")
-
-  const handleImport = async () => {
-    if (!importUrl.trim()) return
-    setIsImporting(true)
-    try {
-      const parsed = await RecipesService.importRecipeUrl({
-        requestBody: { url: importUrl, language: i18n.language },
-      })
-
-      const mappedIngredients = (parsed.ingredients ?? []).map((pi) => ({
-        ingredient_name: pi.name,
-        quantity: pi.quantity,
-        unit: pi.unit,
-        notes: pi.notes ?? "",
-        name_en: pi.name_en ?? null,
-        category: pi.category ?? null,
-      }))
-
-      const nameToIdx = new Map(
-        mappedIngredients.map((mi, idx) => [
-          mi.ingredient_name.toLowerCase(),
-          idx,
-        ]),
-      )
-
-      const mappedSteps = (parsed.steps ?? []).map((ps) => {
-        const indices = (ps.ingredient_names ?? [])
-          .map((name) => nameToIdx.get(name.toLowerCase()) ?? -1)
-          .filter((idx) => idx >= 0)
-        return { instruction: ps.instruction, ingredient_indices: indices }
-      })
-
-      form.reset({
-        title: parsed.title,
-        description: parsed.description ?? "",
-        servings: parsed.servings ?? "",
-        prep_time_minutes: parsed.prep_time_minutes ?? "",
-        cook_time_minutes: parsed.cook_time_minutes ?? "",
-        source_url: parsed.source_url ?? "",
-        image_url: parsed.image_url ?? "",
-        is_public: false,
-        import_consent: false,
-        ingredients: mappedIngredients,
-        steps: mappedSteps,
-      })
-      setImportUrl("")
-      showSuccessToast(t("add.import_success"))
-    } catch {
-      showErrorToast(t("add.import_error"))
-    } finally {
-      setIsImporting(false)
-    }
-  }
-
   const mutation = useMutation({
-    mutationFn: (data: FormData) =>
-      RecipesService.createRecipe({
-        requestBody: {
-          title: data.title,
-          description: data.description || null,
-          servings: data.servings ? Number(data.servings) : null,
-          prep_time_minutes: data.prep_time_minutes
-            ? Number(data.prep_time_minutes)
-            : null,
-          cook_time_minutes: data.cook_time_minutes
-            ? Number(data.cook_time_minutes)
-            : null,
-          source_url: data.source_url || null,
-          image_url: data.image_url || null,
-          is_public: data.is_public,
-          import_consent: !!data.source_url && data.import_consent,
-          ingredients: data.ingredients.map((i) => ({
-            ingredient_name: i.ingredient_name,
-            quantity: i.quantity,
-            unit: i.unit as Unit,
-            notes: i.notes || null,
-            name_en: i.name_en ?? null,
-            category: (i.category ?? null) as IngredientCategory | null,
-          })),
-          steps: data.steps.map((s, idx) => ({
-            step_number: idx + 1,
-            instruction: s.instruction,
-            ingredient_indices: s.ingredient_indices,
-          })),
-        },
-      }),
+    mutationFn: (data: RecipeFormValues) =>
+      RecipesService.createRecipe({ requestBody: toRecipeCreatePayload(data) }),
     onSuccess: () => {
       showSuccessToast(t("add.success"))
-      form.reset()
+      form.reset(defaultCreateValues)
       setIsOpen(false)
     },
     onError: handleError.bind(showErrorToast),
@@ -287,14 +56,6 @@ const AddRecipe = () => {
       queryClient.invalidateQueries({ queryKey: ["recipes"] })
     },
   })
-
-  const toggleStepIngredient = (stepIndex: number, ingredientIndex: number) => {
-    const current = form.getValues(`steps.${stepIndex}.ingredient_indices`)
-    const next = current.includes(ingredientIndex)
-      ? current.filter((i) => i !== ingredientIndex)
-      : [...current, ingredientIndex]
-    form.setValue(`steps.${stepIndex}.ingredient_indices`, next)
-  }
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -309,433 +70,15 @@ const AddRecipe = () => {
           <DialogTitle>{t("add.dialog_title")}</DialogTitle>
           <DialogDescription>{t("add.dialog_description")}</DialogDescription>
         </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit((d) => mutation.mutate(d))}>
-            <div className="grid gap-4 py-4">
-              {/* Import from URL */}
-              <div className="flex gap-2 p-3 rounded-md border border-dashed bg-muted/30">
-                <Input
-                  placeholder={t("add.import_placeholder")}
-                  value={importUrl}
-                  onChange={(e) => setImportUrl(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault()
-                      handleImport()
-                    }
-                  }}
-                  className="bg-transparent border-0 shadow-none focus-visible:ring-0 px-0"
-                />
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={handleImport}
-                  disabled={isImporting || !importUrl.trim()}
-                >
-                  {isImporting ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Download className="h-4 w-4" />
-                  )}
-                  <span className="ml-1.5">{tCommon("import")}</span>
-                </Button>
-              </div>
-
-              <FormField
-                control={form.control}
-                name="title"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      {t("form.title_label")}{" "}
-                      <span className="text-destructive">*</span>
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder={t("form.title_placeholder")}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("form.description_label")}</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder={t("form.description_placeholder")}
-                        {...field}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-              <div className="grid grid-cols-3 gap-4">
-                <FormField
-                  control={form.control}
-                  name="servings"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("form.servings_label")}</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          min={1}
-                          placeholder="4"
-                          {...field}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="prep_time_minutes"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("form.prep_label")}</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          min={0}
-                          placeholder="15"
-                          {...field}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="cook_time_minutes"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("form.cook_label")}</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          min={0}
-                          placeholder="30"
-                          {...field}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="source_url"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("form.source_url_label")}</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder={t("form.url_placeholder")}
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="image_url"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("form.image_url_label")}</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder={t("form.url_placeholder")}
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              {/* Public toggle */}
-              <FormField
-                control={form.control}
-                name="is_public"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start gap-3 rounded-lg border p-3">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>{t("form.make_public_label")}</FormLabel>
-                      <p className="text-xs text-muted-foreground">
-                        {t("form.make_public_warning")}
-                      </p>
-                    </div>
-                  </FormItem>
-                )}
-              />
-
-              {/* Import consent — only when source URL is present */}
-              {form.watch("source_url") && (
-                <FormField
-                  control={form.control}
-                  name="import_consent"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950/20">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel className="text-sm font-medium leading-snug cursor-pointer">
-                          {t("add.import_consent_label")}
-                        </FormLabel>
-                        <FormMessage />
-                      </div>
-                    </FormItem>
-                  )}
-                />
-              )}
-
-              {/* Ingredients */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <FormLabel>{t("form.ingredients_label")}</FormLabel>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                      appendIngredient({
-                        ingredient_name: "",
-                        quantity: 1,
-                        unit: "piece",
-                        notes: "",
-                        name_en: null,
-                        category: null,
-                      })
-                    }
-                  >
-                    <Plus className="mr-1 h-3 w-3" /> {t("form.add_ingredient")}
-                  </Button>
-                </div>
-                <div className="space-y-3">
-                  {ingredientFields.map((field, index) => (
-                    <div key={field.id} className="flex flex-col gap-1">
-                      <div className="flex gap-2 items-start">
-                        <FormField
-                          control={form.control}
-                          name={`ingredients.${index}.ingredient_name`}
-                          render={({ field: f }) => (
-                            <FormItem className="flex-1">
-                              <FormControl>
-                                <Input
-                                  placeholder={t(
-                                    "form.ingredient_name_placeholder",
-                                    { defaultValue: "Ingredient name" },
-                                  )}
-                                  {...f}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name={`ingredients.${index}.quantity`}
-                          render={({ field: f }) => (
-                            <FormItem className="w-20">
-                              <FormControl>
-                                <Input
-                                  type="number"
-                                  min={0.01}
-                                  step="any"
-                                  placeholder={t("form.qty_placeholder")}
-                                  {...f}
-                                />
-                              </FormControl>
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name={`ingredients.${index}.unit`}
-                          render={({ field: f }) => (
-                            <FormItem className="w-24">
-                              <Select
-                                onValueChange={f.onChange}
-                                value={f.value}
-                              >
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  {UnitSchema.enum.map((u) => (
-                                    <SelectItem key={u} value={u}>
-                                      {tCommon(`unit_labels.${u}`, {
-                                        defaultValue: u,
-                                      })}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </FormItem>
-                          )}
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => removeIngredient(index)}
-                          className="mt-0.5"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      <FormField
-                        control={form.control}
-                        name={`ingredients.${index}.notes`}
-                        render={({ field: f }) => (
-                          <FormItem className="pr-10">
-                            <FormControl>
-                              <Input
-                                placeholder={t("form.notes_placeholder")}
-                                className="h-7 text-xs text-muted-foreground"
-                                {...f}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Steps */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <FormLabel>{t("form.steps_label")}</FormLabel>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                      appendStep({ instruction: "", ingredient_indices: [] })
-                    }
-                  >
-                    <Plus className="mr-1 h-3 w-3" /> {t("form.add_step")}
-                  </Button>
-                </div>
-                <div className="space-y-3">
-                  {stepFields.map((field, stepIndex) => {
-                    const selectedIndices = form.watch(
-                      `steps.${stepIndex}.ingredient_indices`,
-                    )
-                    return (
-                      <div
-                        key={field.id}
-                        className="flex gap-3 p-3 rounded-md border bg-muted/20"
-                      >
-                        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-muted text-muted-foreground text-xs flex items-center justify-center font-semibold mt-1">
-                          {stepIndex + 1}
-                        </span>
-                        <div className="flex-1 space-y-2">
-                          <FormField
-                            control={form.control}
-                            name={`steps.${stepIndex}.instruction`}
-                            render={({ field: f }) => (
-                              <FormItem>
-                                <FormControl>
-                                  <textarea
-                                    className="flex min-h-[72px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                    placeholder={t(
-                                      "form.step_instruction_placeholder",
-                                    )}
-                                    {...f}
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          {watchedIngredients.length > 0 && (
-                            <div>
-                              <p className="text-xs text-muted-foreground mb-1">
-                                {t("form.step_ingredients_hint")}
-                              </p>
-                              <div className="flex flex-wrap gap-1">
-                                {watchedIngredients.map((ing, ingIdx) => {
-                                  const label = ing.ingredient_name
-                                  if (!label) return null
-                                  const active =
-                                    selectedIndices.includes(ingIdx)
-                                  return (
-                                    <button
-                                      key={ingIdx}
-                                      type="button"
-                                      onClick={() =>
-                                        toggleStepIngredient(stepIndex, ingIdx)
-                                      }
-                                      className="focus:outline-none"
-                                    >
-                                      <Badge
-                                        variant={active ? "default" : "outline"}
-                                        className="text-xs cursor-pointer"
-                                      >
-                                        {label}
-                                      </Badge>
-                                    </button>
-                                  )
-                                })}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => removeStep(stepIndex)}
-                          className="mt-0.5 flex-shrink-0"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            </div>
-
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button variant="outline" disabled={mutation.isPending}>
-                  {tCommon("cancel")}
-                </Button>
-              </DialogClose>
-              <LoadingButton type="submit" loading={mutation.isPending}>
-                {tCommon("save")}
-              </LoadingButton>
-            </DialogFooter>
-          </form>
-        </Form>
+        <RecipeForm
+          form={form}
+          mode="create"
+          onSubmit={(data) => mutation.mutate(data)}
+          isPending={mutation.isPending}
+          importPanel={
+            <RecipeImportPanel onImported={(values) => form.reset(values)} />
+          }
+        />
       </DialogContent>
     </Dialog>
   )

@@ -1,81 +1,44 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { useForm } from "react-hook-form"
+import { useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import { UsersService } from "@/client"
+import { ConfirmDialog } from "@/components/Common/ConfirmDialog"
 import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { LoadingButton } from "@/components/ui/loading-button"
+import { DialogTrigger } from "@/components/ui/dialog"
 import useAuth from "@/hooks/useAuth"
-import useCustomToast from "@/hooks/useCustomToast"
-import { handleError } from "@/utils"
+import { useCrudMutation } from "@/hooks/useCrudMutation"
 
 const DeleteConfirmation = () => {
   const { t } = useTranslation("settings")
-  const { t: tCommon } = useTranslation("common")
-  const queryClient = useQueryClient()
-  const { showSuccessToast, showErrorToast } = useCustomToast()
-  const { handleSubmit } = useForm()
+  const [isOpen, setIsOpen] = useState(false)
   const { logout } = useAuth()
 
-  const mutation = useMutation({
+  const mutation = useCrudMutation({
     mutationFn: () => UsersService.deleteUserMe(),
+    successMessage: t("delete_account.success"),
+    invalidateKeys: ["currentUser"],
     onSuccess: () => {
-      showSuccessToast(t("delete_account.success"))
       logout()
-    },
-    onError: handleError.bind(showErrorToast),
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["currentUser"] })
     },
   })
 
-  const onSubmit = async () => {
-    mutation.mutate()
-  }
-
   return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button variant="destructive" className="mt-3">
-          {t("delete_account.button")}
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <DialogHeader>
-            <DialogTitle>{t("delete_account.dialog_title")}</DialogTitle>
-            <DialogDescription>
-              {t("delete_account.dialog_description")}
-            </DialogDescription>
-          </DialogHeader>
-
-          <DialogFooter className="mt-4">
-            <DialogClose asChild>
-              <Button variant="outline" disabled={mutation.isPending}>
-                {tCommon("cancel")}
-              </Button>
-            </DialogClose>
-            <LoadingButton
-              variant="destructive"
-              type="submit"
-              loading={mutation.isPending}
-            >
-              {tCommon("delete")}
-            </LoadingButton>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+    <ConfirmDialog
+      open={isOpen}
+      onOpenChange={setIsOpen}
+      title={t("delete_account.dialog_title")}
+      description={t("delete_account.dialog_description")}
+      variant="destructive"
+      isPending={mutation.isPending}
+      onConfirm={() => mutation.mutate()}
+      trigger={
+        <DialogTrigger asChild>
+          <Button variant="destructive" className="mt-3">
+            {t("delete_account.button")}
+          </Button>
+        </DialogTrigger>
+      }
+    />
   )
 }
 

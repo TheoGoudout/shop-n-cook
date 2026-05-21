@@ -1,4 +1,3 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import {
   CalendarRange,
@@ -12,54 +11,17 @@ import {
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 
-import {
-  RecipesService,
-  type ShoppingListItemPublic,
-  type ShoppingListPublic,
-  ShoppingListsService,
-} from "@/client"
+import { type ShoppingListPublic, ShoppingListsService } from "@/client"
+import { ConfirmDialog } from "@/components/Common/ConfirmDialog"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { LoadingButton } from "@/components/ui/loading-button"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import useCustomToast from "@/hooks/useCustomToast"
+import { useCrudMutation } from "@/hooks/useCrudMutation"
 import { useUnitSystem } from "@/hooks/useUnitSystem"
-import { handleError } from "@/utils"
 
-const UNITS = [
-  "g",
-  "kg",
-  "ml",
-  "L",
-  "piece",
-  "tbsp",
-  "tsp",
-  "cup",
-  "oz",
-  "lb",
-  "bunch",
-  "pinch",
-  "clove",
-  "slice",
-  "can",
-  "package",
-]
+import { AddItemDialog } from "./AddItemDialog"
+import { AddRecipeDialog } from "./AddRecipeDialog"
+import { RenameListDialog } from "./RenameListDialog"
 
 interface Props {
   list: ShoppingListPublic
@@ -76,107 +38,34 @@ export function ShoppingListCard({ list }: Props) {
   const { t } = useTranslation("shopping")
   const { t: tCommon } = useTranslation("common")
   const { convert } = useUnitSystem()
-  const queryClient = useQueryClient()
-  const { showSuccessToast, showErrorToast } = useCustomToast()
   const [addItemOpen, setAddItemOpen] = useState(false)
   const [addRecipeOpen, setAddRecipeOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [renameOpen, setRenameOpen] = useState(false)
-  const [itemName, setItemName] = useState("")
-  const [quantity, setQuantity] = useState("1")
-  const [unit, setUnit] = useState("piece")
-  const [selectedRecipe, setSelectedRecipe] = useState("")
-  const [servings, setServings] = useState("")
-  const [newName, setNewName] = useState(list.name)
 
-  const { data: recipesData } = useQuery({
-    queryKey: ["recipes"],
-    queryFn: () => RecipesService.readRecipes({ limit: 100 }),
-    enabled: addRecipeOpen,
-  })
+  const listsKey = ["shopping-lists"]
 
-  const selectedRecipeData = recipesData?.data.find(
-    (r) => r.id === selectedRecipe,
-  )
-
-  const invalidate = () =>
-    queryClient.invalidateQueries({ queryKey: ["shopping-lists"] })
-
-  const checkMutation = useMutation({
+  const checkMutation = useCrudMutation({
     mutationFn: ({ itemId, checked }: { itemId: string; checked: boolean }) =>
       ShoppingListsService.updateItem({
         id: list.id,
         itemId,
         requestBody: { is_checked: checked },
       }),
-    onSettled: invalidate,
+    invalidateKeys: listsKey,
   })
 
-  const removeItemMutation = useMutation({
+  const removeItemMutation = useCrudMutation({
     mutationFn: (itemId: string) =>
       ShoppingListsService.deleteItem({ id: list.id, itemId }),
-    onSuccess: () => showSuccessToast(t("item_removed")),
-    onError: handleError.bind(showErrorToast),
-    onSettled: invalidate,
+    successMessage: t("item_removed"),
+    invalidateKeys: listsKey,
   })
 
-  const addItemMutation = useMutation({
-    mutationFn: () =>
-      ShoppingListsService.addItem({
-        id: list.id,
-        requestBody: {
-          name: itemName.trim(),
-          quantity: Number(quantity),
-          unit: unit as ShoppingListItemPublic["unit"],
-        },
-      }),
-    onSuccess: () => {
-      showSuccessToast(t("add_item_dialog.success"))
-      setAddItemOpen(false)
-      setItemName("")
-      setQuantity("1")
-      setUnit("piece")
-    },
-    onError: handleError.bind(showErrorToast),
-    onSettled: invalidate,
-  })
-
-  const addRecipeMutation = useMutation({
-    mutationFn: () =>
-      ShoppingListsService.addRecipe({
-        id: list.id,
-        recipeId: selectedRecipe,
-        servings: servings ? Number(servings) : undefined,
-      }),
-    onSuccess: () => {
-      showSuccessToast(t("add_recipe_dialog.success"))
-      setAddRecipeOpen(false)
-      setSelectedRecipe("")
-      setServings("")
-    },
-    onError: handleError.bind(showErrorToast),
-    onSettled: invalidate,
-  })
-
-  const deleteListMutation = useMutation({
+  const deleteListMutation = useCrudMutation({
     mutationFn: () => ShoppingListsService.deleteShoppingList({ id: list.id }),
-    onSuccess: () => showSuccessToast(t("delete_dialog.success")),
-    onError: handleError.bind(showErrorToast),
-    onSettled: invalidate,
-  })
-
-  const renameMutation = useMutation({
-    mutationFn: () =>
-      ShoppingListsService.updateShoppingList({
-        id: list.id,
-        requestBody: { name: newName },
-      }),
-    onSuccess: () => {
-      showSuccessToast(t("rename_dialog.success"))
-      setRenameOpen(false)
-    },
-    onError: handleError.bind(showErrorToast),
-    onSettled: invalidate,
+    successMessage: t("delete_dialog.success"),
+    invalidateKeys: listsKey,
   })
 
   const items = list.items ?? []
@@ -207,10 +96,7 @@ export function ShoppingListCard({ list }: Props) {
               variant="ghost"
               size="icon"
               className="h-7 w-7"
-              onClick={() => {
-                setNewName(list.name)
-                setRenameOpen(true)
-              }}
+              onClick={() => setRenameOpen(true)}
             >
               <Pencil className="h-3.5 w-3.5" />
             </Button>
@@ -332,213 +218,31 @@ export function ShoppingListCard({ list }: Props) {
         </div>
       </CardContent>
 
-      {/* Add item dialog */}
-      <Dialog open={addItemOpen} onOpenChange={setAddItemOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{t("add_item_dialog.title")}</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div>
-              <p className="text-sm font-medium mb-1">
-                {t("add_item_dialog.ingredient_label")}
-              </p>
-              <input
-                type="text"
-                value={itemName}
-                onChange={(e) => setItemName(e.target.value)}
-                placeholder={t("add_item_dialog.item_name_placeholder", {
-                  defaultValue: "e.g. Toilet paper, Milk…",
-                })}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <p className="text-sm font-medium mb-1">
-                  {t("add_item_dialog.quantity_label")}
-                </p>
-                <input
-                  type="number"
-                  min={0.01}
-                  step="any"
-                  value={quantity}
-                  onChange={(e) => setQuantity(e.target.value)}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                />
-              </div>
-              <div>
-                <p className="text-sm font-medium mb-1">
-                  {t("add_item_dialog.unit_label")}
-                </p>
-                <Select value={unit} onValueChange={setUnit}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {UNITS.map((u) => (
-                      <SelectItem key={u} value={u}>
-                        {tCommon(`unit_labels.${u}`, { defaultValue: u })}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline" disabled={addItemMutation.isPending}>
-                {tCommon("cancel")}
-              </Button>
-            </DialogClose>
-            <LoadingButton
-              onClick={() => addItemMutation.mutate()}
-              loading={addItemMutation.isPending}
-              disabled={!itemName.trim()}
-            >
-              {t("add_item_dialog.submit")}
-            </LoadingButton>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Add recipe dialog */}
-      <Dialog open={addRecipeOpen} onOpenChange={setAddRecipeOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{t("add_recipe_dialog.title")}</DialogTitle>
-            <DialogDescription>
-              {t("add_recipe_dialog.description")}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div>
-              <p className="text-sm font-medium mb-1">
-                {t("add_recipe_dialog.recipe_label")}
-              </p>
-              <Select
-                value={selectedRecipe}
-                onValueChange={(v) => {
-                  setSelectedRecipe(v)
-                  const r = recipesData?.data.find((r) => r.id === v)
-                  if (r?.servings) setServings(String(r.servings))
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue
-                    placeholder={t("add_recipe_dialog.select_recipe")}
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {recipesData?.data.map((r) => (
-                    <SelectItem key={r.id} value={r.id}>
-                      {r.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            {selectedRecipe && (
-              <div>
-                <p className="text-sm font-medium mb-1">
-                  {t("add_recipe_dialog.servings_label")}
-                  {selectedRecipeData?.servings && (
-                    <span className="text-muted-foreground font-normal ml-1">
-                      {t("add_recipe_dialog.recipe_default", {
-                        count: selectedRecipeData.servings,
-                      })}
-                    </span>
-                  )}
-                </p>
-                <input
-                  type="number"
-                  min={1}
-                  step={1}
-                  value={servings}
-                  onChange={(e) => setServings(e.target.value)}
-                  placeholder={
-                    selectedRecipeData?.servings
-                      ? String(selectedRecipeData.servings)
-                      : t("add_recipe_dialog.servings_placeholder")
-                  }
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                />
-              </div>
-            )}
-          </div>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline" disabled={addRecipeMutation.isPending}>
-                {tCommon("cancel")}
-              </Button>
-            </DialogClose>
-            <LoadingButton
-              onClick={() => addRecipeMutation.mutate()}
-              loading={addRecipeMutation.isPending}
-              disabled={!selectedRecipe}
-            >
-              {t("add_recipe_dialog.submit")}
-            </LoadingButton>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Rename dialog */}
-      <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{t("rename_dialog.title")}</DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
-            <input
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            />
-          </div>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline" disabled={renameMutation.isPending}>
-                {tCommon("cancel")}
-              </Button>
-            </DialogClose>
-            <LoadingButton
-              onClick={() => renameMutation.mutate()}
-              loading={renameMutation.isPending}
-              disabled={!newName.trim()}
-            >
-              {t("rename_dialog.submit")}
-            </LoadingButton>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete confirmation */}
-      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{t("delete_dialog.title")}</DialogTitle>
-            <DialogDescription>
-              {t("delete_dialog.description", { name: list.name })}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="mt-4">
-            <DialogClose asChild>
-              <Button variant="outline" disabled={deleteListMutation.isPending}>
-                {tCommon("cancel")}
-              </Button>
-            </DialogClose>
-            <LoadingButton
-              variant="destructive"
-              onClick={() => deleteListMutation.mutate()}
-              loading={deleteListMutation.isPending}
-            >
-              {tCommon("delete")}
-            </LoadingButton>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <AddItemDialog
+        listId={list.id}
+        open={addItemOpen}
+        onOpenChange={setAddItemOpen}
+      />
+      <AddRecipeDialog
+        listId={list.id}
+        open={addRecipeOpen}
+        onOpenChange={setAddRecipeOpen}
+      />
+      <RenameListDialog
+        listId={list.id}
+        currentName={list.name}
+        open={renameOpen}
+        onOpenChange={setRenameOpen}
+      />
+      <ConfirmDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title={t("delete_dialog.title")}
+        description={t("delete_dialog.description", { name: list.name })}
+        variant="destructive"
+        isPending={deleteListMutation.isPending}
+        onConfirm={() => deleteListMutation.mutate()}
+      />
     </Card>
   )
 }

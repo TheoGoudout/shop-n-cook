@@ -63,7 +63,7 @@ def test_get_duplicate_groups_empty_llm_response(db: Session) -> None:
     msg.content = ""
     llm_mock.invoke.return_value = msg
 
-    with patch("app.services.recipe_import._get_llm", return_value=llm_mock):
+    with patch("app.services.recipe_import.llm.get_llm", return_value=llm_mock):
         groups = crud.get_duplicate_groups(session=db)
 
     assert groups == []
@@ -86,7 +86,7 @@ def test_get_duplicate_groups_content_block_response(db: Session) -> None:
     ]
     llm_mock.invoke.return_value = msg
 
-    with patch("app.services.recipe_import._get_llm", return_value=llm_mock):
+    with patch("app.services.recipe_import.llm.get_llm", return_value=llm_mock):
         groups = crud.get_duplicate_groups(session=db)
 
     names_in_groups = {i.name for group in groups for i in group}
@@ -106,7 +106,7 @@ def test_get_duplicate_groups_llm(db: Session) -> None:
         [["test_dup_a_xyz", "test_dup_a_xyz variant"]]
     )
 
-    with patch("app.services.recipe_import._get_llm", return_value=llm_mock):
+    with patch("app.services.recipe_import.llm.get_llm", return_value=llm_mock):
         groups = crud.get_duplicate_groups(session=db)
 
     names_in_groups = {i.name for group in groups for i in group}
@@ -130,7 +130,7 @@ def test_get_duplicate_groups_strips_markdown_fence(db: Session) -> None:
     )
     llm_mock.invoke.return_value = msg
 
-    with patch("app.services.recipe_import._get_llm", return_value=llm_mock):
+    with patch("app.services.recipe_import.llm.get_llm", return_value=llm_mock):
         groups = crud.get_duplicate_groups(session=db)
 
     names_in_groups = {i.name for group in groups for i in group}

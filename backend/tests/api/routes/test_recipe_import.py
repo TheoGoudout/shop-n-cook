@@ -49,10 +49,10 @@ def test_import_recipe_url_success(
 
     with (
         patch(
-            "app.services.recipe_import._fetch_page",
+            "app.services.recipe_import.scraper.fetch_page",
             return_value=("some recipe text", None),
         ),
-        patch("app.services.recipe_import._get_llm", return_value=llm_mock),
+        patch("app.services.recipe_import.llm.get_llm", return_value=llm_mock),
     ):
         response = client.post(
             f"{settings.API_V1_STR}/recipes/import-url",
@@ -75,10 +75,11 @@ def test_import_recipe_url_no_api_key_returns_503(
 ) -> None:
     with (
         patch(
-            "app.services.recipe_import._fetch_page", return_value=("some text", None)
+            "app.services.recipe_import.scraper.fetch_page",
+            return_value=("some text", None),
         ),
         patch(
-            "app.services.recipe_import._get_llm",
+            "app.services.recipe_import.llm.get_llm",
             side_effect=ValueError("ANTHROPIC_API_KEY is not configured"),
         ),
     ):
@@ -96,11 +97,11 @@ def test_import_recipe_url_parse_error_returns_422(
 ) -> None:
     with (
         patch(
-            "app.services.recipe_import._fetch_page",
+            "app.services.recipe_import.scraper.fetch_page",
             return_value=("not a recipe", None),
         ),
         patch(
-            "app.services.recipe_import._get_llm",
+            "app.services.recipe_import.llm.get_llm",
             side_effect=RuntimeError("LLM unavailable"),
         ),
     ):
@@ -129,8 +130,10 @@ def test_import_recipe_url_strips_markdown_fences(
     llm_mock.invoke.return_value = MagicMock(content=fenced)
 
     with (
-        patch("app.services.recipe_import._fetch_page", return_value=("text", None)),
-        patch("app.services.recipe_import._get_llm", return_value=llm_mock),
+        patch(
+            "app.services.recipe_import.scraper.fetch_page", return_value=("text", None)
+        ),
+        patch("app.services.recipe_import.llm.get_llm", return_value=llm_mock),
     ):
         response = client.post(
             f"{settings.API_V1_STR}/recipes/import-url",
@@ -145,11 +148,11 @@ def test_import_recipe_url_strips_markdown_fences(
 def test_get_llm_unknown_provider() -> None:
     from unittest.mock import patch as p
 
-    from app.services.recipe_import import _get_llm
+    from app.services.recipe_import.llm import get_llm
 
     with p.object(settings, "AI_PROVIDER", "unknown"):
         try:
-            _get_llm()
+            get_llm()
             raise AssertionError("should raise")
         except ValueError as exc:
             assert "Unknown AI_PROVIDER" in str(exc)
@@ -189,10 +192,10 @@ def test_import_recipe_filters_null_quantity_ingredients(
 
     with (
         patch(
-            "app.services.recipe_import._fetch_page",
+            "app.services.recipe_import.scraper.fetch_page",
             return_value=("some recipe text", None),
         ),
-        patch("app.services.recipe_import._get_llm", return_value=llm_mock),
+        patch("app.services.recipe_import.llm.get_llm", return_value=llm_mock),
     ):
         response = client.post(
             f"{settings.API_V1_STR}/recipes/import-url",
@@ -214,10 +217,10 @@ def test_import_returns_source_url_and_image_url(
 
     with (
         patch(
-            "app.services.recipe_import._fetch_page",
+            "app.services.recipe_import.scraper.fetch_page",
             return_value=("text", "https://example.com/image.jpg"),
         ),
-        patch("app.services.recipe_import._get_llm", return_value=llm_mock),
+        patch("app.services.recipe_import.llm.get_llm", return_value=llm_mock),
     ):
         response = client.post(
             f"{settings.API_V1_STR}/recipes/import-url",
@@ -234,7 +237,7 @@ def test_import_returns_source_url_and_image_url(
 def test_configure_langsmith_sets_env() -> None:
     import os
 
-    from app.services.recipe_import import _configure_langsmith
+    from app.services.recipe_import.llm import configure_langsmith
 
     with (
         patch.object(settings, "LANGCHAIN_TRACING_V2", True),
@@ -244,7 +247,7 @@ def test_configure_langsmith_sets_env() -> None:
             settings, "LANGCHAIN_ENDPOINT", "https://eu.api.smith.langchain.com"
         ),
     ):
-        _configure_langsmith()
+        configure_langsmith()
         assert os.environ.get("LANGCHAIN_TRACING_V2") == "true"
         assert os.environ.get("LANGCHAIN_API_KEY") == "test-key"
         assert (
@@ -256,24 +259,24 @@ def test_configure_langsmith_sets_env() -> None:
 
 
 def test_build_system_prompt_french() -> None:
-    from app.services.recipe_import import _build_system_prompt
+    from app.services.recipe_import.prompt import build_system_prompt
 
-    prompt = _build_system_prompt("fr")
+    prompt = build_system_prompt("fr")
     assert "French" in prompt
     assert "Translate" in prompt
 
 
 def test_build_system_prompt_french_regional() -> None:
-    from app.services.recipe_import import _build_system_prompt
+    from app.services.recipe_import.prompt import build_system_prompt
 
-    prompt = _build_system_prompt("fr-FR")
+    prompt = build_system_prompt("fr-FR")
     assert "French" in prompt
 
 
 def test_build_system_prompt_english_default() -> None:
-    from app.services.recipe_import import _build_system_prompt
+    from app.services.recipe_import.prompt import build_system_prompt
 
-    prompt = _build_system_prompt(None)
+    prompt = build_system_prompt(None)
     assert "American English" in prompt
 
 
@@ -284,8 +287,11 @@ def test_import_recipe_url_with_language(
     llm_mock.invoke.return_value = _make_llm_response(_SAMPLE_RECIPE)
 
     with (
-        patch("app.services.recipe_import._fetch_page", return_value=("texte", None)),
-        patch("app.services.recipe_import._get_llm", return_value=llm_mock),
+        patch(
+            "app.services.recipe_import.scraper.fetch_page",
+            return_value=("texte", None),
+        ),
+        patch("app.services.recipe_import.llm.get_llm", return_value=llm_mock),
     ):
         response = client.post(
             f"{settings.API_V1_STR}/recipes/import-url",
@@ -303,7 +309,7 @@ def test_import_recipe_url_with_language(
 def test_get_llm_anthropic_provider() -> None:
     from unittest.mock import MagicMock, patch
 
-    from app.services.recipe_import import _get_llm
+    from app.services.recipe_import.llm import get_llm
 
     mock_llm = MagicMock()
     with (
@@ -311,19 +317,19 @@ def test_get_llm_anthropic_provider() -> None:
         patch.object(settings, "ANTHROPIC_API_KEY", "test-key"),
         patch("langchain_anthropic.ChatAnthropic", return_value=mock_llm),
     ):
-        llm = _get_llm()
+        llm = get_llm()
     assert llm is mock_llm
 
 
 def test_get_llm_anthropic_no_key() -> None:
-    from app.services.recipe_import import _get_llm
+    from app.services.recipe_import.llm import get_llm
 
     with (
         patch.object(settings, "AI_PROVIDER", "anthropic"),
         patch.object(settings, "ANTHROPIC_API_KEY", ""),
     ):
         try:
-            _get_llm()
+            get_llm()
             raise AssertionError("should raise")
         except ValueError as exc:
             assert "ANTHROPIC_API_KEY" in str(exc)
@@ -332,7 +338,7 @@ def test_get_llm_anthropic_no_key() -> None:
 def test_get_llm_openai_provider() -> None:
     from unittest.mock import MagicMock, patch
 
-    from app.services.recipe_import import _get_llm
+    from app.services.recipe_import.llm import get_llm
 
     mock_llm = MagicMock()
     with (
@@ -340,19 +346,19 @@ def test_get_llm_openai_provider() -> None:
         patch.object(settings, "OPENAI_API_KEY", "test-key"),
         patch("langchain_openai.ChatOpenAI", return_value=mock_llm),
     ):
-        llm = _get_llm()
+        llm = get_llm()
     assert llm is mock_llm
 
 
 def test_get_llm_openai_no_key() -> None:
-    from app.services.recipe_import import _get_llm
+    from app.services.recipe_import.llm import get_llm
 
     with (
         patch.object(settings, "AI_PROVIDER", "openai"),
         patch.object(settings, "OPENAI_API_KEY", ""),
     ):
         try:
-            _get_llm()
+            get_llm()
             raise AssertionError("should raise")
         except ValueError as exc:
             assert "OPENAI_API_KEY" in str(exc)
@@ -361,7 +367,7 @@ def test_get_llm_openai_no_key() -> None:
 def test_get_llm_google_provider() -> None:
     from unittest.mock import MagicMock, patch
 
-    from app.services.recipe_import import _get_llm
+    from app.services.recipe_import.llm import get_llm
 
     mock_llm = MagicMock()
     with (
@@ -369,19 +375,19 @@ def test_get_llm_google_provider() -> None:
         patch.object(settings, "GOOGLE_API_KEY", "test-key"),
         patch("langchain_google_genai.ChatGoogleGenerativeAI", return_value=mock_llm),
     ):
-        llm = _get_llm()
+        llm = get_llm()
     assert llm is mock_llm
 
 
 def test_get_llm_google_no_key() -> None:
-    from app.services.recipe_import import _get_llm
+    from app.services.recipe_import.llm import get_llm
 
     with (
         patch.object(settings, "AI_PROVIDER", "google"),
         patch.object(settings, "GOOGLE_API_KEY", ""),
     ):
         try:
-            _get_llm()
+            get_llm()
             raise AssertionError("should raise")
         except ValueError as exc:
             assert "GOOGLE_API_KEY" in str(exc)
@@ -402,7 +408,7 @@ def test_fetch_page_json_ld() -> None:
     import json as _json
     from unittest.mock import patch
 
-    from app.services.recipe_import import _fetch_page
+    from app.services.recipe_import.scraper import fetch_page
 
     recipe_data = {
         "@type": "Recipe",
@@ -419,7 +425,7 @@ def test_fetch_page_json_ld() -> None:
 <body><p>Recipe page</p></body>
 </html>"""
     with patch("httpx.get", return_value=_make_httpx_response(html)):
-        text, image_url = _fetch_page("https://example.com/cake")
+        text, image_url = fetch_page("https://example.com/cake")
 
     assert "JSON-LD Cake" in text
     assert image_url == "https://example.com/cake.jpg"
@@ -430,7 +436,7 @@ def test_fetch_page_json_ld_list_wrapper() -> None:
     import json as _json
     from unittest.mock import patch
 
-    from app.services.recipe_import import _fetch_page
+    from app.services.recipe_import.scraper import fetch_page
 
     recipe_data = [
         {"@type": "WebPage"},
@@ -440,7 +446,7 @@ def test_fetch_page_json_ld_list_wrapper() -> None:
     <script type="application/ld+json">{_json.dumps(recipe_data)}</script>
     </head><body></body></html>"""
     with patch("httpx.get", return_value=_make_httpx_response(html)):
-        text, image_url = _fetch_page("https://example.com/soup")
+        text, image_url = fetch_page("https://example.com/soup")
 
     assert "List Wrapped Soup" in text
     assert image_url is None
@@ -450,7 +456,7 @@ def test_fetch_page_html_sections() -> None:
     """HTML with Ingredients/Instructions sections is extracted via targeted parser."""
     from unittest.mock import patch
 
-    from app.services.recipe_import import _fetch_page
+    from app.services.recipe_import.scraper import fetch_page
 
     html = """<html><head><title>HTML Recipe</title></head><body>
 <h2>Ingredients</h2>
@@ -459,7 +465,7 @@ def test_fetch_page_html_sections() -> None:
 <p>Mix flour and eggs. Bake at 180°C for 30 minutes.</p>
 </body></html>"""
     with patch("httpx.get", return_value=_make_httpx_response(html)):
-        text, image_url = _fetch_page("https://example.com/html-recipe")
+        text, image_url = fetch_page("https://example.com/html-recipe")
 
     assert "flour" in text.lower()
     assert image_url is None
@@ -469,13 +475,13 @@ def test_fetch_page_fallback_plain_text() -> None:
     """Pages with no structured data fall back to full-text extraction."""
     from unittest.mock import patch
 
-    from app.services.recipe_import import _fetch_page
+    from app.services.recipe_import.scraper import fetch_page
 
     html = """<html><head><title>Plain Recipe</title></head><body>
 <p>Just some plain text about a recipe with no sections.</p>
 </body></html>"""
     with patch("httpx.get", return_value=_make_httpx_response(html)):
-        text, image_url = _fetch_page("https://example.com/plain")
+        text, image_url = fetch_page("https://example.com/plain")
 
     assert "Plain Recipe" in text or "plain text" in text.lower()
 
@@ -517,10 +523,10 @@ def test_reimport_recipe_success(
 
     with (
         patch(
-            "app.services.recipe_import._fetch_page",
+            "app.services.recipe_import.scraper.fetch_page",
             return_value=("some recipe text", None),
         ),
-        patch("app.services.recipe_import._get_llm", return_value=llm_mock),
+        patch("app.services.recipe_import.llm.get_llm", return_value=llm_mock),
     ):
         response = client.post(
             f"{settings.API_V1_STR}/recipes/{recipe.id}/reimport",
@@ -551,10 +557,10 @@ def test_reimport_recipe_syncs_ingredient_catalog(
 
     with (
         patch(
-            "app.services.recipe_import._fetch_page",
+            "app.services.recipe_import.scraper.fetch_page",
             return_value=("some recipe text", None),
         ),
-        patch("app.services.recipe_import._get_llm", return_value=llm_mock),
+        patch("app.services.recipe_import.llm.get_llm", return_value=llm_mock),
     ):
         response = client.post(
             f"{settings.API_V1_STR}/recipes/{recipe.id}/reimport",
@@ -623,11 +629,11 @@ def test_reimport_recipe_llm_error_returns_503(
 
     with (
         patch(
-            "app.services.recipe_import._fetch_page",
+            "app.services.recipe_import.scraper.fetch_page",
             return_value=("some text", None),
         ),
         patch(
-            "app.services.recipe_import._get_llm",
+            "app.services.recipe_import.llm.get_llm",
             side_effect=ValueError("ANTHROPIC_API_KEY is not configured"),
         ),
     ):
@@ -650,7 +656,7 @@ def test_import_url_cache_hit_returns_existing_recipe(
     _create_recipe_with_url(db, superuser.id, "https://example.com/cache-hit-test")
 
     llm_mock = MagicMock()
-    with patch("app.services.recipe_import._get_llm", return_value=llm_mock):
+    with patch("app.services.recipe_import.llm.get_llm", return_value=llm_mock):
         response = client.post(
             f"{settings.API_V1_STR}/recipes/import-url",
             headers=superuser_token_headers,
@@ -678,10 +684,10 @@ def test_import_url_cache_is_per_user(
 
     with (
         patch(
-            "app.services.recipe_import._fetch_page",
+            "app.services.recipe_import.scraper.fetch_page",
             return_value=("recipe text", None),
         ),
-        patch("app.services.recipe_import._get_llm", return_value=llm_mock),
+        patch("app.services.recipe_import.llm.get_llm", return_value=llm_mock),
     ):
         response = client.post(
             f"{settings.API_V1_STR}/recipes/import-url",

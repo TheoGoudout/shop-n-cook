@@ -20,7 +20,7 @@ from app.models import (
 from app.models.user import User
 
 
-def _ri_to_public(ri: RecipeIngredient) -> RecipeIngredientPublic:
+def recipe_ingredient_to_public(ri: RecipeIngredient) -> RecipeIngredientPublic:
     return RecipeIngredientPublic(
         id=ri.id,
         ingredient_name=ri.ingredient_name,
@@ -65,7 +65,9 @@ def recipe_to_public(recipe: Recipe, owner: User | None = None) -> RecipePublic:
         owner_id=recipe.owner_id,
         owner_name=owner_name,
         created_at=recipe.created_at,
-        ingredients=[_ri_to_public(ri) for ri in recipe.recipe_ingredients],
+        ingredients=[
+            recipe_ingredient_to_public(ri) for ri in recipe.recipe_ingredients
+        ],
         steps=sorted(
             [_step_to_public(s) for s in recipe.steps],
             key=lambda s: s.step_number,
@@ -119,11 +121,20 @@ def get_recipes(
     session: Session,
     owner_id: uuid.UUID | None = None,
     search: str | None = None,
+    public_only: bool = False,
+    eager_load_owner: bool = False,
     skip: int = 0,
     limit: int = 100,
 ) -> tuple[list[Recipe], int]:
     query = select(Recipe)
     count_query = select(func.count()).select_from(Recipe)
+
+    if public_only:
+        query = query.where(Recipe.is_public == True)  # noqa: E712
+        count_query = count_query.where(Recipe.is_public == True)  # noqa: E712
+
+    if eager_load_owner:
+        query = query.options(selectinload(Recipe.owner))  # type: ignore[arg-type]
 
     if owner_id is not None:
         query = query.where(Recipe.owner_id == owner_id)
@@ -153,33 +164,15 @@ def get_public_recipes(
     skip: int = 0,
     limit: int = 100,
 ) -> tuple[list[Recipe], int]:
-    query = (
-        select(Recipe)
-        .where(Recipe.is_public == True)  # noqa: E712
-        .options(selectinload(Recipe.owner))  # type: ignore[arg-type]
+    return get_recipes(
+        session=session,
+        owner_id=owner_id,
+        search=search,
+        public_only=True,
+        eager_load_owner=True,
+        skip=skip,
+        limit=limit,
     )
-    count_query = (
-        select(func.count()).select_from(Recipe).where(Recipe.is_public == True)  # noqa: E712
-    )
-
-    if owner_id is not None:
-        query = query.where(Recipe.owner_id == owner_id)
-        count_query = count_query.where(Recipe.owner_id == owner_id)
-
-    if search:
-        pattern = f"%{search}%"
-        search_filter = or_(
-            col(Recipe.title).ilike(pattern),
-            col(Recipe.description).ilike(pattern),
-        )
-        query = query.where(search_filter)
-        count_query = count_query.where(search_filter)
-
-    count = session.exec(count_query).one()
-    recipes = session.exec(
-        query.order_by(col(Recipe.created_at).desc()).offset(skip).limit(limit)
-    ).all()
-    return list(recipes), count
 
 
 def create_recipe(

@@ -103,7 +103,9 @@ def fetch_and_update_ingredients_batch(
             for ingredient in needs_image:
                 session.add(ingredient)
             session.commit()
-            logger.info("Committed image updates for %d ingredient(s)", len(needs_image))
+            logger.info(
+                "Committed image updates for %d ingredient(s)", len(needs_image)
+            )
         else:
             logger.info("No image updates needed, skipping commit")
 

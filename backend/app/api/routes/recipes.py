@@ -53,8 +53,12 @@ def _recipe_to_parsed(recipe: Recipe, session: Session) -> ParsedRecipe:
     ingredients = [
         ParsedIngredient(
             name=ri.ingredient_name,
-            name_en=catalog[ri.ingredient_name].name_en if ri.ingredient_name in catalog else None,
-            category=catalog[ri.ingredient_name].category if ri.ingredient_name in catalog else IngredientCategory.OTHER,
+            name_en=catalog[ri.ingredient_name].name_en
+            if ri.ingredient_name in catalog
+            else None,
+            category=catalog[ri.ingredient_name].category
+            if ri.ingredient_name in catalog
+            else IngredientCategory.OTHER,
             quantity=ri.quantity,
             unit=ri.unit,
             notes=ri.notes,

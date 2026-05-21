@@ -70,7 +70,7 @@ function DeduplicateButton() {
           <DialogFooter>
             <DialogClose asChild>
               <Button variant="outline" disabled={mutation.isPending}>
-                Cancel
+                {t("cancel", { ns: "common" })}
               </Button>
             </DialogClose>
             <LoadingButton

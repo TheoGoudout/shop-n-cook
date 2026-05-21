@@ -140,7 +140,6 @@ def test_batch_no_updates_needed(caplog: pytest.LogCaptureFixture) -> None:
     assert "No image updates needed" in caplog.text
 
 
-
 def test_batch_uses_name_en_for_spoonacular_search() -> None:
     """Spoonacular is queried with the English name, not the original."""
     from app.services.ingredient_image import fetch_and_update_ingredients_batch

@@ -63,7 +63,9 @@ def get_duplicate_groups(session: Session) -> list[list[Ingredient]]:
     """Ask the LLM to identify groups of duplicate ingredient names."""
     from langchain_core.messages import HumanMessage, SystemMessage
 
-    from app.services.recipe_import import _get_llm
+    from app.services.recipe_import import _configure_langsmith, _get_llm
+
+    _configure_langsmith()
 
     ingredients = session.exec(select(Ingredient).order_by(Ingredient.name)).all()
     if len(ingredients) < 2:

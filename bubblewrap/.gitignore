@@ -1,6 +1,8 @@
 android.keystore
 *.apk
+*.idsig
 *.aab
 app/build/
+build/
 .gradle/
 local.properties

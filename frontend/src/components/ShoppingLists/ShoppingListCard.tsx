@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import {
   CalendarRange,
@@ -18,6 +18,7 @@ import {
   type ShoppingListPublic,
   ShoppingListsService,
 } from "@/client"
+import { ConfirmDialog } from "@/components/Common/ConfirmDialog"
 import { UnitSelect } from "@/components/Common/UnitSelect"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
@@ -39,9 +40,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import useCustomToast from "@/hooks/useCustomToast"
+import { useCrudMutation } from "@/hooks/useCrudMutation"
 import { useUnitSystem } from "@/hooks/useUnitSystem"
-import { handleError } from "@/utils"
 
 interface Props {
   list: ShoppingListPublic
@@ -58,8 +58,6 @@ export function ShoppingListCard({ list }: Props) {
   const { t } = useTranslation("shopping")
   const { t: tCommon } = useTranslation("common")
   const { convert } = useUnitSystem()
-  const queryClient = useQueryClient()
-  const { showSuccessToast, showErrorToast } = useCustomToast()
   const [addItemOpen, setAddItemOpen] = useState(false)
   const [addRecipeOpen, setAddRecipeOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
@@ -81,28 +79,26 @@ export function ShoppingListCard({ list }: Props) {
     (r) => r.id === selectedRecipe,
   )
 
-  const invalidate = () =>
-    queryClient.invalidateQueries({ queryKey: ["shopping-lists"] })
+  const listsKey = ["shopping-lists"]
 
-  const checkMutation = useMutation({
+  const checkMutation = useCrudMutation({
     mutationFn: ({ itemId, checked }: { itemId: string; checked: boolean }) =>
       ShoppingListsService.updateItem({
         id: list.id,
         itemId,
         requestBody: { is_checked: checked },
       }),
-    onSettled: invalidate,
+    invalidateKeys: listsKey,
   })
 
-  const removeItemMutation = useMutation({
+  const removeItemMutation = useCrudMutation({
     mutationFn: (itemId: string) =>
       ShoppingListsService.deleteItem({ id: list.id, itemId }),
-    onSuccess: () => showSuccessToast(t("item_removed")),
-    onError: handleError.bind(showErrorToast),
-    onSettled: invalidate,
+    successMessage: t("item_removed"),
+    invalidateKeys: listsKey,
   })
 
-  const addItemMutation = useMutation({
+  const addItemMutation = useCrudMutation({
     mutationFn: () =>
       ShoppingListsService.addItem({
         id: list.id,
@@ -112,53 +108,49 @@ export function ShoppingListCard({ list }: Props) {
           unit: unit as ShoppingListItemPublic["unit"],
         },
       }),
+    successMessage: t("add_item_dialog.success"),
+    invalidateKeys: listsKey,
     onSuccess: () => {
-      showSuccessToast(t("add_item_dialog.success"))
       setAddItemOpen(false)
       setItemName("")
       setQuantity("1")
       setUnit("piece")
     },
-    onError: handleError.bind(showErrorToast),
-    onSettled: invalidate,
   })
 
-  const addRecipeMutation = useMutation({
+  const addRecipeMutation = useCrudMutation({
     mutationFn: () =>
       ShoppingListsService.addRecipe({
         id: list.id,
         recipeId: selectedRecipe,
         servings: servings ? Number(servings) : undefined,
       }),
+    successMessage: t("add_recipe_dialog.success"),
+    invalidateKeys: listsKey,
     onSuccess: () => {
-      showSuccessToast(t("add_recipe_dialog.success"))
       setAddRecipeOpen(false)
       setSelectedRecipe("")
       setServings("")
     },
-    onError: handleError.bind(showErrorToast),
-    onSettled: invalidate,
   })
 
-  const deleteListMutation = useMutation({
+  const deleteListMutation = useCrudMutation({
     mutationFn: () => ShoppingListsService.deleteShoppingList({ id: list.id }),
-    onSuccess: () => showSuccessToast(t("delete_dialog.success")),
-    onError: handleError.bind(showErrorToast),
-    onSettled: invalidate,
+    successMessage: t("delete_dialog.success"),
+    invalidateKeys: listsKey,
   })
 
-  const renameMutation = useMutation({
+  const renameMutation = useCrudMutation({
     mutationFn: () =>
       ShoppingListsService.updateShoppingList({
         id: list.id,
         requestBody: { name: newName },
       }),
+    successMessage: t("rename_dialog.success"),
+    invalidateKeys: listsKey,
     onSuccess: () => {
-      showSuccessToast(t("rename_dialog.success"))
       setRenameOpen(false)
     },
-    onError: handleError.bind(showErrorToast),
-    onSettled: invalidate,
   })
 
   const items = list.items ?? []
@@ -486,30 +478,15 @@ export function ShoppingListCard({ list }: Props) {
       </Dialog>
 
       {/* Delete confirmation */}
-      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{t("delete_dialog.title")}</DialogTitle>
-            <DialogDescription>
-              {t("delete_dialog.description", { name: list.name })}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="mt-4">
-            <DialogClose asChild>
-              <Button variant="outline" disabled={deleteListMutation.isPending}>
-                {tCommon("cancel")}
-              </Button>
-            </DialogClose>
-            <LoadingButton
-              variant="destructive"
-              onClick={() => deleteListMutation.mutate()}
-              loading={deleteListMutation.isPending}
-            >
-              {tCommon("delete")}
-            </LoadingButton>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ConfirmDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title={t("delete_dialog.title")}
+        description={t("delete_dialog.description", { name: list.name })}
+        variant="destructive"
+        isPending={deleteListMutation.isPending}
+        onConfirm={() => deleteListMutation.mutate()}
+      />
     </Card>
   )
 }

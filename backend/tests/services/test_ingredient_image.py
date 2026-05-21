@@ -121,7 +121,7 @@ def test_batch_missing_ingredient_id(caplog: pytest.LogCaptureFixture) -> None:
 
 
 def test_batch_no_updates_needed(caplog: pytest.LogCaptureFixture) -> None:
-    """Ingredient already has image, non-OTHER category and English name → nothing committed."""
+    """Ingredient already has an image → nothing committed."""
     from app.services.ingredient_image import fetch_and_update_ingredients_batch
 
     ing = _make_ingredient(
@@ -137,34 +137,8 @@ def test_batch_no_updates_needed(caplog: pytest.LogCaptureFixture) -> None:
         fetch_and_update_ingredients_batch([ing.id])
 
     mock_session.commit.assert_not_called()
-    assert "No updates needed" in caplog.text
+    assert "No image updates needed" in caplog.text
 
-
-def test_batch_sets_name_en_and_category(caplog: pytest.LogCaptureFixture) -> None:
-    """LLM enrichment sets both name_en and category in one call."""
-    from app.services.ingredient_image import fetch_and_update_ingredients_batch
-
-    ing = _make_ingredient(name="ail")  # French for garlic, no name_en, OTHER category
-    mock_session = MagicMock()
-    mock_session.get.return_value = ing
-
-    with (
-        patch("sqlmodel.Session", return_value=_session_ctx(mock_session)),
-        patch(
-            "app.services.ingredient_image._enrich_ingredients_batch",
-            return_value={"ail": {"name_en": "garlic", "category": "produce"}},
-        ),
-        patch(
-            "app.services.ingredient_image.fetch_image_from_spoonacular",
-            return_value=None,
-        ),
-    ):
-        fetch_and_update_ingredients_batch([ing.id])
-
-    assert ing.name_en == "garlic"
-    assert ing.category == "produce"
-    assert "Setting name_en" in caplog.text
-    assert "Setting category" in caplog.text
 
 
 def test_batch_uses_name_en_for_spoonacular_search() -> None:
@@ -201,10 +175,6 @@ def test_batch_falls_back_to_original_name_when_no_name_en() -> None:
 
     with (
         patch("sqlmodel.Session", return_value=_session_ctx(mock_session)),
-        patch(
-            "app.services.ingredient_image._enrich_ingredients_batch",
-            return_value={},
-        ),
         patch(
             "app.services.ingredient_image.fetch_image_from_spoonacular",
             return_value=None,
@@ -254,10 +224,6 @@ def test_batch_no_image_url_obtained(caplog: pytest.LogCaptureFixture) -> None:
 
     with (
         patch("sqlmodel.Session", return_value=_session_ctx(mock_session)),
-        patch(
-            "app.services.ingredient_image._enrich_ingredients_batch",
-            return_value={"ail": {"name_en": "garlic", "category": "produce"}},
-        ),
         patch(
             "app.services.ingredient_image.fetch_image_from_spoonacular",
             return_value=None,

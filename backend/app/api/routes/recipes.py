@@ -178,7 +178,7 @@ def _sync_ingredient_catalog(
     ids_to_update = []
     needs_commit = False
     for ing in ingredients:
-        ingredient, created = crud.get_or_create_ingredient(
+        ingredient, _ = crud.get_or_create_ingredient(
             session=session, name=ing.ingredient_name
         )
         changed = False
@@ -195,11 +195,7 @@ def _sync_ingredient_catalog(
         if changed:
             session.add(ingredient)
             needs_commit = True
-        if (
-            created
-            or ingredient.category == IngredientCategory.OTHER
-            or not ingredient.image_url
-        ):
+        if not ingredient.image_url:
             ids_to_update.append(ingredient.id)
     if needs_commit:
         session.commit()

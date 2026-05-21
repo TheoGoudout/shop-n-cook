@@ -1,12 +1,25 @@
-import { useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
-import { Package } from "lucide-react"
+import { Combine, Package } from "lucide-react"
+import { useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import { IngredientsService } from "@/client"
 import { IngredientActionsMenu } from "@/components/Admin/IngredientActionsMenu"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { LoadingButton } from "@/components/ui/loading-button"
+import useCustomToast from "@/hooks/useCustomToast"
 import { APP_NAME } from "@/lib/config"
+import { handleError } from "@/utils"
 
 export const Route = createFileRoute("/_layout/admin/ingredients")({
   component: IngredientsPage,
@@ -14,6 +27,64 @@ export const Route = createFileRoute("/_layout/admin/ingredients")({
     meta: [{ title: `Ingredients - Admin - ${APP_NAME}` }],
   }),
 })
+
+function DeduplicateButton() {
+  const [open, setOpen] = useState(false)
+  const queryClient = useQueryClient()
+  const { showSuccessToast, showErrorToast } = useCustomToast()
+  const { t } = useTranslation("admin")
+
+  const mutation = useMutation({
+    mutationFn: () =>
+      IngredientsService.deduplicateIngredients({ dryRun: false }),
+    onSuccess: (data) => {
+      setOpen(false)
+      if (data.removed_count === 0) {
+        showSuccessToast(t("ingredient.deduplicate_none"))
+      } else {
+        showSuccessToast(
+          t("ingredient.deduplicate_success", { count: data.removed_count }),
+        )
+      }
+      queryClient.invalidateQueries({ queryKey: ["ingredient-catalog"] })
+    },
+    onError: handleError.bind(showErrorToast),
+  })
+
+  return (
+    <>
+      <Button variant="outline" onClick={() => setOpen(true)}>
+        <Combine />
+        {t("ingredient.deduplicate")}
+      </Button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {t("ingredient.deduplicate_confirm_title")}
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            {t("ingredient.deduplicate_confirm_description")}
+          </p>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline" disabled={mutation.isPending}>
+                Cancel
+              </Button>
+            </DialogClose>
+            <LoadingButton
+              loading={mutation.isPending}
+              onClick={() => mutation.mutate()}
+            >
+              {t("ingredient.deduplicate")}
+            </LoadingButton>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  )
+}
 
 function IngredientsTableContent() {
   const { t } = useTranslation("common")
@@ -109,11 +180,14 @@ function IngredientsPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">
-          {t("ingredients.title")}
-        </h1>
-        <p className="text-muted-foreground">{t("ingredients.subtitle")}</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">
+            {t("ingredients.title")}
+          </h1>
+          <p className="text-muted-foreground">{t("ingredients.subtitle")}</p>
+        </div>
+        <DeduplicateButton />
       </div>
       <IngredientsTableContent />
     </div>

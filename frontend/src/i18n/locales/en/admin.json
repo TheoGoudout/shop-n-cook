@@ -52,6 +52,11 @@
     "fetch_image": "Fetch Image",
     "fetch_image_queued": "Image fetch queued",
     "updated": "Ingredient updated successfully",
-    "image_url": "Image URL"
+    "image_url": "Image URL",
+    "deduplicate": "Deduplicate",
+    "deduplicate_confirm_title": "Deduplicate ingredients?",
+    "deduplicate_confirm_description": "Duplicate catalog entries will be merged and all recipes and shopping lists will be updated to use the canonical name. This cannot be undone.",
+    "deduplicate_success": "{{count}} duplicate(s) removed",
+    "deduplicate_none": "No duplicates found"
   }
 }

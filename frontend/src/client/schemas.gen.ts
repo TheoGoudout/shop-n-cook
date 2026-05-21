@@ -57,6 +57,48 @@ export const Body_login_login_access_tokenSchema = {
     title: 'Body_login-login_access_token'
 } as const;
 
+export const DeduplicateMergeSchema = {
+    properties: {
+        kept: {
+            type: 'string',
+            title: 'Kept'
+        },
+        removed: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Removed'
+        }
+    },
+    type: 'object',
+    required: ['kept', 'removed'],
+    title: 'DeduplicateMerge'
+} as const;
+
+export const DeduplicateResponseSchema = {
+    properties: {
+        dry_run: {
+            type: 'boolean',
+            title: 'Dry Run'
+        },
+        groups: {
+            items: {
+                '$ref': '#/components/schemas/DeduplicateMerge'
+            },
+            type: 'array',
+            title: 'Groups'
+        },
+        removed_count: {
+            type: 'integer',
+            title: 'Removed Count'
+        }
+    },
+    type: 'object',
+    required: ['dry_run', 'groups', 'removed_count'],
+    title: 'DeduplicateResponse'
+} as const;
+
 export const HTTPValidationErrorSchema = {
     properties: {
         detail: {

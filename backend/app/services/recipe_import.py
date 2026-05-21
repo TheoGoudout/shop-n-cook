@@ -106,6 +106,13 @@ Rules:
 - For each ingredient, set "category" to the most appropriate value from: {_CATEGORIES}
 - For "name_en": always use the English name regardless of the interface language (if the name is already in English, repeat it unchanged)
 {lang_rule}
+- Use the base/generic form of ingredient names: strip size qualifiers \
+(e.g. "moyennes", "grosses", "petites", "medium", "large", "small"), \
+temperature states (e.g. "fondu", "chaud", "froid", "melted", "hot"), \
+and preparation notes (e.g. "haché", "émincé", "coupé", "chopped", "sliced", "grated") \
+from the name field — put those details in the "notes" field instead \
+(e.g. name="courgettes" notes="moyennes"; name="beurre" notes="fondu"; \
+name="onion" notes="finely chopped")
 - Do not include any text outside the JSON object"""
 
 

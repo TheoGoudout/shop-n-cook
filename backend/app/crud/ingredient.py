@@ -122,5 +122,7 @@ def rename_ingredient_references(
 
 
 def delete_ingredient(session: Session, ingredient: Ingredient) -> None:
-    session.delete(ingredient)
+    obj = session.get(Ingredient, ingredient.id)
+    if obj:
+        session.delete(obj)
     session.commit()

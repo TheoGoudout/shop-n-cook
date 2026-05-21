@@ -42,7 +42,7 @@ def test_rename_ingredient_references_no_match(db: Session) -> None:
     )
 
 
-def test_get_duplicate_groups_too_few(_db: Session) -> None:
+def test_get_duplicate_groups_too_few() -> None:
     # When the DB has fewer than 2 ingredients, the function returns [] immediately
     # without calling the LLM.  We stub exec() to simulate that case.
     from unittest.mock import MagicMock as MM

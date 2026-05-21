@@ -73,9 +73,11 @@ function ShareTargetPage() {
           import_consent: true,
           ingredients: (vars.parsed.ingredients ?? []).map((ing) => ({
             ingredient_name: ing.name,
+            name_en: ing.name_en ?? null,
             quantity: ing.quantity,
             unit: ing.unit,
             notes: ing.notes ?? null,
+            category: ing.category ?? null,
           })),
           steps: (vars.parsed.steps ?? []).map((step, i) => ({
             step_number: i + 1,

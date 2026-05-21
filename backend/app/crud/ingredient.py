@@ -88,7 +88,20 @@ def get_duplicate_groups(session: Session) -> list[list[Ingredient]]:
             HumanMessage(content=names_json),
         ]
     )
-    raw = response.content if isinstance(response.content, str) else ""
+    if isinstance(response.content, str):
+        raw = response.content
+    elif isinstance(response.content, list):
+        raw = next(
+            (
+                b["text"] if isinstance(b, dict) else getattr(b, "text", "")
+                for b in response.content
+                if (isinstance(b, dict) and b.get("type") == "text")
+                or getattr(b, "type", None) == "text"
+            ),
+            "",
+        )
+    else:
+        raw = ""
     if raw.startswith("```"):
         raw = raw.split("```")[1].lstrip("json").strip()
     raw = raw.strip()

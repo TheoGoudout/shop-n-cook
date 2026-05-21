@@ -72,6 +72,31 @@ def test_get_duplicate_groups_empty_llm_response(db: Session) -> None:
     crud.delete_ingredient(session=db, ingredient=ing_b)
 
 
+def test_get_duplicate_groups_content_block_response(db: Session) -> None:
+    ing_a = _make_ingredient(db, "test_block_a_xyz")
+    ing_b = _make_ingredient(db, "test_block_a_xyz variant")
+
+    llm_mock = MagicMock()
+    msg = MagicMock()
+    msg.content = [
+        {
+            "type": "text",
+            "text": json.dumps([["test_block_a_xyz", "test_block_a_xyz variant"]]),
+        }
+    ]
+    llm_mock.invoke.return_value = msg
+
+    with patch("app.services.recipe_import._get_llm", return_value=llm_mock):
+        groups = crud.get_duplicate_groups(session=db)
+
+    names_in_groups = {i.name for group in groups for i in group}
+    assert "test_block_a_xyz" in names_in_groups
+    assert "test_block_a_xyz variant" in names_in_groups
+
+    crud.delete_ingredient(session=db, ingredient=ing_a)
+    crud.delete_ingredient(session=db, ingredient=ing_b)
+
+
 def test_get_duplicate_groups_llm(db: Session) -> None:
     ing_a = _make_ingredient(db, "test_dup_a_xyz")
     ing_b = _make_ingredient(db, "test_dup_a_xyz variant")

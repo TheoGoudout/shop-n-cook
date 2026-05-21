@@ -39,6 +39,17 @@ export type IngredientsPublic = {
     count: number;
 };
 
+export type DeduplicateMerge = {
+    kept: string;
+    removed: Array<string>;
+};
+
+export type DeduplicateResponse = {
+    dry_run: boolean;
+    groups: Array<DeduplicateMerge>;
+    removed_count: number;
+};
+
 export type IngredientUpdate = {
     category?: (IngredientCategory | null);
     image_url?: (string | null);

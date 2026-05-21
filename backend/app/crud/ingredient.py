@@ -1,8 +1,12 @@
+import json
 import uuid
 
+from sqlalchemy import update
 from sqlmodel import Session, func, select
 
 from app.models.ingredient import Ingredient, IngredientCreate, IngredientUpdate
+from app.models.recipe import RecipeIngredient
+from app.models.shopping_list import ShoppingListItem
 
 
 def get_ingredient_by_name(session: Session, name: str) -> Ingredient | None:
@@ -53,3 +57,70 @@ def update_ingredient(
     session.commit()
     session.refresh(ingredient)
     return ingredient
+
+
+def get_duplicate_groups(session: Session) -> list[list[Ingredient]]:
+    """Ask the LLM to identify groups of duplicate ingredient names."""
+    from langchain_core.messages import HumanMessage, SystemMessage
+
+    from app.services.recipe_import import _get_llm
+
+    ingredients = session.exec(
+        select(Ingredient).order_by(Ingredient.name)
+    ).all()
+    if len(ingredients) < 2:
+        return []
+
+    names_json = json.dumps([i.name for i in ingredients], ensure_ascii=False)
+    llm = _get_llm()
+    response = llm.invoke(
+        [
+            SystemMessage(
+                content=(
+                    "You are a culinary data analyst. Given a JSON list of ingredient names, "
+                    "return ONLY a valid JSON array of arrays. Each inner array groups names "
+                    "that refer to the same core ingredient (e.g. a name with size qualifiers, "
+                    "parenthetical variants, or preparation notes alongside the base name). "
+                    "Only include groups with at least 2 elements. "
+                    "Do not include singletons. "
+                    'Example output: [["courgettes","courgettes moyennes"],'
+                    '["huile d\'olive","huile d\'olive (extra vierge)"]]'
+                )
+            ),
+            HumanMessage(content=names_json),
+        ]
+    )
+    raw = response.content if isinstance(response.content, str) else ""
+    if raw.startswith("```"):
+        raw = raw.split("```")[1].lstrip("json").strip()
+    groups_raw: list[list[str]] = json.loads(raw)
+
+    name_to_obj = {i.name: i for i in ingredients}
+    result = []
+    for group in groups_raw:
+        resolved = [name_to_obj[n] for n in group if n in name_to_obj]
+        if len(resolved) >= 2:
+            result.append(resolved)
+    return result
+
+
+def rename_ingredient_references(
+    session: Session, old_name: str, new_name: str
+) -> None:
+    """Update all recipe and shopping list references from old_name to new_name."""
+    session.exec(  # type: ignore[call-overload]
+        update(RecipeIngredient)
+        .where(func.lower(RecipeIngredient.ingredient_name) == old_name.lower())
+        .values(ingredient_name=new_name)
+    )
+    session.exec(  # type: ignore[call-overload]
+        update(ShoppingListItem)
+        .where(func.lower(ShoppingListItem.name) == old_name.lower())
+        .values(name=new_name)
+    )
+    session.commit()
+
+
+def delete_ingredient(session: Session, ingredient: Ingredient) -> None:
+    session.delete(ingredient)
+    session.commit()

@@ -52,6 +52,11 @@
     "fetch_image": "Récupérer l'image",
     "fetch_image_queued": "Récupération de l'image en file d'attente",
     "updated": "Ingrédient mis à jour avec succès",
-    "image_url": "URL de l'image"
+    "image_url": "URL de l'image",
+    "deduplicate": "Dédupliquer",
+    "deduplicate_confirm_title": "Dédupliquer les ingrédients ?",
+    "deduplicate_confirm_description": "Les entrées du catalogue en double seront fusionnées et toutes les recettes et listes de courses seront mises à jour avec le nom canonique. Cette action est irréversible.",
+    "deduplicate_success": "{{count}} doublon(s) supprimé(s)",
+    "deduplicate_none": "Aucun doublon trouvé"
   }
 }

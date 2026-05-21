@@ -81,6 +81,19 @@ export class IngredientsService {
      * @returns IngredientPublic Successful Response
      * @throws ApiError
      */
+    public static deduplicateIngredients(data: { dry_run?: boolean } = {}): CancelablePromise<import('./types.gen').DeduplicateResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/ingredients/deduplicate',
+            query: {
+                dry_run: data.dry_run ?? true
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+
     public static fetchIngredientImage(data: IngredientsFetchIngredientImageData): CancelablePromise<IngredientsFetchIngredientImageResponse> {
         return __request(OpenAPI, {
             method: 'POST',

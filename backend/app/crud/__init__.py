@@ -1,9 +1,12 @@
 from app.crud.ingredient import (
     create_ingredient,
+    delete_ingredient,
+    get_duplicate_groups,
     get_ingredient,
     get_ingredient_by_name,
     get_ingredients,
     get_or_create_ingredient,
+    rename_ingredient_references,
     update_ingredient,
 )
 from app.crud.recipe import (
@@ -47,6 +50,9 @@ __all__ = [
     "get_or_create_ingredient",
     "create_ingredient",
     "update_ingredient",
+    "delete_ingredient",
+    "rename_ingredient_references",
+    "get_duplicate_groups",
     # user
     "create_user",
     "update_user",

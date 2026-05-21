@@ -69,3 +69,14 @@ class IngredientUpdate(SQLModel):
 class IngredientsPublic(SQLModel):
     data: list[IngredientPublic]
     count: int
+
+
+class DeduplicateMerge(SQLModel):
+    kept: str
+    removed: list[str]
+
+
+class DeduplicateResponse(SQLModel):
+    dry_run: bool
+    groups: list[DeduplicateMerge]
+    removed_count: int

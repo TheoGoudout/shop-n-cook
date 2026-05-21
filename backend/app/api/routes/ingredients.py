@@ -7,6 +7,8 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from app import crud
 from app.api.deps import CurrentUser, SessionDep, get_current_active_superuser
 from app.models.ingredient import (
+    DeduplicateMerge,
+    DeduplicateResponse,
     IngredientCreate,
     IngredientPublic,
     IngredientsPublic,
@@ -67,6 +69,44 @@ def update_ingredient(
         session=session, ingredient=ingredient, update_in=update_in
     )
     return IngredientPublic.model_validate(ingredient)
+
+
+@router.post("/deduplicate", response_model=DeduplicateResponse)
+def deduplicate_ingredients(
+    *,
+    session: SessionDep,
+    _current_user: Annotated[Any, Depends(get_current_active_superuser)],
+    dry_run: bool = True,
+) -> Any:
+    """Merge near-duplicate ingredient catalog entries. Superuser only.
+
+    Pass ?dry_run=false to apply changes. Default is preview-only.
+    Cascades: recipe_ingredient.ingredient_name and shopping_list_item.name
+    are updated to the canonical (shortest) name in each duplicate group.
+    """
+    groups = crud.get_duplicate_groups(session=session)
+    merges: list[DeduplicateMerge] = []
+    removed_count = 0
+    for group in groups:
+        group_sorted = sorted(group, key=lambda i: len(i.name))
+        canonical = group_sorted[0]
+        to_remove = group_sorted[1:]
+        merges.append(
+            DeduplicateMerge(
+                kept=canonical.name,
+                removed=[i.name for i in to_remove],
+            )
+        )
+        if not dry_run:
+            for dup in to_remove:
+                crud.rename_ingredient_references(
+                    session=session, old_name=dup.name, new_name=canonical.name
+                )
+                crud.delete_ingredient(session=session, ingredient=dup)
+            removed_count += len(to_remove)
+    return DeduplicateResponse(
+        dry_run=dry_run, groups=merges, removed_count=removed_count
+    )
 
 
 @router.post("/{id}/fetch-image", response_model=IngredientPublic)

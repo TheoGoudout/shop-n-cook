@@ -16,6 +16,7 @@ from app.crud.recipe import (
     get_recipe,
     get_recipe_by_source_url,
     get_recipes,
+    recipe_ingredient_to_public,
     recipe_to_public,
     update_recipe,
 )
@@ -71,6 +72,7 @@ __all__ = [
     "update_recipe",
     "delete_recipe",
     "recipe_to_public",
+    "recipe_ingredient_to_public",
     # shopping list
     "get_shopping_list",
     "get_shopping_lists",

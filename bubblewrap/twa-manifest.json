@@ -21,8 +21,8 @@
     "path": "./android.keystore",
     "alias": "shopncook"
   },
-  "appVersionName": "7",
-  "appVersionCode": 7,
+  "appVersionName": "10",
+  "appVersionCode": 10,
   "shortcuts": [],
   "generatorApp": "bubblewrap-cli",
   "webManifestUrl": "https://app.shop-n-cook.com/manifest.webmanifest",
@@ -36,10 +36,19 @@
   "isMetaQuest": false,
   "fullScopeUrl": "https://app.shop-n-cook.com/",
   "minSdkVersion": 21,
+  "shareTarget": {
+    "action": "https://app.shop-n-cook.com/share-target",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  },
   "orientation": "portrait",
   "fingerprints": [],
   "additionalTrustedOrigins": [],
   "retainedBundles": [],
   "displayOverride": [],
-  "appVersion": "7"
+  "appVersion": "10"
 }

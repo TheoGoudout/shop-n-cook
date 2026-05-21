@@ -15,6 +15,7 @@
  */
 package com.shopncook.app;
 
+import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.net.Uri;
 import android.os.Build;
@@ -44,10 +45,21 @@ public class LauncherActivity
 
     @Override
     protected Uri getLaunchingUrl() {
-        // Get the original launch Url.
         Uri uri = super.getLaunchingUrl();
 
-        
+        Intent intent = getIntent();
+        if (Intent.ACTION_SEND.equals(intent.getAction())) {
+            Uri.Builder shareUrl = Uri.parse("https://app.shop-n-cook.com/share-target").buildUpon();
+            String text = intent.getStringExtra(Intent.EXTRA_TEXT);
+            if (text != null) {
+                shareUrl.appendQueryParameter("text", text);
+            }
+            String title = intent.getStringExtra(Intent.EXTRA_SUBJECT);
+            if (title != null) {
+                shareUrl.appendQueryParameter("title", title);
+            }
+            return shareUrl.build();
+        }
 
         return uri;
     }

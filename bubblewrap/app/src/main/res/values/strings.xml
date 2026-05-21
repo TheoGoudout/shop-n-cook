@@ -38,5 +38,7 @@
         }
     }]
     
-  </string>  
+  </string>
+
+  <string name="shareTarget">{"action":"https://app.shop-n-cook.com/share-target","method":"GET","enctype":"application/x-www-form-urlencoded","params":{"title":"title","text":"text","url":"url"}}</string>
 </resources>

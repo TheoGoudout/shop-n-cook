@@ -3,6 +3,7 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from pydantic import BaseModel, HttpUrl
+from sqlmodel import Session, col, select
 
 from app import crud
 from app.api.deps import CurrentUser, SessionDep, get_current_active_superuser
@@ -16,7 +17,7 @@ from app.models import (
     RecipeStepCreate,
     RecipeUpdate,
 )
-from app.models.ingredient import IngredientCategory
+from app.models.ingredient import Ingredient, IngredientCategory
 from app.models.user import User
 from app.services.ingredient_image import fetch_and_update_ingredients_batch
 from app.services.recipe_import import (
@@ -38,12 +39,22 @@ class ReimportRequest(BaseModel):
     language: str | None = None
 
 
-def _recipe_to_parsed(recipe: Recipe) -> ParsedRecipe:
+def _recipe_to_parsed(recipe: Recipe, session: Session) -> ParsedRecipe:
     """Convert a saved Recipe back to ParsedRecipe format (used as DB cache hit)."""
+    names = [ri.ingredient_name for ri in recipe.recipe_ingredients]
+    catalog: dict[str, Ingredient] = {}
+    if names:
+        rows = session.exec(
+            select(Ingredient).where(col(Ingredient.name).in_(names))
+        ).all()
+        catalog = {row.name: row for row in rows}
+
     ri_map = {ri.id: ri for ri in recipe.recipe_ingredients}
     ingredients = [
         ParsedIngredient(
             name=ri.ingredient_name,
+            name_en=catalog[ri.ingredient_name].name_en if ri.ingredient_name in catalog else None,
+            category=catalog[ri.ingredient_name].category if ri.ingredient_name in catalog else IngredientCategory.OTHER,
             quantity=ri.quantity,
             unit=ri.unit,
             notes=ri.notes,
@@ -304,7 +315,7 @@ def import_recipe_url(
         session=session, owner_id=current_user.id, source_url=url
     )
     if existing:
-        return _recipe_to_parsed(existing)
+        return _recipe_to_parsed(existing, session)
 
     try:
         parsed = import_recipe_from_url(url, language=body.language)

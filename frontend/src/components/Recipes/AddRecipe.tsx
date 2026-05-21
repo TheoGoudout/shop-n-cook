@@ -52,6 +52,8 @@ const baseIngredientSchema = z.object({
   quantity: z.coerce.number().positive(),
   unit: z.string().min(1),
   notes: z.string().optional(),
+  name_en: z.string().nullable().optional(),
+  category: z.string().nullable().optional(),
 })
 
 const baseFormSchema = z.object({
@@ -201,6 +203,8 @@ const AddRecipe = () => {
         quantity: pi.quantity,
         unit: pi.unit,
         notes: pi.notes ?? "",
+        name_en: pi.name_en ?? null,
+        category: pi.category ?? null,
       }))
 
       const nameToIdx = new Map(
@@ -261,6 +265,8 @@ const AddRecipe = () => {
             quantity: i.quantity,
             unit: i.unit as Unit,
             notes: i.notes || null,
+            name_en: i.name_en ?? null,
+            category: i.category ?? null,
           })),
           steps: data.steps.map((s, idx) => ({
             step_number: idx + 1,
@@ -516,6 +522,8 @@ const AddRecipe = () => {
                         quantity: 1,
                         unit: "piece",
                         notes: "",
+                        name_en: null,
+                        category: null,
                       })
                     }
                   >

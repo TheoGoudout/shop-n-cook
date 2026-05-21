@@ -91,6 +91,9 @@ def get_duplicate_groups(session: Session) -> list[list[Ingredient]]:
     raw = response.content if isinstance(response.content, str) else ""
     if raw.startswith("```"):
         raw = raw.split("```")[1].lstrip("json").strip()
+    raw = raw.strip()
+    if not raw:
+        return []
     groups_raw: list[list[str]] = json.loads(raw)
 
     name_to_obj = {i.name: i for i in ingredients}

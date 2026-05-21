@@ -54,6 +54,24 @@ def test_get_duplicate_groups_too_few() -> None:
     assert result == []
 
 
+def test_get_duplicate_groups_empty_llm_response(db: Session) -> None:
+    ing_a = _make_ingredient(db, "test_empty_llm_a_xyz")
+    ing_b = _make_ingredient(db, "test_empty_llm_b_xyz")
+
+    llm_mock = MagicMock()
+    msg = MagicMock()
+    msg.content = ""
+    llm_mock.invoke.return_value = msg
+
+    with patch("app.services.recipe_import._get_llm", return_value=llm_mock):
+        groups = crud.get_duplicate_groups(session=db)
+
+    assert groups == []
+
+    crud.delete_ingredient(session=db, ingredient=ing_a)
+    crud.delete_ingredient(session=db, ingredient=ing_b)
+
+
 def test_get_duplicate_groups_llm(db: Session) -> None:
     ing_a = _make_ingredient(db, "test_dup_a_xyz")
     ing_b = _make_ingredient(db, "test_dup_a_xyz variant")

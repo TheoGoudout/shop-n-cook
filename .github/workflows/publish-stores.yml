@@ -211,6 +211,14 @@ jobs:
           path: bubblewrap/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 7
 
+      - name: Write release notes
+        if: github.event_name == 'release'
+        env:
+          RELEASE_BODY: ${{ github.event.release.body }}
+        run: |
+          mkdir -p whats-new
+          printf '%s' "$RELEASE_BODY" > whats-new/whatsnew-en-US
+
       - name: Upload to Google Play (${{ needs.prepare.outputs.android_track }})
         if: github.event_name == 'release'
         uses: r0adkll/upload-google-play@v1
@@ -218,10 +226,9 @@ jobs:
           serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: ${{ vars.ANDROID_PACKAGE_NAME }}
           releaseFiles: bubblewrap/app/build/outputs/bundle/release/app-release.aab
-          track: ${{ needs.prepare.outputs.android_track }}
+          tracks: ${{ needs.prepare.outputs.android_track }}
           releaseName: ${{ github.event.release.name }}
-          releaseNotes: |
-            en-US=${{ github.event.release.body }}
+          whatsNewDirectory: whats-new
 
   # ── iOS ────────────────────────────────────────────────────────────────────
   ios:

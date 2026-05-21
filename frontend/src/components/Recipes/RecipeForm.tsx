@@ -3,7 +3,7 @@ import type { ReactNode } from "react"
 import { type UseFormReturn, useFieldArray } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 
-import { UnitSchema } from "@/client/schemas.gen"
+import { UnitSelect } from "@/components/Common/UnitSelect"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -18,13 +18,6 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 
 import type { RecipeFormValues } from "./recipeFormSchema"
 
@@ -290,22 +283,12 @@ export function RecipeForm({
                       name={`ingredients.${index}.unit`}
                       render={({ field: f }) => (
                         <FormItem className="w-24">
-                          <Select onValueChange={f.onChange} value={f.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {UnitSchema.enum.map((u) => (
-                                <SelectItem key={u} value={u}>
-                                  {tCommon(`unit_labels.${u}`, {
-                                    defaultValue: u,
-                                  })}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <FormControl>
+                            <UnitSelect
+                              value={f.value}
+                              onValueChange={f.onChange}
+                            />
+                          </FormControl>
                         </FormItem>
                       )}
                     />

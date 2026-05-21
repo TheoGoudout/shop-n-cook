@@ -18,6 +18,7 @@ import {
   type ShoppingListPublic,
   ShoppingListsService,
 } from "@/client"
+import { UnitSelect } from "@/components/Common/UnitSelect"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -41,25 +42,6 @@ import {
 import useCustomToast from "@/hooks/useCustomToast"
 import { useUnitSystem } from "@/hooks/useUnitSystem"
 import { handleError } from "@/utils"
-
-const UNITS = [
-  "g",
-  "kg",
-  "ml",
-  "L",
-  "piece",
-  "tbsp",
-  "tsp",
-  "cup",
-  "oz",
-  "lb",
-  "bunch",
-  "pinch",
-  "clove",
-  "slice",
-  "can",
-  "package",
-]
 
 interface Props {
   list: ShoppingListPublic
@@ -371,18 +353,7 @@ export function ShoppingListCard({ list }: Props) {
                 <p className="text-sm font-medium mb-1">
                   {t("add_item_dialog.unit_label")}
                 </p>
-                <Select value={unit} onValueChange={setUnit}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {UNITS.map((u) => (
-                      <SelectItem key={u} value={u}>
-                        {tCommon(`unit_labels.${u}`, { defaultValue: u })}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <UnitSelect value={unit} onValueChange={setUnit} />
               </div>
             </div>
           </div>

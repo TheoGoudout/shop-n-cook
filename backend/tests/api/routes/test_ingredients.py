@@ -48,9 +48,7 @@ def test_get_duplicate_groups_too_few() -> None:
     from unittest.mock import MagicMock as MM
 
     mock_session = MM(spec=Session)
-    mock_session.exec.return_value.all.return_value = [
-        Ingredient(name="only_one")
-    ]
+    mock_session.exec.return_value.all.return_value = [Ingredient(name="only_one")]
 
     result = crud.get_duplicate_groups(session=mock_session)
     assert result == []
@@ -132,7 +130,10 @@ def test_deduplicate_dry_run(
 
     # Nothing deleted.
     assert crud.get_ingredient_by_name(session=db, name="test_dry_base_xyz") is not None
-    assert crud.get_ingredient_by_name(session=db, name="test_dry_base_xyz long") is not None
+    assert (
+        crud.get_ingredient_by_name(session=db, name="test_dry_base_xyz long")
+        is not None
+    )
 
     crud.delete_ingredient(session=db, ingredient=ing1)
     crud.delete_ingredient(session=db, ingredient=ing2)
@@ -163,8 +164,12 @@ def test_deduplicate_apply(
     assert data["groups"][0]["kept"] == "test_apply_base_xyz"
 
     # Shorter name kept; longer removed.
-    assert crud.get_ingredient_by_name(session=db, name="test_apply_base_xyz") is not None
-    assert crud.get_ingredient_by_name(session=db, name="test_apply_base_xyz long") is None
+    assert (
+        crud.get_ingredient_by_name(session=db, name="test_apply_base_xyz") is not None
+    )
+    assert (
+        crud.get_ingredient_by_name(session=db, name="test_apply_base_xyz long") is None
+    )
 
     remaining = crud.get_ingredient_by_name(session=db, name="test_apply_base_xyz")
     if remaining:

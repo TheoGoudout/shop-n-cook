@@ -65,9 +65,7 @@ def get_duplicate_groups(session: Session) -> list[list[Ingredient]]:
 
     from app.services.recipe_import import _get_llm
 
-    ingredients = session.exec(
-        select(Ingredient).order_by(Ingredient.name)
-    ).all()
+    ingredients = session.exec(select(Ingredient).order_by(Ingredient.name)).all()
     if len(ingredients) < 2:
         return []
 

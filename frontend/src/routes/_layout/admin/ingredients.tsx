@@ -36,7 +36,7 @@ function DeduplicateButton() {
 
   const mutation = useMutation({
     mutationFn: () =>
-      IngredientsService.deduplicateIngredients({ dry_run: false }),
+      IngredientsService.deduplicateIngredients({ dryRun: false }),
     onSuccess: (data) => {
       setOpen(false)
       if (data.removed_count === 0) {
@@ -60,7 +60,9 @@ function DeduplicateButton() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{t("ingredient.deduplicate_confirm_title")}</DialogTitle>
+            <DialogTitle>
+              {t("ingredient.deduplicate_confirm_title")}
+            </DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
             {t("ingredient.deduplicate_confirm_description")}

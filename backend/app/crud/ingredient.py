@@ -108,12 +108,12 @@ def rename_ingredient_references(
     session: Session, old_name: str, new_name: str
 ) -> None:
     """Update all recipe and shopping list references from old_name to new_name."""
-    session.exec(  # type: ignore[call-overload]
+    session.execute(
         update(RecipeIngredient)
         .where(func.lower(RecipeIngredient.ingredient_name) == old_name.lower())
         .values(ingredient_name=new_name)
     )
-    session.exec(  # type: ignore[call-overload]
+    session.execute(
         update(ShoppingListItem)
         .where(func.lower(ShoppingListItem.name) == old_name.lower())
         .values(name=new_name)

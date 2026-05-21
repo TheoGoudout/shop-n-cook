@@ -9,6 +9,17 @@ export type Body_login_login_access_token = {
     client_secret?: (string | null);
 };
 
+export type DeduplicateMerge = {
+    kept: string;
+    removed: Array<(string)>;
+};
+
+export type DeduplicateResponse = {
+    dry_run: boolean;
+    groups: Array<DeduplicateMerge>;
+    removed_count: number;
+};
+
 export type HTTPValidationError = {
     detail?: Array<ValidationError>;
 };
@@ -337,6 +348,12 @@ export type IngredientsUpdateIngredientData = {
 };
 
 export type IngredientsUpdateIngredientResponse = (IngredientPublic);
+
+export type IngredientsDeduplicateIngredientsData = {
+    dryRun?: boolean;
+};
+
+export type IngredientsDeduplicateIngredientsResponse = (DeduplicateResponse);
 
 export type IngredientsFetchIngredientImageData = {
     id: string;

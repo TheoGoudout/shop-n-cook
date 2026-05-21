@@ -4,7 +4,9 @@
     "target": {
       "namespace": "android_app",
       "package_name": "com.shopncook.app",
-      "sha256_cert_fingerprints": ["C1:37:E9:44:79:54:4A:FB:FC:57:F0:0E:14:BD:9A:7F:AA:6D:3F:E0:5E:39:8A:89:1B:82:B2:23:32:67:66:B3"]
+      "sha256_cert_fingerprints": [
+        "C1:37:E9:44:79:54:4A:FB:FC:57:F0:0E:14:BD:9A:7F:AA:6D:3F:E0:5E:39:8A:89:1B:82:B2:23:32:67:66:B3"
+      ]
     }
   }
 ]

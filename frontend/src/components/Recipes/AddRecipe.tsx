@@ -7,7 +7,7 @@ import { type Resolver, useFieldArray, useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { z } from "zod"
 
-import { RecipesService, type Unit } from "@/client"
+import { type IngredientCategory, RecipesService, type Unit } from "@/client"
 import { UnitSchema } from "@/client/schemas.gen"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -95,6 +95,8 @@ const AddRecipe = () => {
         quantity: z.coerce.number().positive(),
         unit: z.string().min(1),
         notes: z.string().optional(),
+        name_en: z.string().nullable().optional(),
+        category: z.string().nullable().optional(),
       }),
     [t],
   )
@@ -266,7 +268,7 @@ const AddRecipe = () => {
             unit: i.unit as Unit,
             notes: i.notes || null,
             name_en: i.name_en ?? null,
-            category: i.category ?? null,
+            category: (i.category ?? null) as IngredientCategory | null,
           })),
           steps: data.steps.map((s, idx) => ({
             step_number: idx + 1,

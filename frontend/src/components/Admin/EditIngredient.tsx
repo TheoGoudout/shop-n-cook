@@ -114,7 +114,10 @@ const EditIngredient = ({ ingredient, onSuccess }: EditIngredientProps) => {
           <form onSubmit={form.handleSubmit((d) => mutation.mutate(d))}>
             <DialogHeader>
               <DialogTitle>
-                {t("ingredient.edit_title", { ns: "admin", name: ingredient.name })}
+                {t("ingredient.edit_title", {
+                  ns: "admin",
+                  name: ingredient.name,
+                })}
               </DialogTitle>
             </DialogHeader>
             <div className="grid gap-4 py-4">

@@ -144,7 +144,10 @@ jobs:
       - name: Fix manifest version for Firefox
         run: |
           # Firefox requires numeric-only versions (x.y.z.w); convert e.g. 1.1.0-rc2 → 1.1.0.2
-          FF_VERSION=$(echo "${{ needs.build.outputs.version }}" | sed 's/-rc\([0-9]*\)$/.\1/')
+          # Use the release tag (e.g. v1.3.0-rc2) because manifest.json strips the pre-release suffix.
+          SEMVER="${{ github.ref_name }}"
+          SEMVER="${SEMVER#v}"
+          FF_VERSION=$(echo "$SEMVER" | sed 's/-rc\([0-9]*\)$/.\1/')
           jq --arg v "$FF_VERSION" '.version = $v' ext-src/manifest.json > /tmp/manifest.json
           mv /tmp/manifest.json ext-src/manifest.json
 

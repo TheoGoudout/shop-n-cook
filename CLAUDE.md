@@ -12,8 +12,8 @@ This is a Bun-workspace monorepo with a separate Python backend.
 backend/    FastAPI + SQLModel + Alembic (Python 3.10+, uv)
 frontend/   React 19 + Vite + TanStack Router/Query + Biome (Bun)
 extension/  Browser extension (Chrome/Firefox/Edge/Opera/Safari) — Vite + Vitest
-bubblewrap/ Android Trusted Web Activity wrapper
-ios/        iOS app configuration
+mobile/android/  Android Trusted Web Activity wrapper (bubblewrap-generated)
+mobile/ios/      iOS app configuration (PWABuilder-generated)
 landing/    Static Nginx-served landing page
 scripts/    Build/generation helpers
 ```

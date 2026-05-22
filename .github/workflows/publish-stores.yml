@@ -8,18 +8,18 @@
 #
 #   ANDROID (Trusted Web Activity via Bubblewrap)
 #     1. npm i -g @bubblewrap/cli
-#     2. mkdir bubblewrap && cd bubblewrap
+#     2. mkdir -p mobile/android && cd mobile/android
 #        bubblewrap init --manifest https://<your-domain>/manifest.webmanifest
-#     3. Commit the generated project (git add bubblewrap/ — keystore is gitignored)
-#     4. keytool -list -v -keystore bubblewrap/android.keystore → copy SHA-256 fingerprint
+#     3. Commit the generated project (git add mobile/android/ — keystore is gitignored)
+#     4. keytool -list -v -keystore mobile/android/android.keystore → copy SHA-256 fingerprint
 #        → paste into frontend/public/.well-known/assetlinks.json
-#     5. base64 -w0 bubblewrap/android.keystore → save as secret ANDROID_KEYSTORE_BASE64
+#     5. base64 -w0 mobile/android/android.keystore → save as secret ANDROID_KEYSTORE_BASE64
 #     6. Create Google Play service account with "Release manager" role
 #        → save JSON as secret GOOGLE_PLAY_SERVICE_ACCOUNT_JSON
 #
 #   iOS (PWABuilder-generated WKWebView app)
 #     1. Go to pwabuilder.com → enter your URL → Download → iOS
-#     2. Unzip into ios/ and commit
+#     2. Unzip into mobile/ios/ and commit
 #     3. In Apple Developer Portal: create App ID, provisioning profile, distribution cert
 #        base64 -w0 cert.p12  → APPLE_CERTIFICATE_BASE64
 #        base64 -w0 app.mobileprovision → APPLE_PROVISIONING_PROFILE_BASE64
@@ -147,11 +147,11 @@ jobs:
         if: github.event_name == 'release'
         run: |
           echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" \
-            | tr -d '[:space:]' | base64 -d > bubblewrap/android.keystore
+            | tr -d '[:space:]' | base64 -d > mobile/android/android.keystore
 
       - name: Convert keystore to legacy PKCS12
         if: github.event_name == 'release'
-        working-directory: bubblewrap
+        working-directory: mobile/android
         env:
           STORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
         run: |
@@ -170,7 +170,7 @@ jobs:
 
       - name: Bump version
         if: github.event_name == 'release'
-        working-directory: bubblewrap/app
+        working-directory: mobile/android/app
         run: |
           sed -i \
             "s/versionCode [0-9]*/versionCode ${{ needs.prepare.outputs.version_code }}/" \
@@ -181,7 +181,7 @@ jobs:
 
       - name: Build signed AAB
         if: github.event_name == 'release'
-        working-directory: bubblewrap
+        working-directory: mobile/android
         run: |
           chmod +x gradlew
           ./gradlew bundleRelease \
@@ -193,7 +193,7 @@ jobs:
 
       - name: Build signed APK
         if: github.event_name == 'release'
-        working-directory: bubblewrap
+        working-directory: mobile/android
         run: |
           ./gradlew assembleRelease \
             -Pandroid.injected.signing.store.file="$(pwd)/android.keystore" \
@@ -204,7 +204,7 @@ jobs:
 
       - name: Build debug APK
         if: github.event_name != 'release'
-        working-directory: bubblewrap
+        working-directory: mobile/android
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug
@@ -213,9 +213,9 @@ jobs:
         if: github.event_name == 'release'
         run: |
           VERSION="${{ needs.prepare.outputs.version }}"
-          cp bubblewrap/app/build/outputs/bundle/release/app-release.aab \
+          cp mobile/android/app/build/outputs/bundle/release/app-release.aab \
              "shop-n-cook-${VERSION}.aab"
-          cp bubblewrap/app/build/outputs/apk/release/app-release.apk \
+          cp mobile/android/app/build/outputs/apk/release/app-release.apk \
              "shop-n-cook-${VERSION}.apk"
 
       - name: Upload AAB artifact
@@ -239,7 +239,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: android-debug-apk
-          path: bubblewrap/app/build/outputs/apk/debug/app-debug.apk
+          path: mobile/android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 7
 
       - name: Attach APK and AAB to release
@@ -264,7 +264,7 @@ jobs:
         with:
           serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: ${{ vars.ANDROID_PACKAGE_NAME }}
-          releaseFiles: bubblewrap/app/build/outputs/bundle/release/app-release.aab
+          releaseFiles: mobile/android/app/build/outputs/bundle/release/app-release.aab
           tracks: ${{ needs.prepare.outputs.android_track }}
           releaseName: ${{ github.event.release.name }}
           whatsNewDirectory: whats-new
@@ -281,7 +281,7 @@ jobs:
         with:
           ruby-version: '3.3'
           bundler-cache: true
-          working-directory: ios
+          working-directory: mobile/ios
 
       - name: Import distribution certificate
         env:
@@ -310,7 +310,7 @@ jobs:
           cp "$PP_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/
 
       - name: Build and upload via Fastlane (${{ needs.prepare.outputs.ios_lane }})
-        working-directory: ios
+        working-directory: mobile/ios
         env:
           APP_STORE_CONNECT_API_KEY_ID:        ${{ secrets.APPLE_API_KEY_ID }}
           APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APPLE_API_KEY_ISSUER }}

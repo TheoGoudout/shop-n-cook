@@ -70,6 +70,9 @@ on:
     branches: [master]
   workflow_dispatch:
 
+permissions:
+  contents: write # needed to attach build artifacts to the release
+
 jobs:
   # ── Shared metadata ────────────────────────────────────────────────────────
   prepare:
@@ -188,6 +191,17 @@ jobs:
             -Pandroid.injected.signing.key.alias="${{ vars.ANDROID_KEY_ALIAS }}" \
             -Pandroid.injected.signing.key.password="${{ secrets.ANDROID_KEY_PASSWORD }}"
 
+      - name: Build signed APK
+        if: github.event_name == 'release'
+        working-directory: bubblewrap
+        run: |
+          ./gradlew assembleRelease \
+            -Pandroid.injected.signing.store.file="$(pwd)/android.keystore" \
+            -Pandroid.injected.signing.store.type=PKCS12 \
+            -Pandroid.injected.signing.store.password="${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" \
+            -Pandroid.injected.signing.key.alias="${{ vars.ANDROID_KEY_ALIAS }}" \
+            -Pandroid.injected.signing.key.password="${{ secrets.ANDROID_KEY_PASSWORD }}"
+
       - name: Build debug APK
         if: github.event_name != 'release'
         working-directory: bubblewrap
@@ -195,12 +209,29 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleDebug
 
+      - name: Rename release artifacts
+        if: github.event_name == 'release'
+        run: |
+          VERSION="${{ needs.prepare.outputs.version }}"
+          cp bubblewrap/app/build/outputs/bundle/release/app-release.aab \
+             "shop-n-cook-${VERSION}.aab"
+          cp bubblewrap/app/build/outputs/apk/release/app-release.apk \
+             "shop-n-cook-${VERSION}.apk"
+
       - name: Upload AAB artifact
         if: github.event_name == 'release'
         uses: actions/upload-artifact@v4
         with:
           name: android-aab
-          path: bubblewrap/app/build/outputs/bundle/release/app-release.aab
+          path: shop-n-cook-${{ needs.prepare.outputs.version }}.aab
+          retention-days: 7
+
+      - name: Upload APK artifact
+        if: github.event_name == 'release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: shop-n-cook-${{ needs.prepare.outputs.version }}.apk
           retention-days: 7
 
       - name: Upload debug APK artifact
@@ -210,6 +241,14 @@ jobs:
           name: android-debug-apk
           path: bubblewrap/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 7
+
+      - name: Attach APK and AAB to release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            shop-n-cook-${{ needs.prepare.outputs.version }}.apk
+            shop-n-cook-${{ needs.prepare.outputs.version }}.aab
 
       - name: Write release notes
         if: github.event_name == 'release'
@@ -340,3 +379,21 @@ jobs:
           } else {
             msstore publish -i $msix --id $productId
           }
+
+      - name: Rename MSIX for release
+        shell: pwsh
+        run: |
+          Copy-Item "$env:RUNNER_TEMP\ShopNCook.msix" `
+            "shop-n-cook-${{ needs.prepare.outputs.version }}.msix"
+
+      - name: Upload MSIX artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-msix
+          path: shop-n-cook-${{ needs.prepare.outputs.version }}.msix
+          retention-days: 7
+
+      - name: Attach MSIX to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: shop-n-cook-${{ needs.prepare.outputs.version }}.msix

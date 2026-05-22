@@ -157,6 +157,7 @@ jobs:
         run: bun add -g web-ext
 
       - name: Sign & submit to AMO
+        id: sign
         run: |
           # pre-release → unlisted (signed .xpi attached to release, not visible on AMO)
           # full release → listed (appears publicly on addons.mozilla.org)
@@ -165,7 +166,30 @@ jobs:
             --source-dir ext-src \
             --channel "$CHANNEL" \
             --api-key "${{ secrets.FIREFOX_API_KEY }}" \
-            --api-secret "${{ secrets.FIREFOX_API_SECRET }}"
+            --api-secret "${{ secrets.FIREFOX_API_SECRET }}" \
+            --artifacts-dir /tmp/web-ext-artifacts
+          echo "channel=$CHANNEL" >> "$GITHUB_OUTPUT"
+
+      - name: Attach XPI to release
+        run: |
+          XPI=$(find /tmp/web-ext-artifacts -name "*.xpi" -print -quit)
+          if [ -n "$XPI" ]; then
+            cp "$XPI" "shop-n-cook-${{ needs.build.outputs.version }}.xpi"
+          fi
+
+      - name: Upload XPI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: firefox-xpi
+          path: shop-n-cook-${{ needs.build.outputs.version }}.xpi
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Attach XPI to GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          fail_on_unmatched_files: false
+          files: shop-n-cook-${{ needs.build.outputs.version }}.xpi
 
   publish-edge:
     name: Publish → Edge Add-ons

@@ -29,6 +29,27 @@ Make sure your editor is using the correct Python virtual environment, with the 
 
 Modify or add SQLModel models for data and SQL tables in `./backend/app/models/`, API endpoints in `./backend/app/api/`, CRUD (Create, Read, Update, Delete) utils in `./backend/app/crud/`.
 
+### Code layout
+
+* `./backend/app/main.py` — FastAPI app, Sentry init, CORS, v1 router include.
+* `./backend/app/api/routes/` — one file per resource: `login`, `users`, `recipes`, `ingredients`, `shopping_lists`, `user_settings`, `utils`.
+* `./backend/app/api/deps.py` — shared dependencies (`SessionDep`, `CurrentUser`, superuser gates).
+* `./backend/app/models/` — SQLModel tables + Pydantic schemas (`*Create`, `*Update`, `*Public`).
+* `./backend/app/crud/` — CRUD functions. Public-facing shapes are built via helpers:
+  * `recipe_to_public(recipe, owner=None)` / `recipe_ingredient_to_public(ri)` in `crud/recipe.py`
+  * `shopping_list_to_public(shopping_list)` in `crud/shopping_list.py`
+  * Reuse these instead of constructing `RecipePublic` / `ShoppingListPublic` inline.
+  * CRUD signatures use keyword-only arguments (`*, session=…, owner_id=…`) — match the existing style when adding new functions.
+* `./backend/app/services/` — non-CRUD application services.
+  * `recipe_import/` — AI-powered URL → recipe extraction, split by concern:
+    * `models.py` — `ParsedIngredient`, `ParsedStep`, `ParsedRecipe`
+    * `prompt.py` — `build_system_prompt(language)` + Unit/Category fragments
+    * `scraper.py` — `fetch_page(url)` (httpx + BeautifulSoup, JSON-LD → HTML sections → plain-text fallback)
+    * `llm.py` — `get_llm()` (Anthropic / OpenAI / Google) and `configure_langsmith()`
+    * `orchestrator.py` — `import_recipe_from_url(url, language)` ties them together
+    * `__init__.py` re-exports the public surface. The orchestrator references its dependencies via `llm as llm_module` and `scraper as scraper_module` so tests can patch them at the submodule paths (`app.services.recipe_import.scraper.fetch_page`, `app.services.recipe_import.llm.get_llm`).
+  * `ingredient_image.py` — batch image lookup for ingredients.
+
 ## VS Code
 
 There are already configurations in place to run the backend through the VS Code debugger, so that you can use breakpoints, pause and explore variables, etc.

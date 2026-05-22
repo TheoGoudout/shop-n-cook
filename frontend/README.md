@@ -85,20 +85,35 @@ The frontend code is structured as follows:
 
 * `frontend/src` - The main frontend code.
 * `frontend/src/assets` - Static assets.
-* `frontend/src/client` - The generated OpenAPI client (auto-generated from backend OpenAPI schema).
+* `frontend/src/client` - The generated OpenAPI client (auto-generated from backend OpenAPI schema). **Never hand-edit.**
 * `frontend/src/components` - The different components of the frontend:
-  * `Recipes/` - Recipe list, detail, create/edit forms, and AI import modal.
-  * `ShoppingLists/` - Shopping list cards and item tracking.
+  * `Recipes/` - Recipe list, detail, action menu, and the Add/Edit flow:
+    * `AddRecipe.tsx` / `EditRecipe.tsx` are thin wrappers around the shared `RecipeForm.tsx`.
+    * `recipeFormSchema.ts` owns the Zod schema factory, `defaultCreateValues`, `buildEditDefaults`, and the `toRecipeCreatePayload` / `toRecipeUpdatePayload` mappers.
+    * `RecipeImportPanel.tsx` is the decoupled URL-import box used by `AddRecipe`.
+  * `ShoppingLists/` - List cards and per-list dialogs (`ShoppingListCard`, `AddItemDialog`, `AddRecipeDialog`, `RenameListDialog`).
   * `Dashboard/` - Stats overview and bar chart (Recharts).
-  * `UserSettings/` - Household settings form.
-  * `Admin/` - Admin user management panel.
+  * `UserSettings/` - Profile, household settings, and account deletion.
+  * `Admin/` - Admin user and ingredient management panel.
   * `Sidebar/` - App sidebar layout and navigation components.
   * `Pending/` - Loading skeleton placeholder components.
-  * `Common/` - Shared UI components (dialogs, tables, etc.).
-  * `ui/` - shadcn/ui base components.
-* `frontend/src/hooks` - Custom React hooks.
-* `frontend/src/i18n` - Internationalization setup and locale files (English and French).
-* `frontend/src/routes` - The different routes of the frontend which include the pages.
+  * `Common/` - Shared UI components:
+    * `ConfirmDialog.tsx` — destructive/confirm dialog for delete + confirm flows.
+    * `UnitSelect.tsx` — unit picker backed by `UnitSchema.enum` from the OpenAPI client.
+    * `DataTable.tsx`, `AuthLayout.tsx`, `Footer.tsx`, `Logo.tsx`, `NotFound.tsx`, `ErrorComponent.tsx`, `Appearance.tsx`.
+  * `ui/` - shadcn/ui base components (do not hand-edit; regenerate via `npx shadcn add`).
+* `frontend/src/hooks` - Custom React hooks (`useAuth`, `useCustomToast`, `useCrudMutation`, `useUnitSystem`, `useIngredientCatalog`, `useMobile`, `useCopyToClipboard`).
+* `frontend/src/i18n` - Internationalization setup and locale files under `locales/{en,fr}/<namespace>.json`. Every new key must land in both locales.
+* `frontend/src/routes` - File-based TanStack Router pages (the route tree is auto-regenerated at `routeTree.gen.ts`).
+
+### Shared primitives to reuse
+
+When adding new UI, prefer composing these over re-implementing the pattern:
+
+* `useCrudMutation({ mutationFn, invalidateKeys, successMessage, onSuccess })` — wraps `useMutation` with the standard success-toast / error-toast / invalidate-key plumbing. Supports `invalidateKeys: QueryKey | QueryKey[]`.
+* `<ConfirmDialog variant="destructive" />` — for any "are you sure?" flow. Supports both controlled mode and a `trigger` slot (e.g. a `DropdownMenuItem`).
+* `<UnitSelect />` — for any unit picker. Never hardcode a unit list.
+* `<RecipeForm mode="create" | "edit" />` — when extending the recipe shape, update `RecipeFormValues`, `createRecipeFormSchema`, `defaultCreateValues`, `buildEditDefaults`, and both payload mappers in `recipeFormSchema.ts`.
 
 ## End-to-End Testing with Playwright
 

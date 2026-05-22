@@ -111,6 +111,15 @@ This includes using Docker Compose, Mailcatcher, local development servers, `.en
 
 Check the file [release-notes.md](./release-notes.md).
 
+## For AI assistants
+
+If you're an AI assistant (Claude Code, Cursor, etc.) working in this repo,
+see [CLAUDE.md](./CLAUDE.md) for project conventions: the shared primitives
+(`<RecipeForm>`, `<UnitSelect>`, `<ConfirmDialog>`, `useCrudMutation`),
+the recipe-import package layout, i18n rules, pre-commit hooks, and the
+CI pipelines. Claude Code skills covering common workflows live under
+[`.claude/skills/`](./.claude/skills/).
+
 ## License
 
 The Shop n Cook project is licensed under the terms of the MIT license.

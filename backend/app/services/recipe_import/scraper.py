@@ -33,7 +33,9 @@ def _validate_url_is_public(url: str) -> None:
             or ip.is_reserved
             or ip.is_multicast
         ):
-            raise ValueError("Requests to private or reserved addresses are not allowed")
+            raise ValueError(
+                "Requests to private or reserved addresses are not allowed"
+            )
 
 
 def fetch_page(url: str) -> tuple[str, str | None]:

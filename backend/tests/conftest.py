@@ -6,6 +6,7 @@ from sqlmodel import Session, delete
 
 from app.core.config import settings
 from app.core.db import engine, init_db
+from app.core.limiter import limiter
 from app.main import app
 from app.models import (
     Recipe,
@@ -16,6 +17,18 @@ from app.models import (
 )
 from tests.utils.user import authentication_token_from_email
 from tests.utils.utils import get_superuser_token_headers
+
+
+@pytest.fixture(scope="session", autouse=True)
+def disable_rate_limiting() -> Generator[None, None, None]:
+    """Disable slowapi rate limiting during tests.
+
+    TestClient routes all requests from a single synthetic IP, so rate limits
+    would trip almost immediately across the test suite.
+    """
+    limiter._enabled = False
+    yield
+    limiter._enabled = True
 
 
 @pytest.fixture(scope="session", autouse=True)

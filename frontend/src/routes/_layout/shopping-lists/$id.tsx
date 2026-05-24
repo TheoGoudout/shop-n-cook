@@ -62,8 +62,13 @@ function formatDate(d: string) {
 function recipeBreakdown(
   item: ShoppingListItemPublic,
   planned: ShoppingListRecipePublic[],
-): { title: string; quantity: number; unit: string }[] {
-  const results: { title: string; quantity: number; unit: string }[] = []
+): { title: string; recipe_id: string; quantity: number; unit: string }[] {
+  const results: {
+    title: string
+    recipe_id: string
+    quantity: number
+    unit: string
+  }[] = []
   for (const pr of planned) {
     const scale = pr.servings_planned / Math.max(pr.recipe_servings ?? 1, 1)
     const ri = pr.ingredients?.find(
@@ -74,6 +79,7 @@ function recipeBreakdown(
     if (ri) {
       results.push({
         title: pr.recipe_title,
+        recipe_id: pr.recipe_id,
         quantity: Math.round(ri.quantity * scale * 100) / 100,
         unit: item.unit,
       })
@@ -191,13 +197,23 @@ function ShoppingTab({ list }: { list: ShoppingListPublic }) {
             <Trash2 className="h-3 w-3" />
           </Button>
         </div>
-        {breakdown.length > 1 && (
+        {breakdown.length >= 1 && (
           <div className="ml-6 mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5">
             {breakdown.map((b) => {
               const convertedB = convert(b.quantity, b.unit)
               return (
-                <span key={b.title} className="text-xs text-muted-foreground">
-                  {b.title}: {convertedB.quantity}{" "}
+                <span
+                  key={b.recipe_id}
+                  className="text-xs text-muted-foreground"
+                >
+                  <Link
+                    to="/recipes/$id"
+                    params={{ id: b.recipe_id }}
+                    className="hover:underline"
+                  >
+                    {b.title}
+                  </Link>
+                  : {convertedB.quantity}{" "}
                   {tCommon(`unit_labels.${convertedB.unit}`, {
                     defaultValue: convertedB.unit,
                   })}

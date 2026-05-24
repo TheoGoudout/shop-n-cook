@@ -56,6 +56,7 @@ services:
       - LANGCHAIN_API_KEY=${LANGCHAIN_API_KEY}
       - LANGCHAIN_PROJECT=${LANGCHAIN_PROJECT}
       - LANGCHAIN_ENDPOINT=${LANGCHAIN_ENDPOINT}
+      - RATE_LIMIT_ENABLED=${RATE_LIMIT_ENABLED:-True}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/utils/health-check/"]
       interval: 10s

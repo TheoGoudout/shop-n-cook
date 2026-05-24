@@ -199,6 +199,12 @@ def add_recipe(
     recipe = crud.get_recipe(session=session, recipe_id=recipe_id)
     if not recipe:
         raise HTTPException(status_code=404, detail="Recipe not found")
+    if (
+        not current_user.is_superuser
+        and recipe.owner_id != current_user.id
+        and not recipe.is_public
+    ):
+        raise HTTPException(status_code=403, detail="Not enough permissions")
     sl = crud.add_recipe_to_shopping_list(
         session=session,
         shopping_list=sl,

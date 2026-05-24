@@ -2,14 +2,45 @@
 
 from __future__ import annotations
 
+import ipaddress
 import json
+import socket
+from urllib.parse import urlparse
 
 import httpx
 from bs4 import BeautifulSoup
 
 
+def _validate_url_is_public(url: str) -> None:
+    """Raise ValueError if the URL resolves to a private/internal address (SSRF guard)."""
+    hostname = urlparse(url).hostname
+    if not hostname:
+        raise ValueError("Invalid URL: missing hostname")
+    try:
+        infos = socket.getaddrinfo(hostname, None)
+    except socket.gaierror as exc:
+        raise ValueError(f"Could not resolve hostname '{hostname}'") from exc
+    for info in infos:
+        addr = info[4][0]
+        try:
+            ip = ipaddress.ip_address(addr)
+        except ValueError:
+            continue
+        if (
+            ip.is_private
+            or ip.is_loopback
+            or ip.is_link_local
+            or ip.is_reserved
+            or ip.is_multicast
+        ):
+            raise ValueError(
+                "Requests to private or reserved addresses are not allowed"
+            )
+
+
 def fetch_page(url: str) -> tuple[str, str | None]:
     """Fetch a URL and return (focused recipe text, og:image URL or None)."""
+    _validate_url_is_public(url)
     response = httpx.get(
         url,
         timeout=15,

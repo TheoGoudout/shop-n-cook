@@ -31,33 +31,32 @@ import { LoadingButton } from "@/components/ui/loading-button"
 import useCustomToast from "@/hooks/useCustomToast"
 import { handleError } from "@/utils"
 
-function isoWeekNumber(d: Date): number {
-  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()))
-  const day = date.getUTCDay() || 7
-  date.setUTCDate(date.getUTCDate() + 4 - day)
-  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1))
-  return Math.ceil(((date.getTime() - yearStart.getTime()) / 86400000 + 1) / 7)
-}
-
 function toDateInput(d: Date): string {
   return d.toISOString().split("T")[0]
 }
 
-function getDefaultListDefaults() {
+function getDefaultListDefaults(locale: string) {
   const now = new Date()
   const day = now.getDay()
-  const diff = day === 0 ? -6 : 1 - day // shift to Monday
+  // Thu-Sun: default to next week (already planning ahead); Mon-Wed: current week
+  const isUpcoming = day === 0 || day >= 4
+  const daysToMonday = isUpcoming
+    ? day === 0
+      ? 1
+      : 8 - day
+    : day === 1
+      ? 0
+      : 1 - day
   const monday = new Date(now)
-  monday.setDate(now.getDate() + diff)
+  monday.setDate(now.getDate() + daysToMonday)
   const sunday = new Date(monday)
   sunday.setDate(monday.getDate() + 6)
 
-  const weekNum = isoWeekNumber(now)
   const fmt = (d: Date) =>
-    d.toLocaleDateString(undefined, { day: "numeric", month: "short" })
+    d.toLocaleDateString(locale, { day: "numeric", month: "short" })
 
   return {
-    name: `Week #${weekNum} · ${fmt(monday)} – ${fmt(sunday)}`,
+    name: `${fmt(monday)} – ${fmt(sunday)}`,
     start_date: toDateInput(monday),
     end_date: toDateInput(sunday),
   }
@@ -70,11 +69,13 @@ type FormData = {
 }
 
 const AddShoppingList = () => {
-  const { t } = useTranslation("shopping")
+  const { t, i18n } = useTranslation("shopping")
   const { t: tCommon } = useTranslation("common")
   const [isOpen, setIsOpen] = useState(false)
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
+
+  const defaults = () => getDefaultListDefaults(i18n.language)
 
   const formSchema = z.object({
     name: z.string().min(1, { message: t("add_list.name_required") }),
@@ -84,7 +85,7 @@ const AddShoppingList = () => {
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
-    defaultValues: getDefaultListDefaults(),
+    defaultValues: defaults(),
   })
 
   const mutation = useMutation({
@@ -98,7 +99,7 @@ const AddShoppingList = () => {
       }),
     onSuccess: () => {
       showSuccessToast(t("add_list.success"))
-      form.reset(getDefaultListDefaults())
+      form.reset(defaults())
       setIsOpen(false)
     },
     onError: handleError.bind(showErrorToast),
@@ -111,7 +112,7 @@ const AddShoppingList = () => {
       open={isOpen}
       onOpenChange={(open) => {
         setIsOpen(open)
-        if (open) form.reset(getDefaultListDefaults())
+        if (open) form.reset(defaults())
       }}
     >
       <DialogTrigger asChild>

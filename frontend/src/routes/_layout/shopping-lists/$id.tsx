@@ -198,7 +198,7 @@ function ShoppingTab({ list }: { list: ShoppingListPublic }) {
           </Button>
         </div>
         {breakdown.length >= 1 && (
-          <div className="ml-6 mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5">
+          <div className="ml-6 mt-0.5 flex flex-col gap-y-0.5">
             {breakdown.map((b) => {
               const convertedB = convert(b.quantity, b.unit)
               return (

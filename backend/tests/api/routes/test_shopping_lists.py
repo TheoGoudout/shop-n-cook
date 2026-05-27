@@ -342,3 +342,93 @@ def test_delete_planned_recipe_wrong_list(
         headers=superuser_token_headers,
     )
     assert response.status_code == 404
+
+
+def test_delete_planned_recipe_removes_ingredients(
+    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+) -> None:
+    """Deleting a planned recipe removes its contributed ingredients from the list."""
+    superuser = crud.get_user_by_email(session=db, email=settings.FIRST_SUPERUSER)
+    sl = create_random_shopping_list(db, owner_id=superuser.id)  # type: ignore[union-attr]
+    recipe = create_random_recipe(db, owner_id=superuser.id, with_ingredients=True)  # type: ignore[union-attr]
+    add_resp = client.post(
+        f"{settings.API_V1_STR}/shopping-lists/{sl.id}/add-recipe/{recipe.id}",  # type: ignore[attr-defined]
+        headers=superuser_token_headers,
+    )
+    assert add_resp.status_code == 200
+    planned_id = add_resp.json()["planned_recipes"][0]["id"]
+
+    del_resp = client.delete(
+        f"{settings.API_V1_STR}/shopping-lists/{sl.id}/planned-recipes/{planned_id}",
+        headers=superuser_token_headers,
+    )
+    assert del_resp.status_code == 200
+
+    list_resp = client.get(
+        f"{settings.API_V1_STR}/shopping-lists/{sl.id}",
+        headers=superuser_token_headers,
+    )
+    assert list_resp.json()["items"] == []
+    assert list_resp.json()["planned_recipes"] == []
+
+
+def test_delete_planned_recipe_partial_aggregate(
+    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+) -> None:
+    """Deleting one of two recipes sharing an ingredient reduces (not zeros) the quantity."""
+    superuser = crud.get_user_by_email(session=db, email=settings.FIRST_SUPERUSER)
+    sl = create_random_shopping_list(db, owner_id=superuser.id)  # type: ignore[union-attr]
+    recipe = create_random_recipe(db, owner_id=superuser.id, with_ingredients=True)  # type: ignore[union-attr]
+    # Add the same recipe twice (shared ingredients, quantity doubled)
+    for _ in range(2):
+        client.post(
+            f"{settings.API_V1_STR}/shopping-lists/{sl.id}/add-recipe/{recipe.id}",  # type: ignore[attr-defined]
+            headers=superuser_token_headers,
+        )
+    list_resp = client.get(
+        f"{settings.API_V1_STR}/shopping-lists/{sl.id}",
+        headers=superuser_token_headers,
+    )
+    planned_id = list_resp.json()["planned_recipes"][0]["id"]
+
+    client.delete(
+        f"{settings.API_V1_STR}/shopping-lists/{sl.id}/planned-recipes/{planned_id}",
+        headers=superuser_token_headers,
+    )
+
+    final_resp = client.get(
+        f"{settings.API_V1_STR}/shopping-lists/{sl.id}",
+        headers=superuser_token_headers,
+    )
+    items = final_resp.json()["items"]
+    assert len(items) == 2  # still 2 distinct ingredients
+    for item in items:
+        assert item["quantity"] == 1.0  # back to single-recipe quantity
+
+
+def test_update_planned_recipe_servings_adjusts_items(
+    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+) -> None:
+    """Updating servings_planned scales ingredient quantities accordingly."""
+    superuser = crud.get_user_by_email(session=db, email=settings.FIRST_SUPERUSER)
+    sl = create_random_shopping_list(db, owner_id=superuser.id)  # type: ignore[union-attr]
+    recipe = create_random_recipe(db, owner_id=superuser.id, with_ingredients=True)  # type: ignore[union-attr]
+    add_resp = client.post(
+        f"{settings.API_V1_STR}/shopping-lists/{sl.id}/add-recipe/{recipe.id}",  # type: ignore[attr-defined]
+        headers=superuser_token_headers,
+    )
+    planned_id = add_resp.json()["planned_recipes"][0]["id"]
+    original_servings = add_resp.json()["planned_recipes"][0]["recipe_servings"] or 1
+
+    client.patch(
+        f"{settings.API_V1_STR}/shopping-lists/{sl.id}/planned-recipes/{planned_id}",
+        headers=superuser_token_headers,
+        json={"servings_planned": original_servings * 2},
+    )
+
+    list_resp = client.get(
+        f"{settings.API_V1_STR}/shopping-lists/{sl.id}",
+        headers=superuser_token_headers,
+    )
+    for item in list_resp.json()["items"]:
+        assert item["quantity"] == 2.0  # doubled servings → doubled quantities

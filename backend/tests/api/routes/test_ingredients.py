@@ -9,6 +9,8 @@ from sqlmodel import Session
 from app import crud
 from app.core.config import settings
 from app.models.ingredient import Ingredient
+from app.models.shopping_list import ShoppingListItem
+from app.models import ShoppingListCreate, Unit
 
 
 def _llm_response(groups: list[list[str]]) -> MagicMock:
@@ -40,6 +42,38 @@ def test_rename_ingredient_references_no_match(db: Session) -> None:
         old_name="test_nonexistent_old_zzz",
         new_name="test_nonexistent_new_zzz",
     )
+
+
+def test_rename_merges_duplicate_shopping_list_items(db: Session) -> None:
+    """After renaming, shopping list items with the same name+unit are merged."""
+    superuser = crud.get_user_by_email(session=db, email=settings.FIRST_SUPERUSER)
+    sl = crud.create_shopping_list(
+        session=db,
+        list_in=ShoppingListCreate(name="test_merge_sl"),
+        owner_id=superuser.id,  # type: ignore[union-attr]
+    )
+    item_a = ShoppingListItem(
+        shopping_list_id=sl.id,
+        name="Tomato",
+        quantity=100.0,
+        unit=Unit.GRAM,
+    )
+    item_b = ShoppingListItem(
+        shopping_list_id=sl.id,
+        name="Tomate",
+        quantity=200.0,
+        unit=Unit.GRAM,
+    )
+    db.add(item_a)
+    db.add(item_b)
+    db.commit()
+
+    crud.rename_ingredient_references(session=db, old_name="Tomate", new_name="Tomato")
+
+    db.refresh(sl)
+    items = [i for i in sl.items if i.unit == Unit.GRAM and i.name.lower() == "tomato"]
+    assert len(items) == 1
+    assert items[0].quantity == 300.0
 
 
 def test_get_duplicate_groups_too_few() -> None:

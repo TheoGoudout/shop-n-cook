@@ -10,6 +10,8 @@ import {
   CheckCircle2,
   ChefHat,
   Circle,
+  Minus,
+  Plus,
   ShoppingCart,
   Trash2,
   Users,
@@ -288,6 +290,23 @@ function MealsTab({ list }: { list: ShoppingListPublic }) {
     onSettled: invalidate,
   })
 
+  const updateServings = useMutation({
+    mutationFn: ({
+      plannedRecipeId,
+      servings,
+    }: {
+      plannedRecipeId: string
+      servings: number
+    }) =>
+      ShoppingListsService.updatePlannedRecipe({
+        id,
+        plannedRecipeId,
+        requestBody: { servings_planned: servings },
+      }),
+    onError: handleError.bind(showErrorToast),
+    onSettled: invalidate,
+  })
+
   if (planned.length === 0) {
     return (
       <p className="text-sm text-muted-foreground italic py-4">
@@ -335,10 +354,45 @@ function MealsTab({ list }: { list: ShoppingListPublic }) {
                   >
                     {pr.recipe_title}
                   </Link>
-                  <Badge variant="secondary" className="text-xs">
-                    <Users className="h-3 w-3 mr-1" />
-                    {t("servings_badge", { count: pr.servings_planned })}
-                  </Badge>
+                  <div className="flex items-center gap-0.5 rounded-full bg-secondary px-1.5 py-0.5 text-xs text-secondary-foreground">
+                    <button
+                      type="button"
+                      className="flex h-4 w-4 items-center justify-center rounded-full hover:bg-muted disabled:opacity-40"
+                      disabled={
+                        pr.servings_planned <= 1 ||
+                        (updateServings.isPending &&
+                          updateServings.variables?.plannedRecipeId === pr.id)
+                      }
+                      onClick={() =>
+                        updateServings.mutate({
+                          plannedRecipeId: pr.id,
+                          servings: pr.servings_planned - 1,
+                        })
+                      }
+                    >
+                      <Minus className="h-2.5 w-2.5" />
+                    </button>
+                    <span className="flex items-center gap-1 px-1">
+                      <Users className="h-3 w-3" />
+                      {t("servings_badge", { count: pr.servings_planned })}
+                    </span>
+                    <button
+                      type="button"
+                      className="flex h-4 w-4 items-center justify-center rounded-full hover:bg-muted disabled:opacity-40"
+                      disabled={
+                        updateServings.isPending &&
+                        updateServings.variables?.plannedRecipeId === pr.id
+                      }
+                      onClick={() =>
+                        updateServings.mutate({
+                          plannedRecipeId: pr.id,
+                          servings: pr.servings_planned + 1,
+                        })
+                      }
+                    >
+                      <Plus className="h-2.5 w-2.5" />
+                    </button>
+                  </div>
                   {pr.is_prepared && (
                     <Badge variant="outline" className="text-xs text-green-600">
                       {t("detail.done")}

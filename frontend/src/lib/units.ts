@@ -69,7 +69,7 @@ export function convertUnit(
   }
 
   // Unit is already in target system, or is universal (piece, bunch, etc.)
-  return { quantity, unit }
+  return { quantity: roundSmart(quantity), unit }
 }
 
 /** Read the saved unit system preference from localStorage */

@@ -38,15 +38,7 @@ function toDateInput(d: Date): string {
 function getDefaultListDefaults(locale: string) {
   const now = new Date()
   const day = now.getDay()
-  // Thu-Sun: default to next week (already planning ahead); Mon-Wed: current week
-  const isUpcoming = day === 0 || day >= 4
-  const daysToMonday = isUpcoming
-    ? day === 0
-      ? 1
-      : 8 - day
-    : day === 1
-      ? 0
-      : 1 - day
+  const daysToMonday = day === 0 ? 1 : 8 - day
   const monday = new Date(now)
   monday.setDate(now.getDate() + daysToMonday)
   const sunday = new Date(monday)

@@ -120,6 +120,31 @@ def get_duplicate_groups(session: Session) -> list[list[Ingredient]]:
     return result
 
 
+def _merge_duplicate_shopping_list_items(
+    session: Session, canonical_name: str
+) -> None:
+    """Merge shopping list items that share the same name+unit after a rename."""
+    items = session.exec(
+        select(ShoppingListItem).where(
+            func.lower(ShoppingListItem.name) == canonical_name.lower()
+        )
+    ).all()
+
+    groups: dict[tuple[uuid.UUID, str], list[ShoppingListItem]] = {}
+    for item in items:
+        key = (item.shopping_list_id, item.unit)
+        groups.setdefault(key, []).append(item)
+
+    for group_items in groups.values():
+        if len(group_items) <= 1:
+            continue
+        keeper = group_items[0]
+        keeper.quantity = sum(i.quantity for i in group_items)
+        session.add(keeper)
+        for dup in group_items[1:]:
+            session.delete(dup)
+
+
 def rename_ingredient_references(
     session: Session, old_name: str, new_name: str
 ) -> None:
@@ -134,6 +159,8 @@ def rename_ingredient_references(
         .where(func.lower(ShoppingListItem.name) == old_name.lower())
         .values(name=new_name)
     )
+    session.flush()
+    _merge_duplicate_shopping_list_items(session, new_name)
     session.commit()
 
 

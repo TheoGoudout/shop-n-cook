@@ -88,6 +88,7 @@ services:
       - "5173:5173"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5173/"]
+      start_period: 30s
     build:
       context: .
       dockerfile: frontend/Dockerfile.dev

@@ -1,6 +1,24 @@
 # Release Notes
 
-## Latest Changes
+## 1.4.2
+
+### Features
+
+* Shopping list: servings +/- controls — adjust recipe servings directly from the list
+* Shopping list: item quantities update automatically when recipe servings change
+* Shopping list: improved UX for recipe management, servings display, and list renaming
+* Shopping list: ingredient entries now link back to their source recipe
+* Ingredient rename: duplicate shopping list items automatically merged after rename
+
+### Fixes
+
+* Android: fix TWA build failure — replace deprecated jcenter() with mavenCentral()
+* Android: publish releases to internal track instead of production
+* Android: add Play App Signing certificate fingerprint to assetlinks.json
+* Security: fix three permission issues found during extension review
+* Docker: pass `RATE_LIMIT_ENABLED` into backend container
+
+## 1.4.0
 
 ### Features
 

@@ -80,16 +80,21 @@ jobs:
         with:
           name: extension-zip
 
-      - name: Get OAuth access token
+      - name: Get access token from service account
         id: token
         env:
-          CLIENT_ID:     ${{ secrets.CHROME_CLIENT_ID }}
-          CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
-          REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
+          SA_JSON: ${{ secrets.CHROME_SERVICE_ACCOUNT_JSON }}
         run: |
-          TOKEN=$(curl -sf -X POST "https://oauth2.googleapis.com/token" \
-            -d "client_id=$CLIENT_ID&client_secret=$CLIENT_SECRET&refresh_token=$REFRESH_TOKEN&grant_type=refresh_token" \
-            | jq -r '.access_token')
+          TOKEN=$(python3 - <<'PYEOF'
+import google.oauth2.service_account, google.auth.transport.requests, json, os
+creds = google.oauth2.service_account.Credentials.from_service_account_info(
+    json.loads(os.environ["SA_JSON"]),
+    scopes=["https://www.googleapis.com/auth/chromewebstore"],
+)
+creds.refresh(google.auth.transport.requests.Request())
+print(creds.token)
+PYEOF
+)
           echo "::add-mask::$TOKEN"
           echo "token=$TOKEN" >> "$GITHUB_OUTPUT"
 

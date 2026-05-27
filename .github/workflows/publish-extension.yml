@@ -80,28 +80,18 @@ jobs:
         with:
           name: extension-zip
 
-      - name: Get access token from service account
+      - name: Authenticate to Google
         id: token
-        env:
-          SA_JSON: ${{ secrets.CHROME_SERVICE_ACCOUNT_JSON }}
-        run: |
-          TOKEN=$(python3 - <<'PYEOF'
-import google.oauth2.service_account, google.auth.transport.requests, json, os
-creds = google.oauth2.service_account.Credentials.from_service_account_info(
-    json.loads(os.environ["SA_JSON"]),
-    scopes=["https://www.googleapis.com/auth/chromewebstore"],
-)
-creds.refresh(google.auth.transport.requests.Request())
-print(creds.token)
-PYEOF
-)
-          echo "::add-mask::$TOKEN"
-          echo "token=$TOKEN" >> "$GITHUB_OUTPUT"
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.CHROME_SERVICE_ACCOUNT_JSON }}
+          token_format: access_token
+          scopes: https://www.googleapis.com/auth/chromewebstore
 
       - name: Upload package
         env:
           EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
-          TOKEN:        ${{ steps.token.outputs.token }}
+          TOKEN:        ${{ steps.token.outputs.access_token }}
         run: |
           curl -sf -X PUT \
             "https://www.googleapis.com/upload/chromewebstore/v1.1/items/$EXTENSION_ID" \
@@ -112,7 +102,7 @@ PYEOF
       - name: Publish submission
         env:
           EXTENSION_ID:   ${{ secrets.CHROME_EXTENSION_ID }}
-          TOKEN:          ${{ steps.token.outputs.token }}
+          TOKEN:          ${{ steps.token.outputs.access_token }}
           PUBLISH_TARGET: ${{ github.event.release.prerelease && 'trustedTesters' || 'default' }}
         run: |
           RESULT=$(curl -s -X POST \
@@ -222,7 +212,7 @@ PYEOF
         run: |
           curl -sf -X POST \
             "https://api.addons.microsoftedge.microsoft.com/v1/products/${{ secrets.EDGE_PRODUCT_ID }}/submissions/draft/package" \
-            -H "Authorization: Bearer ${{ steps.token.outputs.token }}" \
+            -H "Authorization: Bearer ${{ steps.token.outputs.access_token }}" \
             -H "Content-Type: application/zip" \
             --data-binary @extension.zip
 
@@ -232,7 +222,7 @@ PYEOF
         run: |
           curl -sf -X POST \
             "https://api.addons.microsoftedge.microsoft.com/v1/products/${{ secrets.EDGE_PRODUCT_ID }}/submissions" \
-            -H "Authorization: Bearer ${{ steps.token.outputs.token }}"
+            -H "Authorization: Bearer ${{ steps.token.outputs.access_token }}"
 
   publish-opera:
     name: Publish → Opera Add-ons

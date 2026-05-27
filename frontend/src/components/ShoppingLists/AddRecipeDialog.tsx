@@ -2,7 +2,11 @@ import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 
-import { RecipesService, ShoppingListsService } from "@/client"
+import {
+  RecipesService,
+  ShoppingListsService,
+  UserSettingsService,
+} from "@/client"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -39,6 +43,11 @@ export function AddRecipeDialog({ listId, open, onOpenChange }: Props) {
     queryKey: ["recipes"],
     queryFn: () => RecipesService.readRecipes({ limit: 100 }),
     enabled: open,
+  })
+
+  const { data: userSettings } = useQuery({
+    queryKey: ["user-settings"],
+    queryFn: () => UserSettingsService.readUserSettings(),
   })
 
   const selectedRecipeData = recipesData?.data.find(
@@ -79,8 +88,12 @@ export function AddRecipeDialog({ listId, open, onOpenChange }: Props) {
               value={selectedRecipe}
               onValueChange={(v) => {
                 setSelectedRecipe(v)
-                const r = recipesData?.data.find((r) => r.id === v)
-                if (r?.servings) setServings(String(r.servings))
+                const householdSize = userSettings?.household_size
+                if (householdSize) setServings(String(householdSize))
+                else {
+                  const r = recipesData?.data.find((r) => r.id === v)
+                  if (r?.servings) setServings(String(r.servings))
+                }
               }}
             >
               <SelectTrigger>

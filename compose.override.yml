@@ -41,19 +41,34 @@ services:
       - "app/main.py"
     develop:
       watch:
-        - path: ./backend
+        - path: ./backend/app
           action: sync
-          target: /app/backend
-          ignore:
-            - ./backend/.venv
-            - .venv
+          target: /app/backend/app
+        - path: ./backend/scripts
+          action: sync
+          target: /app/backend/scripts
         - path: ./backend/pyproject.toml
+          action: rebuild
+        - path: ./uv.lock
+          action: rebuild
+        - path: ./pyproject.toml
           action: rebuild
     volumes:
       - ./backend/htmlcov:/app/backend/htmlcov
 
   prestart:
     environment: *backend-required-env
+    develop:
+      watch:
+        - path: ./backend/app/alembic
+          action: sync+restart
+          target: /app/backend/app/alembic
+        - path: ./backend/pyproject.toml
+          action: rebuild
+        - path: ./uv.lock
+          action: rebuild
+        - path: ./pyproject.toml
+          action: rebuild
 
   mailcatcher:
     image: schickling/mailcatcher
@@ -70,14 +85,34 @@ services:
   frontend:
     restart: "no"
     ports:
-      - "5173:80"
+      - "5173:5173"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5173/"]
+      start_period: 30s
     build:
       context: .
-      dockerfile: frontend/Dockerfile
-      args:
-        - VITE_API_URL=${API_URL?Variable not set}
-        - VITE_PROJECT_NAME=${PROJECT_NAME?Variable not set}
-        - NODE_ENV=development
+      dockerfile: frontend/Dockerfile.dev
+    environment:
+      - VITE_API_URL=${API_URL?Variable not set}
+      - VITE_PROJECT_NAME=${PROJECT_NAME:-Shop n Cook}
+    develop:
+      watch:
+        - path: ./frontend/src
+          action: sync
+          target: /app/frontend/src
+        - path: ./frontend/public
+          action: sync
+          target: /app/frontend/public
+        - path: ./frontend/index.html
+          action: sync
+          target: /app/frontend/index.html
+        - path: ./frontend/vite.config.ts
+          action: sync+restart
+          target: /app/frontend/vite.config.ts
+        - path: ./frontend/package.json
+          action: rebuild
+        - path: ./bun.lock
+          action: rebuild
 
   landing:
     restart: "no"
@@ -85,6 +120,19 @@ services:
       - "8080:80"
     environment:
       FRONTEND_URL: ${FRONTEND_HOST?Variable not set}
+    develop:
+      watch:
+        - path: ./landing/index.html
+          action: sync+restart
+          target: /usr/share/nginx/html/index.html.template
+        - path: ./landing/privacy.html
+          action: sync
+          target: /usr/share/nginx/html/privacy.html
+        - path: ./landing/nginx.conf
+          action: sync+restart
+          target: /etc/nginx/conf.d/default.conf
+        - path: ./landing/docker-entrypoint.sh
+          action: rebuild
 
   playwright:
     build:

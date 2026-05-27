@@ -7,6 +7,9 @@ import { VitePWA } from "vite-plugin-pwa"
 import pkg from "./package.json"
 
 export default defineConfig(({ mode }) => ({
+  server: {
+    host: true,
+  },
   define: {
     __APP_VERSION__: JSON.stringify(
       mode === "development" ? "dev" : pkg.version,

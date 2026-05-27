@@ -166,12 +166,70 @@ def get_shopping_list_recipe(
     return session.get(ShoppingListRecipe, sl_recipe_id)
 
 
+def _adjust_items_for_recipe(
+    *,
+    session: Session,
+    shopping_list: ShoppingList,
+    sl_recipe: ShoppingListRecipe,
+    old_servings: int,
+    new_servings: int,
+) -> None:
+    """Adjust shopping list items when a recipe's planned servings change.
+
+    Subtracts the old contribution and adds the new one for each ingredient.
+    Items that drop to zero or below are deleted.
+    """
+    recipe = sl_recipe.recipe
+    original_servings = recipe.servings or 1
+    old_scale = old_servings / original_servings
+    new_scale = new_servings / original_servings
+
+    existing: dict[tuple[str, str], ShoppingListItem] = {
+        (item.name.lower(), item.unit): item for item in shopping_list.items
+    }
+
+    for ri in recipe.recipe_ingredients:
+        key = (ri.ingredient_name.lower(), ri.unit)
+        delta = ri.quantity * (new_scale - old_scale)
+        if abs(delta) < 1e-9:
+            continue
+        if key in existing:
+            item = existing[key]
+            item.quantity += delta
+            if item.quantity <= 1e-9:
+                session.delete(item)
+                del existing[key]
+            else:
+                session.add(item)
+        elif delta > 0:
+            new_item = ShoppingListItem(
+                shopping_list_id=shopping_list.id,
+                name=ri.ingredient_name,
+                quantity=delta,
+                unit=ri.unit,
+            )
+            session.add(new_item)
+            existing[key] = new_item
+
+
 def update_shopping_list_recipe(
     *,
     session: Session,
+    shopping_list: ShoppingList,
     sl_recipe: ShoppingListRecipe,
     update_in: ShoppingListRecipeUpdate,
 ) -> ShoppingListRecipe:
+    if (
+        update_in.servings_planned is not None
+        and update_in.servings_planned != sl_recipe.servings_planned
+    ):
+        _adjust_items_for_recipe(
+            session=session,
+            shopping_list=shopping_list,
+            sl_recipe=sl_recipe,
+            old_servings=sl_recipe.servings_planned,
+            new_servings=update_in.servings_planned,
+        )
     update_data = update_in.model_dump(exclude_unset=True)
     sl_recipe.sqlmodel_update(update_data)
     session.add(sl_recipe)
@@ -181,8 +239,15 @@ def update_shopping_list_recipe(
 
 
 def delete_shopping_list_recipe(
-    *, session: Session, sl_recipe: ShoppingListRecipe
+    *, session: Session, shopping_list: ShoppingList, sl_recipe: ShoppingListRecipe
 ) -> None:
+    _adjust_items_for_recipe(
+        session=session,
+        shopping_list=shopping_list,
+        sl_recipe=sl_recipe,
+        old_servings=sl_recipe.servings_planned,
+        new_servings=0,
+    )
     session.delete(sl_recipe)
     session.commit()
 

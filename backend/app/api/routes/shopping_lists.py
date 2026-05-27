@@ -232,14 +232,14 @@ def update_planned_recipe(
     sl: ShoppingList | None = crud.get_shopping_list(
         session=session, shopping_list_id=id
     )
-    _check_list_access(sl, current_user, id)
+    sl = _check_list_access(sl, current_user, id)
     sl_recipe: ShoppingListRecipe | None = crud.get_shopping_list_recipe(
         session=session, sl_recipe_id=planned_recipe_id
     )
     if not sl_recipe or sl_recipe.shopping_list_id != id:
         raise HTTPException(status_code=404, detail="Planned recipe not found")
     updated = crud.update_shopping_list_recipe(
-        session=session, sl_recipe=sl_recipe, update_in=update_in
+        session=session, shopping_list=sl, sl_recipe=sl_recipe, update_in=update_in
     )
     return _sl_recipe_to_public(updated)
 
@@ -255,11 +255,13 @@ def delete_planned_recipe(
     sl: ShoppingList | None = crud.get_shopping_list(
         session=session, shopping_list_id=id
     )
-    _check_list_access(sl, current_user, id)
+    sl = _check_list_access(sl, current_user, id)
     sl_recipe: ShoppingListRecipe | None = crud.get_shopping_list_recipe(
         session=session, sl_recipe_id=planned_recipe_id
     )
     if not sl_recipe or sl_recipe.shopping_list_id != id:
         raise HTTPException(status_code=404, detail="Planned recipe not found")
-    crud.delete_shopping_list_recipe(session=session, sl_recipe=sl_recipe)
+    crud.delete_shopping_list_recipe(
+        session=session, shopping_list=sl, sl_recipe=sl_recipe
+    )
     return Message(message="Planned recipe removed successfully")

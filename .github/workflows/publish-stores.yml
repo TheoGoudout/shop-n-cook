@@ -95,9 +95,16 @@ jobs:
             VERSION="${TAG#v}"
             MAJOR=$(echo "$VERSION" | cut -d. -f1)
             MINOR=$(echo "$VERSION" | cut -d. -f2)
-            PATCH=$(echo "$VERSION" | cut -d. -f3 | cut -d- -f1)
+            PATCH_FULL=$(echo "$VERSION" | cut -d. -f3)
+            PATCH=$(echo "$PATCH_FULL" | cut -d- -f1)
             PATCH=${PATCH:-0}
-            VERSION_CODE=$((MAJOR * 10000 + MINOR * 100 + PATCH))
+            RC=$(echo "$PATCH_FULL" | grep -oP '(?<=-rc)\d+' || echo "")
+            if [ -n "$RC" ]; then
+              RC_DIGIT="$RC"
+            else
+              RC_DIGIT=99
+            fi
+            VERSION_CODE=$((MAJOR * 1000000 + MINOR * 10000 + PATCH * 100 + RC_DIGIT))
           else
             VERSION="0.0.0"
             VERSION_CODE=0
@@ -268,6 +275,7 @@ jobs:
           tracks: ${{ needs.prepare.outputs.android_track }}
           releaseName: ${{ github.event.release.name }}
           whatsNewDirectory: whats-new
+          status: ${{ github.event.release.prerelease && 'draft' || 'completed' }}
 
   # ── iOS ────────────────────────────────────────────────────────────────────
   ios:

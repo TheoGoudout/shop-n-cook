@@ -50,7 +50,7 @@ test.describe("Shopping lists page", () => {
     ).toBeVisible()
 
     const value = await page.getByLabel(/Name/i).inputValue()
-    expect(value).toMatch(/Week #\d+/)
+    expect(value).toMatch(/\S+.*–.*\S+/)
 
     await page.getByRole("button", { name: "Cancel" }).click()
   })

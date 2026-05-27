@@ -8,9 +8,9 @@ from sqlmodel import Session
 
 from app import crud
 from app.core.config import settings
+from app.models import ShoppingListCreate, Unit
 from app.models.ingredient import Ingredient
 from app.models.shopping_list import ShoppingListItem
-from app.models import ShoppingListCreate, Unit
 
 
 def _llm_response(groups: list[list[str]]) -> MagicMock:

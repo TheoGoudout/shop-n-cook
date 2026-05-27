@@ -120,9 +120,7 @@ def get_duplicate_groups(session: Session) -> list[list[Ingredient]]:
     return result
 
 
-def _merge_duplicate_shopping_list_items(
-    session: Session, canonical_name: str
-) -> None:
+def _merge_duplicate_shopping_list_items(session: Session, canonical_name: str) -> None:
     """Merge shopping list items that share the same name+unit after a rename."""
     items = session.exec(
         select(ShoppingListItem).where(

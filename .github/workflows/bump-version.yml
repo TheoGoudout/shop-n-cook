@@ -43,7 +43,8 @@ jobs:
 
       - name: Update extension/public/manifest.json
         run: |
-          jq --arg v "${{ steps.v.outputs.manifest_version }}" '.version = $v' \
+          jq --arg v "${{ steps.v.outputs.manifest_version }}" --arg vn "${{ steps.v.outputs.version }}" \
+            '.version = $v | .version_name = $vn' \
             extension/public/manifest.json > /tmp/manifest.json && mv /tmp/manifest.json extension/public/manifest.json
 
       - name: Commit, tag and push

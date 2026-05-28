@@ -1,5 +1,11 @@
 # Release Notes
 
+## 1.4.4
+
+### Fixes
+
+* Android: publish stable builds to alpha track; RC builds remain on internal track
+
 ## 1.4.3
 
 ### Fixes

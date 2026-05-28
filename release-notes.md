@@ -1,5 +1,18 @@
 # Release Notes
 
+## 1.4.3
+
+### Fixes
+
+* Extension: fix Chrome Web Store publishing — switch from OAuth refresh token to service account auth
+* Extension: fix YAML syntax in Chrome publish workflow
+* Extension: skip store submissions for pre-releases (RC builds no longer queue in review)
+* Extension: add version name display for pre-release builds
+* Android: fix version code collision between RC and stable builds
+* Android: fix beta track precondition on Google Play submission
+* CI: add release notes to Firefox, iOS, and Android store submissions
+* Android: RC builds now publish to internal track; stable builds publish to beta track
+
 ## 1.4.2
 
 ### Features

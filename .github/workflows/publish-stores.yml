@@ -120,7 +120,7 @@ jobs:
             echo "ios_lane=beta"            >> "$GITHUB_OUTPUT"
             echo "windows_beta=true"        >> "$GITHUB_OUTPUT"
           else
-            echo "android_track=beta"       >> "$GITHUB_OUTPUT"
+            echo "android_track=alpha"       >> "$GITHUB_OUTPUT"
             echo "ios_lane=release"         >> "$GITHUB_OUTPUT"
             echo "windows_beta=false"       >> "$GITHUB_OUTPUT"
           fi

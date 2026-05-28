@@ -73,7 +73,8 @@ jobs:
     name: Publish → Chrome Web Store
     needs: build
     runs-on: ubuntu-latest
-    if: github.event_name == 'release' && needs.build.outputs.chrome == 'true'
+    # Pre-releases are skipped — a version in review blocks further submissions, and RCs shouldn't queue ahead of the real release.
+    if: github.event_name == 'release' && !github.event.release.prerelease && needs.build.outputs.chrome == 'true'
     # Also covers Vivaldi and Brave — both Chromium-based and use Chrome Web Store directly
     steps:
       - uses: actions/download-artifact@v4
@@ -111,16 +112,15 @@ jobs:
 
       - name: Publish submission
         env:
-          EXTENSION_ID:   ${{ secrets.CHROME_EXTENSION_ID }}
-          TOKEN:          ${{ steps.token.outputs.token }}
-          PUBLISH_TARGET: ${{ github.event.release.prerelease && 'trustedTesters' || 'default' }}
+          EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
+          TOKEN:        ${{ steps.token.outputs.token }}
         run: |
           RESULT=$(curl -s -X POST \
             "https://www.googleapis.com/chromewebstore/v1.1/items/$EXTENSION_ID/publish" \
             -H "Authorization: Bearer $TOKEN" \
             -H "x-goog-api-version: 2" \
             -H "Content-Type: application/json" \
-            -d "{\"target\":\"$PUBLISH_TARGET\"}")
+            -d '{"target":"default"}')
           STATUS=$(echo "$RESULT" | jq -r '.status[0] // ""')
           ERROR=$(echo "$RESULT" | jq -r '.error.message // ""')
           # ITEM_PENDING_REVIEW = submitted for review (normal for broad-permission extensions)
@@ -137,7 +137,8 @@ jobs:
     name: Publish → Firefox Add-ons (AMO)
     needs: build
     runs-on: ubuntu-latest
-    if: github.event_name == 'release' && needs.build.outputs.firefox == 'true'
+    # Pre-releases are skipped entirely — RC testers install extension.zip directly in Firefox Dev Edition.
+    if: github.event_name == 'release' && !github.event.release.prerelease && needs.build.outputs.firefox == 'true'
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -145,16 +146,6 @@ jobs:
 
       - name: Unzip extension
         run: mkdir ext-src && cd ext-src && unzip ../extension.zip
-
-      - name: Fix manifest version for Firefox
-        run: |
-          # Firefox requires numeric-only versions (x.y.z.w); convert e.g. 1.1.0-rc2 → 1.1.0.2
-          # Use the release tag (e.g. v1.3.0-rc2) because manifest.json strips the pre-release suffix.
-          SEMVER="${{ github.ref_name }}"
-          SEMVER="${SEMVER#v}"
-          FF_VERSION=$(echo "$SEMVER" | sed 's/-rc\([0-9]*\)$/.\1/')
-          jq --arg v "$FF_VERSION" '.version = $v' ext-src/manifest.json > /tmp/manifest.json
-          mv /tmp/manifest.json ext-src/manifest.json
 
       - uses: oven-sh/setup-bun@v2
 
@@ -200,7 +191,7 @@ jobs:
     name: Publish → Edge Add-ons
     needs: build
     runs-on: ubuntu-latest
-    if: github.event_name == 'release' && needs.build.outputs.edge == 'true'
+    if: github.event_name == 'release' && !github.event.release.prerelease && needs.build.outputs.edge == 'true'
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -227,8 +218,6 @@ jobs:
             --data-binary @extension.zip
 
       - name: Publish submission
-        # skip on pre-release: draft is saved and visible to you in Partner Center, but not pushed public
-        if: ${{ !github.event.release.prerelease }}
         run: |
           curl -sf -X POST \
             "https://api.addons.microsoftedge.microsoft.com/v1/products/${{ secrets.EDGE_PRODUCT_ID }}/submissions" \

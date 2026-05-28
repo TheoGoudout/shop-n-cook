@@ -275,7 +275,7 @@ jobs:
           tracks: ${{ needs.prepare.outputs.android_track }}
           releaseName: ${{ github.event.release.name }}
           whatsNewDirectory: whats-new
-          status: ${{ github.event.release.prerelease && 'draft' || 'completed' }}
+          status: draft
 
   # ── iOS ────────────────────────────────────────────────────────────────────
   ios:

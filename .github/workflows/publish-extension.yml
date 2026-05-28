@@ -187,6 +187,37 @@ jobs:
           fail_on_unmatched_files: false
           files: shop-n-cook-${{ needs.build.outputs.version }}.xpi
 
+      # Requires FIREFOX_EXTENSION_SLUG repository variable (Settings → Variables → Actions).
+      # Value: the slug or GUID of the add-on on addons.mozilla.org.
+      - name: Set release notes on AMO
+        if: vars.FIREFOX_EXTENSION_SLUG != ''
+        env:
+          ADDON_SLUG:   ${{ vars.FIREFOX_EXTENSION_SLUG }}
+          API_KEY:      ${{ secrets.FIREFOX_API_KEY }}
+          API_SECRET:   ${{ secrets.FIREFOX_API_SECRET }}
+          VERSION:      ${{ needs.build.outputs.version }}
+          RELEASE_BODY: ${{ github.event.release.body }}
+        run: |
+          JWT=$(python3 - <<'EOF'
+          import hmac, hashlib, base64, json, time, os
+          def b64url(data):
+              if isinstance(data, str): data = data.encode()
+              return base64.urlsafe_b64encode(data).rstrip(b'=').decode()
+          now = int(time.time())
+          hdr = b64url(json.dumps({"alg": "HS256", "typ": "JWT"}))
+          pld = b64url(json.dumps({"iss": os.environ["API_KEY"], "iat": now, "exp": now + 60}))
+          msg = f"{hdr}.{pld}"
+          sig = b64url(hmac.new(os.environ["API_SECRET"].encode(), msg.encode(), hashlib.sha256).digest())
+          print(f"{msg}.{sig}")
+          EOF
+          )
+          NOTES_JSON=$(python3 -c 'import json,os; print(json.dumps(os.environ["RELEASE_BODY"]))')
+          curl -sf -X PATCH \
+            "https://addons.mozilla.org/api/v5/addons/addon/${ADDON_SLUG}/versions/${VERSION}/" \
+            -H "Authorization: JWT $JWT" \
+            -H "Content-Type: application/json" \
+            -d "{\"release_notes\":{\"en-US\":${NOTES_JSON}}}"
+
   publish-edge:
     name: Publish → Edge Add-ons
     needs: build

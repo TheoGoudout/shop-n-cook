@@ -17,7 +17,8 @@ platform :ios do
     upload_to_testflight(
       api_key: api_key_from_env,
       skip_waiting_for_build_processing: true,
-      notify_external_testers: false
+      notify_external_testers: false,
+      changelog: ENV.fetch("RELEASE_NOTES", "")
     )
   end
 
@@ -35,7 +36,8 @@ platform :ios do
       submit_for_review: false,
       automatic_release: false,
       force: true,
-      precheck_include_in_app_purchases: false
+      precheck_include_in_app_purchases: false,
+      release_notes: { "en-US" => ENV.fetch("RELEASE_NOTES", "") }
     )
   end
 

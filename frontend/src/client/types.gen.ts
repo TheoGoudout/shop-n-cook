@@ -20,6 +20,8 @@ export type DeduplicateResponse = {
     removed_count: number;
 };
 
+export type Difficulty = 'easy' | 'medium' | 'hard';
+
 export type HTTPValidationError = {
     detail?: Array<ValidationError>;
 };
@@ -55,6 +57,8 @@ export type IngredientUpdate = {
     image_url?: (string | null);
 };
 
+export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'dessert' | 'drink' | 'other';
+
 export type Message = {
     message: string;
 };
@@ -83,6 +87,15 @@ export type ParsedRecipe = {
     ingredients?: Array<ParsedIngredient>;
     source_url?: (string | null);
     image_url?: (string | null);
+    seasons?: Array<Season>;
+    is_vegan?: boolean;
+    is_vegetarian?: boolean;
+    is_gluten_free?: boolean;
+    is_dairy_free?: boolean;
+    kcal_per_serving?: (number | null);
+    difficulty?: (Difficulty | null);
+    meal_type?: (MealType | null);
+    cuisine_type?: (string | null);
 };
 
 export type ParsedStep = {
@@ -106,6 +119,15 @@ export type RecipeCreate = {
     source_url?: (string | null);
     image_url?: (string | null);
     is_public?: boolean;
+    seasons?: Array<Season>;
+    is_vegan?: boolean;
+    is_vegetarian?: boolean;
+    is_gluten_free?: boolean;
+    is_dairy_free?: boolean;
+    kcal_per_serving?: (number | null);
+    difficulty?: (Difficulty | null);
+    meal_type?: (MealType | null);
+    cuisine_type?: (string | null);
     ingredients?: Array<RecipeIngredientCreate>;
     steps?: Array<RecipeStepCreate>;
     import_consent?: boolean;
@@ -137,6 +159,15 @@ export type RecipePublic = {
     source_url?: (string | null);
     image_url?: (string | null);
     is_public?: boolean;
+    seasons?: Array<Season>;
+    is_vegan?: boolean;
+    is_vegetarian?: boolean;
+    is_gluten_free?: boolean;
+    is_dairy_free?: boolean;
+    kcal_per_serving?: (number | null);
+    difficulty?: (Difficulty | null);
+    meal_type?: (MealType | null);
+    cuisine_type?: (string | null);
     id: string;
     owner_id: string;
     owner_name?: (string | null);
@@ -179,11 +210,22 @@ export type RecipeUpdate = {
     is_public?: (boolean | null);
     ingredients?: (Array<RecipeIngredientCreate> | null);
     steps?: (Array<RecipeStepCreate> | null);
+    seasons?: (Array<Season> | null);
+    is_vegan?: (boolean | null);
+    is_vegetarian?: (boolean | null);
+    is_gluten_free?: (boolean | null);
+    is_dairy_free?: (boolean | null);
+    kcal_per_serving?: (number | null);
+    difficulty?: (Difficulty | null);
+    meal_type?: (MealType | null);
+    cuisine_type?: (string | null);
 };
 
 export type ReimportRequest = {
     language?: (string | null);
 };
+
+export type Season = 'spring' | 'summer' | 'autumn' | 'winter';
 
 export type ShoppingFrequency = 'weekly' | 'biweekly' | 'monthly';
 
@@ -394,17 +436,33 @@ export type PrivateCreateUserData = {
 export type PrivateCreateUserResponse = (UserPublic);
 
 export type RecipesReadPublicRecipesData = {
+    cuisineType?: (string | null);
+    difficulty?: (Difficulty | null);
+    isDairyFree?: (boolean | null);
+    isGlutenFree?: (boolean | null);
+    isVegan?: (boolean | null);
+    isVegetarian?: (boolean | null);
     limit?: number;
+    mealType?: (MealType | null);
     ownerId?: (string | null);
     search?: (string | null);
+    seasons?: (Array<Season> | null);
     skip?: number;
 };
 
 export type RecipesReadPublicRecipesResponse = (RecipesPublic);
 
 export type RecipesReadRecipesData = {
+    cuisineType?: (string | null);
+    difficulty?: (Difficulty | null);
+    isDairyFree?: (boolean | null);
+    isGlutenFree?: (boolean | null);
+    isVegan?: (boolean | null);
+    isVegetarian?: (boolean | null);
     limit?: number;
+    mealType?: (MealType | null);
     search?: (string | null);
+    seasons?: (Array<Season> | null);
     skip?: number;
 };
 

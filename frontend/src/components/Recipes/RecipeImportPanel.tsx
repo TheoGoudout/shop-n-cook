@@ -2,7 +2,7 @@ import i18n from "i18next"
 import { Download, Loader2 } from "lucide-react"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
-
+import type { Difficulty, MealType, Season } from "@/client"
 import { RecipesService } from "@/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -63,6 +63,15 @@ export function RecipeImportPanel({ onImported }: Props) {
         image_url: parsed.image_url ?? "",
         ingredients: mappedIngredients,
         steps: mappedSteps,
+        seasons: (parsed.seasons ?? []) as Season[],
+        is_vegan: parsed.is_vegan ?? false,
+        is_vegetarian: parsed.is_vegetarian ?? false,
+        is_gluten_free: parsed.is_gluten_free ?? false,
+        is_dairy_free: parsed.is_dairy_free ?? false,
+        kcal_per_serving: parsed.kcal_per_serving ?? "",
+        difficulty: (parsed.difficulty as Difficulty) ?? "",
+        meal_type: (parsed.meal_type as MealType) ?? "",
+        cuisine_type: parsed.cuisine_type ?? "",
       })
       setUrl("")
       showSuccessToast(t("add.import_success"))

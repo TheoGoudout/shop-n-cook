@@ -99,6 +99,12 @@ export const DeduplicateResponseSchema = {
     title: 'DeduplicateResponse'
 } as const;
 
+export const DifficultySchema = {
+    type: 'string',
+    enum: ['easy', 'medium', 'hard'],
+    title: 'Difficulty'
+} as const;
+
 export const HTTPValidationErrorSchema = {
     properties: {
         detail: {
@@ -263,6 +269,12 @@ export const IngredientsPublicSchema = {
     title: 'IngredientsPublic'
 } as const;
 
+export const MealTypeSchema = {
+    type: 'string',
+    enum: ['breakfast', 'lunch', 'dinner', 'snack', 'dessert', 'drink', 'other'],
+    title: 'MealType'
+} as const;
+
 export const MessageSchema = {
     properties: {
         message: {
@@ -425,6 +437,76 @@ export const ParsedRecipeSchema = {
                 }
             ],
             title: 'Image Url'
+        },
+        seasons: {
+            items: {
+                '$ref': '#/components/schemas/Season'
+            },
+            type: 'array',
+            title: 'Seasons',
+            default: []
+        },
+        is_vegan: {
+            type: 'boolean',
+            title: 'Is Vegan',
+            default: false
+        },
+        is_vegetarian: {
+            type: 'boolean',
+            title: 'Is Vegetarian',
+            default: false
+        },
+        is_gluten_free: {
+            type: 'boolean',
+            title: 'Is Gluten Free',
+            default: false
+        },
+        is_dairy_free: {
+            type: 'boolean',
+            title: 'Is Dairy Free',
+            default: false
+        },
+        kcal_per_serving: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Kcal Per Serving'
+        },
+        difficulty: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/Difficulty'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        meal_type: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/MealType'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        cuisine_type: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Cuisine Type'
         }
     },
     type: 'object',
@@ -559,6 +641,77 @@ export const RecipeCreateSchema = {
             type: 'boolean',
             title: 'Is Public',
             default: false
+        },
+        seasons: {
+            items: {
+                '$ref': '#/components/schemas/Season'
+            },
+            type: 'array',
+            title: 'Seasons'
+        },
+        is_vegan: {
+            type: 'boolean',
+            title: 'Is Vegan',
+            default: false
+        },
+        is_vegetarian: {
+            type: 'boolean',
+            title: 'Is Vegetarian',
+            default: false
+        },
+        is_gluten_free: {
+            type: 'boolean',
+            title: 'Is Gluten Free',
+            default: false
+        },
+        is_dairy_free: {
+            type: 'boolean',
+            title: 'Is Dairy Free',
+            default: false
+        },
+        kcal_per_serving: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    minimum: 0
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Kcal Per Serving'
+        },
+        difficulty: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/Difficulty'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        meal_type: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/MealType'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        cuisine_type: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 100
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Cuisine Type'
         },
         ingredients: {
             items: {
@@ -759,6 +912,77 @@ export const RecipePublicSchema = {
             type: 'boolean',
             title: 'Is Public',
             default: false
+        },
+        seasons: {
+            items: {
+                '$ref': '#/components/schemas/Season'
+            },
+            type: 'array',
+            title: 'Seasons'
+        },
+        is_vegan: {
+            type: 'boolean',
+            title: 'Is Vegan',
+            default: false
+        },
+        is_vegetarian: {
+            type: 'boolean',
+            title: 'Is Vegetarian',
+            default: false
+        },
+        is_gluten_free: {
+            type: 'boolean',
+            title: 'Is Gluten Free',
+            default: false
+        },
+        is_dairy_free: {
+            type: 'boolean',
+            title: 'Is Dairy Free',
+            default: false
+        },
+        kcal_per_serving: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    minimum: 0
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Kcal Per Serving'
+        },
+        difficulty: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/Difficulty'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        meal_type: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/MealType'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        cuisine_type: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 100
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Cuisine Type'
         },
         id: {
             type: 'string',
@@ -1009,6 +1233,106 @@ export const RecipeUpdateSchema = {
                 }
             ],
             title: 'Steps'
+        },
+        seasons: {
+            anyOf: [
+                {
+                    items: {
+                        '$ref': '#/components/schemas/Season'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Seasons'
+        },
+        is_vegan: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Is Vegan'
+        },
+        is_vegetarian: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Is Vegetarian'
+        },
+        is_gluten_free: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Is Gluten Free'
+        },
+        is_dairy_free: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Is Dairy Free'
+        },
+        kcal_per_serving: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Kcal Per Serving'
+        },
+        difficulty: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/Difficulty'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        meal_type: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/MealType'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        cuisine_type: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Cuisine Type'
         }
     },
     type: 'object',
@@ -1050,6 +1374,12 @@ export const ReimportRequestSchema = {
     },
     type: 'object',
     title: 'ReimportRequest'
+} as const;
+
+export const SeasonSchema = {
+    type: 'string',
+    enum: ['spring', 'summer', 'autumn', 'winter'],
+    title: 'Season'
 } as const;
 
 export const ShoppingFrequencySchema = {

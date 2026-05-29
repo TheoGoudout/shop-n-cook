@@ -3,9 +3,13 @@
 from __future__ import annotations
 
 from app.models.ingredient import IngredientCategory, Unit
+from app.models.recipe import Difficulty, MealType, Season
 
 _UNITS = ", ".join(u.value for u in Unit)
 _CATEGORIES = ", ".join(c.value for c in IngredientCategory)
+_SEASONS = ", ".join(s.value for s in Season)
+_DIFFICULTIES = ", ".join(d.value for d in Difficulty)
+_MEAL_TYPES = ", ".join(m.value for m in MealType)
 
 
 def build_system_prompt(language: str | None = None) -> str:
@@ -49,7 +53,16 @@ Return ONLY a valid JSON object with this exact structure:
       "instruction": "What to do in this step",
       "ingredient_names": ["ingredient name 1", "ingredient name 2"]
     }}
-  ]
+  ],
+  "seasons": ["spring", "summer"],
+  "is_vegan": false,
+  "is_vegetarian": false,
+  "is_gluten_free": false,
+  "is_dairy_free": false,
+  "kcal_per_serving": 450,
+  "difficulty": "medium",
+  "meal_type": "dinner",
+  "cuisine_type": "Italian"
 }}
 
 Rules:
@@ -70,4 +83,13 @@ and preparation notes (e.g. "haché", "émincé", "coupé", "chopped", "sliced",
 from the name field — put those details in the "notes" field instead \
 (e.g. name="courgettes" notes="moyennes"; name="beurre" notes="fondu"; \
 name="onion" notes="finely chopped")
+- For "seasons": list the seasons when this dish is most appropriate (e.g. soups in autumn/winter, salads in summer); use values from: {_SEASONS}; use [] if seasonal relevance is unclear
+- For "is_vegan": set true only if all ingredients are plant-based with no animal products; default false
+- For "is_vegetarian": set true only if there is no meat, poultry, or seafood; dairy and eggs are allowed; default false
+- For "is_gluten_free": set true only if confident there are no gluten-containing ingredients (wheat, barley, rye, etc.); default false
+- For "is_dairy_free": set true only if confident there are no dairy products (milk, butter, cheese, cream, etc.); default false
+- For "kcal_per_serving": estimate total calories per serving based on the ingredients and servings count; use null if you cannot make a reasonable estimate
+- For "difficulty": classify as one of: {_DIFFICULTIES} — easy means simple techniques and few steps, hard means advanced techniques or many complex steps
+- For "meal_type": classify as one of: {_MEAL_TYPES}
+- For "cuisine_type": name the cuisine (e.g. "Italian", "French", "Thai", "Lebanese") as a short free-text string; use null if unclear
 - Do not include any text outside the JSON object"""

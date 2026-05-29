@@ -1,9 +1,12 @@
 import uuid
 from datetime import datetime
+from enum import Enum
 from typing import TYPE_CHECKING
 
+import sqlalchemy as sa
 from pydantic import model_validator
-from sqlalchemy import DateTime
+from sqlalchemy import Column, DateTime
+from sqlalchemy.dialects.postgresql import ARRAY as PG_ARRAY
 from sqlmodel import Field, Relationship, SQLModel
 
 from app.models.base import get_datetime_utc
@@ -11,6 +14,34 @@ from app.models.ingredient import IngredientCategory, Unit
 
 if TYPE_CHECKING:
     from app.models.user import User
+
+
+# --------------------------------------------------------------------------- #
+# Recipe metadata enums                                                        #
+# --------------------------------------------------------------------------- #
+
+
+class Season(str, Enum):
+    SPRING = "spring"
+    SUMMER = "summer"
+    AUTUMN = "autumn"
+    WINTER = "winter"
+
+
+class Difficulty(str, Enum):
+    EASY = "easy"
+    MEDIUM = "medium"
+    HARD = "hard"
+
+
+class MealType(str, Enum):
+    BREAKFAST = "breakfast"
+    LUNCH = "lunch"
+    DINNER = "dinner"
+    SNACK = "snack"
+    DESSERT = "dessert"
+    DRINK = "drink"
+    OTHER = "other"
 
 
 # --------------------------------------------------------------------------- #
@@ -122,6 +153,19 @@ class RecipeBase(SQLModel):
     source_url: str | None = None
     image_url: str | None = None
     is_public: bool = Field(default=False)
+    # Metadata
+    seasons: list[Season] = Field(
+        default_factory=list,
+        sa_column=Column(PG_ARRAY(sa.String), nullable=True, server_default="{}"),
+    )
+    is_vegan: bool = Field(default=False)
+    is_vegetarian: bool = Field(default=False)
+    is_gluten_free: bool = Field(default=False)
+    is_dairy_free: bool = Field(default=False)
+    kcal_per_serving: int | None = Field(default=None, ge=0)
+    difficulty: Difficulty | None = Field(default=None)
+    meal_type: MealType | None = Field(default=None)
+    cuisine_type: str | None = Field(default=None, max_length=100)
 
 
 class RecipeCreate(RecipeBase):
@@ -147,6 +191,16 @@ class RecipeUpdate(SQLModel):
     is_public: bool | None = None
     ingredients: list[RecipeIngredientCreate] | None = None
     steps: list[RecipeStepCreate] | None = None
+    # Metadata
+    seasons: list[Season] | None = None
+    is_vegan: bool | None = None
+    is_vegetarian: bool | None = None
+    is_gluten_free: bool | None = None
+    is_dairy_free: bool | None = None
+    kcal_per_serving: int | None = None
+    difficulty: Difficulty | None = None
+    meal_type: MealType | None = None
+    cuisine_type: str | None = None
 
 
 # --------------------------------------------------------------------------- #

@@ -120,16 +120,19 @@ export function RecipeFilterBar({
 
       {/* Difficulty select */}
       <Select
-        value={filters.difficulty}
+        value={filters.difficulty || "_none"}
         onValueChange={(v) =>
-          onChange({ ...filters, difficulty: v as Difficulty | "" })
+          onChange({
+            ...filters,
+            difficulty: v === "_none" ? "" : (v as Difficulty),
+          })
         }
       >
         <SelectTrigger className="h-7 w-28 text-xs">
-          <SelectValue placeholder={t("filters.difficulty")} />
+          <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">{t("filters.difficulty")}</SelectItem>
+          <SelectItem value="_none">{t("filters.difficulty")}</SelectItem>
           {DIFFICULTIES.map((d) => (
             <SelectItem key={d} value={d}>
               {t(`form.difficulty_${d}`)}
@@ -140,16 +143,19 @@ export function RecipeFilterBar({
 
       {/* Meal type select */}
       <Select
-        value={filters.meal_type}
+        value={filters.meal_type || "_none"}
         onValueChange={(v) =>
-          onChange({ ...filters, meal_type: v as MealType | "" })
+          onChange({
+            ...filters,
+            meal_type: v === "_none" ? "" : (v as MealType),
+          })
         }
       >
         <SelectTrigger className="h-7 w-28 text-xs">
-          <SelectValue placeholder={t("filters.meal_type")} />
+          <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">{t("filters.meal_type")}</SelectItem>
+          <SelectItem value="_none">{t("filters.meal_type")}</SelectItem>
           {MEAL_TYPES.map((m) => (
             <SelectItem key={m} value={m}>
               {t(`form.meal_${m}`)}

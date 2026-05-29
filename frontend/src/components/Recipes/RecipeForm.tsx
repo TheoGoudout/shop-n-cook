@@ -242,18 +242,18 @@ export function RecipeForm({
                   <FormItem>
                     <FormLabel>{t("form.difficulty_label")}</FormLabel>
                     <Select
-                      onValueChange={field.onChange}
-                      value={field.value ?? ""}
+                      onValueChange={(v) =>
+                        field.onChange(v === "_none" ? "" : v)
+                      }
+                      value={field.value || "_none"}
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue
-                            placeholder={t("form.select_placeholder")}
-                          />
+                          <SelectValue />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">{t("form.none")}</SelectItem>
+                        <SelectItem value="_none">{t("form.none")}</SelectItem>
                         {DIFFICULTIES.map((d) => (
                           <SelectItem key={d} value={d}>
                             {t(`form.difficulty_${d}`)}
@@ -271,18 +271,18 @@ export function RecipeForm({
                   <FormItem>
                     <FormLabel>{t("form.meal_type_label")}</FormLabel>
                     <Select
-                      onValueChange={field.onChange}
-                      value={field.value ?? ""}
+                      onValueChange={(v) =>
+                        field.onChange(v === "_none" ? "" : v)
+                      }
+                      value={field.value || "_none"}
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue
-                            placeholder={t("form.select_placeholder")}
-                          />
+                          <SelectValue />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">{t("form.none")}</SelectItem>
+                        <SelectItem value="_none">{t("form.none")}</SelectItem>
                         {MEAL_TYPES.map((m) => (
                           <SelectItem key={m} value={m}>
                             {t(`form.meal_${m}`)}

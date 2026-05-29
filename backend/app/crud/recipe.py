@@ -1,6 +1,8 @@
 import uuid
 from datetime import datetime, timezone
 
+import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import array as pg_array
 from sqlalchemy.orm import selectinload
 from sqlmodel import Session, col, func, or_, select
 
@@ -17,6 +19,7 @@ from app.models import (
     RecipeStepPublic,
     RecipeUpdate,
 )
+from app.models.recipe import Difficulty, MealType, Season
 from app.models.user import User
 
 
@@ -72,6 +75,15 @@ def recipe_to_public(recipe: Recipe, owner: User | None = None) -> RecipePublic:
             [_step_to_public(s) for s in recipe.steps],
             key=lambda s: s.step_number,
         ),
+        seasons=recipe.seasons or [],
+        is_vegan=recipe.is_vegan,
+        is_vegetarian=recipe.is_vegetarian,
+        is_gluten_free=recipe.is_gluten_free,
+        is_dairy_free=recipe.is_dairy_free,
+        kcal_per_serving=recipe.kcal_per_serving,
+        difficulty=recipe.difficulty,
+        meal_type=recipe.meal_type,
+        cuisine_type=recipe.cuisine_type,
     )
 
 
@@ -125,6 +137,14 @@ def get_recipes(
     eager_load_owner: bool = False,
     skip: int = 0,
     limit: int = 100,
+    seasons: list[Season] | None = None,
+    is_vegan: bool | None = None,
+    is_vegetarian: bool | None = None,
+    is_gluten_free: bool | None = None,
+    is_dairy_free: bool | None = None,
+    difficulty: Difficulty | None = None,
+    meal_type: MealType | None = None,
+    cuisine_type: str | None = None,
 ) -> tuple[list[Recipe], int]:
     query = select(Recipe)
     count_query = select(func.count()).select_from(Recipe)
@@ -149,6 +169,41 @@ def get_recipes(
         query = query.where(search_filter)
         count_query = count_query.where(search_filter)
 
+    if seasons:
+        seasons_arr = pg_array([s.value for s in seasons], type_=sa.String)
+        seasons_filter = col(Recipe.seasons).bool_op("&&")(seasons_arr)
+        query = query.where(seasons_filter)
+        count_query = count_query.where(seasons_filter)
+
+    if is_vegan is True:
+        query = query.where(Recipe.is_vegan == True)  # noqa: E712
+        count_query = count_query.where(Recipe.is_vegan == True)  # noqa: E712
+
+    if is_vegetarian is True:
+        query = query.where(Recipe.is_vegetarian == True)  # noqa: E712
+        count_query = count_query.where(Recipe.is_vegetarian == True)  # noqa: E712
+
+    if is_gluten_free is True:
+        query = query.where(Recipe.is_gluten_free == True)  # noqa: E712
+        count_query = count_query.where(Recipe.is_gluten_free == True)  # noqa: E712
+
+    if is_dairy_free is True:
+        query = query.where(Recipe.is_dairy_free == True)  # noqa: E712
+        count_query = count_query.where(Recipe.is_dairy_free == True)  # noqa: E712
+
+    if difficulty is not None:
+        query = query.where(Recipe.difficulty == difficulty.value)
+        count_query = count_query.where(Recipe.difficulty == difficulty.value)
+
+    if meal_type is not None:
+        query = query.where(Recipe.meal_type == meal_type.value)
+        count_query = count_query.where(Recipe.meal_type == meal_type.value)
+
+    if cuisine_type:
+        pattern = f"%{cuisine_type}%"
+        query = query.where(col(Recipe.cuisine_type).ilike(pattern))
+        count_query = count_query.where(col(Recipe.cuisine_type).ilike(pattern))
+
     count = session.exec(count_query).one()
     recipes = session.exec(
         query.order_by(col(Recipe.created_at).desc()).offset(skip).limit(limit)
@@ -163,6 +218,14 @@ def get_public_recipes(
     search: str | None = None,
     skip: int = 0,
     limit: int = 100,
+    seasons: list[Season] | None = None,
+    is_vegan: bool | None = None,
+    is_vegetarian: bool | None = None,
+    is_gluten_free: bool | None = None,
+    is_dairy_free: bool | None = None,
+    difficulty: Difficulty | None = None,
+    meal_type: MealType | None = None,
+    cuisine_type: str | None = None,
 ) -> tuple[list[Recipe], int]:
     return get_recipes(
         session=session,
@@ -172,6 +235,14 @@ def get_public_recipes(
         eager_load_owner=True,
         skip=skip,
         limit=limit,
+        seasons=seasons,
+        is_vegan=is_vegan,
+        is_vegetarian=is_vegetarian,
+        is_gluten_free=is_gluten_free,
+        is_dairy_free=is_dairy_free,
+        difficulty=difficulty,
+        meal_type=meal_type,
+        cuisine_type=cuisine_type,
     )
 
 

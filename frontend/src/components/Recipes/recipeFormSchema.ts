@@ -2,12 +2,27 @@ import type { TFunction } from "i18next"
 import { z } from "zod"
 
 import type {
+  Difficulty,
   IngredientCategory,
+  MealType,
   RecipeCreate,
   RecipePublic,
   RecipeUpdate,
+  Season,
   Unit,
 } from "@/client"
+
+const SEASONS = ["spring", "summer", "autumn", "winter"] as const
+const DIFFICULTIES = ["easy", "medium", "hard"] as const
+const MEAL_TYPES = [
+  "breakfast",
+  "lunch",
+  "dinner",
+  "snack",
+  "dessert",
+  "drink",
+  "other",
+] as const
 
 export type RecipeFormValues = {
   title: string
@@ -31,6 +46,16 @@ export type RecipeFormValues = {
     instruction: string
     ingredient_indices: number[]
   }>
+  // Metadata
+  seasons: Season[]
+  is_vegan: boolean
+  is_vegetarian: boolean
+  is_gluten_free: boolean
+  is_dairy_free: boolean
+  kcal_per_serving?: number | ""
+  difficulty?: Difficulty | ""
+  meal_type?: MealType | ""
+  cuisine_type?: string
 }
 
 interface SchemaOptions {
@@ -81,6 +106,21 @@ export const createRecipeFormSchema = (
     import_consent: z.boolean().default(false),
     ingredients: z.array(ingredientSchema),
     steps: z.array(stepSchema),
+    // Metadata
+    seasons: z.array(z.enum(SEASONS)).default([]),
+    is_vegan: z.boolean().default(false),
+    is_vegetarian: z.boolean().default(false),
+    is_gluten_free: z.boolean().default(false),
+    is_dairy_free: z.boolean().default(false),
+    kcal_per_serving: z.coerce
+      .number()
+      .int()
+      .min(0)
+      .optional()
+      .or(z.literal("")),
+    difficulty: z.enum(DIFFICULTIES).optional().or(z.literal("")),
+    meal_type: z.enum(MEAL_TYPES).optional().or(z.literal("")),
+    cuisine_type: z.string().max(100).optional(),
   })
 
   if (!requireImportConsent) return base
@@ -108,6 +148,15 @@ export const defaultCreateValues: RecipeFormValues = {
   import_consent: false,
   ingredients: [],
   steps: [],
+  seasons: [],
+  is_vegan: false,
+  is_vegetarian: false,
+  is_gluten_free: false,
+  is_dairy_free: false,
+  kcal_per_serving: "",
+  difficulty: "",
+  meal_type: "",
+  cuisine_type: "",
 }
 
 export const buildEditDefaults = (recipe: RecipePublic): RecipeFormValues => {
@@ -141,6 +190,15 @@ export const buildEditDefaults = (recipe: RecipePublic): RecipeFormValues => {
       notes: i.notes ?? "",
     })),
     steps: initialSteps,
+    seasons: (recipe.seasons as Season[]) ?? [],
+    is_vegan: recipe.is_vegan ?? false,
+    is_vegetarian: recipe.is_vegetarian ?? false,
+    is_gluten_free: recipe.is_gluten_free ?? false,
+    is_dairy_free: recipe.is_dairy_free ?? false,
+    kcal_per_serving: recipe.kcal_per_serving ?? "",
+    difficulty: (recipe.difficulty as Difficulty) ?? "",
+    meal_type: (recipe.meal_type as MealType) ?? "",
+    cuisine_type: recipe.cuisine_type ?? "",
   }
 }
 
@@ -177,6 +235,17 @@ export const toRecipeCreatePayload = (
   import_consent: !!data.source_url && data.import_consent,
   ingredients: data.ingredients.map(toIngredientPayload),
   steps: data.steps.map(toStepPayload),
+  seasons: data.seasons,
+  is_vegan: data.is_vegan,
+  is_vegetarian: data.is_vegetarian,
+  is_gluten_free: data.is_gluten_free,
+  is_dairy_free: data.is_dairy_free,
+  kcal_per_serving: data.kcal_per_serving
+    ? Number(data.kcal_per_serving)
+    : null,
+  difficulty: (data.difficulty || null) as Difficulty | null,
+  meal_type: (data.meal_type || null) as MealType | null,
+  cuisine_type: data.cuisine_type || null,
 })
 
 export const toRecipeUpdatePayload = (
@@ -196,4 +265,15 @@ export const toRecipeUpdatePayload = (
   is_public: data.is_public,
   ingredients: data.ingredients.map(toIngredientPayload),
   steps: data.steps.map(toStepPayload),
+  seasons: data.seasons,
+  is_vegan: data.is_vegan,
+  is_vegetarian: data.is_vegetarian,
+  is_gluten_free: data.is_gluten_free,
+  is_dairy_free: data.is_dairy_free,
+  kcal_per_serving: data.kcal_per_serving
+    ? Number(data.kcal_per_serving)
+    : null,
+  difficulty: (data.difficulty || null) as Difficulty | null,
+  meal_type: (data.meal_type || null) as MealType | null,
+  cuisine_type: data.cuisine_type || null,
 })

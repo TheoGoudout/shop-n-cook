@@ -248,6 +248,14 @@ export class RecipesService {
      * @param data.search
      * @param data.skip
      * @param data.limit
+     * @param data.seasons
+     * @param data.isVegan
+     * @param data.isVegetarian
+     * @param data.isGlutenFree
+     * @param data.isDairyFree
+     * @param data.difficulty
+     * @param data.mealType
+     * @param data.cuisineType
      * @returns RecipesPublic Successful Response
      * @throws ApiError
      */
@@ -259,7 +267,15 @@ export class RecipesService {
                 owner_id: data.ownerId,
                 search: data.search,
                 skip: data.skip,
-                limit: data.limit
+                limit: data.limit,
+                seasons: data.seasons,
+                is_vegan: data.isVegan,
+                is_vegetarian: data.isVegetarian,
+                is_gluten_free: data.isGlutenFree,
+                is_dairy_free: data.isDairyFree,
+                difficulty: data.difficulty,
+                meal_type: data.mealType,
+                cuisine_type: data.cuisineType
             },
             errors: {
                 422: 'Validation Error'
@@ -274,6 +290,14 @@ export class RecipesService {
      * @param data.search
      * @param data.skip
      * @param data.limit
+     * @param data.seasons
+     * @param data.isVegan
+     * @param data.isVegetarian
+     * @param data.isGlutenFree
+     * @param data.isDairyFree
+     * @param data.difficulty
+     * @param data.mealType
+     * @param data.cuisineType
      * @returns RecipesPublic Successful Response
      * @throws ApiError
      */
@@ -284,7 +308,15 @@ export class RecipesService {
             query: {
                 search: data.search,
                 skip: data.skip,
-                limit: data.limit
+                limit: data.limit,
+                seasons: data.seasons,
+                is_vegan: data.isVegan,
+                is_vegetarian: data.isVegetarian,
+                is_gluten_free: data.isGlutenFree,
+                is_dairy_free: data.isDairyFree,
+                difficulty: data.difficulty,
+                meal_type: data.mealType,
+                cuisine_type: data.cuisineType
             },
             errors: {
                 422: 'Validation Error'

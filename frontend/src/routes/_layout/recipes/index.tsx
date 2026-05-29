@@ -9,6 +9,11 @@ import { DataTable } from "@/components/Common/DataTable"
 import PendingItems from "@/components/Pending/PendingItems"
 import AddRecipe from "@/components/Recipes/AddRecipe"
 import { useColumns } from "@/components/Recipes/columns"
+import {
+  defaultFilters,
+  RecipeFilterBar,
+  type RecipeFilters,
+} from "@/components/Recipes/RecipeFilterBar"
 import { Input } from "@/components/ui/input"
 import { APP_NAME } from "@/lib/config"
 
@@ -26,20 +31,49 @@ export const Route = createFileRoute("/_layout/recipes/")({
   }),
 })
 
-function RecipesTableContent({ search }: { search: string }) {
+function RecipesTableContent({
+  search,
+  filters,
+}: {
+  search: string
+  filters: RecipeFilters
+}) {
   const { t } = useTranslation("recipes")
   const { data } = useSuspenseQuery(getRecipesQueryOptions())
   const columns = useColumns()
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return data.data
-    const q = search.toLowerCase()
-    return data.data.filter(
-      (r) =>
-        r.title.toLowerCase().includes(q) ||
-        (r.description ?? "").toLowerCase().includes(q),
-    )
-  }, [data.data, search])
+    return data.data.filter((r) => {
+      if (search.trim()) {
+        const q = search.toLowerCase()
+        if (
+          !r.title.toLowerCase().includes(q) &&
+          !(r.description ?? "").toLowerCase().includes(q)
+        )
+          return false
+      }
+      if (
+        filters.seasons.length > 0 &&
+        !filters.seasons.some((s) => (r.seasons ?? []).includes(s))
+      )
+        return false
+      if (filters.is_vegan && !r.is_vegan) return false
+      if (filters.is_vegetarian && !r.is_vegetarian) return false
+      if (filters.is_gluten_free && !r.is_gluten_free) return false
+      if (filters.is_dairy_free && !r.is_dairy_free) return false
+      if (filters.difficulty && r.difficulty !== filters.difficulty)
+        return false
+      if (filters.meal_type && r.meal_type !== filters.meal_type) return false
+      if (
+        filters.cuisine_type &&
+        !(r.cuisine_type ?? "")
+          .toLowerCase()
+          .includes(filters.cuisine_type.toLowerCase())
+      )
+        return false
+      return true
+    })
+  }, [data.data, search, filters])
 
   if (data.data.length === 0) {
     return (
@@ -59,9 +93,10 @@ function RecipesTableContent({ search }: { search: string }) {
 function Recipes() {
   const { t } = useTranslation("recipes")
   const [search, setSearch] = useState("")
+  const [filters, setFilters] = useState<RecipeFilters>(defaultFilters)
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">
@@ -80,8 +115,13 @@ function Recipes() {
           className="pl-9"
         />
       </div>
+      <RecipeFilterBar
+        filters={filters}
+        onChange={setFilters}
+        onClear={() => setFilters(defaultFilters)}
+      />
       <Suspense fallback={<PendingItems />}>
-        <RecipesTableContent search={search} />
+        <RecipesTableContent search={search} filters={filters} />
       </Suspense>
     </div>
   )

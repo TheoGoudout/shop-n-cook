@@ -18,8 +18,27 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 import type { RecipeFormValues } from "./recipeFormSchema"
+
+const SEASONS = ["spring", "summer", "autumn", "winter"] as const
+const DIFFICULTIES = ["easy", "medium", "hard"] as const
+const MEAL_TYPES = [
+  "breakfast",
+  "lunch",
+  "dinner",
+  "snack",
+  "dessert",
+  "drink",
+  "other",
+] as const
 
 interface RecipeFormProps {
   form: UseFormReturn<RecipeFormValues>
@@ -55,6 +74,15 @@ export function RecipeForm({
 
   const watchedIngredients = form.watch("ingredients")
   const watchedSourceUrl = form.watch("source_url")
+  const watchedSeasons = form.watch("seasons")
+
+  const toggleSeason = (season: (typeof SEASONS)[number]) => {
+    const current = form.getValues("seasons") ?? []
+    const next = current.includes(season)
+      ? current.filter((s) => s !== season)
+      : [...current, season]
+    form.setValue("seasons", next)
+  }
 
   const toggleStepIngredient = (stepIndex: number, ingredientIndex: number) => {
     const current = form.getValues(`steps.${stepIndex}.ingredient_indices`)
@@ -166,6 +194,166 @@ export function RecipeForm({
                 </FormItem>
               )}
             />
+          </div>
+
+          {/* Metadata section */}
+          <div className="rounded-lg border p-3 space-y-3">
+            <p className="text-sm font-medium text-muted-foreground">
+              {t("form.metadata_label")}
+            </p>
+
+            {/* Dietary checkboxes */}
+            <div className="flex flex-wrap gap-4">
+              {(
+                [
+                  "is_vegan",
+                  "is_vegetarian",
+                  "is_gluten_free",
+                  "is_dairy_free",
+                ] as const
+              ).map((field) => (
+                <FormField
+                  key={field}
+                  control={form.control}
+                  name={field}
+                  render={({ field: f }) => (
+                    <FormItem className="flex items-center gap-2">
+                      <FormControl>
+                        <Checkbox
+                          checked={f.value as boolean}
+                          onCheckedChange={f.onChange}
+                        />
+                      </FormControl>
+                      <FormLabel className="!mt-0 cursor-pointer font-normal">
+                        {t(`form.${field}_label`)}
+                      </FormLabel>
+                    </FormItem>
+                  )}
+                />
+              ))}
+            </div>
+
+            {/* Difficulty, Meal type, Kcal */}
+            <div className="grid grid-cols-3 gap-4">
+              <FormField
+                control={form.control}
+                name="difficulty"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("form.difficulty_label")}</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value ?? ""}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue
+                            placeholder={t("form.select_placeholder")}
+                          />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="">{t("form.none")}</SelectItem>
+                        {DIFFICULTIES.map((d) => (
+                          <SelectItem key={d} value={d}>
+                            {t(`form.difficulty_${d}`)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="meal_type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("form.meal_type_label")}</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value ?? ""}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue
+                            placeholder={t("form.select_placeholder")}
+                          />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="">{t("form.none")}</SelectItem>
+                        {MEAL_TYPES.map((m) => (
+                          <SelectItem key={m} value={m}>
+                            {t(`form.meal_${m}`)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="kcal_per_serving"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("form.kcal_label")}</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min={0}
+                        placeholder="450"
+                        {...field}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Cuisine type and Seasons */}
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="cuisine_type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("form.cuisine_type_label")}</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder={t("form.cuisine_type_placeholder")}
+                        {...field}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <div>
+                <FormLabel>{t("form.seasons_label")}</FormLabel>
+                <div className="flex flex-wrap gap-3 mt-2">
+                  {SEASONS.map((season) => (
+                    <button
+                      key={season}
+                      type="button"
+                      onClick={() => toggleSeason(season)}
+                      className="focus:outline-none"
+                    >
+                      <Badge
+                        variant={
+                          watchedSeasons?.includes(season)
+                            ? "default"
+                            : "outline"
+                        }
+                        className="text-xs cursor-pointer"
+                      >
+                        {t(`form.season_${season}`)}
+                      </Badge>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Public toggle */}

@@ -1,7 +1,7 @@
 import uuid
 from typing import Annotated, Any
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from pydantic import BaseModel, HttpUrl
 from sqlmodel import Session, col, select
 
@@ -18,6 +18,7 @@ from app.models import (
     RecipeUpdate,
 )
 from app.models.ingredient import Ingredient, IngredientCategory
+from app.models.recipe import Difficulty, MealType, Season
 from app.models.user import User
 from app.services.ingredient_image import fetch_and_update_ingredients_batch
 from app.services.recipe_import import (
@@ -86,6 +87,15 @@ def _recipe_to_parsed(recipe: Recipe, session: Session) -> ParsedRecipe:
         image_url=recipe.image_url,
         ingredients=ingredients,
         steps=steps,
+        seasons=recipe.seasons or [],
+        is_vegan=recipe.is_vegan,
+        is_vegetarian=recipe.is_vegetarian,
+        is_gluten_free=recipe.is_gluten_free,
+        is_dairy_free=recipe.is_dairy_free,
+        kcal_per_serving=recipe.kcal_per_serving,
+        difficulty=recipe.difficulty,
+        meal_type=recipe.meal_type,
+        cuisine_type=recipe.cuisine_type,
     )
 
 
@@ -124,6 +134,15 @@ def _parsed_to_update(parsed: ParsedRecipe) -> RecipeUpdate:
         image_url=parsed.image_url,
         ingredients=ingredients,
         steps=steps,
+        seasons=parsed.seasons,
+        is_vegan=parsed.is_vegan,
+        is_vegetarian=parsed.is_vegetarian,
+        is_gluten_free=parsed.is_gluten_free,
+        is_dairy_free=parsed.is_dairy_free,
+        kcal_per_serving=parsed.kcal_per_serving,
+        difficulty=parsed.difficulty,
+        meal_type=parsed.meal_type,
+        cuisine_type=parsed.cuisine_type,
     )
 
 
@@ -135,10 +154,30 @@ def read_public_recipes(
     search: str | None = None,
     skip: int = 0,
     limit: int = 100,
+    seasons: list[Season] | None = Query(default=None),
+    is_vegan: bool | None = None,
+    is_vegetarian: bool | None = None,
+    is_gluten_free: bool | None = None,
+    is_dairy_free: bool | None = None,
+    difficulty: Difficulty | None = None,
+    meal_type: MealType | None = None,
+    cuisine_type: str | None = None,
 ) -> Any:
     """List all public recipes. Optionally filter by owner_id or search query."""
     recipes, count = crud.get_public_recipes(
-        session=session, owner_id=owner_id, search=search, skip=skip, limit=limit
+        session=session,
+        owner_id=owner_id,
+        search=search,
+        skip=skip,
+        limit=limit,
+        seasons=seasons,
+        is_vegan=is_vegan,
+        is_vegetarian=is_vegetarian,
+        is_gluten_free=is_gluten_free,
+        is_dairy_free=is_dairy_free,
+        difficulty=difficulty,
+        meal_type=meal_type,
+        cuisine_type=cuisine_type,
     )
     return RecipesPublic(data=[crud.recipe_to_public(r) for r in recipes], count=count)
 
@@ -150,11 +189,31 @@ def read_recipes(
     search: str | None = None,
     skip: int = 0,
     limit: int = 100,
+    seasons: list[Season] | None = Query(default=None),
+    is_vegan: bool | None = None,
+    is_vegetarian: bool | None = None,
+    is_gluten_free: bool | None = None,
+    is_dairy_free: bool | None = None,
+    difficulty: Difficulty | None = None,
+    meal_type: MealType | None = None,
+    cuisine_type: str | None = None,
 ) -> Any:
     """List recipes. Superusers see all; regular users see only their own."""
     owner_id = None if current_user.is_superuser else current_user.id
     recipes, count = crud.get_recipes(
-        session=session, owner_id=owner_id, search=search, skip=skip, limit=limit
+        session=session,
+        owner_id=owner_id,
+        search=search,
+        skip=skip,
+        limit=limit,
+        seasons=seasons,
+        is_vegan=is_vegan,
+        is_vegetarian=is_vegetarian,
+        is_gluten_free=is_gluten_free,
+        is_dairy_free=is_dairy_free,
+        difficulty=difficulty,
+        meal_type=meal_type,
+        cuisine_type=cuisine_type,
     )
     return RecipesPublic(data=[crud.recipe_to_public(r) for r in recipes], count=count)
 

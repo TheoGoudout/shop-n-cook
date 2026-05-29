@@ -1,6 +1,13 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
-import { ArrowLeft, ChefHat, Clock, ExternalLink, Users } from "lucide-react"
+import {
+  ArrowLeft,
+  ChefHat,
+  Clock,
+  ExternalLink,
+  Flame,
+  Users,
+} from "lucide-react"
 import { Suspense } from "react"
 import { useTranslation } from "react-i18next"
 
@@ -103,7 +110,66 @@ function RecipeDetailContent() {
             <span>{t("detail.total", { count: totalTime })}</span>
           </div>
         )}
+        {recipe.kcal_per_serving != null && (
+          <div className="flex items-center gap-1.5 text-muted-foreground">
+            <Flame className="h-4 w-4" />
+            <span>{t("detail.kcal", { count: recipe.kcal_per_serving })}</span>
+          </div>
+        )}
       </div>
+
+      {/* Metadata badges */}
+      {((recipe.seasons ?? []).length > 0 ||
+        recipe.is_vegan ||
+        recipe.is_vegetarian ||
+        recipe.is_gluten_free ||
+        recipe.is_dairy_free ||
+        recipe.difficulty ||
+        recipe.meal_type ||
+        recipe.cuisine_type) && (
+        <div className="flex flex-wrap gap-2">
+          {(recipe.seasons ?? []).map((s) => (
+            <Badge key={s} variant="secondary" className="text-xs capitalize">
+              {t(`form.season_${s}`)}
+            </Badge>
+          ))}
+          {recipe.is_vegan && (
+            <Badge className="text-xs bg-green-600 hover:bg-green-600">
+              {t("form.is_vegan_label")}
+            </Badge>
+          )}
+          {!recipe.is_vegan && recipe.is_vegetarian && (
+            <Badge className="text-xs bg-green-500 hover:bg-green-500">
+              {t("form.is_vegetarian_label")}
+            </Badge>
+          )}
+          {recipe.is_gluten_free && (
+            <Badge variant="outline" className="text-xs">
+              {t("form.is_gluten_free_label")}
+            </Badge>
+          )}
+          {recipe.is_dairy_free && (
+            <Badge variant="outline" className="text-xs">
+              {t("form.is_dairy_free_label")}
+            </Badge>
+          )}
+          {recipe.difficulty && (
+            <Badge variant="secondary" className="text-xs capitalize">
+              {t(`form.difficulty_${recipe.difficulty}`)}
+            </Badge>
+          )}
+          {recipe.meal_type && (
+            <Badge variant="secondary" className="text-xs capitalize">
+              {t(`form.meal_${recipe.meal_type}`)}
+            </Badge>
+          )}
+          {recipe.cuisine_type && (
+            <Badge variant="outline" className="text-xs">
+              {recipe.cuisine_type}
+            </Badge>
+          )}
+        </div>
+      )}
 
       {/* Ingredients */}
       <Card>

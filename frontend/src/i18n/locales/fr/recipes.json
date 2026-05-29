@@ -17,7 +17,8 @@
     "servings": "{{count}} portions",
     "prep": "Prép. : {{count}} min",
     "cook": "Cuisson : {{count}} min",
-    "total": "Total : {{count}} min"
+    "total": "Total : {{count}} min",
+    "kcal": "{{count}} kcal/portion"
   },
   "columns": {
     "title": "Titre",
@@ -93,7 +94,40 @@
     "steps_label": "Étapes",
     "add_step": "Ajouter une étape",
     "step_instruction_placeholder": "Décrivez ce qu'il faut faire à cette étape…",
-    "step_ingredients_hint": "Ingrédients utilisés à cette étape"
+    "step_ingredients_hint": "Ingrédients utilisés à cette étape",
+    "metadata_label": "Métadonnées de la recette",
+    "is_vegan_label": "Vegan",
+    "is_vegetarian_label": "Végétarien",
+    "is_gluten_free_label": "Sans gluten",
+    "is_dairy_free_label": "Sans lactose",
+    "difficulty_label": "Difficulté",
+    "difficulty_easy": "Facile",
+    "difficulty_medium": "Moyen",
+    "difficulty_hard": "Difficile",
+    "meal_type_label": "Type de repas",
+    "meal_breakfast": "Petit-déjeuner",
+    "meal_lunch": "Déjeuner",
+    "meal_dinner": "Dîner",
+    "meal_snack": "Collation",
+    "meal_dessert": "Dessert",
+    "meal_drink": "Boisson",
+    "meal_other": "Autre",
+    "kcal_label": "Kcal / portion",
+    "cuisine_type_label": "Cuisine",
+    "cuisine_type_placeholder": "ex. Italienne, Thaïe…",
+    "seasons_label": "Saisons",
+    "season_spring": "Printemps",
+    "season_summer": "Été",
+    "season_autumn": "Automne",
+    "season_winter": "Hiver",
+    "select_placeholder": "Sélectionner…",
+    "none": "Aucun"
+  },
+  "filters": {
+    "difficulty": "Difficulté",
+    "meal_type": "Type de repas",
+    "cuisine": "Cuisine…",
+    "clear_all": "Effacer les filtres"
   },
   "public": {
     "title": "Recettes de la communauté",

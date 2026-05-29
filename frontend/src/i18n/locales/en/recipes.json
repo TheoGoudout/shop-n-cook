@@ -17,7 +17,8 @@
     "servings": "{{count}} servings",
     "prep": "Prep: {{count}} min",
     "cook": "Cook: {{count}} min",
-    "total": "Total: {{count}} min"
+    "total": "Total: {{count}} min",
+    "kcal": "{{count}} kcal/serving"
   },
   "columns": {
     "title": "Title",
@@ -93,7 +94,40 @@
     "steps_label": "Steps",
     "add_step": "Add Step",
     "step_instruction_placeholder": "Describe what to do in this step…",
-    "step_ingredients_hint": "Ingredients used in this step"
+    "step_ingredients_hint": "Ingredients used in this step",
+    "metadata_label": "Recipe metadata",
+    "is_vegan_label": "Vegan",
+    "is_vegetarian_label": "Vegetarian",
+    "is_gluten_free_label": "Gluten-free",
+    "is_dairy_free_label": "Dairy-free",
+    "difficulty_label": "Difficulty",
+    "difficulty_easy": "Easy",
+    "difficulty_medium": "Medium",
+    "difficulty_hard": "Hard",
+    "meal_type_label": "Meal type",
+    "meal_breakfast": "Breakfast",
+    "meal_lunch": "Lunch",
+    "meal_dinner": "Dinner",
+    "meal_snack": "Snack",
+    "meal_dessert": "Dessert",
+    "meal_drink": "Drink",
+    "meal_other": "Other",
+    "kcal_label": "Kcal / serving",
+    "cuisine_type_label": "Cuisine",
+    "cuisine_type_placeholder": "e.g. Italian, Thai…",
+    "seasons_label": "Seasons",
+    "season_spring": "Spring",
+    "season_summer": "Summer",
+    "season_autumn": "Autumn",
+    "season_winter": "Winter",
+    "select_placeholder": "Select…",
+    "none": "None"
+  },
+  "filters": {
+    "difficulty": "Difficulty",
+    "meal_type": "Meal type",
+    "cuisine": "Cuisine…",
+    "clear_all": "Clear filters"
   },
   "public": {
     "title": "Community Recipes",

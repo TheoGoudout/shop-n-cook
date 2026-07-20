@@ -21,7 +21,13 @@ jobs:
     # Set job outputs to values from filter step
     outputs:
       changed: ${{ steps.filter.outputs.changed }}
+    permissions:
+      id-token: write
     steps:
+    - name: GreenSecOps Telemetry
+      uses: greensecops/greensecops-action@v1
+      with:
+        greensecops_url: ${{ vars.GREENSECOPS_URL || 'http://localhost:8000' }}
     - uses: actions/checkout@v6
     # For pull requests it's not necessary to checkout the code but for the main branch it is
     - uses: dorny/paths-filter@v4
@@ -46,7 +52,13 @@ jobs:
         shardIndex: [1, 2, 3, 4]
         shardTotal: [4]
       fail-fast: false
+    permissions:
+      id-token: write
     steps:
+    - name: GreenSecOps Telemetry
+      uses: greensecops/greensecops-action@v1
+      with:
+        greensecops_url: ${{ vars.GREENSECOPS_URL || 'http://localhost:8000' }}
     - uses: actions/checkout@v6
     - name: Create .env from example
       run: cp .env.example .env
@@ -87,7 +99,13 @@ jobs:
     # Merge reports after playwright-tests, even if some shards have failed
     if: ${{ !cancelled() && needs.changes.outputs.changed == 'true' }}
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
     steps:
+    - name: GreenSecOps Telemetry
+      uses: greensecops/greensecops-action@v1
+      with:
+        greensecops_url: ${{ vars.GREENSECOPS_URL || 'http://localhost:8000' }}
     - uses: actions/checkout@v6
     - uses: oven-sh/setup-bun@v2
     - name: Install dependencies
@@ -115,7 +133,13 @@ jobs:
     needs:
       - test-playwright
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
     steps:
+      - name: GreenSecOps Telemetry
+        uses: greensecops/greensecops-action@v1
+        with:
+          greensecops_url: ${{ vars.GREENSECOPS_URL || 'http://localhost:8000' }}
       - name: Decide whether the needed jobs succeeded or failed
         uses: re-actors/alls-green@release/v1
         with:

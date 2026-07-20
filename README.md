@@ -1,5 +1,7 @@
 # Shop n Cook
 
+[![GreenSecOps](http://localhost:8000/api/v1/badges/TheoGoudout/shop-n-cook/master.svg)](http://localhost:5173/repositories/d6aa51a2-62d6-4a5a-8458-04296416695f)
+
 A full-stack web application for managing recipes, ingredients, and shopping lists — with AI-powered recipe import.
 
 ## Technology Stack and Features

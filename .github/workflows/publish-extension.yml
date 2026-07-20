@@ -21,7 +21,13 @@ jobs:
       edge:     ${{ steps.check.outputs.edge }}
       opera:    ${{ steps.check.outputs.opera }}
       safari:   ${{ steps.check.outputs.safari }}
+    permissions:
+      id-token: write
     steps:
+      - name: GreenSecOps Telemetry
+        uses: greensecops/greensecops-action@v1
+        with:
+          greensecops_url: ${{ vars.GREENSECOPS_URL || 'http://localhost:8000' }}
       - uses: actions/checkout@v6
 
       - name: Extract version from manifest
@@ -76,7 +82,13 @@ jobs:
     # Pre-releases are skipped — a version in review blocks further submissions, and RCs shouldn't queue ahead of the real release.
     if: github.event_name == 'release' && !github.event.release.prerelease && needs.build.outputs.chrome == 'true'
     # Also covers Vivaldi and Brave — both Chromium-based and use Chrome Web Store directly
+    permissions:
+      id-token: write
     steps:
+      - name: GreenSecOps Telemetry
+        uses: greensecops/greensecops-action@v1
+        with:
+          greensecops_url: ${{ vars.GREENSECOPS_URL || 'http://localhost:8000' }}
       - uses: actions/download-artifact@v4
         with:
           name: extension-zip
@@ -139,7 +151,13 @@ jobs:
     runs-on: ubuntu-latest
     # Pre-releases are skipped entirely — RC testers install extension.zip directly in Firefox Dev Edition.
     if: github.event_name == 'release' && !github.event.release.prerelease && needs.build.outputs.firefox == 'true'
+    permissions:
+      id-token: write
     steps:
+      - name: GreenSecOps Telemetry
+        uses: greensecops/greensecops-action@v1
+        with:
+          greensecops_url: ${{ vars.GREENSECOPS_URL || 'http://localhost:8000' }}
       - uses: actions/download-artifact@v4
         with:
           name: extension-zip
@@ -223,7 +241,13 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     if: github.event_name == 'release' && !github.event.release.prerelease && needs.build.outputs.edge == 'true'
+    permissions:
+      id-token: write
     steps:
+      - name: GreenSecOps Telemetry
+        uses: greensecops/greensecops-action@v1
+        with:
+          greensecops_url: ${{ vars.GREENSECOPS_URL || 'http://localhost:8000' }}
       - uses: actions/download-artifact@v4
         with:
           name: extension-zip
@@ -262,7 +286,13 @@ jobs:
     if: github.event_name == 'release' && !github.event.release.prerelease && needs.build.outputs.opera == 'true'
     # Opera has no official REST API; automation uses Puppeteer via ext-opera-upload.
     # reCAPTCHA Enterprise may block uploads — continue-on-error prevents failing the release.
+    permissions:
+      id-token: write
     steps:
+      - name: GreenSecOps Telemetry
+        uses: greensecops/greensecops-action@v1
+        with:
+          greensecops_url: ${{ vars.GREENSECOPS_URL || 'http://localhost:8000' }}
       - uses: actions/download-artifact@v4
         with:
           name: extension-zip
@@ -287,7 +317,13 @@ jobs:
     # pre-release and full release follow the same upload path.
     # Every build lands in TestFlight first; App Store review must be submitted manually
     # from App Store Connect — there is no API to trigger it automatically.
+    permissions:
+      id-token: write
     steps:
+      - name: GreenSecOps Telemetry
+        uses: greensecops/greensecops-action@v1
+        with:
+          greensecops_url: ${{ vars.GREENSECOPS_URL || 'http://localhost:8000' }}
       - uses: actions/checkout@v6
 
       - uses: actions/download-artifact@v4

@@ -86,7 +86,13 @@ jobs:
       has_android:   ${{ steps.check.outputs.has_android }}
       has_ios:       ${{ steps.check.outputs.has_ios }}
       has_windows:   ${{ steps.check.outputs.has_windows }}
+    permissions:
+      id-token: write
     steps:
+      - name: GreenSecOps Telemetry
+        uses: greensecops/greensecops-action@v1
+        with:
+          greensecops_url: ${{ vars.GREENSECOPS_URL || 'http://localhost:8000' }}
       - name: Parse semver from tag
         id: version
         run: |
@@ -142,7 +148,13 @@ jobs:
     needs: prepare
     runs-on: ubuntu-latest
     if: github.event_name != 'release' || needs.prepare.outputs.has_android == 'true'
+    permissions:
+      id-token: write
     steps:
+      - name: GreenSecOps Telemetry
+        uses: greensecops/greensecops-action@v1
+        with:
+          greensecops_url: ${{ vars.GREENSECOPS_URL || 'http://localhost:8000' }}
       - uses: actions/checkout@v4
 
       - uses: actions/setup-java@v4
@@ -282,7 +294,13 @@ jobs:
     needs: prepare
     runs-on: macos-latest
     if: github.event_name == 'release' && needs.prepare.outputs.has_ios == 'true'
+    permissions:
+      id-token: write
     steps:
+      - name: GreenSecOps Telemetry
+        uses: greensecops/greensecops-action@v1
+        with:
+          greensecops_url: ${{ vars.GREENSECOPS_URL || 'http://localhost:8000' }}
       - uses: actions/checkout@v4
 
       - uses: ruby/setup-ruby@v1
@@ -333,7 +351,13 @@ jobs:
     needs: prepare
     runs-on: windows-latest
     if: github.event_name == 'release' && needs.prepare.outputs.has_windows == 'true'
+    permissions:
+      id-token: write
     steps:
+      - name: GreenSecOps Telemetry
+        uses: greensecops/greensecops-action@v1
+        with:
+          greensecops_url: ${{ vars.GREENSECOPS_URL || 'http://localhost:8000' }}
       - uses: actions/checkout@v4
 
       - name: Install Microsoft Store CLI

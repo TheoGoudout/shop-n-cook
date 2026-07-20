@@ -15,7 +15,13 @@ jobs:
     name: Bump version files and tag
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      id-token: write
     steps:
+      - name: GreenSecOps Telemetry
+        uses: greensecops/greensecops-action@v1
+        with:
+          greensecops_url: ${{ vars.GREENSECOPS_URL || 'http://localhost:8000' }}
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         with:
           token: ${{ secrets.GITHUB_TOKEN }}

@@ -76,7 +76,9 @@ permissions:
 jobs:
   # ── Shared metadata ────────────────────────────────────────────────────────
   prepare:
+    name: Prepare Metadata
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     outputs:
       version:       ${{ steps.version.outputs.version }}
       version_code:  ${{ steps.version.outputs.version_code }}
@@ -139,13 +141,15 @@ jobs:
 
   # ── Android ────────────────────────────────────────────────────────────────
   android:
+    name: Build Android
     needs: prepare
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     if: github.event_name != 'release' || needs.prepare.outputs.has_android == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9 # v4
         with:
           java-version: '17'
           distribution: 'temurin'
@@ -227,7 +231,7 @@ jobs:
 
       - name: Upload AAB artifact
         if: github.event_name == 'release'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: android-aab
           path: shop-n-cook-${{ needs.prepare.outputs.version }}.aab
@@ -235,7 +239,7 @@ jobs:
 
       - name: Upload APK artifact
         if: github.event_name == 'release'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: android-apk
           path: shop-n-cook-${{ needs.prepare.outputs.version }}.apk
@@ -243,7 +247,7 @@ jobs:
 
       - name: Upload debug APK artifact
         if: github.event_name != 'release'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: android-debug-apk
           path: mobile/android/app/build/outputs/apk/debug/app-debug.apk
@@ -251,7 +255,7 @@ jobs:
 
       - name: Attach APK and AAB to release
         if: github.event_name == 'release'
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           files: |
             shop-n-cook-${{ needs.prepare.outputs.version }}.apk
@@ -267,7 +271,7 @@ jobs:
 
       - name: Upload to Google Play (${{ needs.prepare.outputs.android_track }})
         if: github.event_name == 'release'
-        uses: r0adkll/upload-google-play@v1
+        uses: r0adkll/upload-google-play@e738b9dd8f2476ea806d921b64aacd24f34515a5 # v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: ${{ vars.ANDROID_PACKAGE_NAME }}
@@ -279,13 +283,15 @@ jobs:
 
   # ── iOS ────────────────────────────────────────────────────────────────────
   ios:
+    name: Build iOS
     needs: prepare
     runs-on: macos-latest
+    timeout-minutes: 30
     if: github.event_name == 'release' && needs.prepare.outputs.has_ios == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      - uses: ruby/setup-ruby@v1
+      - uses: ruby/setup-ruby@003a5c4d8d6321bd302e38f6f0ec593f77f06600 # v1
         with:
           ruby-version: '3.3'
           bundler-cache: true
@@ -295,7 +301,7 @@ jobs:
         env:
           CERT_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
           CERT_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          KEYCHAIN_PASSWORD: tmp-${{ github.run_id }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
         run: |
           KEYCHAIN="$RUNNER_TEMP/build.keychain"
           security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
@@ -330,11 +336,13 @@ jobs:
 
   # ── Windows ────────────────────────────────────────────────────────────────
   windows:
+    name: Build Windows
     needs: prepare
     runs-on: windows-latest
+    timeout-minutes: 30
     if: github.event_name == 'release' && needs.prepare.outputs.has_windows == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Install Microsoft Store CLI
         shell: pwsh
@@ -396,13 +404,13 @@ jobs:
             "shop-n-cook-${{ needs.prepare.outputs.version }}.msix"
 
       - name: Upload MSIX artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: windows-msix
           path: shop-n-cook-${{ needs.prepare.outputs.version }}.msix
           retention-days: 7
 
       - name: Attach MSIX to release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           files: shop-n-cook-${{ needs.prepare.outputs.version }}.msix

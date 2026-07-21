@@ -14,6 +14,7 @@ jobs:
   build:
     name: Build & Package
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     outputs:
       version:  ${{ steps.version.outputs.version }}
       chrome:   ${{ steps.check.outputs.chrome }}
@@ -22,13 +23,18 @@ jobs:
       opera:    ${{ steps.check.outputs.opera }}
       safari:   ${{ steps.check.outputs.safari }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
       - name: Extract version from manifest
         id: version
         run: echo "version=$(jq -r '.version' extension/public/manifest.json)" >> "$GITHUB_OUTPUT"
 
-      - uses: oven-sh/setup-bun@v2
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: extension/node_modules
+          key: ${{ runner.os }}-bun-${{ hashFiles('extension/bun.lockb') }}
 
       - name: Install dependencies
         run: bun install
@@ -57,7 +63,7 @@ jobs:
           echo "safari=$([ -n "$APPLE_CERTIFICATE" ] && echo true || echo false)" >> $GITHUB_OUTPUT
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: extension-zip
           path: extension.zip
@@ -65,7 +71,7 @@ jobs:
 
       - name: Attach zip to release
         if: github.event_name == 'release'
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           files: extension.zip
 
@@ -73,13 +79,17 @@ jobs:
     name: Publish → Chrome Web Store
     needs: build
     runs-on: ubuntu-latest
-    # Pre-releases are skipped — a version in review blocks further submissions, and RCs shouldn't queue ahead of the real release.
+    timeout-minutes: 30
     if: github.event_name == 'release' && !github.event.release.prerelease && needs.build.outputs.chrome == 'true'
-    # Also covers Vivaldi and Brave — both Chromium-based and use Chrome Web Store directly
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: extension-zip
+
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip
 
       - name: Get access token from service account
         id: token
@@ -123,8 +133,6 @@ jobs:
             -d '{"target":"default"}')
           STATUS=$(echo "$RESULT" | jq -r '.status[0] // ""')
           ERROR=$(echo "$RESULT" | jq -r '.error.message // ""')
-          # ITEM_PENDING_REVIEW = submitted for review (normal for broad-permission extensions)
-          # "in review" error = previous submission still under review; new package uploaded as draft
           if [ "$STATUS" = "OK" ] || [ "$STATUS" = "ITEM_PENDING_REVIEW" ] || \
              echo "$ERROR" | grep -qi "in review"; then
             echo "Submitted: $STATUS $ERROR"
@@ -137,17 +145,22 @@ jobs:
     name: Publish → Firefox Add-ons (AMO)
     needs: build
     runs-on: ubuntu-latest
-    # Pre-releases are skipped entirely — RC testers install extension.zip directly in Firefox Dev Edition.
+    timeout-minutes: 30
     if: github.event_name == 'release' && !github.event.release.prerelease && needs.build.outputs.firefox == 'true'
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: extension-zip
+
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm
 
       - name: Unzip extension
         run: mkdir ext-src && cd ext-src && unzip ../extension.zip
 
-      - uses: oven-sh/setup-bun@v2
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
 
       - name: Install web-ext
         run: bun add -g web-ext
@@ -155,8 +168,6 @@ jobs:
       - name: Sign & submit to AMO
         id: sign
         run: |
-          # pre-release → unlisted (signed .xpi attached to release, not visible on AMO)
-          # full release → listed (appears publicly on addons.mozilla.org)
           CHANNEL=${{ github.event.release.prerelease && 'unlisted' || 'listed' }}
           web-ext sign \
             --source-dir ext-src \
@@ -174,7 +185,7 @@ jobs:
           fi
 
       - name: Upload XPI artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: firefox-xpi
           path: shop-n-cook-${{ needs.build.outputs.version }}.xpi
@@ -182,13 +193,11 @@ jobs:
           retention-days: 7
 
       - name: Attach XPI to GitHub release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           fail_on_unmatched_files: false
           files: shop-n-cook-${{ needs.build.outputs.version }}.xpi
 
-      # Requires FIREFOX_EXTENSION_SLUG repository variable (Settings → Variables → Actions).
-      # Value: the slug or GUID of the add-on on addons.mozilla.org.
       - name: Set release notes on AMO
         if: vars.FIREFOX_EXTENSION_SLUG != ''
         env:
@@ -222,9 +231,10 @@ jobs:
     name: Publish → Edge Add-ons
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     if: github.event_name == 'release' && !github.event.release.prerelease && needs.build.outputs.edge == 'true'
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: extension-zip
 
@@ -258,14 +268,17 @@ jobs:
     name: Publish → Opera Add-ons
     needs: build
     runs-on: ubuntu-latest
-    # Opera has no staging channel — skip on pre-releases entirely.
+    timeout-minutes: 30
     if: github.event_name == 'release' && !github.event.release.prerelease && needs.build.outputs.opera == 'true'
-    # Opera has no official REST API; automation uses Puppeteer via ext-opera-upload.
-    # reCAPTCHA Enterprise may block uploads — continue-on-error prevents failing the release.
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: extension-zip
+
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm
 
       - name: Install ext-opera-upload
         run: npm install -g ext-opera-upload
@@ -277,20 +290,17 @@ jobs:
             --password "${{ secrets.OPERA_PASSWORD }}" \
             --extension-id "${{ secrets.OPERA_EXTENSION_ID }}" \
             --zip extension.zip
-        continue-on-error: true
 
   publish-safari:
     name: Publish → Safari (Mac App Store)
     needs: build
     runs-on: macos-latest
+    timeout-minutes: 30
     if: github.event_name == 'release' && needs.build.outputs.safari == 'true'
-    # pre-release and full release follow the same upload path.
-    # Every build lands in TestFlight first; App Store review must be submitted manually
-    # from App Store Connect — there is no API to trigger it automatically.
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: extension-zip
 

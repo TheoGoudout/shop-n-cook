@@ -14,6 +14,13 @@ ENV UV_COMPILE_BYTECODE=1
 # Ref: https://docs.astral.sh/uv/guides/integration/docker/#caching
 ENV UV_LINK_MODE=copy
 
+# Constrained deploy hosts can stall past uv's 30s default while pulling the
+# larger wheels (lxml, psycopg-binary), especially when another image build is
+# sharing the link. Cap the parallel downloads so each stream gets usable
+# bandwidth, and give a slow one room to finish.
+ENV UV_HTTP_TIMEOUT=120
+ENV UV_CONCURRENT_DOWNLOADS=4
+
 WORKDIR /app/
 
 # Place executables in the environment at the front of the path
@@ -25,7 +32,7 @@ ENV PATH="/app/.venv/bin:$PATH"
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
-    uv sync --frozen --no-install-workspace --package app
+    uv sync --frozen --no-install-workspace --no-dev --package app
 
 COPY ./backend/scripts /app/backend/scripts
 
@@ -38,7 +45,7 @@ COPY ./backend/app /app/backend/app
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
-    uv sync --frozen --package app
+    uv sync --frozen --no-dev --package app
 
 WORKDIR /app/backend/
 

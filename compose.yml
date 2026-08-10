@@ -28,9 +28,12 @@ services:
         condition: service_completed_successfully
     environment: &backend-required-env
       - PROJECT_NAME=${PROJECT_NAME:-Shop n Cook}
-      - FRONTEND_HOST=${SERVICE_URL_FRONTEND:-}
+      # The frontend is deployed to Cloudflare Workers, not by Coolify, so this
+      # is a real domain rather than a SERVICE_URL_* variable. FRONTEND_HOST is
+      # always an allowed CORS origin — BACKEND_CORS_ORIGINS adds extra ones.
+      - FRONTEND_HOST=${FRONTEND_HOST:-https://app.shop-n-cook.com}
       - ENVIRONMENT=${ENVIRONMENT:-production}
-      - BACKEND_CORS_ORIGINS=${SERVICE_URL_FRONTEND:-}
+      - BACKEND_CORS_ORIGINS=${BACKEND_CORS_ORIGINS:-}
       - SECRET_KEY=${SERVICE_PASSWORD_SECRET:-}
       - FIRST_SUPERUSER=${FIRST_SUPERUSER?Variable not set}
       - FIRST_SUPERUSER_PASSWORD=${SERVICE_PASSWORD_SUPERUSER:-}
@@ -79,37 +82,11 @@ services:
     command: bash scripts/prestart.sh
     environment: *backend-required-env
 
-  frontend:
-    image: shop-n-cook/frontend:${TAG:-latest}
-    restart: always
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/"]
-      interval: 10s
-      retries: 5
-      start_period: 10s
-      timeout: 5s
-    build:
-      context: .
-      dockerfile: frontend/Dockerfile
-      args:
-        - VITE_API_URL=${SERVICE_URL_BACKEND:-}
-        - VITE_PROJECT_NAME=${PROJECT_NAME:-Shop n Cook}
-        - NODE_ENV=production
-
-  landing:
-    image: shop-n-cook/landing:${TAG:-latest}
-    restart: always
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/"]
-      interval: 10s
-      retries: 5
-      start_period: 10s
-      timeout: 5s
-    build:
-      context: .
-      dockerfile: landing/Dockerfile
-    environment:
-      - FRONTEND_URL=${SERVICE_URL_FRONTEND:-}
+# The `frontend` and `landing` services live in `compose.override.yml`: they are
+# deployed to Cloudflare Workers in staging and production (see deployment.md),
+# so this file — the stack Coolify deploys — carries the backend and database
+# only. Compose loads the override file automatically, so `docker compose up`
+# still brings up the full local stack.
 
 volumes:
   app-db-data:

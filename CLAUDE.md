@@ -14,7 +14,7 @@ frontend/   React 19 + Vite + TanStack Router/Query + Biome (Bun)
 extension/  Browser extension (Chrome/Firefox/Edge/Opera/Safari) — Vite + Vitest
 mobile/android/  Android Trusted Web Activity wrapper (bubblewrap-generated)
 mobile/ios/      iOS app configuration (PWABuilder-generated)
-landing/    Static Nginx-served landing page
+landing/    Static landing page (Cloudflare Workers; Nginx container locally)
 scripts/    Build/generation helpers
 ```
 
@@ -144,17 +144,31 @@ Each push runs:
 - `playwright.yml` — frontend E2E (4-shard parallel, retries on CI)
 - `test-extension.yml` — vitest + type-check + build
 - `test-docker-compose.yml` — bring up the full stack as a smoke test
+- `deploy-cloudflare.yml` — on `master`, deploy `frontend/` + `landing/` to staging
 
 On release tags:
 - `publish-extension.yml` — publish to Chrome, Firefox, Edge, Opera, Safari
 - `publish-stores.yml` — Play Store, F-Droid, App Store
+- `deploy-cloudflare.yml` — deploy `frontend/` + `landing/` to production
 
 `bump-version.yml` is manually dispatched and bumps the root
 `package.json`, `frontend/package.json`, `extension/package.json`,
 `backend/pyproject.toml`, and the extension manifest in lockstep.
 
-Coolify deploys to production on every push to `master` via the Coolify
-GitHub App.
+Deployment is split in two (see `deployment.md`):
+
+- `frontend/` and `landing/` are static sites on Cloudflare Workers, deployed
+  by `deploy-cloudflare.yml` — `master` → staging, `v*` tag → production.
+  Config lives in `frontend/wrangler.jsonc` / `landing/wrangler.jsonc`, and
+  build-time settings in the committed `.env.staging` / `.env.production`
+  files of each project. `compose.yml` no longer builds them; their Docker
+  services live in `compose.override.yml` for local development only.
+- `backend/` and the database are deployed by Coolify from `compose.yml` on
+  every push to `master` via the Coolify GitHub App.
+
+Domains: `shop-n-cook.com` (landing), `app.shop-n-cook.com` (frontend),
+`api.shop-n-cook.com` (backend); staging mirrors this under
+`staging.shop-n-cook.com`.
 
 ## Things not to touch
 

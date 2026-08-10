@@ -1,0 +1,33 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "shop-n-cook-frontend",
+  "compatibility_date": "2026-08-01",
+  "main": "worker/index.ts",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    // Deep links such as /recipes/123 must resolve to the SPA shell.
+    "not_found_handling": "single-page-application"
+  },
+  // `routes` is not inheritable — it must be declared per environment.
+  "env": {
+    "staging": {
+      "name": "shop-n-cook-frontend-staging",
+      "routes": [
+        {
+          "pattern": "app.staging.shop-n-cook.com",
+          "custom_domain": true
+        }
+      ]
+    },
+    "production": {
+      "name": "shop-n-cook-frontend",
+      "routes": [
+        {
+          "pattern": "app.shop-n-cook.com",
+          "custom_domain": true
+        }
+      ]
+    }
+  }
+}

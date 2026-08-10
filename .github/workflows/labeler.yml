@@ -31,7 +31,10 @@ jobs:
       pull-requests: read
     runs-on: ubuntu-latest
     steps:
-      - uses: docker://agilepathway/pull-request-label-checker@a91054365736411477123163354413645318356d # latest
+      # A docker:// reference must be pinned by OCI digest (sha256:...), not by
+      # a git commit SHA — the latter makes `docker pull` fail with
+      # "invalid reference format". This digest is the v1.6.65 image.
+      - uses: docker://agilepathway/pull-request-label-checker@sha256:14f5f3dfda922496d07d53494e2d2b42885165f90677a1c03d600059b7706a61 # v1.6.65
         with:
           one_of: breaking,security,feature,bug,refactor,upgrade,docs,lang-all,internal
           repo_token: ${{ secrets.GITHUB_TOKEN }}

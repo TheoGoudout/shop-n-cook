@@ -1,14 +1,50 @@
 name: Publish Extension
 
+# Called by release.yml when a release is published. Also dispatchable on its
+# own to re-drive the browser stores for an existing release without
+# resubmitting to the app stores.
+#
+# This used to listen for the `release` event directly and additionally build on
+# every push to master, where every publish job then skipped — test-extension.yml
+# already covers building the extension on master and PRs.
+
 on:
-  release:
-    types: [released, prereleased]
-  push:
-    branches: [master]
+  workflow_call:
+    inputs:
+      tag:
+        description: "Release tag, e.g. v1.5.0"
+        required: true
+        type: string
+      version:
+        description: "Version without the leading v, e.g. 1.5.0"
+        required: true
+        type: string
+      prerelease:
+        description: "Whether this is a pre-release"
+        required: true
+        type: boolean
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to publish, e.g. v1.5.0"
+        required: true
+        type: string
+      version:
+        description: "Version without the leading v, e.g. 1.5.0"
+        required: true
+        type: string
+      prerelease:
+        description: "Whether this is a pre-release"
+        required: true
+        type: boolean
+        default: false
 
 permissions:
   contents: write # needed to attach the zip to the release
+
+concurrency:
+  group: publish-extension-${{ inputs.tag }}
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -24,10 +60,16 @@ jobs:
       safari:   ${{ steps.check.outputs.safari }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          ref: ${{ inputs.tag }}
 
-      - name: Extract version from manifest
+      - name: Resolve version
         id: version
-        run: echo "version=$(jq -r '.version' extension/public/manifest.json)" >> "$GITHUB_OUTPUT"
+        # Taken from the tag, not from the manifest. The manifest carries the
+        # pre-release suffix stripped (Chrome rejects it), so reading it here
+        # made v1.5.0-rc1 and v1.5.0-rc2 produce identically named release
+        # assets that overwrote each other.
+        run: echo "version=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
 
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
 
@@ -65,9 +107,11 @@ jobs:
           retention-days: 7
 
       - name: Attach zip to release
-        if: github.event_name == 'release'
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
+          # Explicit, because on workflow_dispatch GITHUB_REF is a branch and
+          # the action would otherwise not find the release to attach to.
+          tag_name: ${{ inputs.tag }}
           files: extension.zip
 
   publish-chrome:
@@ -76,7 +120,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     # Pre-releases are skipped — a version in review blocks further submissions, and RCs shouldn't queue ahead of the real release.
-    if: github.event_name == 'release' && !github.event.release.prerelease && needs.build.outputs.chrome == 'true'
+    if: ${{ !inputs.prerelease && needs.build.outputs.chrome == 'true' }}
     # Also covers Vivaldi and Brave — both Chromium-based and use Chrome Web Store directly
     steps:
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
@@ -141,7 +185,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     # Pre-releases are skipped entirely — RC testers install extension.zip directly in Firefox Dev Edition.
-    if: github.event_name == 'release' && !github.event.release.prerelease && needs.build.outputs.firefox == 'true'
+    if: ${{ !inputs.prerelease && needs.build.outputs.firefox == 'true' }}
     steps:
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
@@ -188,8 +232,23 @@ jobs:
       - name: Attach XPI to GitHub release
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
+          tag_name: ${{ inputs.tag }}
           fail_on_unmatched_files: false
           files: shop-n-cook-${{ needs.build.outputs.version }}.xpi
+
+      - name: Fetch release notes
+        id: notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          # Read the body off the release rather than github.event.release.body,
+          # which is empty when this workflow is called rather than triggered.
+          {
+            echo "body<<RELEASE_BODY_EOF"
+            gh release view "$TAG" --repo "${{ github.repository }}" --json body --jq .body
+            echo "RELEASE_BODY_EOF"
+          } >> "$GITHUB_OUTPUT"
 
       # Requires FIREFOX_EXTENSION_SLUG repository variable (Settings → Variables → Actions).
       # Value: the slug or GUID of the add-on on addons.mozilla.org.
@@ -200,7 +259,7 @@ jobs:
           API_KEY:      ${{ secrets.FIREFOX_API_KEY }}
           API_SECRET:   ${{ secrets.FIREFOX_API_SECRET }}
           VERSION:      ${{ needs.build.outputs.version }}
-          RELEASE_BODY: ${{ github.event.release.body }}
+          RELEASE_BODY: ${{ steps.notes.outputs.body }}
         run: |
           JWT=$(python3 - <<'EOF'
           import hmac, hashlib, base64, json, time, os
@@ -227,7 +286,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    if: github.event_name == 'release' && !github.event.release.prerelease && needs.build.outputs.edge == 'true'
+    if: ${{ !inputs.prerelease && needs.build.outputs.edge == 'true' }}
     steps:
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
@@ -265,7 +324,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     # Opera has no staging channel — skip on pre-releases entirely.
-    if: github.event_name == 'release' && !github.event.release.prerelease && needs.build.outputs.opera == 'true'
+    if: ${{ !inputs.prerelease && needs.build.outputs.opera == 'true' }}
     # Opera has no official REST API; automation uses Puppeteer via ext-opera-upload.
     # reCAPTCHA Enterprise may block uploads — continue-on-error prevents failing the release.
     steps:
@@ -290,12 +349,14 @@ jobs:
     needs: build
     runs-on: macos-latest
     timeout-minutes: 60
-    if: github.event_name == 'release' && needs.build.outputs.safari == 'true'
+    if: ${{ needs.build.outputs.safari == 'true' }}
     # pre-release and full release follow the same upload path.
     # Every build lands in TestFlight first; App Store review must be submitted manually
     # from App Store Connect — there is no API to trigger it automatically.
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          ref: ${{ inputs.tag }}
 
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:

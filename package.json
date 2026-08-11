@@ -1,6 +1,7 @@
 {
   "name": "fastapi-full-stack-template",
   "private": true,
+  "version": "1.4.6",
   "workspaces": [
     "frontend",
     "extension",

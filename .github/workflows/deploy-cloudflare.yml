@@ -4,16 +4,30 @@ name: Deploy to Cloudflare Workers
 # Workers static assets. The backend and database are deployed separately by
 # Coolify (see deployment.md).
 #
-#   push to master  -> staging      (staging.shop-n-cook.com, app.staging.shop-n-cook.com)
-#   push of a v* tag -> production  (shop-n-cook.com, app.shop-n-cook.com)
+#   push to master    -> staging     (staging.shop-n-cook.com, app.staging.shop-n-cook.com)
+#   called by release.yml -> production (shop-n-cook.com, app.shop-n-cook.com)
 #   workflow_dispatch -> either, on demand
+#
+# Production is driven by the published release, not by the tag push, so it
+# rolls out alongside the extension and app stores. The old `tags: ["v*"]`
+# trigger never actually worked: bump-version.yml pushed the tag with
+# GITHUB_TOKEN, which GitHub suppresses for triggering workflows, so this
+# workflow had zero tag runs in its entire history.
 
 on:
   push:
     branches:
       - master
-    tags:
-      - "v*"
+  workflow_call:
+    inputs:
+      environment:
+        description: "Environment to deploy"
+        required: true
+        type: string
+      ref:
+        description: "Git ref to build from (defaults to the calling ref)"
+        required: false
+        type: string
   workflow_dispatch:
     inputs:
       environment:
@@ -29,7 +43,7 @@ permissions:
 
 concurrency:
   # Never let two deploys of the same environment race each other.
-  group: deploy-cloudflare-${{ github.event.inputs.environment || (github.ref_type == 'tag' && 'production' || 'staging') }}
+  group: deploy-cloudflare-${{ inputs.environment || 'staging' }}
   cancel-in-progress: false
 
 jobs:
@@ -44,16 +58,17 @@ jobs:
       - name: Resolve environment from trigger
         id: resolve
         env:
-          DISPATCH_ENVIRONMENT: ${{ github.event.inputs.environment }}
-          REF_TYPE: ${{ github.ref_type }}
+          # Set for both workflow_call and workflow_dispatch; empty on push.
+          INPUT_ENVIRONMENT: ${{ inputs.environment }}
         run: |
-          if [ -n "$DISPATCH_ENVIRONMENT" ]; then
-            ENVIRONMENT="$DISPATCH_ENVIRONMENT"
-          elif [ "$REF_TYPE" = "tag" ]; then
-            ENVIRONMENT="production"
-          else
-            ENVIRONMENT="staging"
-          fi
+          ENVIRONMENT="${INPUT_ENVIRONMENT:-staging}"
+          case "$ENVIRONMENT" in
+            staging|production) ;;
+            *)
+              echo "::error::Unknown environment '$ENVIRONMENT'."
+              exit 1
+              ;;
+          esac
           echo "environment=$ENVIRONMENT" >> "$GITHUB_OUTPUT"
           echo "Deploying to $ENVIRONMENT"
 
@@ -75,6 +90,10 @@ jobs:
           - landing
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          # A production deploy builds the released tag, not whatever master has
+          # drifted to since.
+          ref: ${{ inputs.ref || github.ref }}
 
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
 

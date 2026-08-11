@@ -46,8 +46,30 @@ Set these on both the `staging` and `production` GitHub Environments:
 
 | Secret | Description |
 |---|---|
-| `CLOUDFLARE_API_TOKEN` | API token with **Workers Scripts: Edit** and **Workers Routes: Edit**, plus **DNS: Edit** on the zone so custom domains can be provisioned |
+| `CLOUDFLARE_API_TOKEN` | API token — see [permissions](#api-token-permissions) below |
 | `CLOUDFLARE_ACCOUNT_ID` | Cloudflare account ID |
+
+#### API token permissions
+
+Create the token at
+[dash.cloudflare.com/profile/api-tokens](https://dash.cloudflare.com/profile/api-tokens).
+A deploy needs both halves of this list — an account-scoped half to upload the
+Worker, and a zone-scoped half to attach the custom domains declared in
+`frontend/wrangler.jsonc` and `landing/wrangler.jsonc`:
+
+| Scope | Permission | Needed for |
+|---|---|---|
+| Account | Workers Scripts: Edit | Uploading the Worker and its static assets |
+| Zone | Zone: Read | Resolving each custom hostname to its zone — wrangler looks the zone up by name before it can touch routes |
+| Zone | Workers Routes: Edit | Binding `app.shop-n-cook.com` and friends to the uploaded Worker |
+| Zone | DNS: Edit | Provisioning the DNS records and certificates a custom domain needs on first deploy |
+
+Under **Zone Resources**, include the `shop-n-cook.com` zone (or *All zones*) —
+a token scoped to the account alone is not enough.
+
+The *Edit Cloudflare Workers* template is a reasonable starting point, but check
+it against the table above and add whatever zone permissions it is missing
+rather than assuming it covers them.
 
 ### Environment files
 
@@ -86,6 +108,33 @@ bun run --filter landing  build:production && bun run --filter landing  deploy:p
 Wrangler needs `CLOUDFLARE_API_TOKEN` (or an interactive `wrangler login`) and
 `CLOUDFLARE_ACCOUNT_ID` in the environment. Add `--dry-run` to the deploy step to
 validate the config without touching the account.
+
+### Troubleshooting
+
+**`Authentication error [code: 10000]` on `/zones/<zone-id>/workers/routes`**
+
+```
+✘ [ERROR] A request to the Cloudflare API (/zones/<zone-id>/workers/routes) failed.
+  Authentication error [code: 10000]
+```
+
+The API token is missing the zone-scoped half of its
+[permissions](#api-token-permissions). The giveaway is *where* in the deploy it
+fails: the asset upload and `Uploaded shop-n-cook-frontend-staging` lines
+succeed — those only need account-scoped **Workers Scripts: Edit** — and the
+failure lands on the next step, where wrangler attaches the custom domains from
+`wrangler.jsonc`. A token that can upload a Worker but not edit routes produces
+exactly this split.
+
+Fix it by regenerating the token with every permission in the table above, and
+confirm its **Zone Resources** include `shop-n-cook.com`. Update
+`CLOUDFLARE_API_TOKEN` on **both** the `staging` and `production` GitHub
+Environments — they hold separate copies of the secret — then re-run the
+workflow.
+
+Until the routes attach, the Worker exists but no custom hostname serves it, so
+the site stays on its previous deploy. Nothing needs to be rolled back; a
+successful re-run is enough.
 
 ### How the static sites are served
 

@@ -42,7 +42,8 @@ rollout as one workflow run:
 | --- | --- |
 | Browser extensions | Chrome Web Store, Firefox (AMO), Edge, Opera, Safari (TestFlight) |
 | App stores | Google Play (draft), Apple App Store, Windows Store (MSIX) |
-| Cloudflare production | `shop-n-cook.com` + `app.shop-n-cook.com` |
+| Coolify production (backend) | Re-pins `api.shop-n-cook.com` to the tag and redeploys |
+| Cloudflare production | `shop-n-cook.com` + `app.shop-n-cook.com` — waits for the backend first |
 
 Because it is a single run, **Re-run failed jobs** retries only the target that
 broke — useful because the external stores fail for reasons that have nothing to
@@ -58,8 +59,8 @@ A version containing `-rcN` is published as a GitHub pre-release. Then:
 - Safari still builds — everything lands in TestFlight first.
 - Android goes to the `internal` track, iOS to the `beta` lane, Windows to a
   flight.
-- **Cloudflare production is skipped.** Pre-releases must not reach the
-  production domains.
+- **Cloudflare and Coolify production are skipped.** Pre-releases must not reach
+  the production domains or the production API.
 
 Stable releases go to Android `alpha`, iOS `release`, and Google Play submissions
 land as **draft** — a human still promotes them in the Play Console.
@@ -98,8 +99,14 @@ the file and the stores cannot drift apart.
 
 ## Backend and database
 
-Deployed continuously from `master` by Coolify — not part of a tagged release.
-See `deployment.md`.
+A release target like any other. `deploy-coolify.yml` re-pins the production
+Coolify application's git ref to the released tag, redeploys it, waits for the
+build, and asserts that `api.shop-n-cook.com` reports the released version. It
+runs before the Cloudflare deploy so the API is upgraded ahead of the frontend
+that calls it.
+
+Staging is separate and unchanged: it still redeploys continuously from `master`
+via the Coolify GitHub App. See `deployment.md`.
 
 ## Required secrets
 
@@ -107,6 +114,11 @@ See `deployment.md`.
 `release-prepare.yml` pushes the bump commit with. It must not be the default
 `GITHUB_TOKEN`: GitHub suppresses workflow runs for anything pushed with it, so
 the released commit would get no CI.
+
+`COOLIFY_URL`, `COOLIFY_API_TOKEN` and `COOLIFY_APP_UUID` live on the
+`production` GitHub Environment and drive the backend deploy. Unlike the store
+credentials these are **required** — the job fails rather than skipping, because
+a backend that silently did not deploy leaves the frontend on the wrong API.
 
 Store credentials are read per-target and each is skipped when its secret is
 absent — see the `Check secret availability` steps in
@@ -116,5 +128,11 @@ authoritative list.
 
 ## Reverting
 
-Bump again to a new patch version with the fix included. Coolify keeps previous
-backend deploys around for a fast revert.
+For the backend, dispatch
+[`deploy-coolify.yml`](../../../.github/workflows/deploy-coolify.yml) with
+`environment: production` and `ref` set to the previous tag — it re-pins and
+redeploys, and the version assertion confirms the rollback landed. Coolify also
+keeps previous backend deploys around for a redeploy from its dashboard.
+
+Everything else rolls forward: bump again to a new patch version with the fix
+included.

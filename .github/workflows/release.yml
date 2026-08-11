@@ -32,6 +32,7 @@ on:
           - extension
           - stores
           - cloudflare
+          - coolify
 
 permissions:
   contents: read
@@ -54,6 +55,7 @@ jobs:
       run_extension: ${{ steps.targets.outputs.extension }}
       run_stores: ${{ steps.targets.outputs.stores }}
       run_cloudflare: ${{ steps.targets.outputs.cloudflare }}
+      run_coolify: ${{ steps.targets.outputs.coolify }}
     steps:
       - name: Resolve tag, version and pre-release flag
         id: release
@@ -85,7 +87,7 @@ jobs:
         env:
           TARGETS: ${{ inputs.targets || 'all' }}
         run: |
-          for target in extension stores cloudflare; do
+          for target in extension stores cloudflare coolify; do
             if [ "$TARGETS" = "all" ] || [ "$TARGETS" = "$target" ]; then
               echo "$target=true"  >> "$GITHUB_OUTPUT"
             else
@@ -121,14 +123,41 @@ jobs:
       prerelease: ${{ needs.resolve.outputs.prerelease == 'true' }}
     secrets: inherit
 
+  coolify:
+    name: Coolify production (backend)
+    needs: resolve
+    # Same pre-release exclusion as Cloudflare below — an RC must not reach the
+    # production API any more than it may reach the production domains.
+    if: >-
+      needs.resolve.outputs.run_coolify == 'true' &&
+      needs.resolve.outputs.prerelease != 'true'
+    permissions:
+      contents: read
+    uses: ./.github/workflows/deploy-coolify.yml
+    with:
+      environment: production
+      ref: ${{ needs.resolve.outputs.tag }}
+    secrets: inherit
+
   cloudflare:
     name: Cloudflare production
-    needs: resolve
+    # Sequenced behind the backend so the API is upgraded before the frontend
+    # that calls it. Coolify used to deploy continuously from master, which kept
+    # the backend permanently ahead of the frontend; pinning it to the released
+    # tag inverts that, so the ordering now has to be explicit.
+    needs: [resolve, coolify]
     # Pre-releases must not reach the production domains; they exist to be
     # exercised on the store beta tracks first.
+    #
+    # `always()` is what lets a *skipped* coolify job through — `targets: cloudflare`
+    # skips it, and a plain `needs:` would then skip this job too. A coolify job
+    # that actually failed still blocks the frontend deploy.
     if: >-
+      always() &&
       needs.resolve.outputs.run_cloudflare == 'true' &&
-      needs.resolve.outputs.prerelease != 'true'
+      needs.resolve.outputs.prerelease != 'true' &&
+      needs.coolify.result != 'failure' &&
+      needs.coolify.result != 'cancelled'
     permissions:
       contents: read
     uses: ./.github/workflows/deploy-cloudflare.yml
@@ -139,7 +168,7 @@ jobs:
 
   release-complete:
     name: Release complete
-    needs: [resolve, extension, stores, cloudflare]
+    needs: [resolve, extension, stores, cloudflare, coolify]
     # Runs even when a target failed or was skipped, so the run's conclusion is
     # the release's conclusion rather than just the last job's.
     if: always()
@@ -157,6 +186,7 @@ jobs:
             echo "| --- | --- |"
             echo "| Browser extensions | ${{ needs.extension.result }} |"
             echo "| App stores | ${{ needs.stores.result }} |"
+            echo "| Coolify production (backend) | ${{ needs.coolify.result }} |"
             echo "| Cloudflare production | ${{ needs.cloudflare.result }} |"
           } >> "$GITHUB_STEP_SUMMARY"
 

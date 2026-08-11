@@ -1,0 +1,8 @@
+# Served by Cloudflare Workers static assets.
+# Mirrors the cache rules in frontend/nginx.conf: a stale service worker blocks
+# PWA installation and breaks the Web Share Target, so it must never be cached.
+/sw.js
+  Cache-Control: no-store, no-cache, must-revalidate
+
+/workbox-*.js
+  Cache-Control: no-store, no-cache, must-revalidate

@@ -1,0 +1,16 @@
+{
+  "name": "landing",
+  "private": true,
+  "version": "1.4.4",
+  "type": "module",
+  "scripts": {
+    "build": "bun ../scripts/build-landing.mjs production",
+    "build:staging": "bun ../scripts/build-landing.mjs staging",
+    "build:production": "bun ../scripts/build-landing.mjs production",
+    "deploy:staging": "wrangler deploy --env staging",
+    "deploy:production": "wrangler deploy --env production"
+  },
+  "devDependencies": {
+    "wrangler": "^4.120.1"
+  }
+}

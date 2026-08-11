@@ -27,7 +27,7 @@ A full-stack web application for managing recipes, ingredients, and shopping lis
 - Email-based password recovery.
 - [Mailcatcher](https://mailcatcher.me) for local email testing during development.
 - Tests with [Pytest](https://pytest.org).
-- CI (continuous integration) with GitHub Actions; CD via [Coolify](https://coolify.io) GitHub App.
+- CI (continuous integration) with GitHub Actions; CD to [Cloudflare Workers](https://developers.cloudflare.com/workers/static-assets/) (frontend + landing) and [Coolify](https://coolify.io) (backend + database), with staging and production environments.
 
 ## Application Features
 

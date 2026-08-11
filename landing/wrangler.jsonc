@@ -1,0 +1,36 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "shop-n-cook-landing",
+  "compatibility_date": "2026-08-01",
+  // Pure static site — no Worker script. The default `html_handling`
+  // ("auto-trailing-slash") serves /privacy from privacy.html, matching the
+  // `try_files $uri $uri.html` rule in landing/nginx.conf.
+  "assets": {
+    "directory": "./dist"
+  },
+  // `routes` is not inheritable — it must be declared per environment.
+  "env": {
+    "staging": {
+      "name": "shop-n-cook-landing-staging",
+      "routes": [
+        {
+          "pattern": "staging.shop-n-cook.com",
+          "custom_domain": true
+        }
+      ]
+    },
+    "production": {
+      "name": "shop-n-cook-landing",
+      "routes": [
+        {
+          "pattern": "shop-n-cook.com",
+          "custom_domain": true
+        },
+        {
+          "pattern": "www.shop-n-cook.com",
+          "custom_domain": true
+        }
+      ]
+    }
+  }
+}

@@ -82,7 +82,11 @@ services:
       - "1080:1080"
       - "1025:1025"
 
+  # `frontend` and `landing` are defined here rather than in compose.yml: in
+  # staging and production they are deployed to Cloudflare Workers, so they are
+  # local-development services only.
   frontend:
+    image: shop-n-cook/frontend-dev:${TAG:-latest}
     restart: "no"
     ports:
       - "5173:5173"
@@ -115,9 +119,19 @@ services:
           action: rebuild
 
   landing:
+    image: shop-n-cook/landing:${TAG:-latest}
     restart: "no"
     ports:
       - "8080:80"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 10s
+      retries: 5
+      start_period: 10s
+      timeout: 5s
+    build:
+      context: .
+      dockerfile: landing/Dockerfile
     environment:
       FRONTEND_URL: ${FRONTEND_HOST?Variable not set}
     develop:

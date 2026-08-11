@@ -9,25 +9,36 @@
     // Deep links such as /recipes/123 must resolve to the SPA shell.
     "not_found_handling": "single-page-application"
   },
-  // `routes` is not inheritable — it must be declared per environment.
+  // No `routes` key: the custom domains are attached by hand in the Cloudflare
+  // dashboard (see deployment.md). Declaring them here would make wrangler
+  // reconcile them on *every* deploy against the zone's routing table, which
+  // needs a CI token carrying Workers Routes: Edit and DNS: Edit on
+  // shop-n-cook.com — rights broad enough to repoint api.shop-n-cook.com if the
+  // token ever leaked. Leaving them out keeps CI's token account-scoped.
+  //
+  // The trade-off: a rename of any `name` below silently orphans its dashboard
+  // binding, because nothing here enforces the hostname → Worker mapping.
+  "workers_dev": false,
   "env": {
     "staging": {
       "name": "shop-n-cook-frontend-staging",
-      "routes": [
-        {
-          "pattern": "app.staging.shop-n-cook.com",
-          "custom_domain": true
-        }
-      ]
+      // `assets` is repeated rather than left to environment inheritance.
+      // Wrangler does inherit it, but a named environment that silently
+      // resolves to no assets deploys an empty site, and this is the cheap way
+      // to make `deploy --dry-run --env staging` catch that instead.
+      "assets": {
+        "directory": "./dist",
+        "binding": "ASSETS",
+        "not_found_handling": "single-page-application"
+      }
     },
     "production": {
       "name": "shop-n-cook-frontend",
-      "routes": [
-        {
-          "pattern": "app.shop-n-cook.com",
-          "custom_domain": true
-        }
-      ]
+      "assets": {
+        "directory": "./dist",
+        "binding": "ASSETS",
+        "not_found_handling": "single-page-application"
+      }
     }
   }
 }

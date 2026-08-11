@@ -18,10 +18,9 @@ There are two environments, **staging** and **production**.
 | Frontend | `app.shop-n-cook.com` | `app.staging.shop-n-cook.com` |
 | Backend | `api.shop-n-cook.com` | `api.staging.shop-n-cook.com` |
 
-The frontend and landing hostnames are declared as custom domains in
-`frontend/wrangler.jsonc` and `landing/wrangler.jsonc`; Cloudflare creates and
-manages the DNS records and certificates for them on first deploy. The `api.*`
-records point at the Coolify host and are managed there.
+The frontend and landing hostnames are attached to their Workers by hand in the
+Cloudflare dashboard — see [Custom domains](#custom-domains). The `api.*` records
+point at the Coolify host and are managed there.
 
 ---
 
@@ -46,8 +45,58 @@ Set these on both the `staging` and `production` GitHub Environments:
 
 | Secret | Description |
 |---|---|
-| `CLOUDFLARE_API_TOKEN` | API token with **Workers Scripts: Edit** and **Workers Routes: Edit**, plus **DNS: Edit** on the zone so custom domains can be provisioned |
+| `CLOUDFLARE_API_TOKEN` | API token — see [permissions](#api-token-permissions) below |
 | `CLOUDFLARE_ACCOUNT_ID` | Cloudflare account ID |
+
+#### API token permissions
+
+Create the token at
+[dash.cloudflare.com/profile/api-tokens](https://dash.cloudflare.com/profile/api-tokens).
+One account-scoped permission is enough:
+
+| Scope | Permission | Needed for |
+|---|---|---|
+| Account | Workers Scripts: Edit | Uploading the Worker and its static assets |
+
+No zone permissions are required, and the token deliberately does not carry any.
+That is only true because neither `wrangler.jsonc` declares `routes` — see
+[Custom domains](#custom-domains) for the reasoning and for the one-time manual
+setup it implies.
+
+### Custom domains
+
+Custom domains are **not** managed by wrangler. Neither `wrangler.jsonc`
+declares a `routes` key; each hostname is bound to its Worker once, by hand, in
+the Cloudflare dashboard under **Workers & Pages → \<worker\> → Settings →
+Domains & Routes → Add → Custom domain**.
+
+| Hostname | Worker |
+|---|---|
+| `shop-n-cook.com` | `shop-n-cook-landing` |
+| `www.shop-n-cook.com` | `shop-n-cook-landing` |
+| `staging.shop-n-cook.com` | `shop-n-cook-landing-staging` |
+| `app.shop-n-cook.com` | `shop-n-cook-frontend` |
+| `app.staging.shop-n-cook.com` | `shop-n-cook-frontend-staging` |
+
+Cloudflare creates the DNS record and certificate when you add the binding. A
+Worker has to exist before you can bind a hostname to it, so the order is
+*deploy first, bind second* — the staging pair after the first push to `master`,
+the production pair after the first `v*` tag.
+
+**Why not declare them in `wrangler.jsonc`?** Because wrangler treats the config
+as authoritative and reconciles `routes` against the zone on *every* deploy, not
+just the first. That would require the CI token to hold `Workers Routes: Edit`
+and `DNS: Edit` on `shop-n-cook.com` — enough to repoint `api.shop-n-cook.com`
+at anything, including the Coolify-hosted backend, if the token ever leaked.
+Binding by hand keeps the CI token account-scoped.
+
+The cost is drift: the hostname → Worker mapping lives only in the dashboard and
+in the table above. Renaming a `name` in either `wrangler.jsonc` orphans its
+binding silently — the deploy will succeed and the site will keep serving the
+old Worker. Change the two together.
+
+`workers_dev` is set to `false` in both configs so a Worker with no custom
+domain attached is not quietly reachable at a `*.workers.dev` URL.
 
 ### Environment files
 
@@ -86,6 +135,32 @@ bun run --filter landing  build:production && bun run --filter landing  deploy:p
 Wrangler needs `CLOUDFLARE_API_TOKEN` (or an interactive `wrangler login`) and
 `CLOUDFLARE_ACCOUNT_ID` in the environment. Add `--dry-run` to the deploy step to
 validate the config without touching the account.
+
+### Troubleshooting
+
+**`Authentication error [code: 10000]` on `/zones/<zone-id>/workers/routes`**
+
+```
+✘ [ERROR] A request to the Cloudflare API (/zones/<zone-id>/workers/routes) failed.
+  Authentication error [code: 10000]
+```
+
+Something reintroduced a `routes` key into `frontend/wrangler.jsonc` or
+`landing/wrangler.jsonc`. The account-scoped token cannot edit zone routes by
+design, so wrangler fails the moment it tries to reconcile them. The giveaway is
+*where* it fails: the asset upload and the `Uploaded shop-n-cook-frontend-staging`
+line succeed, and the error lands on the step immediately after.
+
+Remove the `routes` key and bind the hostname in the dashboard instead — see
+[Custom domains](#custom-domains).
+
+**A deploy succeeds but the site is unchanged**
+
+The Worker was updated; the hostname is pointing somewhere else. Either the
+custom domain was never bound, or a `name` in `wrangler.jsonc` was changed and
+the dashboard binding still points at the old Worker. Check the hostname against
+the table in [Custom domains](#custom-domains). Nothing needs rolling back — a
+deploy that uploads is already live for whatever hostname is bound to it.
 
 ### How the static sites are served
 

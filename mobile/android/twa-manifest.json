@@ -21,8 +21,8 @@
     "path": "./android.keystore",
     "alias": "shopncook"
   },
-  "appVersionName": "1.4.6",
-  "appVersionCode": 1040699,
+  "appVersionName": "1.4.7",
+  "appVersionCode": 1040799,
   "shortcuts": [],
   "generatorApp": "bubblewrap-cli",
   "webManifestUrl": "https://app.shop-n-cook.com/manifest.webmanifest",
@@ -50,5 +50,5 @@
   "additionalTrustedOrigins": [],
   "retainedBundles": [],
   "displayOverride": [],
-  "appVersion": "1.4.6"
+  "appVersion": "1.4.7"
 }

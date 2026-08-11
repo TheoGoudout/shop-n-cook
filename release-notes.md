@@ -1,5 +1,15 @@
 # Release Notes
 
+## 1.4.7
+
+### Features
+
+* CI: Rework the release pipeline around a draft release
+
+### Fixes
+
+* CI: Stop the release preflight failing on path-filtered workflows
+
 ## 1.4.4
 
 ### Fixes

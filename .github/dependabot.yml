@@ -1,4 +1,8 @@
 version: 2
+# NOTE: every label listed under `labels:` must already exist in the repository —
+# Dependabot applies existing labels but will not create them, and naming a missing
+# one makes the update run error out. `dependencies` does not exist here, so it is
+# deliberately not listed. Create the label first if you want it back.
 updates:
   # GitHub Actions
   - package-ecosystem: github-actions
@@ -7,7 +11,7 @@ updates:
       interval: daily
     commit-message:
       prefix: ⬆
-    labels: [dependencies, internal]
+    labels: [internal]
   # Python uv
   - package-ecosystem: uv
     directory: /
@@ -15,7 +19,7 @@ updates:
       interval: weekly
     commit-message:
       prefix: ⬆
-    labels: [dependencies, internal]
+    labels: [internal]
   # bun
   - package-ecosystem: bun
     directory: /
@@ -23,7 +27,7 @@ updates:
       interval: weekly
     commit-message:
       prefix: ⬆
-    labels: [dependencies, internal]
+    labels: [internal]
     ignore:
       - dependency-name: "@hey-api/openapi-ts"
   # Docker
@@ -35,7 +39,7 @@ updates:
       interval: weekly
     commit-message:
       prefix: ⬆
-    labels: [dependencies, internal]
+    labels: [internal]
   # Docker Compose
   - package-ecosystem: docker-compose
     directory: /
@@ -43,4 +47,4 @@ updates:
       interval: weekly
     commit-message:
       prefix: ⬆
-    labels: [dependencies, internal]
+    labels: [internal]

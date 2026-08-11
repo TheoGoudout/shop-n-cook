@@ -1,0 +1,170 @@
+name: Release
+
+# Step 2 of 2 of the release process (see .claude/skills/release/SKILL.md).
+#
+# Fires when the draft release created by release-prepare.yml is published,
+# which is also the moment GitHub creates the tag. Everything a release ships is
+# driven from here as called workflows, so the whole rollout is a single run:
+# one place to see status, and "Re-run failed jobs" re-drives only the store
+# that broke rather than resubmitting to all of them.
+#
+# Previously each publisher listened for the `release` event independently,
+# which meant no shared status, no partial retry, and a trigger asymmetry where
+# flipping a pre-release to a full release re-ran the extension publish but not
+# the store publish.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing release tag to (re-)publish, e.g. v1.5.0"
+        required: true
+        type: string
+      targets:
+        description: "Which targets to run"
+        required: true
+        type: choice
+        default: all
+        options:
+          - all
+          - extension
+          - stores
+          - cloudflare
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.event.release.tag_name || inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  resolve:
+    name: Resolve release
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      tag: ${{ steps.release.outputs.tag }}
+      version: ${{ steps.release.outputs.version }}
+      prerelease: ${{ steps.release.outputs.prerelease }}
+      run_extension: ${{ steps.targets.outputs.extension }}
+      run_stores: ${{ steps.targets.outputs.stores }}
+      run_cloudflare: ${{ steps.targets.outputs.cloudflare }}
+    steps:
+      - name: Resolve tag, version and pre-release flag
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name || inputs.tag }}
+        run: |
+          set -euo pipefail
+
+          # On workflow_dispatch the release payload is absent, so read the
+          # pre-release flag back from the release itself rather than guessing.
+          PRERELEASE=$(gh release view "$TAG" \
+            --repo "${{ github.repository }}" --json isPrerelease --jq .isPrerelease)
+
+          VERSION="${TAG#v}"
+          if ! echo "$VERSION" | grep -qP '^\d+\.\d+\.\d+(-rc\d+)?$'; then
+            echo "::error::Tag $TAG does not carry a version of the form X.Y.Z or X.Y.Z-rcN."
+            exit 1
+          fi
+
+          echo "tag=$TAG"               >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION"       >> "$GITHUB_OUTPUT"
+          echo "prerelease=$PRERELEASE" >> "$GITHUB_OUTPUT"
+
+          echo "Releasing $TAG (version $VERSION, prerelease=$PRERELEASE)."
+
+      - name: Resolve targets
+        id: targets
+        env:
+          TARGETS: ${{ inputs.targets || 'all' }}
+        run: |
+          for target in extension stores cloudflare; do
+            if [ "$TARGETS" = "all" ] || [ "$TARGETS" = "$target" ]; then
+              echo "$target=true"  >> "$GITHUB_OUTPUT"
+            else
+              echo "$target=false" >> "$GITHUB_OUTPUT"
+            fi
+          done
+
+  extension:
+    name: Browser extensions
+    needs: resolve
+    if: needs.resolve.outputs.run_extension == 'true'
+    # A called workflow's token is capped by the caller, and these publishers
+    # attach build artifacts to the release.
+    permissions:
+      contents: write
+    uses: ./.github/workflows/publish-extension.yml
+    with:
+      tag: ${{ needs.resolve.outputs.tag }}
+      version: ${{ needs.resolve.outputs.version }}
+      prerelease: ${{ needs.resolve.outputs.prerelease == 'true' }}
+    secrets: inherit
+
+  stores:
+    name: App stores
+    needs: resolve
+    if: needs.resolve.outputs.run_stores == 'true'
+    permissions:
+      contents: write
+    uses: ./.github/workflows/publish-stores.yml
+    with:
+      tag: ${{ needs.resolve.outputs.tag }}
+      version: ${{ needs.resolve.outputs.version }}
+      prerelease: ${{ needs.resolve.outputs.prerelease == 'true' }}
+    secrets: inherit
+
+  cloudflare:
+    name: Cloudflare production
+    needs: resolve
+    # Pre-releases must not reach the production domains; they exist to be
+    # exercised on the store beta tracks first.
+    if: >-
+      needs.resolve.outputs.run_cloudflare == 'true' &&
+      needs.resolve.outputs.prerelease != 'true'
+    permissions:
+      contents: read
+    uses: ./.github/workflows/deploy-cloudflare.yml
+    with:
+      environment: production
+      ref: ${{ needs.resolve.outputs.tag }}
+    secrets: inherit
+
+  release-complete:
+    name: Release complete
+    needs: [resolve, extension, stores, cloudflare]
+    # Runs even when a target failed or was skipped, so the run's conclusion is
+    # the release's conclusion rather than just the last job's.
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Report
+        env:
+          TAG: ${{ needs.resolve.outputs.tag }}
+        run: |
+          {
+            echo "## Release $TAG"
+            echo
+            echo "| Target | Result |"
+            echo "| --- | --- |"
+            echo "| Browser extensions | ${{ needs.extension.result }} |"
+            echo "| App stores | ${{ needs.stores.result }} |"
+            echo "| Cloudflare production | ${{ needs.cloudflare.result }} |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Fail if any target failed
+        if: >-
+          contains(needs.*.result, 'failure') ||
+          contains(needs.*.result, 'cancelled')
+        run: |
+          echo "::error::At least one release target failed. Re-run failed jobs" \
+               "to retry only those, or use the workflow_dispatch 'targets' input."
+          exit 1

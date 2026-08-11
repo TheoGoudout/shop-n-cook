@@ -146,19 +146,29 @@ Each push runs:
 - `test-docker-compose.yml` — bring up the full stack as a smoke test
 - `deploy-cloudflare.yml` — on `master`, deploy `frontend/` + `landing/` to staging
 
-On release tags:
-- `publish-extension.yml` — publish to Chrome, Firefox, Edge, Opera, Safari
-- `publish-stores.yml` — Play Store, F-Droid, App Store
-- `deploy-cloudflare.yml` — deploy `frontend/` + `landing/` to production
+Releasing is two workflows (see `.claude/skills/release/SKILL.md`):
 
-`bump-version.yml` is manually dispatched and bumps the root
-`package.json`, `frontend/package.json`, `extension/package.json`,
-`backend/pyproject.toml`, and the extension manifest in lockstep.
+- `release-prepare.yml` — manually dispatched. Validates master, generates
+  release notes from Conventional Commits, bumps every version file, commits to
+  `master`, and opens a **draft** GitHub Release. It does not create the tag —
+  GitHub does that when the draft is published, which is what makes a tag
+  without a release impossible.
+- `release.yml` — fires on `release: published` and drives the whole rollout as
+  one run, calling three reusable workflows: `publish-extension.yml` (Chrome,
+  Firefox, Edge, Opera, Safari), `publish-stores.yml` (Play Store, App Store,
+  Windows Store) and `deploy-cloudflare.yml` (production). Re-running failed
+  jobs retries only the target that broke.
+
+`scripts/set-version.mjs` owns the list of files carrying the version (both
+`package.json` sets, `landing/`, `backend/pyproject.toml`, the extension
+manifest, and the Android version files); `bun scripts/set-version.mjs --check`
+fails on drift.
 
 Deployment is split in two (see `deployment.md`):
 
 - `frontend/` and `landing/` are static sites on Cloudflare Workers, deployed
-  by `deploy-cloudflare.yml` — `master` → staging, `v*` tag → production.
+  by `deploy-cloudflare.yml` — `master` → staging, published release →
+  production.
   Config lives in `frontend/wrangler.jsonc` / `landing/wrangler.jsonc`, and
   build-time settings in the committed `.env.staging` / `.env.production`
   files of each project. `compose.yml` no longer builds them; their Docker

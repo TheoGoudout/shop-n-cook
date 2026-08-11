@@ -1,69 +1,120 @@
 ---
 name: release
-description: Information about how Shop'n'Cook releases work. Use when the user asks how to bump the version, what publishes happen on a tag, or how to roll out a new build to extension stores / app stores.
+description: Information about how Shop'n'Cook releases work. Use when the user asks how to cut a release, bump the version, what publishes happen on a release, or how to roll out a new build to extension stores / app stores.
 ---
 
 # Release process
 
-Shop'n'Cook follows semantic versioning. Version numbers are kept in
-lockstep across:
+Shop'n'Cook follows semantic versioning. Tags are `v<version>`, e.g. `v1.5.0` or
+`v1.5.0-rc1`. Releasing is two steps: prepare a draft, then publish it.
 
-- Root `package.json`
-- `frontend/package.json`
-- `extension/package.json`
-- `backend/pyproject.toml`
-- `extension/public/manifest.json` (auto-injected by the extension Vite
-  plugin from `extension/package.json`)
+## Step 1 — Prepare Release
 
-## Bumping the version
+Run the **Prepare Release** workflow
+([`release-prepare.yml`](../../../.github/workflows/release-prepare.yml)) from
+the Actions tab. Pick a `bump` of `patch`, `minor`, `major`, `rc`, or `explicit`
+(with a `version` input).
 
-The `bump-version.yml` workflow is **manually dispatched** (workflow_dispatch).
-It accepts a `version` input (e.g. `1.5.0`), updates all the files above,
-commits the change on `master` as `chore: bump version to <X.Y.Z>`, and
-creates a Git tag.
+It refuses to run unless master is releasable: the ref is `master`, every version
+file agrees, the new version parses and sorts above every existing tag, no tag or
+release already claims it, and the required test suites are green on HEAD.
 
-**Don't bump versions in a feature PR** — bumps land on `master` via the
-workflow after a release-worthy set of changes has merged.
+Then it generates release notes from the commits since the last **stable** tag,
+prepends them to `release-notes.md`, bumps every version file, commits
+`chore(release): <version>` to master, and creates a **draft GitHub Release**.
 
-## What runs on a tag
+**No tag is created at this point.** The draft carries a tag name that does not
+exist yet; GitHub creates the tag when you publish. That is deliberate — it makes
+a tag without a release impossible, which is how `v1.4.5` and `v1.4.6` ended up
+tagged but never published under the old process.
 
-The Git tag created by `bump-version.yml` triggers:
+## Step 2 — publish the draft
 
-1. `publish-extension.yml` — builds the extension and submits to:
-   - Chrome Web Store
-   - Firefox Add-ons (AMO)
-   - Microsoft Edge Add-ons
-   - Opera Add-ons
-   - Safari (App Store via Xcode + altool)
+Review the generated notes in the draft release, edit if you want, and press
+**Publish release**. The body you publish is what the stores show as "what's
+new", so it is worth reading.
 
-2. `publish-stores.yml` — submits the mobile wrappers:
-   - Google Play (via Bubblewrap-built AAB)
-   - F-Droid (metadata-only, F-Droid builds from source)
-   - Apple App Store (iOS wrapper)
+Publishing creates the tag and fires
+[`release.yml`](../../../.github/workflows/release.yml), which drives the entire
+rollout as one workflow run:
 
-All stores require pre-configured secrets in the repository settings
-(`CHROME_REFRESH_TOKEN`, `AMO_API_KEY`, `APPLE_API_KEY`, etc.). See
-`.github/workflows/publish-extension.yml` for the full list.
+| Job | What it does |
+| --- | --- |
+| Browser extensions | Chrome Web Store, Firefox (AMO), Edge, Opera, Safari (TestFlight) |
+| App stores | Google Play (draft), Apple App Store, Windows Store (MSIX) |
+| Cloudflare production | `shop-n-cook.com` + `app.shop-n-cook.com` |
 
-## Backend / frontend release
+Because it is a single run, **Re-run failed jobs** retries only the target that
+broke — useful because the external stores fail for reasons that have nothing to
+do with the code. There is also a `workflow_dispatch` on `release.yml` with a
+`targets` input to re-drive one target for an existing tag.
 
-The backend and frontend deploy continuously from `master` via Coolify
-— there is **no tagged release** for them. A version bump is purely
-about the public-facing extension and mobile builds.
+## Pre-releases
 
-## Pre-release checklist
+A version containing `-rcN` is published as a GitHub pre-release. Then:
 
-Before triggering `bump-version.yml`:
+- Chrome, Firefox, Edge and Opera are **skipped** (a submission in review blocks
+  the next one, so RCs must not queue ahead of the real release).
+- Safari still builds — everything lands in TestFlight first.
+- Android goes to the `internal` track, iOS to the `beta` lane, Windows to a
+  flight.
+- **Cloudflare production is skipped.** Pre-releases must not reach the
+  production domains.
 
-1. `master` is green in CI (pre-commit, test-backend, playwright,
-   test-extension, test-docker-compose).
-2. `release-notes.md` is updated with the new version's changes.
-3. Coolify has deployed the latest backend/frontend successfully.
-4. Manual smoke-test of the live site for the major flows
-   (login, add recipe, add to shopping list).
+Stable releases go to Android `alpha`, iOS `release`, and Google Play submissions
+land as **draft** — a human still promotes them in the Play Console.
+
+## Where the version lives
+
+`scripts/set-version.mjs` is the single source of truth for that list:
+
+```bash
+bun scripts/set-version.mjs --check    # verify every file agrees
+bun scripts/set-version.mjs --print    # the current version
+bun scripts/set-version.mjs 1.5.0      # write it everywhere
+```
+
+It updates the root, `frontend/`, `extension/` and `landing/` `package.json`,
+`backend/pyproject.toml`, `extension/public/manifest.json` (where `version` is
+the pre-release suffix stripped, because Chrome rejects it, and `version_name`
+keeps the full string), and both Android version files. It also owns the Android
+`versionCode` formula (`MAJOR*1000000 + MINOR*10000 + PATCH*100 + RC`, with 99
+for a stable release so a stable outranks its own RCs).
+
+Never bump versions by hand in a feature PR — the release workflow owns it.
+
+## Release notes
+
+`scripts/release-notes.mjs` generates them from Conventional Commits since the
+last stable tag. Commit subjects become the bullets, so write them accordingly:
+`feat(scope):` → Features, `fix:` → Fixes, `perf:` → Performance, `refactor:` →
+Refactors, everything else → Internal. A `!` or a `BREAKING CHANGE:` footer
+promotes a commit to Breaking changes. `chore(release):` commits are skipped, and
+subjects that are not conventional are kept verbatim under Internal rather than
+dropped.
+
+The same generated text goes into `release-notes.md` **and** the release body, so
+the file and the stores cannot drift apart.
+
+## Backend and database
+
+Deployed continuously from `master` by Coolify — not part of a tagged release.
+See `deployment.md`.
+
+## Required secrets
+
+`RELEASE_TOKEN` (a PAT or GitHub App token with `contents: write`) is what
+`release-prepare.yml` pushes the bump commit with. It must not be the default
+`GITHUB_TOKEN`: GitHub suppresses workflow runs for anything pushed with it, so
+the released commit would get no CI.
+
+Store credentials are read per-target and each is skipped when its secret is
+absent — see the `Check secret availability` steps in
+[`publish-extension.yml`](../../../.github/workflows/publish-extension.yml) and
+[`publish-stores.yml`](../../../.github/workflows/publish-stores.yml) for the
+authoritative list.
 
 ## Reverting
 
-If a release goes bad, the safest rollback is to bump again to a new
-patch version with the fix included. Coolify keeps previous backend
-deploys around for fast revert.
+Bump again to a new patch version with the fix included. Coolify keeps previous
+backend deploys around for a fast revert.

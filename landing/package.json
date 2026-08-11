@@ -1,7 +1,7 @@
 {
   "name": "landing",
   "private": true,
-  "version": "1.4.4",
+  "version": "1.4.6",
   "type": "module",
   "scripts": {
     "build": "bun ../scripts/build-landing.mjs production",

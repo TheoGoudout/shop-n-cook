@@ -1,0 +1,253 @@
+name: Prepare Release
+
+# Step 1 of 2 of the release process (see .claude/skills/release/SKILL.md).
+#
+# Validates that master is in a releasable state, generates release notes from
+# the commits since the last stable release, bumps every version file, commits
+# that to master, and opens a DRAFT GitHub Release.
+#
+# It deliberately does NOT create the git tag. The draft release carries a
+# tag_name that does not exist yet; GitHub creates the tag at the moment you
+# publish the draft. That makes tag-without-a-release impossible — the failure
+# mode that left v1.4.5 and v1.4.6 tagged but never published.
+#
+# Publishing the draft fires `release: published`, which release.yml picks up.
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "How to derive the next version"
+        required: true
+        type: choice
+        default: patch
+        options:
+          - patch
+          - minor
+          - major
+          - rc
+          - explicit
+      version:
+        description: "Exact version, e.g. 1.5.0 or 1.5.0-rc1 (only used when bump = explicit)"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+# The `secrets` context is not available in a step-level `if`, so surface the
+# presence of the token as an env var (same pattern as pre-commit.yml).
+env:
+  HAS_RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN != '' }}
+
+concurrency:
+  group: release-prepare
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    name: Validate, bump and draft the release
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          # Full history + tags: the notes generator walks back to the last
+          # stable tag, and preflight compares against every existing tag.
+          fetch-depth: 0
+          fetch-tags: true
+          # A token other than the default GITHUB_TOKEN is needed so the bump
+          # commit actually triggers CI (same reason as pre-commit.yml).
+          token: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+
+      - name: Require a release token
+        if: env.HAS_RELEASE_TOKEN != 'true'
+        run: |
+          echo "::error::RELEASE_TOKEN is not configured. Without it the bump commit" \
+               "is pushed with GITHUB_TOKEN and no CI runs against the released code."
+          exit 1
+
+      - name: Refuse to release from anywhere but master
+        run: |
+          if [ "${{ github.ref }}" != "refs/heads/master" ]; then
+            echo "::error::Releases must be cut from master, got ${{ github.ref }}."
+            exit 1
+          fi
+
+      - name: Verify all version files agree
+        # Catches drift like landing/package.json sitting at 1.4.4 while the rest
+        # of the repo was at 1.4.6.
+        run: bun scripts/set-version.mjs --check
+
+      - name: Compute the next version
+        id: version
+        env:
+          BUMP: ${{ inputs.bump }}
+          EXPLICIT: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          CURRENT=$(bun scripts/set-version.mjs --print)
+          echo "Current version: $CURRENT"
+
+          NEXT=$(bun -e '
+            const [current, bump, explicit] = process.argv.slice(1)
+            if (bump === "explicit") {
+              if (!explicit) throw new Error("bump = explicit requires the version input")
+              console.log(explicit.replace(/^v/, ""))
+              process.exit(0)
+            }
+            const m = /^(\d+)\.(\d+)\.(\d+)(?:-rc(\d+))?$/.exec(current)
+            if (!m) throw new Error(`cannot parse current version ${current}`)
+            let [, major, minor, patch, rc] = m.map(Number)
+            switch (bump) {
+              case "major": console.log(`${major + 1}.0.0`); break
+              case "minor": console.log(`${major}.${minor + 1}.0`); break
+              // Bumping patch off an rc promotes it: 1.5.0-rc2 -> 1.5.0
+              case "patch": console.log(Number.isNaN(rc) ? `${major}.${minor}.${patch + 1}` : `${major}.${minor}.${patch}`); break
+              case "rc": console.log(Number.isNaN(rc) ? `${major}.${minor}.${patch + 1}-rc1` : `${major}.${minor}.${patch}-rc${rc + 1}`); break
+              default: throw new Error(`unknown bump ${bump}`)
+            }
+          ' "$CURRENT" "$BUMP" "$EXPLICIT")
+
+          echo "Next version: $NEXT"
+          echo "version=$NEXT" >> "$GITHUB_OUTPUT"
+          echo "tag=v$NEXT"    >> "$GITHUB_OUTPUT"
+          if echo "$NEXT" | grep -q -- '-rc'; then
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Validate the version and the tag
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          TAG: ${{ steps.version.outputs.tag }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          # Must match what publish-stores.yml parses back out of the tag.
+          if ! echo "$VERSION" | grep -qP '^\d+\.\d+\.\d+(-rc\d+)?$'; then
+            echo "::error::$VERSION is not X.Y.Z or X.Y.Z-rcN."
+            exit 1
+          fi
+
+          if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+            echo "::error::Tag $TAG already exists."
+            exit 1
+          fi
+
+          # A draft release also reserves the tag name; creating a second one
+          # would silently produce two drafts racing for the same tag.
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "::error::A release (possibly a draft) already exists for $TAG."
+            exit 1
+          fi
+
+          # Guard against going backwards. Deliberately not `sort -V`, which
+          # ranks 1.5.0-rc2 above 1.5.0 and would reject every rc promotion.
+          bun scripts/set-version.mjs --is-newer "$VERSION"
+
+      - name: Require master to be green
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          SHA=$(git rev-parse HEAD)
+
+          # Keyed on workflow file paths rather than check-run names, which are
+          # job names and drift (test-extension.yml's job is "Test & Build
+          # Extension"). deploy-cloudflare is deliberately absent: a staging
+          # deploy hiccup should not block cutting a release.
+          REQUIRED="test-backend.yml playwright.yml test-extension.yml test-docker-compose.yml"
+
+          RUNS=$(gh api \
+            "repos/${{ github.repository }}/actions/runs?head_sha=$SHA&per_page=100" \
+            --jq '.workflow_runs[] | [(.path | sub("^\\.github/workflows/"; "")), .status, .conclusion] | @tsv')
+
+          FAILED=0
+          for workflow in $REQUIRED; do
+            LINE=$(echo "$RUNS" | awk -F'\t' -v w="$workflow" '$1 == w {print; exit}')
+            if [ -z "$LINE" ]; then
+              echo "::error::$workflow has not run against $SHA."
+              FAILED=1
+              continue
+            fi
+            STATUS=$(echo "$LINE" | cut -f2)
+            CONCLUSION=$(echo "$LINE" | cut -f3)
+            if [ "$STATUS" != "completed" ]; then
+              echo "::error::$workflow is still $STATUS on $SHA."
+              FAILED=1
+            elif [ "$CONCLUSION" != "success" ] && [ "$CONCLUSION" != "skipped" ]; then
+              echo "::error::$workflow concluded '$CONCLUSION' on $SHA."
+              FAILED=1
+            fi
+          done
+
+          if [ "$FAILED" = "1" ]; then
+            echo "::error::master is not green — refusing to release."
+            exit 1
+          fi
+          echo "master is green at $SHA."
+
+      - name: Generate release notes
+        id: notes
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          # --insert updates release-notes.md; stdout is the body for the release.
+          bun scripts/release-notes.mjs --version "$VERSION" --insert > /tmp/release-body.md
+          echo "--- generated notes ---"
+          cat /tmp/release-body.md
+
+      - name: Bump every version file
+        run: bun scripts/set-version.mjs "${{ steps.version.outputs.version }}"
+
+      - name: Commit the bump to master
+        id: commit
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "chore(release): $VERSION"
+          git push origin HEAD:master
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Create the draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+          SHA: ${{ steps.commit.outputs.sha }}
+        run: |
+          set -euo pipefail
+          # --target is the bump commit SHA, not "master", so later pushes cannot
+          # move where the tag ends up landing.
+          gh release create "$TAG" \
+            --draft \
+            --target "$SHA" \
+            --title "$TAG" \
+            --notes-file /tmp/release-body.md \
+            ${{ steps.version.outputs.prerelease == 'true' && '--prerelease' || '' }}
+
+      - name: Summary
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          URL="${{ github.server_url }}/${{ github.repository }}/releases"
+          {
+            echo "## Draft release $TAG is ready"
+            echo
+            echo "Version bumped to \`${{ steps.version.outputs.version }}\` on master"
+            echo "(commit \`${{ steps.commit.outputs.sha }}\`)."
+            echo
+            echo "**Nothing has been published yet, and the tag does not exist yet.**"
+            echo
+            echo "Review the notes and press *Publish release* at $URL to create the"
+            echo "tag and roll out to the extension stores, app stores and Cloudflare production."
+          } >> "$GITHUB_STEP_SUMMARY"

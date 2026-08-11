@@ -33,8 +33,13 @@ point at the Coolify host and are managed there.
 | Trigger | Environment |
 |---|---|
 | Push to `master` | staging |
-| Push of a `v*` tag (see [`bump-version.yml`](.github/workflows/bump-version.yml)) | production |
+| Called by [`release.yml`](.github/workflows/release.yml) when a release is published | production |
 | `workflow_dispatch` | whichever you pick |
+
+Production deploys alongside the extension and app stores, driven by the
+published release rather than by the tag push — see the
+[release skill](.claude/skills/release/SKILL.md). Pre-releases do not reach
+production.
 
 Each environment maps to a GitHub Environment of the same name, so production
 can carry a required-reviewers approval gate.
@@ -81,7 +86,7 @@ Domains & Routes → Add → Custom domain**.
 Cloudflare creates the DNS record and certificate when you add the binding. A
 Worker has to exist before you can bind a hostname to it, so the order is
 *deploy first, bind second* — the staging pair after the first push to `master`,
-the production pair after the first `v*` tag.
+the production pair after the first published release.
 
 **Why not declare them in `wrangler.jsonc`?** Because wrangler treats the config
 as authoritative and reconciles `routes` against the zone on *every* deploy, not

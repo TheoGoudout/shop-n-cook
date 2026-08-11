@@ -8,29 +8,24 @@
   "assets": {
     "directory": "./dist"
   },
-  // `routes` is not inheritable — it must be declared per environment.
+  // No `routes` key — the custom domains are attached by hand in the Cloudflare
+  // dashboard. See the matching comment in frontend/wrangler.jsonc for why, and
+  // deployment.md for the bindings themselves.
+  "workers_dev": false,
   "env": {
     "staging": {
       "name": "shop-n-cook-landing-staging",
-      "routes": [
-        {
-          "pattern": "staging.shop-n-cook.com",
-          "custom_domain": true
-        }
-      ]
+      // Repeated rather than inherited so `deploy --dry-run --env staging`
+      // catches an environment that resolves to no assets.
+      "assets": {
+        "directory": "./dist"
+      }
     },
     "production": {
       "name": "shop-n-cook-landing",
-      "routes": [
-        {
-          "pattern": "shop-n-cook.com",
-          "custom_domain": true
-        },
-        {
-          "pattern": "www.shop-n-cook.com",
-          "custom_domain": true
-        }
-      ]
+      "assets": {
+        "directory": "./dist"
+      }
     }
   }
 }

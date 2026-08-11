@@ -9,11 +9,15 @@ on:
       - opened
       - synchronize
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   test-backend:
     name: Test Backend
     runs-on: ubuntu-latest
-    timeout-minutes: 360
+    timeout-minutes: 30
     permissions:
       contents: read
     steps:
@@ -25,7 +29,6 @@ jobs:
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: "3.10"
-          cache: "pip"
       - name: Install uv
         uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
       - run: docker compose down -v --remove-orphans

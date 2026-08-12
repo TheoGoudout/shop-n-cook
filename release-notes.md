@@ -1,5 +1,11 @@
 # Release Notes
 
+## 1.4.8
+
+### Features
+
+* CI: Deploy the backend to Coolify as part of the release
+
 ## 1.4.7
 
 ### Features

@@ -154,9 +154,10 @@ Releasing is two workflows (see `.claude/skills/release/SKILL.md`):
   GitHub does that when the draft is published, which is what makes a tag
   without a release impossible.
 - `release.yml` — fires on `release: published` and drives the whole rollout as
-  one run, calling three reusable workflows: `publish-extension.yml` (Chrome,
+  one run, calling four reusable workflows: `publish-extension.yml` (Chrome,
   Firefox, Edge, Opera, Safari), `publish-stores.yml` (Play Store, App Store,
-  Windows Store) and `deploy-cloudflare.yml` (production). Re-running failed
+  Windows Store), `deploy-coolify.yml` (production backend) and
+  `deploy-cloudflare.yml` (production frontend + landing). Re-running failed
   jobs retries only the target that broke.
 
 `scripts/set-version.mjs` owns the list of files carrying the version (both
@@ -173,8 +174,11 @@ Deployment is split in two (see `deployment.md`):
   build-time settings in the committed `.env.staging` / `.env.production`
   files of each project. `compose.yml` no longer builds them; their Docker
   services live in `compose.override.yml` for local development only.
-- `backend/` and the database are deployed by Coolify from `compose.yml` on
-  every push to `master` via the Coolify GitHub App.
+- `backend/` and the database are deployed by Coolify from `compose.yml`.
+  Staging tracks `master` and redeploys on every push via the Coolify GitHub
+  App. Production tracks the released tag: its auto-deploy webhook is off, and
+  `deploy-coolify.yml` re-pins it to the tag and redeploys as part of the
+  release run, ahead of the Cloudflare deploy so the API leads its clients.
 
 Domains: `shop-n-cook.com` (landing), `app.shop-n-cook.com` (frontend),
 `api.shop-n-cook.com` (backend); staging mirrors this under

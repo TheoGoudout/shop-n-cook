@@ -1,0 +1,332 @@
+name: Deploy backend to Coolify
+
+# Deploys `backend/` + the database — the stack described by the root
+# `compose.yml` — by pointing a Coolify application at a git ref and asking it to
+# redeploy. Coolify builds from source, so the ref it tracks *is* the version
+# running in that environment.
+#
+#   called by release.yml -> production, pinned to the released tag
+#   workflow_dispatch     -> either environment, any ref (also the rollback path)
+#
+# Staging is NOT driven from here on a schedule or on push: it keeps
+# auto-deploying from `master` through the Coolify GitHub App. Production has
+# that webhook turned off precisely so master pushes cannot reach it, which is
+# what this workflow exists to replace — see deployment.md.
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: "Environment to deploy"
+        required: true
+        type: string
+      ref:
+        description: "Git ref for Coolify to track, e.g. v1.5.0"
+        required: true
+        type: string
+      force:
+        description: "Rebuild even if the ref already matches (skips the build cache)"
+        required: false
+        default: false
+        type: boolean
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment to deploy"
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+      ref:
+        description: "Git ref for Coolify to track, e.g. v1.5.0. An older tag rolls production back."
+        required: true
+        type: string
+      force:
+        description: "Rebuild even if the ref already matches (skips the build cache)"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  # Never let two deploys of the same environment race each other — the loser
+  # would leave the application pinned to a ref nobody asked for.
+  group: deploy-coolify-${{ inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+
+  deploy:
+    name: Deploy backend (${{ inputs.environment }})
+    runs-on: ubuntu-latest
+    # Generous, because the job waits on a container build happening on the
+    # Coolify host rather than on this runner.
+    timeout-minutes: 45
+    environment: ${{ inputs.environment }}
+    permissions:
+      contents: read
+    steps:
+
+      - name: Require Coolify credentials
+        # Checked in a step rather than through a workflow-level `env` boolean
+        # (the release-prepare.yml idiom) because these secrets live on the
+        # GitHub Environment, and environment secrets only resolve inside a job
+        # that declares `environment:`.
+        #
+        # This fails the run instead of skipping the target the way
+        # publish-extension.yml does: an unpublished browser extension is a
+        # missing nice-to-have, a backend that silently did not deploy is a
+        # frontend talking to the wrong API.
+        env:
+          COOLIFY_URL: ${{ secrets.COOLIFY_URL }}
+          COOLIFY_API_TOKEN: ${{ secrets.COOLIFY_API_TOKEN }}
+          COOLIFY_APP_UUID: ${{ secrets.COOLIFY_APP_UUID }}
+        run: |
+          set -euo pipefail
+          MISSING=""
+          [ -n "$COOLIFY_URL" ]       || MISSING="$MISSING COOLIFY_URL"
+          [ -n "$COOLIFY_API_TOKEN" ] || MISSING="$MISSING COOLIFY_API_TOKEN"
+          [ -n "$COOLIFY_APP_UUID" ]  || MISSING="$MISSING COOLIFY_APP_UUID"
+          if [ -n "$MISSING" ]; then
+            echo "::error::Missing Coolify secrets on the '${{ inputs.environment }}'" \
+                 "environment:$MISSING. See deployment.md."
+            exit 1
+          fi
+
+      - name: Resolve ref, commit and expected version
+        id: target
+        # Done through the API rather than a checkout: the only things needed
+        # from the repository are one commit SHA and one file, and resolving the
+        # ref here means a typo'd tag fails before Coolify is touched.
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REF: ${{ inputs.ref }}
+        run: |
+          set -euo pipefail
+
+          if ! SHA=$(gh api "repos/${{ github.repository }}/commits/$REF" --jq .sha 2>/dev/null); then
+            echo "::error::Ref '$REF' does not exist in ${{ github.repository }}."
+            exit 1
+          fi
+
+          # The version the deployed backend should report. Read from
+          # pyproject.toml at the target commit rather than parsed out of the
+          # tag, so the assertion also works when the ref is a branch (a staging
+          # dispatch of `master`, say). `scripts/set-version.mjs` treats this
+          # file as the canonical version.
+          PYPROJECT=$(gh api "repos/${{ github.repository }}/contents/backend/pyproject.toml?ref=$SHA" \
+            -H "Accept: application/vnd.github.raw")
+          VERSION=$(printf '%s\n' "$PYPROJECT" \
+            | grep -m1 -E '^version[[:space:]]*=' \
+            | sed -E 's/^version[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/')
+
+          if [ -z "$VERSION" ]; then
+            echo "::error::Could not read a version out of backend/pyproject.toml at $SHA."
+            exit 1
+          fi
+
+          case "${{ inputs.environment }}" in
+            production) API_HOST="api.shop-n-cook.com" ;;
+            staging)    API_HOST="api.staging.shop-n-cook.com" ;;
+            *)
+              echo "::error::Unknown environment '${{ inputs.environment }}'."
+              exit 1
+              ;;
+          esac
+
+          {
+            echo "sha=$SHA"
+            echo "version=$VERSION"
+            echo "api_host=$API_HOST"
+          } >> "$GITHUB_OUTPUT"
+
+          echo "Deploying $REF ($SHA), expecting version $VERSION on $API_HOST."
+
+      - name: Point the application at the ref
+        env:
+          COOLIFY_URL: ${{ secrets.COOLIFY_URL }}
+          COOLIFY_API_TOKEN: ${{ secrets.COOLIFY_API_TOKEN }}
+          COOLIFY_APP_UUID: ${{ secrets.COOLIFY_APP_UUID }}
+          REF: ${{ inputs.ref }}
+        run: |
+          set -euo pipefail
+          BASE="${COOLIFY_URL%/}"
+
+          # `git_branch` is Coolify's field for "the ref to check out"; it holds
+          # a tag name just as happily as a branch name, which is how production
+          # was pinned by hand before this workflow existed.
+          RESPONSE=$(curl -sS -w '\n%{http_code}' -X PATCH \
+            "$BASE/api/v1/applications/$COOLIFY_APP_UUID" \
+            -H "Authorization: Bearer $COOLIFY_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "$(jq -cn --arg ref "$REF" '{git_branch: $ref}')")
+
+          CODE=$(printf '%s' "$RESPONSE" | tail -n1)
+          BODY=$(printf '%s' "$RESPONSE" | sed '$d')
+
+          if [ "$CODE" -lt 200 ] || [ "$CODE" -ge 300 ]; then
+            echo "::error::Coolify refused to re-pin the application (HTTP $CODE)."
+            printf '%s\n' "$BODY"
+            exit 1
+          fi
+
+          echo "Application pinned to $REF."
+
+      - name: Trigger the deployment
+        id: trigger
+        env:
+          COOLIFY_URL: ${{ secrets.COOLIFY_URL }}
+          COOLIFY_API_TOKEN: ${{ secrets.COOLIFY_API_TOKEN }}
+          COOLIFY_APP_UUID: ${{ secrets.COOLIFY_APP_UUID }}
+          FORCE: ${{ inputs.force }}
+        run: |
+          set -euo pipefail
+          BASE="${COOLIFY_URL%/}"
+
+          RESPONSE=$(curl -sS -w '\n%{http_code}' \
+            "$BASE/api/v1/deploy?uuid=$COOLIFY_APP_UUID&force=$FORCE" \
+            -H "Authorization: Bearer $COOLIFY_API_TOKEN")
+
+          CODE=$(printf '%s' "$RESPONSE" | tail -n1)
+          BODY=$(printf '%s' "$RESPONSE" | sed '$d')
+
+          if [ "$CODE" -lt 200 ] || [ "$CODE" -ge 300 ]; then
+            echo "::error::Coolify refused to start a deployment (HTTP $CODE)."
+            printf '%s\n' "$BODY"
+            exit 1
+          fi
+
+          # Response shape has moved around across Coolify versions, so accept
+          # either the array form or a bare object and treat "no uuid" as
+          # "started but not trackable" rather than as a failure.
+          UUID=$(printf '%s' "$BODY" \
+            | jq -r '(.deployments[0].deployment_uuid // .deployment_uuid // empty)' 2>/dev/null || true)
+
+          if [ -z "$UUID" ]; then
+            echo "::warning::Coolify returned no deployment uuid, so build progress" \
+                 "cannot be polled. Falling back to the health and version checks."
+            printf '%s\n' "$BODY"
+          else
+            echo "Deployment $UUID started."
+          fi
+
+          echo "uuid=$UUID" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for the build to finish
+        if: steps.trigger.outputs.uuid != ''
+        env:
+          COOLIFY_URL: ${{ secrets.COOLIFY_URL }}
+          COOLIFY_API_TOKEN: ${{ secrets.COOLIFY_API_TOKEN }}
+          DEPLOYMENT_UUID: ${{ steps.trigger.outputs.uuid }}
+        run: |
+          set -euo pipefail
+          BASE="${COOLIFY_URL%/}"
+
+          # 30 minutes at 10s intervals, comfortably inside the job timeout so a
+          # stuck build reports as a timed-out deploy rather than a killed job.
+          for _ in $(seq 1 180); do
+            RESPONSE=$(curl -sS -w '\n%{http_code}' \
+              "$BASE/api/v1/deployments/$DEPLOYMENT_UUID" \
+              -H "Authorization: Bearer $COOLIFY_API_TOKEN") || RESPONSE=$'\n000'
+            CODE=$(printf '%s' "$RESPONSE" | tail -n1)
+            BODY=$(printf '%s' "$RESPONSE" | sed '$d')
+
+            # A 4xx here means the endpoint or the uuid is wrong — no amount of
+            # waiting fixes that, and spinning for the full 30 minutes would bury
+            # the real cause. Transport errors and 5xx are worth retrying.
+            if [ "$CODE" -ge 400 ] && [ "$CODE" -lt 500 ]; then
+              echo "::error::Polling $BASE/api/v1/deployments/$DEPLOYMENT_UUID returned HTTP $CODE." \
+                   "Check the Coolify API version — the deployment endpoint may have moved."
+              printf '%s\n' "$BODY"
+              exit 1
+            fi
+
+            STATUS=$(printf '%s' "$BODY" | jq -r '.status // empty' 2>/dev/null || true)
+
+            case "$STATUS" in
+              finished|success)
+                echo "Build finished."
+                exit 0
+                ;;
+              failed|error|cancelled-by-user)
+                echo "::error::Coolify deployment $DEPLOYMENT_UUID ended as '$STATUS'."
+                printf '%s\n' "$BODY"
+                exit 1
+                ;;
+              "")
+                echo "No status yet, retrying."
+                ;;
+              *)
+                echo "Status: $STATUS"
+                ;;
+            esac
+            sleep 10
+          done
+
+          echo "::error::Coolify deployment $DEPLOYMENT_UUID did not finish within 30 minutes."
+          exit 1
+
+      - name: Verify the deployed backend
+        id: verify
+        env:
+          API_HOST: ${{ steps.target.outputs.api_host }}
+          EXPECTED: ${{ steps.target.outputs.version }}
+        run: |
+          set -euo pipefail
+
+          # `importlib.metadata` hands back PEP 440-normalised versions, so the
+          # 1.5.0-rc1 in pyproject.toml is reported as 1.5.0rc1. Compare with the
+          # separators removed rather than literally.
+          # `--` matters: without it tr reads the leading `-` of the delete set
+          # as an option, fails, and returns empty for *both* sides — which
+          # would make this comparison pass unconditionally.
+          normalise() { printf '%s' "$1" | tr -d -- '-_' | tr '[:upper:]' '[:lower:]'; }
+
+          # The container needs a moment to come up behind Coolify's proxy even
+          # once the build reports finished.
+          for _ in $(seq 1 30); do
+            if curl -fsS --max-time 10 "https://$API_HOST/api/v1/utils/health-check/" >/dev/null; then
+              HEALTHY=1
+              break
+            fi
+            sleep 10
+          done
+
+          if [ "${HEALTHY:-0}" != "1" ]; then
+            echo "::error::https://$API_HOST/api/v1/utils/health-check/ never came back healthy."
+            exit 1
+          fi
+
+          # app/main.py builds the FastAPI app with version=settings.APP_VERSION,
+          # which is the installed package version — i.e. backend/pyproject.toml.
+          LIVE=$(curl -fsS --max-time 10 "https://$API_HOST/api/v1/openapi.json" | jq -r '.info.version')
+
+          if [ "$(normalise "$LIVE")" != "$(normalise "$EXPECTED")" ]; then
+            echo "::error::$API_HOST reports version '$LIVE', expected '$EXPECTED'." \
+                 "The deploy reported success but is not serving the requested ref."
+            exit 1
+          fi
+
+          echo "live=$LIVE" >> "$GITHUB_OUTPUT"
+          echo "$API_HOST is healthy and serving $LIVE."
+
+      - name: Report
+        if: always()
+        env:
+          REF: ${{ inputs.ref }}
+        run: |
+          {
+            echo "## Coolify — ${{ inputs.environment }}"
+            echo
+            echo "| | |"
+            echo "| --- | --- |"
+            echo "| Ref | \`$REF\` |"
+            echo "| Commit | \`${{ steps.target.outputs.sha }}\` |"
+            echo "| Expected version | ${{ steps.target.outputs.version }} |"
+            echo "| Live version | ${{ steps.verify.outputs.live || 'not verified' }} |"
+            echo "| Deployment | \`${{ steps.trigger.outputs.uuid || 'not reported' }}\` |"
+            echo "| API | https://${{ steps.target.outputs.api_host }} |"
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -1,8 +1,9 @@
 name: Deploy to Cloudflare Workers
 
 # Deploys the two static projects — `frontend/` and `landing/` — to Cloudflare
-# Workers static assets. The backend and database are deployed separately by
-# Coolify (see deployment.md).
+# Workers static assets. The backend and database go to Coolify instead, via
+# `deploy-coolify.yml`; on a release `release.yml` runs that first so the API is
+# upgraded before the frontend that calls it (see deployment.md).
 #
 #   push to master    -> staging     (staging.shop-n-cook.com, app.staging.shop-n-cook.com)
 #   called by release.yml -> production (shop-n-cook.com, app.shop-n-cook.com)

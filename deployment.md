@@ -188,10 +188,62 @@ self-hosting the stack — see [Local Development](#local-development).
 
 ## Coolify (backend + database)
 
-Pushing to the `master` branch triggers an automatic deployment. Coolify watches
-the repository via its GitHub App integration and redeploys the stack on every
-push to `master` — no GitHub Actions workflow or manual webhook configuration is
-required.
+Coolify builds from source, so **whichever git ref a Coolify application tracks
+is the version running in that environment**. The two environments track
+different things on purpose:
+
+| | Tracks | Moved by |
+|---|---|---|
+| staging | `master` | The Coolify GitHub App, automatically, on every push |
+| production | the released tag, e.g. `v1.5.0` | [`deploy-coolify.yml`](.github/workflows/deploy-coolify.yml), called by `release.yml` |
+
+Staging needs no GitHub Actions workflow or webhook configuration — the GitHub
+App integration redeploys it on every push to `master`.
+
+Production has that auto-deploy webhook **off**, so master pushes cannot reach
+it. Instead, publishing a release runs `deploy-coolify.yml`, which:
+
+1. resolves the tag to a commit and reads the expected version out of
+   `backend/pyproject.toml` at that commit,
+2. `PATCH`es the Coolify application's git ref (`git_branch`) to the tag,
+3. triggers a deployment and polls it to completion,
+4. waits for `https://api.shop-n-cook.com/api/v1/utils/health-check/`, then
+   asserts that `/api/v1/openapi.json` reports the released version.
+
+The backend therefore deploys *before* the Cloudflare frontend in the same
+release run — `release.yml` sequences them that way so the API is upgraded ahead
+of its clients. Pre-releases do not reach production.
+
+### Required GitHub secrets
+
+Set these on the `production` GitHub Environment (and on `staging` too if you
+want the manual dispatch to work there):
+
+| Secret | Description |
+|---|---|
+| `COOLIFY_URL` | Base URL of the Coolify panel, no trailing slash. A secret rather than a variable so the hostname stays out of run logs. |
+| `COOLIFY_API_TOKEN` | Coolify API token with write access to the application |
+| `COOLIFY_APP_UUID` | The application's UUID — the last path segment of its Coolify dashboard URL |
+
+The workflow fails loudly when any of these is missing, rather than skipping the
+way the store publishers do: a backend that silently did not deploy leaves the
+frontend talking to the wrong API.
+
+The Coolify host must be reachable from GitHub-hosted runners. If it sits behind
+an IP allowlist or Cloudflare Access, the API calls will fail and you will need
+either a Cloudflare Access service token or a self-hosted runner.
+
+### Rolling back
+
+Dispatch [`deploy-coolify.yml`](.github/workflows/deploy-coolify.yml) with
+`environment: production` and `ref` set to the previous tag. It re-pins and
+redeploys, and the version assertion confirms the rollback actually took. Coolify
+also keeps previous deploys around for a redeploy from its dashboard.
+
+Use `force: true` when re-running against a ref the application is already
+pinned to — otherwise Coolify may decide there is nothing to rebuild.
+
+### The stack
 
 `compose.yml` defines the stack Coolify deploys:
 

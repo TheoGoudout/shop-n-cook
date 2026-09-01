@@ -74,6 +74,7 @@ export function RecipeForm({
 
   const watchedIngredients = form.watch("ingredients")
   const watchedSourceUrl = form.watch("source_url")
+  const watchedImportSource = form.watch("import_source")
   const watchedSeasons = form.watch("seasons")
 
   const toggleSeason = (season: (typeof SEASONS)[number]) => {
@@ -381,8 +382,8 @@ export function RecipeForm({
             )}
           />
 
-          {/* Import consent — only in create mode when source URL is present */}
-          {mode === "create" && watchedSourceUrl && (
+          {/* Import consent — create mode only, for URL and photo imports */}
+          {mode === "create" && (watchedSourceUrl || watchedImportSource) && (
             <FormField
               control={form.control}
               name="import_consent"

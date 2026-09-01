@@ -34,6 +34,13 @@ class Difficulty(str, Enum):
     HARD = "hard"
 
 
+class ImportSource(str, Enum):
+    """How a recipe entered the app, when it was not typed in by hand."""
+
+    URL = "url"
+    PHOTO = "photo"
+
+
 class MealType(str, Enum):
     BREAKFAST = "breakfast"
     LUNCH = "lunch"
@@ -172,11 +179,14 @@ class RecipeCreate(RecipeBase):
     ingredients: list[RecipeIngredientCreate] = []
     steps: list[RecipeStepCreate] = []
     import_consent: bool = Field(default=False)
+    import_source: ImportSource | None = Field(default=None)
 
     @model_validator(mode="after")
     def check_import_consent(self) -> "RecipeCreate":
-        if self.source_url and not self.import_consent:
-            raise ValueError("import_consent is required when source_url is provided")
+        if (self.source_url or self.import_source) and not self.import_consent:
+            raise ValueError(
+                "import_consent is required when source_url or import_source is provided"
+            )
         return self
 
 
@@ -222,6 +232,7 @@ class Recipe(RecipeBase, table=True):
         default=None,
         sa_type=DateTime(timezone=True),  # type: ignore
     )
+    import_source: ImportSource | None = Field(default=None)
     owner: "User" = Relationship(back_populates="recipes")
     recipe_ingredients: list[RecipeIngredient] = Relationship(
         back_populates="recipe",

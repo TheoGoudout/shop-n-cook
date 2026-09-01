@@ -57,6 +57,33 @@ export const Body_login_login_access_tokenSchema = {
     title: 'Body_login-login_access_token'
 } as const;
 
+export const Body_recipes_import_recipe_photosSchema = {
+    properties: {
+        photos: {
+            items: {
+                type: 'string',
+                format: 'binary'
+            },
+            type: 'array',
+            title: 'Photos'
+        },
+        language: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Language'
+        }
+    },
+    type: 'object',
+    required: ['photos'],
+    title: 'Body_recipes-import_recipe_photos'
+} as const;
+
 export const DeduplicateMergeSchema = {
     properties: {
         kept: {
@@ -117,6 +144,13 @@ export const HTTPValidationErrorSchema = {
     },
     type: 'object',
     title: 'HTTPValidationError'
+} as const;
+
+export const ImportSourceSchema = {
+    type: 'string',
+    enum: ['url', 'photo'],
+    title: 'ImportSource',
+    description: 'How a recipe entered the app, when it was not typed in by hand.'
 } as const;
 
 export const ImportUrlRequestSchema = {
@@ -733,6 +767,16 @@ export const RecipeCreateSchema = {
             type: 'boolean',
             title: 'Import Consent',
             default: false
+        },
+        import_source: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/ImportSource'
+                },
+                {
+                    type: 'null'
+                }
+            ]
         }
     },
     type: 'object',

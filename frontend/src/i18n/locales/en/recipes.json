@@ -40,8 +40,21 @@
     "import_success": "Recipe imported successfully.",
     "import_partial": "Recipe imported. {{count}} ingredient(s) will be created automatically.",
     "import_error": "Failed to import recipe. Check the URL and try again.",
-    "import_consent_label": "The recipe you are about to import is sourced from a third-party website. By proceeding, you confirm that you have the right to import, store, and reformat this content for personal use, and that you will respect the original author's intellectual property rights. This app does not claim any rights over imported content and always links back to the original source.",
-    "import_consent_required": "You must confirm consent before importing."
+    "import_consent_label": "The recipe you are about to import comes from a third-party source — a website, a cookbook, or another publication. By proceeding, you confirm that you have the right to import, store, and reformat this content for personal use, and that you will respect the original author's intellectual property rights. This app does not claim any rights over imported content, and links back to the original source whenever there is one.",
+    "import_consent_required": "You must confirm consent before importing.",
+    "import_tab_url": "From URL",
+    "import_tab_photos": "From photos",
+    "photo_import_hint": "Photograph a recipe — up to {{max}} pictures of the same recipe, e.g. both pages of a cookbook spread.",
+    "photo_take_photo": "Take photo",
+    "photo_choose_images": "Choose images",
+    "photo_selected_one": "{{count}} photo selected",
+    "photo_selected_other": "{{count}} photos selected",
+    "photo_remove": "Remove photo",
+    "photo_import_success": "Recipe read from your photos. Check the details before saving.",
+    "photo_import_error": "Could not import from these photos. Please try again.",
+    "photo_import_no_recipe": "No recipe could be read in these photos. Try a sharper or closer picture.",
+    "photo_too_many": "You can import at most {{max}} photos at a time.",
+    "photo_rate_limited": "Too many photo imports for now. Please try again later."
   },
   "edit": {
     "menu_item": "Edit",
@@ -68,7 +81,8 @@
     "consent_description": "Before saving this recipe, please confirm the following:",
     "consent_label": "The recipe you are about to import is sourced from a third-party website. By proceeding, you confirm that you have the right to import, store, and reformat this content for personal use, and that you will respect the original author's intellectual property rights. This app does not claim any rights over imported content and always links back to the original source.",
     "consent_confirm": "Save Recipe",
-    "consent_cancel": "Cancel"
+    "consent_cancel": "Cancel",
+    "photo_importing": "Reading the recipe from your photos…"
   },
   "form": {
     "title_label": "Title",

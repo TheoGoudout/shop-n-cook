@@ -128,6 +128,18 @@ class Settings(BaseSettings):
     GOOGLE_API_KEY: str | None = None
     GOOGLE_MODEL: str = "gemini-2.0-flash"
 
+    # Vision models used to read recipes from photographs. Photo OCR is harder
+    # than parsing clean web text, so these default to a stronger tier than the
+    # text models above.
+    ANTHROPIC_VISION_MODEL: str = "claude-sonnet-5"
+    OPENAI_VISION_MODEL: str = "gpt-4o"
+    GOOGLE_VISION_MODEL: str = "gemini-2.5-flash"
+
+    # Recipe import from photos
+    RECIPE_PHOTO_MAX_COUNT: int = 3
+    RECIPE_PHOTO_MAX_BYTES: int = 8 * 1024 * 1024
+    RECIPE_PHOTO_RATE_LIMIT: str = "10/hour"
+
     # Spoonacular ingredient images (https://spoonacular.com/food-api)
     SPOONACULAR_API_KEY: str | None = None
 

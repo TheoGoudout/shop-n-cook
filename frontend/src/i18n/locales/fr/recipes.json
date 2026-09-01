@@ -40,8 +40,21 @@
     "import_success": "Recette importée avec succès.",
     "import_partial": "Recette importée. {{count}} ingrédient(s) seront créés automatiquement.",
     "import_error": "Impossible d'importer la recette. Vérifiez l'URL et réessayez.",
-    "import_consent_label": "La recette que vous êtes sur le point d'importer provient d'un site tiers. En continuant, vous confirmez que vous avez le droit d'importer, de stocker et de reformater ce contenu pour un usage personnel, et que vous respecterez les droits de propriété intellectuelle de l'auteur original. Cette application ne revendique aucun droit sur le contenu importé et renvoie toujours vers la source originale.",
-    "import_consent_required": "Vous devez confirmer votre consentement avant d'importer."
+    "import_consent_label": "La recette que vous êtes sur le point d'importer provient d'une source tierce — un site web, un livre de cuisine ou une autre publication. En continuant, vous confirmez que vous avez le droit d'importer, de stocker et de reformater ce contenu pour un usage personnel, et que vous respecterez les droits de propriété intellectuelle de l'auteur original. Cette application ne revendique aucun droit sur le contenu importé et renvoie vers la source originale lorsqu'il y en a une.",
+    "import_consent_required": "Vous devez confirmer votre consentement avant d'importer.",
+    "import_tab_url": "Depuis une URL",
+    "import_tab_photos": "Depuis des photos",
+    "photo_import_hint": "Photographiez une recette — jusqu'à {{max}} images d'une même recette, par exemple les deux pages d'un livre de cuisine.",
+    "photo_take_photo": "Prendre une photo",
+    "photo_choose_images": "Choisir des images",
+    "photo_selected_one": "{{count}} photo sélectionnée",
+    "photo_selected_other": "{{count}} photos sélectionnées",
+    "photo_remove": "Retirer la photo",
+    "photo_import_success": "Recette lue depuis vos photos. Vérifiez les détails avant d'enregistrer.",
+    "photo_import_error": "Impossible d'importer depuis ces photos. Veuillez réessayer.",
+    "photo_import_no_recipe": "Aucune recette n'a pu être lue sur ces photos. Essayez une image plus nette ou plus rapprochée.",
+    "photo_too_many": "Vous pouvez importer au maximum {{max}} photos à la fois.",
+    "photo_rate_limited": "Trop d'imports de photos pour le moment. Veuillez réessayer plus tard."
   },
   "edit": {
     "menu_item": "Modifier",
@@ -68,7 +81,8 @@
     "consent_description": "Avant d'enregistrer cette recette, veuillez confirmer ce qui suit :",
     "consent_label": "La recette que vous êtes sur le point d'importer provient d'un site tiers. En continuant, vous confirmez que vous avez le droit d'importer, de stocker et de reformater ce contenu pour un usage personnel, et que vous respecterez les droits de propriété intellectuelle de l'auteur original. Cette application ne revendique aucun droit sur le contenu importé et renvoie toujours vers la source originale.",
     "consent_confirm": "Enregistrer la recette",
-    "consent_cancel": "Annuler"
+    "consent_cancel": "Annuler",
+    "photo_importing": "Lecture de la recette depuis vos photos…"
   },
   "form": {
     "title_label": "Titre",

@@ -3,6 +3,7 @@ import { z } from "zod"
 
 import type {
   Difficulty,
+  ImportSource,
   IngredientCategory,
   MealType,
   RecipeCreate,
@@ -13,6 +14,7 @@ import type {
 } from "@/client"
 
 const SEASONS = ["spring", "summer", "autumn", "winter"] as const
+const IMPORT_SOURCES = ["url", "photo"] as const
 const DIFFICULTIES = ["easy", "medium", "hard"] as const
 const MEAL_TYPES = [
   "breakfast",
@@ -34,6 +36,8 @@ export type RecipeFormValues = {
   image_url?: string
   is_public: boolean
   import_consent: boolean
+  /** How this recipe was imported, if it was. Drives the consent requirement. */
+  import_source?: ImportSource | null
   ingredients: Array<{
     ingredient_name: string
     quantity: number
@@ -104,6 +108,7 @@ export const createRecipeFormSchema = (
     image_url: z.string().url().optional().or(z.literal("")),
     is_public: z.boolean().default(false),
     import_consent: z.boolean().default(false),
+    import_source: z.enum(IMPORT_SOURCES).nullable().optional(),
     ingredients: z.array(ingredientSchema),
     steps: z.array(stepSchema),
     // Metadata
@@ -126,7 +131,7 @@ export const createRecipeFormSchema = (
   if (!requireImportConsent) return base
 
   return base.superRefine((data, ctx) => {
-    if (data.source_url && !data.import_consent) {
+    if ((data.source_url || data.import_source) && !data.import_consent) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: t("add.import_consent_required"),
@@ -146,6 +151,7 @@ export const defaultCreateValues: RecipeFormValues = {
   image_url: "",
   is_public: false,
   import_consent: false,
+  import_source: null,
   ingredients: [],
   steps: [],
   seasons: [],
@@ -183,6 +189,8 @@ export const buildEditDefaults = (recipe: RecipePublic): RecipeFormValues => {
     image_url: recipe.image_url ?? "",
     is_public: recipe.is_public ?? false,
     import_consent: false,
+    // Editing an existing recipe never re-triggers the import consent gate.
+    import_source: null,
     ingredients: (recipe.ingredients ?? []).map((i) => ({
       ingredient_name: i.ingredient_name,
       quantity: i.quantity,
@@ -232,7 +240,9 @@ export const toRecipeCreatePayload = (
   source_url: data.source_url || null,
   image_url: data.image_url || null,
   is_public: data.is_public,
-  import_consent: !!data.source_url && data.import_consent,
+  import_source: data.import_source ?? null,
+  import_consent:
+    !!(data.source_url || data.import_source) && data.import_consent,
   ingredients: data.ingredients.map(toIngredientPayload),
   steps: data.steps.map(toStepPayload),
   seasons: data.seasons,

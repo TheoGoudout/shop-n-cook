@@ -12,7 +12,14 @@ _DIFFICULTIES = ", ".join(d.value for d in Difficulty)
 _MEAL_TYPES = ", ".join(m.value for m in MealType)
 
 
-def build_system_prompt(language: str | None = None) -> str:
+def build_system_prompt(language: str | None = None, source: str = "web") -> str:
+    """Build the extraction system prompt.
+
+    ``source`` selects the input the model is being handed: ``"web"`` for scraped
+    page text, ``"photo"`` for one or more photographs of a recipe. The output
+    contract and every extraction rule are shared; only the framing and a short
+    block of OCR-specific rules differ.
+    """
     lang = (language or "en").split("-")[0].lower()
 
     if lang == "fr":
@@ -29,7 +36,28 @@ def build_system_prompt(language: str | None = None) -> str:
             '"granulated sugar" or "powdered sugar" not just "sugar" when the type matters)'
         )
 
-    return f"""You are a recipe extraction assistant. Given the text content of a recipe web page, extract the recipe information and return it as JSON.
+    if source == "photo":
+        input_description = (
+            "one or more photographs of a recipe (a cookbook page, a handwritten "
+            "card, a magazine clipping, a screenshot)"
+        )
+        source_rules = """
+Reading photographs:
+- All the supplied images belong to ONE single recipe (e.g. facing pages of a \
+cookbook spread, or a close-up of the ingredient list next to the method). Merge \
+them into a single recipe — never return several recipes
+- Ignore page furniture: page numbers, running headers, chapter titles, adjacent \
+unrelated recipes, captions of decorative photos, and marketing copy
+- Read quantities with particular care; digits and fractions are easy to misread
+- Never invent a quantity, an ingredient or an instruction that you cannot \
+actually read — omit the item instead
+- If the images contain no legible recipe at all, return exactly {"title": ""} \
+and nothing else"""
+    else:
+        input_description = "the text content of a recipe web page"
+        source_rules = ""
+
+    return f"""You are a recipe extraction assistant. Given {input_description}, extract the recipe information and return it as JSON.
 
 Return ONLY a valid JSON object with this exact structure:
 {{
@@ -92,4 +120,5 @@ name="onion" notes="finely chopped")
 - For "difficulty": classify as one of: {_DIFFICULTIES} — easy means simple techniques and few steps, hard means advanced techniques or many complex steps
 - For "meal_type": classify as one of: {_MEAL_TYPES}
 - For "cuisine_type": name the cuisine (e.g. "Italian", "French", "Thai", "Lebanese") as a short free-text string; use null if unclear
-- Do not include any text outside the JSON object"""
+- Do not include any text outside the JSON object
+{source_rules}"""

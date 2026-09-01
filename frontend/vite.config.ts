@@ -66,13 +66,22 @@ export default defineConfig(({ mode }) => ({
             label: "Shop'n'Cook - Recipes & Shopping List",
           },
         ],
+        // POST + multipart is required to receive shared *files*; the handler
+        // lives in public/sw-share-target.js (imported into the SW below).
         share_target: {
           action: "/share-target",
-          method: "GET",
-          params: { title: "title", text: "text", url: "url" },
+          method: "POST",
+          enctype: "multipart/form-data",
+          params: {
+            title: "title",
+            text: "text",
+            url: "url",
+            files: [{ name: "photos", accept: ["image/*"] }],
+          },
         },
       },
       workbox: {
+        importScripts: ["/sw-share-target.js"],
         navigateFallback: "/index.html",
         navigateFallbackDenylist: [/^\/api/],
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],

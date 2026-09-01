@@ -19,8 +19,13 @@ def configure_langsmith() -> None:
         os.environ["LANGCHAIN_ENDPOINT"] = settings.LANGCHAIN_ENDPOINT
 
 
-def get_llm() -> BaseChatModel:
-    """Return the configured LangChain chat model."""
+def get_llm(*, vision: bool = False) -> BaseChatModel:
+    """Return the configured LangChain chat model.
+
+    Pass ``vision=True`` for image input: it selects the provider's
+    ``*_VISION_MODEL`` and allows a longer timeout, since reading a photographed
+    recipe is slower than parsing scraped text.
+    """
     provider = settings.AI_PROVIDER.lower()
     rate_limiter = InMemoryRateLimiter(
         requests_per_second=2.0,
@@ -34,10 +39,12 @@ def get_llm() -> BaseChatModel:
         from langchain_anthropic import ChatAnthropic
 
         return ChatAnthropic(  # type: ignore[call-arg]
-            model=settings.ANTHROPIC_MODEL,
+            model=(
+                settings.ANTHROPIC_VISION_MODEL if vision else settings.ANTHROPIC_MODEL
+            ),
             api_key=settings.ANTHROPIC_API_KEY,  # type: ignore[arg-type]
             max_retries=2,
-            timeout=60,
+            timeout=120 if vision else 60,
             max_tokens=2560,
             temperature=0,
             rate_limiter=rate_limiter,
@@ -49,10 +56,10 @@ def get_llm() -> BaseChatModel:
         from langchain_openai import ChatOpenAI
 
         return ChatOpenAI(
-            model=settings.OPENAI_MODEL,
+            model=settings.OPENAI_VISION_MODEL if vision else settings.OPENAI_MODEL,
             api_key=settings.OPENAI_API_KEY,  # type: ignore[arg-type]
             max_retries=3,
-            timeout=45,
+            timeout=90 if vision else 45,
             max_completion_tokens=2000,
             temperature=0,
             rate_limiter=rate_limiter,
@@ -64,10 +71,10 @@ def get_llm() -> BaseChatModel:
         from langchain_google_genai import ChatGoogleGenerativeAI
 
         return ChatGoogleGenerativeAI(
-            model=settings.GOOGLE_MODEL,
+            model=settings.GOOGLE_VISION_MODEL if vision else settings.GOOGLE_MODEL,
             google_api_key=settings.GOOGLE_API_KEY,
             max_retries=2,
-            timeout=30,
+            timeout=90 if vision else 30,
             max_output_tokens=2000,
             temperature=0,
             rate_limiter=rate_limiter,

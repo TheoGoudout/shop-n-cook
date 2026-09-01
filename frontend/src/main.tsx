@@ -21,6 +21,20 @@ OpenAPI.TOKEN = async () => {
   return localStorage.getItem("access_token") || ""
 }
 
+// The generated client sets `Content-Type: multipart/form-data` for file uploads,
+// but a multipart body is only parseable with the boundary the browser appends —
+// and the browser only appends it when the header is absent. Axios does not strip
+// it for us, so without this the server answers "Missing boundary in multipart".
+OpenAPI.interceptors.request.use((config) => {
+  if (typeof FormData !== "undefined" && config.data instanceof FormData) {
+    const headers = config.headers as Record<string, unknown> | undefined
+    if (headers) {
+      delete headers["Content-Type"]
+    }
+  }
+  return config
+})
+
 const handleApiError = (error: Error) => {
   if (error instanceof ApiError && [401, 403].includes(error.status)) {
     localStorage.removeItem("access_token")

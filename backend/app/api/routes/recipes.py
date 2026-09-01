@@ -1,12 +1,25 @@
 import uuid
 from typing import Annotated, Any
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    Query,
+    Request,
+    UploadFile,
+)
 from pydantic import BaseModel, HttpUrl
 from sqlmodel import Session, col, select
+from starlette.concurrency import run_in_threadpool
 
 from app import crud
 from app.api.deps import CurrentUser, SessionDep, get_current_active_superuser
+from app.core.config import settings
+from app.core.limiter import limiter, user_or_ip_key
 from app.models import (
     Message,
     Recipe,
@@ -22,10 +35,14 @@ from app.models.recipe import Difficulty, MealType, Season
 from app.models.user import User
 from app.services.ingredient_image import fetch_and_update_ingredients_batch
 from app.services.recipe_import import (
+    InvalidPhotoError,
+    NoRecipeFoundError,
     ParsedIngredient,
     ParsedRecipe,
     ParsedStep,
+    import_recipe_from_photos,
     import_recipe_from_url,
+    validate_photos,
 )
 
 router = APIRouter(prefix="/recipes", tags=["recipes"])
@@ -378,6 +395,55 @@ def import_recipe_url(
 
     try:
         parsed = import_recipe_from_url(url, language=body.language)
+    except ValueError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=422, detail=f"Failed to parse recipe: {exc}"
+        ) from exc
+    return parsed
+
+
+async def _read_upload(photo: UploadFile) -> bytes:
+    """Read one upload, refusing to buffer more than the configured limit.
+
+    Reading one byte past the limit is enough to reject the file without pulling
+    a whole oversized upload into memory.
+    """
+    data = await photo.read(settings.RECIPE_PHOTO_MAX_BYTES + 1)
+    await photo.close()
+    return data
+
+
+@router.post("/import-photos", response_model=ParsedRecipe)
+@limiter.limit(settings.RECIPE_PHOTO_RATE_LIMIT, key_func=user_or_ip_key)
+async def import_recipe_photos(
+    *,
+    request: Request,  # noqa: ARG001 — consumed by slowapi rate-limit decorator
+    current_user: CurrentUser,  # noqa: ARG001 — auth gate, and the rate-limit key
+    photos: Annotated[list[UploadFile], File()],
+    language: Annotated[str | None, Form()] = None,
+) -> Any:
+    """Parse a recipe from photos using AI. Returns pre-filled data for review — does NOT save.
+
+    Every photo is treated as part of a single recipe (e.g. the facing pages of a
+    cookbook spread). Images are validated, sent to the vision model and then
+    discarded — nothing is stored.
+
+    Requires a provider API key to be configured. Returns 503 if not set.
+    """
+    try:
+        validated = validate_photos([await _read_upload(photo) for photo in photos])
+    except InvalidPhotoError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    try:
+        # The provider call blocks for up to two minutes; keep it off the event loop.
+        parsed = await run_in_threadpool(
+            import_recipe_from_photos, validated, language=language
+        )
+    except NoRecipeFoundError as exc:
+        raise HTTPException(status_code=422, detail="no_recipe_found") from exc
     except ValueError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     except Exception as exc:

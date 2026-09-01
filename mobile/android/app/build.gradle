@@ -57,8 +57,8 @@ android {
         applicationId "com.shopncook.app"
         minSdkVersion 21
         targetSdkVersion 35
-        versionCode 1040899
-        versionName "1.4.8"
+        versionCode 1050099
+        versionName "1.5.0"
 
         // The name for the application
         resValue "string", "appName", twaManifest.name

@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "__MSG_appName__",
-  "version": "1.4.8",
-  "version_name": "1.4.8",
+  "version": "1.5.0",
+  "version_name": "1.5.0",
   "description": "__MSG_appDescription__",
   "default_locale": "en",
   "icons": {
@@ -23,7 +23,9 @@
       "id": "extension@shop-n-cook.com",
       "strict_min_version": "140.0",
       "data_collection_permissions": {
-        "required": ["none"],
+        "required": [
+          "none"
+        ],
         "optional": []
       }
     },
@@ -31,6 +33,12 @@
       "strict_min_version": "142.0"
     }
   },
-  "permissions": ["activeTab", "scripting", "storage"],
-  "host_permissions": ["<all_urls>"]
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ]
 }

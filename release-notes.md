@@ -1,5 +1,19 @@
 # Release Notes
 
+## 1.5.0
+
+### Features
+
+* Recipes: Import recipes from photos
+
+### Fixes
+
+* Docker: Copy every workspace manifest before bun install
+
+### Internal
+
+* Extension: Normalize manifest.json formatting
+
 ## 1.4.8
 
 ### Features

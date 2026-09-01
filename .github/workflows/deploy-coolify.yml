@@ -186,12 +186,39 @@ jobs:
           set -euo pipefail
           BASE="${COOLIFY_URL%/}"
 
-          RESPONSE=$(curl -sS -w '\n%{http_code}' \
-            "$BASE/api/v1/deploy?uuid=$COOLIFY_APP_UUID&force=$FORCE" \
-            -H "Authorization: Bearer $COOLIFY_API_TOKEN")
+          # `force` has to reach Coolify as a real JSON boolean. Sent as the
+          # string "false" it is truthy on the far side, which silently turns
+          # every deploy into a cache-less rebuild.
+          case "${FORCE:-false}" in
+            true|True|TRUE) FORCE_JSON=true  ;;
+            *)              FORCE_JSON=false ;;
+          esac
+
+          # Coolify 4.2 made every state-changing endpoint POST-only; the GET
+          # form this used to send now answers `405 This endpoint has changed
+          # to a POST request.` and the release never reaches production.
+          #
+          # The parameters go in both the query string and the JSON body on
+          # purpose: which of the two the deploy controller reads has moved
+          # around across Coolify versions, and sending consistent values in
+          # both is free insurance against picking the wrong one.
+          RESPONSE=$(curl -sS -w '\n%{http_code}' -X POST \
+            "$BASE/api/v1/deploy?uuid=$COOLIFY_APP_UUID&force=$FORCE_JSON" \
+            -H "Authorization: Bearer $COOLIFY_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "$(jq -cn --arg uuid "$COOLIFY_APP_UUID" --argjson force "$FORCE_JSON" \
+                    '{uuid: $uuid, force: $force}')")
 
           CODE=$(printf '%s' "$RESPONSE" | tail -n1)
           BODY=$(printf '%s' "$RESPONSE" | sed '$d')
+
+          if [ "$CODE" = "405" ]; then
+            echo "::error::Coolify rejected the deploy method (HTTP 405). The API" \
+                 "contract for /api/v1/deploy has moved again — check the Coolify" \
+                 "release notes for the method this version expects."
+            printf '%s\n' "$BODY"
+            exit 1
+          fi
 
           if [ "$CODE" -lt 200 ] || [ "$CODE" -ge 300 ]; then
             echo "::error::Coolify refused to start a deployment (HTTP $CODE)."

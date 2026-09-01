@@ -214,6 +214,11 @@ The backend therefore deploys *before* the Cloudflare frontend in the same
 release run — `release.yml` sequences them that way so the API is upgraded ahead
 of its clients. Pre-releases do not reach production.
 
+> **Coolify 4.2 or newer is required.** 4.2 made every state-changing API
+> endpoint `POST`-only, `/api/v1/deploy` among them, and answers the older `GET`
+> form with `405 This endpoint has changed to a POST request.` The workflow
+> sends `POST`, so an instance older than 4.2 will reject the deploy instead.
+
 ### Required GitHub secrets
 
 Set these on the `production` GitHub Environment (and on `staging` too if you

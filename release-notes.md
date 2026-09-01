@@ -1,5 +1,11 @@
 # Release Notes
 
+## 1.5.1
+
+### Fixes
+
+* CI: POST the Coolify deploy request so the release reaches production
+
 ## 1.5.0
 
 ### Features

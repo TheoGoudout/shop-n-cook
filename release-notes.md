@@ -1,5 +1,11 @@
 # Release Notes
 
+## 1.5.2
+
+### Fixes
+
+* Backend: Repair enum columns written with the wrong case
+
 ## 1.5.1
 
 ### Fixes

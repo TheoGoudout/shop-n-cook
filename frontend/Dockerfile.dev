@@ -5,7 +5,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf 
 WORKDIR /app
 
 COPY package.json bun.lock /app/
+# Every workspace declared in the root package.json must be present, or
+# `bun install` fails with "Workspace not found" (bun >= 1.4). Only the
+# manifests are needed to resolve the workspace graph.
 COPY frontend/package.json /app/frontend/
+COPY extension/package.json /app/extension/
+COPY landing/package.json /app/landing/
 
 WORKDIR /app/frontend
 

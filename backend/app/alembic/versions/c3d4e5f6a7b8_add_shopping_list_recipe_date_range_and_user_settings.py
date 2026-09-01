@@ -43,7 +43,7 @@ def upgrade():
             'shopping_frequency',
             sqlmodel.sql.sqltypes.AutoString(length=50),
             nullable=False,
-            server_default='weekly',
+            server_default='WEEKLY',
         ),
         sa.Column('id', sa.Uuid(), nullable=False),
         sa.Column('user_id', sa.Uuid(), nullable=False),

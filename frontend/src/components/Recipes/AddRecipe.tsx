@@ -19,7 +19,7 @@ import useCustomToast from "@/hooks/useCustomToast"
 import { handleError } from "@/utils"
 
 import { RecipeForm } from "./RecipeForm"
-import { RecipeImportPanel } from "./RecipeImportPanel"
+import { RecipeImportTabs } from "./RecipeImportTabs"
 import {
   createRecipeFormSchema,
   defaultCreateValues,
@@ -76,7 +76,7 @@ const AddRecipe = () => {
           onSubmit={(data) => mutation.mutate(data)}
           isPending={mutation.isPending}
           importPanel={
-            <RecipeImportPanel onImported={(values) => form.reset(values)} />
+            <RecipeImportTabs onImported={(values) => form.reset(values)} />
           }
         />
       </DialogContent>

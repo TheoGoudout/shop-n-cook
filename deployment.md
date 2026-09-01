@@ -307,6 +307,12 @@ Other variables with built-in defaults (no need to set in Coolify):
 | `LANGCHAIN_API_KEY` | LangSmith API key |
 | `LANGCHAIN_PROJECT` | LangSmith project name (default: `shop-n-cook`) |
 | `LANGCHAIN_ENDPOINT` | LangSmith API endpoint (use `https://eu.api.smith.langchain.com` for EU) |
+| `ANTHROPIC_VISION_MODEL` | Model used to read recipes from photos (default: `claude-sonnet-5`) |
+| `OPENAI_VISION_MODEL` | Model used to read recipes from photos (default: `gpt-4o`) |
+| `GOOGLE_VISION_MODEL` | Model used to read recipes from photos (default: `gemini-2.5-flash`) |
+| `RECIPE_PHOTO_MAX_COUNT` | Photos accepted per import (default: `3`) |
+| `RECIPE_PHOTO_MAX_BYTES` | Maximum size of a single uploaded photo (default: `8388608`, i.e. 8 MiB) |
+| `RECIPE_PHOTO_RATE_LIMIT` | Per-user limit on photo imports (default: `10/hour`) |
 
 ---
 

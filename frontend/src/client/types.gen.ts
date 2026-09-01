@@ -9,6 +9,11 @@ export type Body_login_login_access_token = {
     client_secret?: (string | null);
 };
 
+export type Body_recipes_import_recipe_photos = {
+    photos: Array<((Blob | File))>;
+    language?: (string | null);
+};
+
 export type DeduplicateMerge = {
     kept: string;
     removed: Array<(string)>;
@@ -25,6 +30,11 @@ export type Difficulty = 'easy' | 'medium' | 'hard';
 export type HTTPValidationError = {
     detail?: Array<ValidationError>;
 };
+
+/**
+ * How a recipe entered the app, when it was not typed in by hand.
+ */
+export type ImportSource = 'url' | 'photo';
 
 export type ImportUrlRequest = {
     url: string;
@@ -131,6 +141,7 @@ export type RecipeCreate = {
     ingredients?: Array<RecipeIngredientCreate>;
     steps?: Array<RecipeStepCreate>;
     import_consent?: boolean;
+    import_source?: (ImportSource | null);
 };
 
 export type RecipeIngredientCreate = {
@@ -505,6 +516,12 @@ export type RecipesImportRecipeUrlData = {
 };
 
 export type RecipesImportRecipeUrlResponse = (ParsedRecipe);
+
+export type RecipesImportRecipePhotosData = {
+    formData: Body_recipes_import_recipe_photos;
+};
+
+export type RecipesImportRecipePhotosResponse = (ParsedRecipe);
 
 export type ShoppingListsReadShoppingListsData = {
     limit?: number;

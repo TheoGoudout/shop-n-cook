@@ -20,7 +20,7 @@ def upgrade() -> None:
         "ingredient",
         sa.Column("id", sa.Uuid(), nullable=False),
         sa.Column("name", sa.String(length=255), nullable=False),
-        sa.Column("category", sa.String(), nullable=False, server_default="other"),
+        sa.Column("category", sa.String(), nullable=False, server_default="OTHER"),
         sa.Column("image_url", sa.String(length=2048), nullable=True),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("name"),

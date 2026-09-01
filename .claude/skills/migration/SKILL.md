@@ -28,6 +28,18 @@ blind spots:
 Edit the generated `op.*` calls to add anything Alembic missed, then run
 `uv run ruff format app/alembic/versions/<file>.py` to format it.
 
+## Enum-backed columns
+
+SQLModel maps a Python enum field to SQLAlchemy's `Enum` type, which stores
+the member **name**, not its value. `ImportSource.URL = "url"` is written to
+the database as `URL`. Any literal a migration writes to such a column — a
+backfill, a `server_default`, seeded rows — must use the name, or every read
+of that row raises
+`LookupError: 'url' is not among the defined enum values`.
+
+`tests/models/test_enum_columns.py` scans the migrations for these literals
+and fails on a mismatch.
+
 ## Applying
 
 ```bash

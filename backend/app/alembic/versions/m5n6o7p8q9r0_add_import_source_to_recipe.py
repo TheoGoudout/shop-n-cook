@@ -21,8 +21,10 @@ def upgrade() -> None:
         sa.Column("import_source", sa.String(length=10), nullable=True),
     )
     # Recipes that already carry a source_url were imported from the web.
+    # The column is mapped to the ImportSource enum, and SQLAlchemy persists
+    # enum *names*, so the literal has to be 'URL' and not 'url'.
     op.execute(
-        "UPDATE recipe SET import_source = 'url' "
+        "UPDATE recipe SET import_source = 'URL' "
         "WHERE source_url IS NOT NULL AND source_url <> ''"
     )
 

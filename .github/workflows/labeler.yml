@@ -1,5 +1,13 @@
 name: Labels
+# pull_request_target, so a pull request from a fork can be labelled — the
+# `pull_request` token is read-only there, and a labeller that cannot label
+# fork contributions labels nothing.
+#
+# Safe here for the one reason that makes this trigger safe anywhere: the fork's
+# code is never checked out, built or run. There is no `actions/checkout` in
+# this file at all; both jobs read the pull request's metadata through the API.
 on:
+  # zizmor: ignore[dangerous-triggers] -- no checkout of the head ref; see above
   pull_request_target:
     types:
       - opened
@@ -8,6 +16,8 @@ on:
       # For label-checker
       - labeled
       - unlabeled
+
+permissions: {}
 
 jobs:
   labeler:

@@ -2,13 +2,26 @@
 # See https://pre-commit.com/hooks.html for more hooks
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v6.0.0
     hooks:
       - id: check-added-large-files
       - id: check-toml
       - id: check-yaml
         args:
           - --unsafe
+      - id: check-merge-conflict
+      - id: detect-private-key
+      - id: mixed-line-ending
+        args: [--fix=lf]
+      - id: check-executables-have-shebangs
+      # Scoped to .github/scripts/, where it is load-bearing: a step invokes its
+      # script directly, so one that lost its executable bit fails on the runner
+      # and nowhere else. Everywhere else in the tree a shebang is documentation
+      # — those scripts are run as `bash x.sh` or `bun x.mjs` — and
+      # .github/scripts/lib/ is imported rather than run, so it carries neither
+      # shebang nor bit.
+      - id: check-shebang-scripts-are-executable
+        files: ^\.github/scripts/
       - id: end-of-file-fixer
         exclude: |
             (?x)^(
@@ -18,11 +31,32 @@ repos:
             )$
       - id: trailing-whitespace
         exclude: ^(frontend|extension)/src/client/.*
+
+  # Shell linting. Every multi-line step body in .github/workflows/ is a file
+  # under .github/scripts/ (see its README), which is what makes this possible
+  # at all — shell inside a YAML string is invisible to every linter there is.
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.11.0.1
+    hooks:
+      - id: shellcheck
+        # -x, so a `source .github/scripts/lib/coolify.sh` is followed into the
+        # library instead of reported as an unreadable path.
+        args: [--external-sources]
+
+  # Conventional commits. scripts/release-notes.mjs sorts the changelog by
+  # commit type, and anything it cannot parse falls into "Internal" — so the
+  # format the release notes are built from was, until now, enforced by nothing.
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v4.4.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]
+        args: [feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert]
   - repo: local
     hooks:
       - id: local-biome-check
         name: biome check
-        entry: npm run lint
+        entry: bun run lint
         language: system
         types: [text]
         files: ^frontend/
@@ -55,6 +89,31 @@ repos:
         entry: uv run mypy backend/app
         require_serial: true
         language: unsupported
+        pass_filenames: false
+
+      # GitHub Actions static analysis. Offline only: the online audits need a
+      # GitHub token and network round-trips per action, which belongs in CI
+      # rather than in front of every commit. .github/workflows/zizmor.yml runs
+      # the full set, so what this hook catches is the cheap half, before it
+      # reaches a branch. Configuration is shared — both read .github/zizmor.yml.
+      - id: zizmor
+        name: Audit GitHub Actions workflows with zizmor
+        entry: uvx zizmor --no-online-audits --min-confidence=medium --min-severity=low
+        language: system
+        files: ^(\.github/(workflows/.*\.ya?ml|zizmor\.yml)|.*\.pre-commit-config\.yaml)$
+        pass_filenames: false
+        args: ["."]
+
+      # Shell inside a YAML string is invisible to every linter there is, so
+      # every multi-line step body lives in .github/scripts/ instead — which is
+      # what the shellcheck hook above is able to see. This is what keeps that
+      # true: a workflow that grows an inline block again, a script nothing
+      # calls, or a step naming a script that is not there, all fail here.
+      - id: workflow-scripts
+        name: Check the workflows carry no embedded scripts
+        entry: uv run python scripts/validate_workflow_scripts.py
+        language: system
+        files: ^(\.github/(workflows/.*\.ya?ml|scripts/.*)|scripts/validate_workflow_scripts\.py)$
         pass_filenames: false
 
       - id: generate-frontend-sdk

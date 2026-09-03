@@ -1,50 +1,119 @@
 version: 2
+
 # NOTE: every label listed under `labels:` must already exist in the repository —
-# Dependabot applies existing labels but will not create them, and naming a missing
-# one makes the update run error out. `dependencies` does not exist here, so it is
-# deliberately not listed. Create the label first if you want it back.
+# Dependabot applies existing labels but will not create them, and naming a
+# missing one makes the update run error out. `dependencies` does not exist here,
+# so only `internal` is listed. Create the label first if you want it back.
+#
+# Every entry carries three things the repository used to do without:
+#
+#   groups     — one pull request per ecosystem per week instead of one per
+#                dependency. Nineteen actions across twelve workflows meant
+#                nineteen pull requests, each needing its own CI run.
+#   cooldown   — seven days before a release is proposed, so a version yanked
+#                within its first week never reaches a branch here.
+#   weekly     — github-actions was on `daily`, which on a twelve-workflow
+#                repository is churn rather than currency.
+
 updates:
-  # GitHub Actions
+  # GitHub Actions. Two directories: the workflows themselves, and the composite
+  # actions they call.
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: daily
+      interval: weekly
+    cooldown:
+      default-days: 7
     commit-message:
       prefix: ⬆
     labels: [internal]
-  # Python uv
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+
+  # Python — packages only. The interpreter version lives in the Dockerfiles and
+  # is handled by the `docker` entry below.
   - package-ecosystem: uv
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     commit-message:
       prefix: ⬆
     labels: [internal]
-  # bun
+    groups:
+      python-packages:
+        patterns:
+          - "*"
+
+  # bun — one entry serves the whole workspace (frontend, extension, landing):
+  # they share bun.lock at the repository root, and Dependabot allows only one
+  # entry per package-ecosystem + directory pair.
   - package-ecosystem: bun
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     commit-message:
       prefix: ⬆
     labels: [internal]
     ignore:
       - dependency-name: "@hey-api/openapi-ts"
-  # Docker
+    groups:
+      npm-packages:
+        patterns:
+          - "*"
+
+  # Docker. `landing` was missing: its image is built and served like the other
+  # two, so it was the one Dockerfile nothing was watching.
   - package-ecosystem: docker
     directories:
       - /backend
       - /frontend
+      - /landing
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     commit-message:
       prefix: ⬆
     labels: [internal]
-  # Docker Compose
+    groups:
+      docker:
+        patterns:
+          - "*"
+
   - package-ecosystem: docker-compose
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     commit-message:
       prefix: ⬆
     labels: [internal]
+    groups:
+      docker-compose:
+        patterns:
+          - "*"
+
+  # pre-commit. The hooks run on every commit and in the pre-commit job, and
+  # nothing was updating them at all — shellcheck-py, the pre-commit-hooks set
+  # and conventional-pre-commit would have sat at whatever revision they were
+  # pinned at.
+  - package-ecosystem: pre-commit
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: ⬆
+    labels: [internal]
+    groups:
+      pre-commit:
+        patterns:
+          - "*"

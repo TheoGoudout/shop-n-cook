@@ -57,43 +57,37 @@ jobs:
       run_cloudflare: ${{ steps.targets.outputs.cloudflare }}
       run_coolify: ${{ steps.targets.outputs.coolify }}
     steps:
+      # The steps below run scripts from .github/scripts/, and one of them calls
+      # scripts/set-version.mjs, so this job needs the tree even though it
+      # builds nothing from it.
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version-file: .bun-version
+          # No cache. This job installs nothing — it runs set-version.mjs, which
+          # is dependency-free — so there is nothing for a restored cache to
+          # speed up, and this workflow is privileged: it is triggered by a
+          # published release and its called workflows hold every store
+          # credential. A cache entry poisoned by a less-privileged workflow has
+          # no business being restored here. (zizmor: cache-poisoning)
+          no-cache: true
+
       - name: Resolve tag, version and pre-release flag
         id: release
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.event.release.tag_name || inputs.tag }}
-        run: |
-          set -euo pipefail
-
-          # On workflow_dispatch the release payload is absent, so read the
-          # pre-release flag back from the release itself rather than guessing.
-          PRERELEASE=$(gh release view "$TAG" \
-            --repo "${{ github.repository }}" --json isPrerelease --jq .isPrerelease)
-
-          VERSION="${TAG#v}"
-          if ! echo "$VERSION" | grep -qP '^\d+\.\d+\.\d+(-rc\d+)?$'; then
-            echo "::error::Tag $TAG does not carry a version of the form X.Y.Z or X.Y.Z-rcN."
-            exit 1
-          fi
-
-          echo "tag=$TAG"               >> "$GITHUB_OUTPUT"
-          echo "version=$VERSION"       >> "$GITHUB_OUTPUT"
-          echo "prerelease=$PRERELEASE" >> "$GITHUB_OUTPUT"
-
-          echo "Releasing $TAG (version $VERSION, prerelease=$PRERELEASE)."
+          REPOSITORY: ${{ github.repository }}
+        run: .github/scripts/release/resolve-tag-version-and-pre-release-flag.sh
 
       - name: Resolve targets
         id: targets
         env:
           TARGETS: ${{ inputs.targets || 'all' }}
-        run: |
-          for target in extension stores cloudflare coolify; do
-            if [ "$TARGETS" = "all" ] || [ "$TARGETS" = "$target" ]; then
-              echo "$target=true"  >> "$GITHUB_OUTPUT"
-            else
-              echo "$target=false" >> "$GITHUB_OUTPUT"
-            fi
-          done
+        run: .github/scripts/release/resolve-targets.sh
 
   extension:
     name: Browser extensions
@@ -103,12 +97,36 @@ jobs:
     # attach build artifacts to the release.
     permissions:
       contents: write
-    uses: ./.github/workflows/publish-extension.yml
+    # `./`, not GitHub's newer `$/`: moving the release pipeline to a
+    # different reference syntax is a deliberate change, not a lint fix.
+    uses: ./.github/workflows/publish-extension.yml # zizmor: ignore[self-repository]
     with:
       tag: ${{ needs.resolve.outputs.tag }}
       version: ${{ needs.resolve.outputs.version }}
       prerelease: ${{ needs.resolve.outputs.prerelease == 'true' }}
-    secrets: inherit
+    # Named rather than inherited. `secrets: inherit` hands the called
+    # workflow every secret this repository holds — so a browser-store
+    # publisher was also carrying the Coolify API token and the release
+    # PAT. Each workflow now declares what it needs, and gets that.
+    secrets:
+      CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
+      CHROME_SERVICE_ACCOUNT_JSON: ${{ secrets.CHROME_SERVICE_ACCOUNT_JSON }}
+      FIREFOX_API_KEY: ${{ secrets.FIREFOX_API_KEY }}
+      FIREFOX_API_SECRET: ${{ secrets.FIREFOX_API_SECRET }}
+      EDGE_TENANT_ID: ${{ secrets.EDGE_TENANT_ID }}
+      EDGE_CLIENT_ID: ${{ secrets.EDGE_CLIENT_ID }}
+      EDGE_CLIENT_SECRET: ${{ secrets.EDGE_CLIENT_SECRET }}
+      EDGE_PRODUCT_ID: ${{ secrets.EDGE_PRODUCT_ID }}
+      OPERA_EMAIL: ${{ secrets.OPERA_EMAIL }}
+      OPERA_PASSWORD: ${{ secrets.OPERA_PASSWORD }}
+      OPERA_EXTENSION_ID: ${{ secrets.OPERA_EXTENSION_ID }}
+      APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+      APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+      APPLE_PROVISIONING_PROFILE: ${{ secrets.APPLE_PROVISIONING_PROFILE }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      APPLE_API_KEY_CONTENT: ${{ secrets.APPLE_API_KEY_CONTENT }}
+      APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+      APPLE_API_KEY_ISSUER_ID: ${{ secrets.APPLE_API_KEY_ISSUER_ID }}
 
   stores:
     name: App stores
@@ -116,12 +134,30 @@ jobs:
     if: needs.resolve.outputs.run_stores == 'true'
     permissions:
       contents: write
-    uses: ./.github/workflows/publish-stores.yml
+    # `./`, not GitHub's newer `$/`: moving the release pipeline to a
+    # different reference syntax is a deliberate change, not a lint fix.
+    uses: ./.github/workflows/publish-stores.yml # zizmor: ignore[self-repository]
     with:
       tag: ${{ needs.resolve.outputs.tag }}
       version: ${{ needs.resolve.outputs.version }}
       prerelease: ${{ needs.resolve.outputs.prerelease == 'true' }}
-    secrets: inherit
+    secrets:
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+      GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+      APPLE_CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
+      APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+      APPLE_PROVISIONING_PROFILE_BASE64: ${{ secrets.APPLE_PROVISIONING_PROFILE_BASE64 }}
+      APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+      APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
+      APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
+      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      AZURE_SELLER_ID: ${{ secrets.AZURE_SELLER_ID }}
+      AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+      WINDOWS_CERTIFICATE_BASE64: ${{ secrets.WINDOWS_CERTIFICATE_BASE64 }}
+      WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
 
   coolify:
     name: Coolify production (backend)
@@ -133,11 +169,16 @@ jobs:
       needs.resolve.outputs.prerelease != 'true'
     permissions:
       contents: read
-    uses: ./.github/workflows/deploy-coolify.yml
+    # `./`, not GitHub's newer `$/`: moving the release pipeline to a
+    # different reference syntax is a deliberate change, not a lint fix.
+    uses: ./.github/workflows/deploy-coolify.yml # zizmor: ignore[self-repository]
     with:
       environment: production
       ref: ${{ needs.resolve.outputs.tag }}
-    secrets: inherit
+    secrets:
+      COOLIFY_URL: ${{ secrets.COOLIFY_URL }}
+      COOLIFY_API_TOKEN: ${{ secrets.COOLIFY_API_TOKEN }}
+      COOLIFY_APP_UUID: ${{ secrets.COOLIFY_APP_UUID }}
 
   cloudflare:
     name: Cloudflare production
@@ -160,11 +201,15 @@ jobs:
       needs.coolify.result != 'cancelled'
     permissions:
       contents: read
-    uses: ./.github/workflows/deploy-cloudflare.yml
+    # `./`, not GitHub's newer `$/`: moving the release pipeline to a
+    # different reference syntax is a deliberate change, not a lint fix.
+    uses: ./.github/workflows/deploy-cloudflare.yml # zizmor: ignore[self-repository]
     with:
       environment: production
       ref: ${{ needs.resolve.outputs.tag }}
-    secrets: inherit
+    secrets:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
   release-complete:
     name: Release complete
@@ -174,27 +219,28 @@ jobs:
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: read # To check out .github/scripts/ below.
     steps:
+      # The steps below run scripts from .github/scripts/, so this job needs the
+      # repository even though it builds nothing from it.
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+
       - name: Report
         env:
           TAG: ${{ needs.resolve.outputs.tag }}
-        run: |
-          {
-            echo "## Release $TAG"
-            echo
-            echo "| Target | Result |"
-            echo "| --- | --- |"
-            echo "| Browser extensions | ${{ needs.extension.result }} |"
-            echo "| App stores | ${{ needs.stores.result }} |"
-            echo "| Coolify production (backend) | ${{ needs.coolify.result }} |"
-            echo "| Cloudflare production | ${{ needs.cloudflare.result }} |"
-          } >> "$GITHUB_STEP_SUMMARY"
+          EXTENSION_RESULT: ${{ needs.extension.result }}
+          STORES_RESULT: ${{ needs.stores.result }}
+          COOLIFY_RESULT: ${{ needs.coolify.result }}
+          CLOUDFLARE_RESULT: ${{ needs.cloudflare.result }}
+        run: .github/scripts/release/report.sh
 
       - name: Fail if any target failed
-        if: >-
-          contains(needs.*.result, 'failure') ||
-          contains(needs.*.result, 'cancelled')
-        run: |
-          echo "::error::At least one release target failed. Re-run failed jobs" \
-               "to retry only those, or use the workflow_dispatch 'targets' input."
-          exit 1
+        env:
+          EXTENSION_RESULT: ${{ needs.extension.result }}
+          STORES_RESULT: ${{ needs.stores.result }}
+          COOLIFY_RESULT: ${{ needs.coolify.result }}
+          CLOUDFLARE_RESULT: ${{ needs.cloudflare.result }}
+        run: .github/scripts/release/fail-if-any-target-failed.sh

@@ -23,6 +23,50 @@ on:
         description: "Whether this is a pre-release"
         required: true
         type: boolean
+    secrets:
+      # The store credentials this workflow actually uses, named rather than
+      # inherited. `secrets: inherit` would hand a workflow that talks to five
+      # third-party stores every secret the repository holds — the Coolify API
+      # token, the Cloudflare token, the release PAT — for the eighteen below.
+      #
+      # None is required: a missing one skips that store's job rather than
+      # failing the release, which is what the build job's secret check is for.
+      CHROME_EXTENSION_ID:
+        required: false
+      CHROME_SERVICE_ACCOUNT_JSON:
+        required: false
+      FIREFOX_API_KEY:
+        required: false
+      FIREFOX_API_SECRET:
+        required: false
+      EDGE_TENANT_ID:
+        required: false
+      EDGE_CLIENT_ID:
+        required: false
+      EDGE_CLIENT_SECRET:
+        required: false
+      EDGE_PRODUCT_ID:
+        required: false
+      OPERA_EMAIL:
+        required: false
+      OPERA_PASSWORD:
+        required: false
+      OPERA_EXTENSION_ID:
+        required: false
+      APPLE_CERTIFICATE:
+        required: false
+      APPLE_CERTIFICATE_PASSWORD:
+        required: false
+      APPLE_PROVISIONING_PROFILE:
+        required: false
+      APPLE_TEAM_ID:
+        required: false
+      APPLE_API_KEY_CONTENT:
+        required: false
+      APPLE_API_KEY_ID:
+        required: false
+      APPLE_API_KEY_ISSUER_ID:
+        required: false
   workflow_dispatch:
     inputs:
       tag:
@@ -51,17 +95,20 @@ jobs:
     name: Build & Package
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: write # To attach the zip to the release.
     outputs:
-      version:  ${{ steps.version.outputs.version }}
-      chrome:   ${{ steps.check.outputs.chrome }}
-      firefox:  ${{ steps.check.outputs.firefox }}
-      edge:     ${{ steps.check.outputs.edge }}
-      opera:    ${{ steps.check.outputs.opera }}
-      safari:   ${{ steps.check.outputs.safari }}
+      version: ${{ steps.version.outputs.version }}
+      chrome: ${{ steps.check.outputs.chrome }}
+      firefox: ${{ steps.check.outputs.firefox }}
+      edge: ${{ steps.check.outputs.edge }}
+      opera: ${{ steps.check.outputs.opera }}
+      safari: ${{ steps.check.outputs.safari }}
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           ref: ${{ inputs.tag }}
+          persist-credentials: false
 
       - name: Resolve version
         id: version
@@ -69,9 +116,13 @@ jobs:
         # pre-release suffix stripped (Chrome rejects it), so reading it here
         # made v1.5.0-rc1 and v1.5.0-rc2 produce identically named release
         # assets that overwrote each other.
-        run: echo "version=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+        env:
+          VERSION: ${{ inputs.version }}
+        run: echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version-file: .bun-version
 
       - name: Install dependencies
         run: bun ci
@@ -82,22 +133,19 @@ jobs:
         working-directory: extension
 
       - name: Package zip
-        run: cd extension/dist && zip -r ../../extension.zip .
+        run: .github/scripts/publish-extension/package-zip.sh
 
       - name: Check secret availability
         id: check
         env:
           CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
-          FIREFOX_API_KEY:     ${{ secrets.FIREFOX_API_KEY }}
-          EDGE_PRODUCT_ID:     ${{ secrets.EDGE_PRODUCT_ID }}
-          OPERA_EMAIL:         ${{ secrets.OPERA_EMAIL }}
-          APPLE_CERTIFICATE:   ${{ secrets.APPLE_CERTIFICATE }}
-        run: |
-          echo "chrome=$([ -n "$CHROME_EXTENSION_ID" ] && echo true || echo false)" >> $GITHUB_OUTPUT
-          echo "firefox=$([ -n "$FIREFOX_API_KEY" ] && echo true || echo false)" >> $GITHUB_OUTPUT
-          echo "edge=$([ -n "$EDGE_PRODUCT_ID" ] && echo true || echo false)" >> $GITHUB_OUTPUT
-          echo "opera=$([ -n "$OPERA_EMAIL" ] && echo true || echo false)" >> $GITHUB_OUTPUT
-          echo "safari=$([ -n "$APPLE_CERTIFICATE" ] && echo true || echo false)" >> $GITHUB_OUTPUT
+          FIREFOX_API_KEY: ${{ secrets.FIREFOX_API_KEY }}
+          EDGE_PRODUCT_ID: ${{ secrets.EDGE_PRODUCT_ID }}
+          OPERA_EMAIL: ${{ secrets.OPERA_EMAIL }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+        # Names only: the values are read from the environment above, never
+        # passed as arguments.
+        run: .github/scripts/shared/check-secret-availability.sh chrome=CHROME_EXTENSION_ID firefox=FIREFOX_API_KEY edge=EDGE_PRODUCT_ID opera=OPERA_EMAIL safari=APPLE_CERTIFICATE
 
       - name: Upload artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
@@ -119,10 +167,19 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    # Pre-releases are skipped — a version in review blocks further submissions, and RCs shouldn't queue ahead of the real release.
+    permissions:
+      contents: read # To check out .github/scripts/ below.
+    # Pre-releases are skipped — a version in review blocks further submissions,
+    # and RCs should not queue ahead of the real release.
     if: ${{ !inputs.prerelease && needs.build.outputs.chrome == 'true' }}
-    # Also covers Vivaldi and Brave — both Chromium-based and use Chrome Web Store directly
+    # Also covers Vivaldi and Brave — both Chromium-based, both using the
+    # Chrome Web Store directly.
     steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          ref: ${{ inputs.tag }}
+          persist-credentials: false
+
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: extension-zip
@@ -131,95 +188,61 @@ jobs:
         id: token
         env:
           SA_JSON: ${{ secrets.CHROME_SERVICE_ACCOUNT_JSON }}
-        run: |
-          pip install google-auth requests -q
-          TOKEN=$(python3 -c "
-          import google.oauth2.service_account as sa, google.auth.transport.requests as req, json, os
-          creds = sa.Credentials.from_service_account_info(
-              json.loads(os.environ['SA_JSON']),
-              scopes=['https://www.googleapis.com/auth/chromewebstore'],
-          )
-          creds.refresh(req.Request())
-          print(creds.token)
-          ")
-          echo "::add-mask::$TOKEN"
-          echo "token=$TOKEN" >> "$GITHUB_OUTPUT"
+        run: .github/scripts/publish-extension/get-access-token-from-service-account.sh
 
       - name: Upload package
         env:
           EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
-          TOKEN:        ${{ steps.token.outputs.token }}
-        run: |
-          curl -sf -X PUT \
-            "https://www.googleapis.com/upload/chromewebstore/v1.1/items/$EXTENSION_ID" \
-            -H "Authorization: Bearer $TOKEN" \
-            -H "x-goog-api-version: 2" \
-            -T extension.zip
+          TOKEN: ${{ steps.token.outputs.token }}
+        run: .github/scripts/publish-extension/upload-package.sh
 
       - name: Publish submission
         env:
           EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
-          TOKEN:        ${{ steps.token.outputs.token }}
-        run: |
-          RESULT=$(curl -s -X POST \
-            "https://www.googleapis.com/chromewebstore/v1.1/items/$EXTENSION_ID/publish" \
-            -H "Authorization: Bearer $TOKEN" \
-            -H "x-goog-api-version: 2" \
-            -H "Content-Type: application/json" \
-            -d '{"target":"default"}')
-          STATUS=$(echo "$RESULT" | jq -r '.status[0] // ""')
-          ERROR=$(echo "$RESULT" | jq -r '.error.message // ""')
-          # ITEM_PENDING_REVIEW = submitted for review (normal for broad-permission extensions)
-          # "in review" error = previous submission still under review; new package uploaded as draft
-          if [ "$STATUS" = "OK" ] || [ "$STATUS" = "ITEM_PENDING_REVIEW" ] || \
-             echo "$ERROR" | grep -qi "in review"; then
-            echo "Submitted: $STATUS $ERROR"
-          else
-            echo "Publish failed: $RESULT"
-            exit 1
-          fi
+          TOKEN: ${{ steps.token.outputs.token }}
+        run: .github/scripts/publish-extension/publish-submission.sh
 
   publish-firefox:
     name: Publish → Firefox Add-ons (AMO)
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    # Pre-releases are skipped entirely — RC testers install extension.zip directly in Firefox Dev Edition.
+    permissions:
+      contents: write # To attach the signed XPI to the release.
+    # Pre-releases are skipped entirely — RC testers install extension.zip
+    # directly in Firefox Dev Edition.
     if: ${{ !inputs.prerelease && needs.build.outputs.firefox == 'true' }}
     steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          ref: ${{ inputs.tag }}
+          persist-credentials: false
+
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: extension-zip
 
       - name: Unzip extension
-        run: mkdir ext-src && cd ext-src && unzip ../extension.zip
+        run: .github/scripts/publish-extension/unzip-extension.sh
 
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version-file: .bun-version
 
       - name: Install web-ext
-        run: bun add -g web-ext
+        run: .github/scripts/publish-extension/install-web-ext.sh
 
-      - name: Sign & submit to AMO
+      - name: Sign and submit to AMO
         id: sign
-        run: |
-          # Always "listed" (appears publicly on addons.mozilla.org): the job's `if`
-          # above already excludes pre-releases, so the unlisted path was unreachable.
-          # RC testers install extension.zip directly in Firefox Dev Edition instead.
-          CHANNEL=listed
-          web-ext sign \
-            --source-dir ext-src \
-            --channel "$CHANNEL" \
-            --api-key "${{ secrets.FIREFOX_API_KEY }}" \
-            --api-secret "${{ secrets.FIREFOX_API_SECRET }}" \
-            --artifacts-dir /tmp/web-ext-artifacts
-          echo "channel=$CHANNEL" >> "$GITHUB_OUTPUT"
+        env:
+          API_KEY: ${{ secrets.FIREFOX_API_KEY }}
+          API_SECRET: ${{ secrets.FIREFOX_API_SECRET }}
+        run: .github/scripts/publish-extension/sign-and-submit-to-amo.sh
 
       - name: Attach XPI to release
-        run: |
-          XPI=$(find /tmp/web-ext-artifacts -name "*.xpi" -print -quit)
-          if [ -n "$XPI" ]; then
-            cp "$XPI" "shop-n-cook-${{ needs.build.outputs.version }}.xpi"
-          fi
+        env:
+          VERSION: ${{ needs.build.outputs.version }}
+        run: .github/scripts/publish-extension/attach-xpi-to-release.sh
 
       - name: Upload XPI artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
@@ -241,184 +264,159 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ inputs.tag }}
-        run: |
-          # Read the body off the release rather than github.event.release.body,
-          # which is empty when this workflow is called rather than triggered.
-          {
-            echo "body<<RELEASE_BODY_EOF"
-            gh release view "$TAG" --repo "${{ github.repository }}" --json body --jq .body
-            echo "RELEASE_BODY_EOF"
-          } >> "$GITHUB_OUTPUT"
+          REPOSITORY: ${{ github.repository }}
+        run: .github/scripts/shared/fetch-release-notes.sh
 
-      # Requires FIREFOX_EXTENSION_SLUG repository variable (Settings → Variables → Actions).
-      # Value: the slug or GUID of the add-on on addons.mozilla.org.
+      # Requires the FIREFOX_EXTENSION_SLUG repository variable (Settings →
+      # Variables → Actions): the slug or GUID of the add-on on AMO.
       - name: Set release notes on AMO
         if: vars.FIREFOX_EXTENSION_SLUG != ''
         env:
-          ADDON_SLUG:   ${{ vars.FIREFOX_EXTENSION_SLUG }}
-          API_KEY:      ${{ secrets.FIREFOX_API_KEY }}
-          API_SECRET:   ${{ secrets.FIREFOX_API_SECRET }}
-          VERSION:      ${{ needs.build.outputs.version }}
+          ADDON_SLUG: ${{ vars.FIREFOX_EXTENSION_SLUG }}
+          API_KEY: ${{ secrets.FIREFOX_API_KEY }}
+          API_SECRET: ${{ secrets.FIREFOX_API_SECRET }}
+          VERSION: ${{ needs.build.outputs.version }}
           RELEASE_BODY: ${{ steps.notes.outputs.body }}
-        run: |
-          JWT=$(python3 - <<'EOF'
-          import hmac, hashlib, base64, json, time, os
-          def b64url(data):
-              if isinstance(data, str): data = data.encode()
-              return base64.urlsafe_b64encode(data).rstrip(b'=').decode()
-          now = int(time.time())
-          hdr = b64url(json.dumps({"alg": "HS256", "typ": "JWT"}))
-          pld = b64url(json.dumps({"iss": os.environ["API_KEY"], "iat": now, "exp": now + 60}))
-          msg = f"{hdr}.{pld}"
-          sig = b64url(hmac.new(os.environ["API_SECRET"].encode(), msg.encode(), hashlib.sha256).digest())
-          print(f"{msg}.{sig}")
-          EOF
-          )
-          NOTES_JSON=$(python3 -c 'import json,os; print(json.dumps(os.environ["RELEASE_BODY"]))')
-          curl -sf -X PATCH \
-            "https://addons.mozilla.org/api/v5/addons/addon/${ADDON_SLUG}/versions/${VERSION}/" \
-            -H "Authorization: JWT $JWT" \
-            -H "Content-Type: application/json" \
-            -d "{\"release_notes\":{\"en-US\":${NOTES_JSON}}}"
+        run: .github/scripts/publish-extension/set-release-notes-on-amo.sh
 
   publish-edge:
     name: Publish → Edge Add-ons
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: read # To check out .github/scripts/ below.
     if: ${{ !inputs.prerelease && needs.build.outputs.edge == 'true' }}
     steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          ref: ${{ inputs.tag }}
+          persist-credentials: false
+
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: extension-zip
 
       - name: Get Azure AD access token
         id: token
-        run: |
-          TOKEN=$(curl -sf -X POST \
-            "https://login.microsoftonline.com/${{ secrets.EDGE_TENANT_ID }}/oauth2/v2.0/token" \
-            -d "client_id=${{ secrets.EDGE_CLIENT_ID }}" \
-            -d "client_secret=${{ secrets.EDGE_CLIENT_SECRET }}" \
-            -d "scope=https://api.addons.microsoftedge.microsoft.com/.default" \
-            -d "grant_type=client_credentials" \
-            | jq -r '.access_token')
-          echo "token=$TOKEN" >> "$GITHUB_OUTPUT"
+        env:
+          TENANT_ID: ${{ secrets.EDGE_TENANT_ID }}
+          CLIENT_ID: ${{ secrets.EDGE_CLIENT_ID }}
+          CLIENT_SECRET: ${{ secrets.EDGE_CLIENT_SECRET }}
+        run: .github/scripts/publish-extension/get-azure-ad-access-token.sh
 
-      - name: Upload package
-        run: |
-          curl -sf -X POST \
-            "https://api.addons.microsoftedge.microsoft.com/v1/products/${{ secrets.EDGE_PRODUCT_ID }}/submissions/draft/package" \
-            -H "Authorization: Bearer ${{ steps.token.outputs.token }}" \
-            -H "Content-Type: application/zip" \
-            --data-binary @extension.zip
+      - name: Upload package to Edge
+        env:
+          PRODUCT_ID: ${{ secrets.EDGE_PRODUCT_ID }}
+          TOKEN: ${{ steps.token.outputs.token }}
+        run: .github/scripts/publish-extension/upload-package-to-edge.sh
 
-      - name: Publish submission
-        run: |
-          curl -sf -X POST \
-            "https://api.addons.microsoftedge.microsoft.com/v1/products/${{ secrets.EDGE_PRODUCT_ID }}/submissions" \
-            -H "Authorization: Bearer ${{ steps.token.outputs.token }}"
+      - name: Publish Edge submission
+        env:
+          PRODUCT_ID: ${{ secrets.EDGE_PRODUCT_ID }}
+          TOKEN: ${{ steps.token.outputs.token }}
+        run: .github/scripts/publish-extension/publish-edge-submission.sh
 
   publish-opera:
     name: Publish → Opera Add-ons
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    # Opera has no staging channel — skip on pre-releases entirely.
+    permissions:
+      contents: read # To check out .github/scripts/ below.
+    # Opera has no staging channel — skipped on pre-releases entirely.
     if: ${{ !inputs.prerelease && needs.build.outputs.opera == 'true' }}
-    # Opera has no official REST API; automation uses Puppeteer via ext-opera-upload.
-    # reCAPTCHA Enterprise may block uploads — continue-on-error prevents failing the release.
+    # Opera has no official REST API; the uploader drives the partner site with
+    # Puppeteer, and reCAPTCHA Enterprise sometimes blocks it.
     steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          ref: ${{ inputs.tag }}
+          persist-credentials: false
+
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: extension-zip
 
-      - name: Install ext-opera-upload
-        run: npm install -g ext-opera-upload
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version-file: .bun-version
 
+      - name: Install ext-opera-upload
+        run: .github/scripts/publish-extension/install-ext-opera-upload.sh
+
+      # `continue-on-error` on the upload alone, not on the job: a reCAPTCHA
+      # block is the failure worth tolerating, and it used to swallow every
+      # other one with it — a bad zip, expired credentials, a renamed flag. The
+      # job still concludes as failure, so release.yml's table shows the Opera
+      # row red instead of reporting a publish that never happened.
       - name: Upload to Opera Add-ons
-        run: |
-          ext-opera-upload \
-            --email "${{ secrets.OPERA_EMAIL }}" \
-            --password "${{ secrets.OPERA_PASSWORD }}" \
-            --extension-id "${{ secrets.OPERA_EXTENSION_ID }}" \
-            --zip extension.zip
+        id: upload
         continue-on-error: true
+        env:
+          EMAIL: ${{ secrets.OPERA_EMAIL }}
+          PASSWORD: ${{ secrets.OPERA_PASSWORD }}
+          EXTENSION_ID: ${{ secrets.OPERA_EXTENSION_ID }}
+        run: .github/scripts/publish-extension/upload-to-opera-add-ons.sh
+
+      - name: Report the upload outcome
+        if: steps.upload.outcome == 'failure'
+        run: exit 1
 
   publish-safari:
     name: Publish → Safari (Mac App Store)
     needs: build
     runs-on: macos-latest
     timeout-minutes: 60
+    permissions:
+      contents: read # To check out the project the Xcode build needs.
     if: ${{ needs.build.outputs.safari == 'true' }}
-    # pre-release and full release follow the same upload path.
-    # Every build lands in TestFlight first; App Store review must be submitted manually
-    # from App Store Connect — there is no API to trigger it automatically.
+    # Pre-release and full release follow the same upload path. Every build
+    # lands in TestFlight first; App Store review has to be submitted by hand
+    # from App Store Connect, as there is no API to trigger it.
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           ref: ${{ inputs.tag }}
+          persist-credentials: false
 
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: extension-zip
 
       - name: Unzip extension
-        run: mkdir ext-src && cd ext-src && unzip ../extension.zip
+        run: .github/scripts/publish-extension/unzip-extension.sh
 
       - name: Convert to Xcode project
-        run: |
-          xcrun safari-web-extension-converter ext-src \
-            --app-name "ShopNCook" \
-            --bundle-identifier com.shopncook.extension \
-            --swift \
-            --no-open
+        run: .github/scripts/publish-extension/convert-to-xcode-project.sh
 
       - name: Import signing certificate
         env:
           CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-        run: |
-          echo "$CERTIFICATE" | base64 --decode > cert.p12
-          security create-keychain -p "" build.keychain
-          security import cert.p12 -k build.keychain -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign
-          security set-key-partition-list -S apple-tool:,apple: -s -k "" build.keychain
-          security default-keychain -s build.keychain
-          security unlock-keychain -p "" build.keychain
+        run: .github/scripts/publish-extension/import-signing-certificate.sh
 
       - name: Install provisioning profile
         env:
           PROVISIONING_PROFILE: ${{ secrets.APPLE_PROVISIONING_PROFILE }}
-        run: |
-          echo "$PROVISIONING_PROFILE" | base64 --decode > profile.mobileprovision
-          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          cp profile.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/
+        run: .github/scripts/publish-extension/install-provisioning-profile.sh
 
       - name: Archive
-        run: |
-          xcodebuild archive \
-            -project ShopNCook/ShopNCook.xcodeproj \
-            -scheme ShopNCook \
-            -archivePath build/ShopNCook.xcarchive \
-            -allowProvisioningUpdates \
-            DEVELOPMENT_TEAM="${{ secrets.APPLE_TEAM_ID }}"
+        env:
+          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: .github/scripts/publish-extension/archive.sh
 
       - name: Export archive
-        run: |
-          xcodebuild -exportArchive \
-            -archivePath build/ShopNCook.xcarchive \
-            -exportPath build/export \
-            -exportOptionsPlist ExportOptions.plist
+        run: .github/scripts/publish-extension/export-archive.sh
 
       - name: Set up App Store Connect API key
-        run: |
-          mkdir -p ~/.appstoreconnect/private_keys
-          echo "${{ secrets.APPLE_API_KEY_CONTENT }}" | base64 --decode \
-            > ~/.appstoreconnect/private_keys/AuthKey_${{ secrets.APPLE_API_KEY_ID }}.p8
+        env:
+          API_KEY_CONTENT: ${{ secrets.APPLE_API_KEY_CONTENT }}
+          API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+        run: .github/scripts/publish-extension/set-up-app-store-connect-api-key.sh
 
       - name: Upload to App Store Connect
-        run: |
-          xcrun altool --upload-app \
-            --type macos \
-            --file build/export/*.pkg \
-            --apiKey "${{ secrets.APPLE_API_KEY_ID }}" \
-            --apiIssuer "${{ secrets.APPLE_API_KEY_ISSUER_ID }}"
+        env:
+          API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          API_ISSUER_ID: ${{ secrets.APPLE_API_KEY_ISSUER_ID }}
+        run: .github/scripts/publish-extension/upload-to-app-store-connect.sh

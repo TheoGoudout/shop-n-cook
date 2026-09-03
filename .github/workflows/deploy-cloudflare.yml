@@ -19,6 +19,17 @@ on:
   push:
     branches:
       - master
+    # Only what the two Workers are actually built from. Without this every
+    # commit to master redeployed both of them — including docs-only commits and
+    # the `chore(release): x.y.z` bump release-prepare.yml pushes, which is a
+    # staging deploy nobody asked for in the middle of cutting a release.
+    paths:
+      - frontend/**
+      - landing/**
+      - package.json
+      - bun.lock
+      - .github/workflows/deploy-cloudflare.yml
+      - .github/scripts/deploy-cloudflare/**
   workflow_call:
     inputs:
       environment:
@@ -29,6 +40,12 @@ on:
         description: "Git ref to build from (defaults to the calling ref)"
         required: false
         type: string
+    secrets:
+      # Named rather than inherited.
+      CLOUDFLARE_API_TOKEN:
+        required: false
+      CLOUDFLARE_ACCOUNT_ID:
+        required: false
   workflow_dispatch:
     inputs:
       environment:
@@ -53,25 +70,22 @@ jobs:
     name: Resolve target environment
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: read # To check out .github/scripts/ below.
     outputs:
       environment: ${{ steps.resolve.outputs.environment }}
     steps:
-      - name: Resolve environment from trigger
+      # For .github/scripts/ only; nothing is built here.
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+
+      - name: Resolve target environment
         id: resolve
         env:
           # Set for both workflow_call and workflow_dispatch; empty on push.
           INPUT_ENVIRONMENT: ${{ inputs.environment }}
-        run: |
-          ENVIRONMENT="${INPUT_ENVIRONMENT:-staging}"
-          case "$ENVIRONMENT" in
-            staging|production) ;;
-            *)
-              echo "::error::Unknown environment '$ENVIRONMENT'."
-              exit 1
-              ;;
-          esac
-          echo "environment=$ENVIRONMENT" >> "$GITHUB_OUTPUT"
-          echo "Deploying to $ENVIRONMENT"
+        run: .github/scripts/deploy-cloudflare/resolve-target-environment.sh
 
   deploy:
     name: Deploy ${{ matrix.project }} (${{ needs.resolve-environment.outputs.environment }})
@@ -90,8 +104,9 @@ jobs:
           - frontend
           - landing
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
+          persist-credentials: false
           # A production deploy builds the released tag, not whatever master has
           # drifted to since.
           ref: ${{ inputs.ref || github.ref }}
@@ -112,3 +127,10 @@ jobs:
           workingDirectory: ${{ matrix.project }}
           packageManager: bun
           command: deploy --env ${{ needs.resolve-environment.outputs.environment }}
+
+      - name: Verify the deployed site
+        env:
+          PROJECT: ${{ matrix.project }}
+          ENVIRONMENT: ${{ needs.resolve-environment.outputs.environment }}
+          HAS_CLOUDFLARE: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
+        run: .github/scripts/deploy-cloudflare/verify-the-deployed-site.sh

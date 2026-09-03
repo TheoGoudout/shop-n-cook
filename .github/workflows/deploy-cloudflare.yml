@@ -19,6 +19,17 @@ on:
   push:
     branches:
       - master
+    # Only what the two Workers are actually built from. Without this every
+    # commit to master redeployed both of them — including docs-only commits and
+    # the `chore(release): x.y.z` bump release-prepare.yml pushes, which is a
+    # staging deploy nobody asked for in the middle of cutting a release.
+    paths:
+      - frontend/**
+      - landing/**
+      - package.json
+      - bun.lock
+      - .github/workflows/deploy-cloudflare.yml
+      - .github/scripts/deploy-cloudflare/**
   workflow_call:
     inputs:
       environment:
@@ -116,3 +127,10 @@ jobs:
           workingDirectory: ${{ matrix.project }}
           packageManager: bun
           command: deploy --env ${{ needs.resolve-environment.outputs.environment }}
+
+      - name: Verify the deployed site
+        env:
+          PROJECT: ${{ matrix.project }}
+          ENVIRONMENT: ${{ needs.resolve-environment.outputs.environment }}
+          HAS_CLOUDFLARE: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
+        run: .github/scripts/deploy-cloudflare/verify-the-deployed-site.sh

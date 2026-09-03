@@ -56,7 +56,9 @@ jobs:
     # the API it is about to be pointed back at.
     permissions:
       contents: read
-    uses: ./.github/workflows/deploy-cloudflare.yml
+    # `./`, not GitHub's newer `$/`: moving the release pipeline to a
+    # different reference syntax is a deliberate change, not a lint fix.
+    uses: ./.github/workflows/deploy-cloudflare.yml # zizmor: ignore[self-repository]
     with:
       environment: ${{ inputs.environment }}
       ref: ${{ inputs.tag }}
@@ -69,7 +71,9 @@ jobs:
     needs: cloudflare
     permissions:
       contents: read
-    uses: ./.github/workflows/deploy-coolify.yml
+    # `./`, not GitHub's newer `$/`: moving the release pipeline to a
+    # different reference syntax is a deliberate change, not a lint fix.
+    uses: ./.github/workflows/deploy-coolify.yml # zizmor: ignore[self-repository]
     with:
       environment: ${{ inputs.environment }}
       ref: ${{ inputs.tag }}

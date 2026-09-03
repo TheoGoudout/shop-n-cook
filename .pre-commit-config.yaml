@@ -98,7 +98,7 @@ repos:
       # reaches a branch. Configuration is shared — both read .github/zizmor.yml.
       - id: zizmor
         name: Audit GitHub Actions workflows with zizmor
-        entry: uvx zizmor --no-online-audits --min-confidence=medium
+        entry: uvx zizmor --no-online-audits --min-confidence=medium --min-severity=low
         language: system
         files: ^(\.github/(workflows/.*\.ya?ml|zizmor\.yml)|.*\.pre-commit-config\.yaml)$
         pass_filenames: false

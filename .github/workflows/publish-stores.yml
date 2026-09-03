@@ -109,21 +109,36 @@ concurrency:
   group: publish-stores-${{ inputs.tag }}
   cancel-in-progress: false
 
+env:
+  # `latest` resolves the newest msstore-cli release at run time, which is what
+  # this always did. Pin it to a tag (`v1.6.0`) to stop the tool that publishes
+  # to the Store changing under a release.
+  MSSTORE_CLI_VERSION: latest
+
 jobs:
   # ── Shared metadata ────────────────────────────────────────────────────────
   prepare:
+    name: Resolve tracks and available stores
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: read # To check out .github/scripts/ below.
     outputs:
-      version:       ${{ inputs.version }}
-      release_name:  ${{ steps.release.outputs.name }}
+      version: ${{ inputs.version }}
+      release_name: ${{ steps.release.outputs.name }}
       android_track: ${{ steps.track.outputs.android_track }}
-      ios_lane:      ${{ steps.track.outputs.ios_lane }}
-      windows_beta:  ${{ steps.track.outputs.windows_beta }}
-      has_android:   ${{ steps.check.outputs.has_android }}
-      has_ios:       ${{ steps.check.outputs.has_ios }}
-      has_windows:   ${{ steps.check.outputs.has_windows }}
+      ios_lane: ${{ steps.track.outputs.ios_lane }}
+      windows_beta: ${{ steps.track.outputs.windows_beta }}
+      has_android: ${{ steps.check.outputs.has_android }}
+      has_ios: ${{ steps.check.outputs.has_ios }}
+      has_windows: ${{ steps.check.outputs.has_windows }}
     steps:
+      # For .github/scripts/ only; nothing is built here.
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          ref: ${{ inputs.tag }}
+          persist-credentials: false
+
       # The Android versionCode used to be derived here and sed-injected into
       # build.gradle at build time. scripts/set-version.mjs now commits it, so
       # the formula lives in exactly one place and the repo tells the truth.
@@ -132,116 +147,81 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ inputs.tag }}
-        run: |
-          set -euo pipefail
-          NAME=$(gh release view "$TAG" --repo "${{ github.repository }}" --json name --jq '.name // ""')
-          echo "name=${NAME:-$TAG}" >> "$GITHUB_OUTPUT"
+          REPOSITORY: ${{ github.repository }}
+        run: .github/scripts/publish-stores/resolve-release-metadata.sh
 
       - name: Resolve store tracks
         id: track
-        run: |
-          if [ "${{ inputs.prerelease }}" = "true" ]; then
-            echo "android_track=internal"   >> "$GITHUB_OUTPUT"
-            echo "ios_lane=beta"            >> "$GITHUB_OUTPUT"
-            echo "windows_beta=true"        >> "$GITHUB_OUTPUT"
-          else
-            echo "android_track=alpha"      >> "$GITHUB_OUTPUT"
-            echo "ios_lane=release"         >> "$GITHUB_OUTPUT"
-            echo "windows_beta=false"       >> "$GITHUB_OUTPUT"
-          fi
+        env:
+          PRERELEASE: ${{ inputs.prerelease }}
+        run: .github/scripts/publish-stores/resolve-store-tracks.sh
 
       - name: Check secret availability
         id: check
         env:
-          ANDROID_KEYSTORE_BASE64:          ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
-          APPLE_CERTIFICATE_BASE64:         ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
-          WINDOWS_CERTIFICATE_BASE64:       ${{ secrets.WINDOWS_CERTIFICATE_BASE64 }}
-        run: |
-          echo "has_android=$([ -n "$ANDROID_KEYSTORE_BASE64" ] && [ -n "$GOOGLE_PLAY_SERVICE_ACCOUNT_JSON" ] && echo true || echo false)" >> $GITHUB_OUTPUT
-          echo "has_ios=$([ -n "$APPLE_CERTIFICATE_BASE64" ] && echo true || echo false)" >> $GITHUB_OUTPUT
-          echo "has_windows=$([ -n "$WINDOWS_CERTIFICATE_BASE64" ] && echo true || echo false)" >> $GITHUB_OUTPUT
+          APPLE_CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
+          WINDOWS_CERTIFICATE_BASE64: ${{ secrets.WINDOWS_CERTIFICATE_BASE64 }}
+        # Names only: the values are read from the environment above, never
+        # passed as arguments. Android needs both of its secrets, so its entry
+        # names the pair.
+        run: .github/scripts/shared/check-secret-availability.sh has_android=ANDROID_KEYSTORE_BASE64+GOOGLE_PLAY_SERVICE_ACCOUNT_JSON has_ios=APPLE_CERTIFICATE_BASE64 has_windows=WINDOWS_CERTIFICATE_BASE64
 
   # ── Android ────────────────────────────────────────────────────────────────
   android:
+    name: Publish → Google Play (${{ needs.prepare.outputs.android_track }})
     needs: prepare
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: write # To attach the APK and AAB to the release.
     if: needs.prepare.outputs.has_android == 'true'
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         with:
           ref: ${{ inputs.tag }}
+          persist-credentials: false
 
       - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
         with:
           java-version: '17'
           distribution: 'temurin'
+          cache: gradle
 
       - name: Decode keystore
-        run: |
-          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" \
-            | tr -d '[:space:]' | base64 -d > mobile/android/android.keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: .github/scripts/publish-stores/decode-keystore.sh
 
       - name: Convert keystore to legacy PKCS12
-        working-directory: mobile/android
         env:
           STORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-        run: |
-          # bundletool ships its own Bouncy Castle that chokes on newer AES-256 PKCS12 files;
-          # re-key to the legacy 3DES format that all BC versions can read.
-          keytool -importkeystore \
-            -srckeystore android.keystore \
-            -srcstoretype PKCS12 \
-            -srcstorepass "$STORE_PASS" \
-            -destkeystore android-legacy.keystore \
-            -deststoretype PKCS12 \
-            -deststorepass "$STORE_PASS" \
-            -noprompt \
-            -J-Dkeystore.pkcs12.legacy
-          mv android-legacy.keystore android.keystore
+        run: .github/scripts/publish-stores/convert-keystore-to-legacy-pkcs12.sh
 
       - name: Verify the checked-out version matches the release
-        working-directory: mobile/android/app
         env:
           VERSION: ${{ inputs.version }}
-        run: |
-          set -euo pipefail
-          ACTUAL=$(grep -oP '(?<=versionName ")[^"]*' build.gradle)
-          if [ "$ACTUAL" != "$VERSION" ]; then
-            echo "::error::build.gradle says versionName $ACTUAL but the release is $VERSION."
-            exit 1
-          fi
-          echo "build.gradle is at $ACTUAL (versionCode $(grep -oP '(?<=versionCode )\d+' build.gradle))."
+        run: .github/scripts/publish-stores/verify-the-checked-out-version-matches-the-release.sh
 
       - name: Build signed AAB
-        working-directory: mobile/android
-        run: |
-          chmod +x gradlew
-          ./gradlew bundleRelease \
-            -Pandroid.injected.signing.store.file="$(pwd)/android.keystore" \
-            -Pandroid.injected.signing.store.type=PKCS12 \
-            -Pandroid.injected.signing.store.password="${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" \
-            -Pandroid.injected.signing.key.alias="${{ vars.ANDROID_KEY_ALIAS }}" \
-            -Pandroid.injected.signing.key.password="${{ secrets.ANDROID_KEY_PASSWORD }}"
+        env:
+          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ vars.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: .github/scripts/publish-stores/build-signed-aab.sh
 
       - name: Build signed APK
-        working-directory: mobile/android
-        run: |
-          ./gradlew assembleRelease \
-            -Pandroid.injected.signing.store.file="$(pwd)/android.keystore" \
-            -Pandroid.injected.signing.store.type=PKCS12 \
-            -Pandroid.injected.signing.store.password="${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" \
-            -Pandroid.injected.signing.key.alias="${{ vars.ANDROID_KEY_ALIAS }}" \
-            -Pandroid.injected.signing.key.password="${{ secrets.ANDROID_KEY_PASSWORD }}"
+        env:
+          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ vars.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: .github/scripts/publish-stores/build-signed-apk.sh
 
       - name: Rename release artifacts
-        run: |
-          VERSION="${{ needs.prepare.outputs.version }}"
-          cp mobile/android/app/build/outputs/bundle/release/app-release.aab \
-             "shop-n-cook-${VERSION}.aab"
-          cp mobile/android/app/build/outputs/apk/release/app-release.apk \
-             "shop-n-cook-${VERSION}.apk"
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: .github/scripts/publish-stores/rename-release-artifacts.sh
 
       - name: Upload AAB artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
@@ -269,13 +249,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ inputs.tag }}
-        run: |
-          set -euo pipefail
-          mkdir -p whats-new
-          # Read from the release rather than github.event.release.body, which is
-          # empty when this workflow is called rather than triggered directly.
-          gh release view "$TAG" --repo "${{ github.repository }}" --json body --jq .body \
-            > whats-new/whatsnew-en-US
+          REPOSITORY: ${{ github.repository }}
+        run: .github/scripts/publish-stores/write-release-notes.sh
 
       - name: Upload to Google Play (${{ needs.prepare.outputs.android_track }})
         uses: r0adkll/upload-google-play@e738b9dd8f2476ea806d921b64aacd24f34515a5 # v1
@@ -290,14 +265,18 @@ jobs:
 
   # ── iOS ────────────────────────────────────────────────────────────────────
   ios:
+    name: Publish → App Store (${{ needs.prepare.outputs.ios_lane }})
     needs: prepare
     runs-on: macos-latest
     timeout-minutes: 60
+    permissions:
+      contents: read # To check out the project Fastlane builds.
     if: needs.prepare.outputs.has_ios == 'true'
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         with:
           ref: ${{ inputs.tag }}
+          persist-credentials: false
 
       - uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1
         with:
@@ -309,121 +288,87 @@ jobs:
         env:
           CERT_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
           CERT_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          KEYCHAIN_PASSWORD: tmp-${{ github.run_id }}
-        run: |
-          KEYCHAIN="$RUNNER_TEMP/build.keychain"
-          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
-          security set-keychain-settings -lut 21600 "$KEYCHAIN"
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
-          echo "$CERT_BASE64" | base64 -d > "$RUNNER_TEMP/cert.p12"
-          security import "$RUNNER_TEMP/cert.p12" \
-            -P "$CERT_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN"
-          security set-key-partition-list \
-            -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
-          security list-keychains -d user -s "$KEYCHAIN" \
-            "$(security list-keychains -d user | head -1 | tr -d '"')"
+        run: .github/scripts/publish-stores/import-distribution-certificate.sh
 
       - name: Install provisioning profile
-        run: |
-          PP_PATH="$RUNNER_TEMP/profile.mobileprovision"
-          echo "${{ secrets.APPLE_PROVISIONING_PROFILE_BASE64 }}" \
-            | base64 -d > "$PP_PATH"
-          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          cp "$PP_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/
+        env:
+          PROVISIONING_PROFILE_BASE64: ${{ secrets.APPLE_PROVISIONING_PROFILE_BASE64 }}
+        run: .github/scripts/publish-stores/install-provisioning-profile.sh
 
       - name: Fetch release notes
         id: notes
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ inputs.tag }}
-        run: |
-          set -euo pipefail
-          {
-            echo "body<<RELEASE_BODY_EOF"
-            gh release view "$TAG" --repo "${{ github.repository }}" --json body --jq .body
-            echo "RELEASE_BODY_EOF"
-          } >> "$GITHUB_OUTPUT"
+          REPOSITORY: ${{ github.repository }}
+        run: .github/scripts/shared/fetch-release-notes.sh
 
       - name: Build and upload via Fastlane (${{ needs.prepare.outputs.ios_lane }})
         working-directory: mobile/ios
         env:
-          APP_STORE_CONNECT_API_KEY_ID:        ${{ secrets.APPLE_API_KEY_ID }}
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
           APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APPLE_API_KEY_ISSUER }}
-          APP_STORE_CONNECT_API_KEY_CONTENT:   ${{ secrets.APPLE_API_KEY_BASE64 }}
-          BUNDLE_ID:                           ${{ vars.IOS_BUNDLE_ID }}
-          TEAM_ID:                             ${{ vars.IOS_TEAM_ID }}
-          RELEASE_NOTES:                       ${{ steps.notes.outputs.body }}
-        run: bundle exec fastlane ${{ needs.prepare.outputs.ios_lane }}
+          APP_STORE_CONNECT_API_KEY_CONTENT: ${{ secrets.APPLE_API_KEY_BASE64 }}
+          BUNDLE_ID: ${{ vars.IOS_BUNDLE_ID }}
+          TEAM_ID: ${{ vars.IOS_TEAM_ID }}
+          RELEASE_NOTES: ${{ steps.notes.outputs.body }}
+          LANE: ${{ needs.prepare.outputs.ios_lane }}
+        run: bundle exec fastlane "$LANE"
 
   # ── Windows ────────────────────────────────────────────────────────────────
   windows:
+    name: Publish → Microsoft Store
     needs: prepare
     runs-on: windows-latest
     timeout-minutes: 60
+    permissions:
+      contents: write # To attach the MSIX to the release.
     if: needs.prepare.outputs.has_windows == 'true'
+    # PowerShell, so these scripts are .ps1 rather than .sh — see
+    # .github/scripts/README.md. Everything else about them is the same: named
+    # after their step, values through env, comments alongside the code.
+    defaults:
+      run:
+        shell: pwsh
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         with:
           ref: ${{ inputs.tag }}
+          persist-credentials: false
 
       - name: Install Microsoft Store CLI
-        shell: pwsh
-        run: |
-          $release = Invoke-RestMethod "https://api.github.com/repos/microsoft/msstore-cli/releases/latest"
-          $url = ($release.assets | Where-Object { $_.name -match 'win-x64' -and $_.name -match '\.zip$' }).browser_download_url
-          Invoke-WebRequest -Uri $url -OutFile "$env:RUNNER_TEMP\msstore.zip"
-          Expand-Archive -Path "$env:RUNNER_TEMP\msstore.zip" -DestinationPath "$env:RUNNER_TEMP\msstore"
-          Add-Content -Path $env:GITHUB_PATH -Value "$env:RUNNER_TEMP\msstore"
+        env:
+          MSSTORE_CLI_VERSION: ${{ env.MSSTORE_CLI_VERSION }}
+        run: .github/scripts/publish-stores/install-microsoft-store-cli.ps1
 
       - name: Package MSIX
-        shell: pwsh
-        run: |
-          $makeAppx = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin" `
-            -Recurse -Filter "makeappx.exe" |
-            Sort-Object FullName -Descending |
-            Select-Object -First 1 -ExpandProperty FullName
-          & $makeAppx pack /d windows /p "$env:RUNNER_TEMP\ShopNCook.msix" /nv
+        run: .github/scripts/publish-stores/package-msix.ps1
 
       - name: Sign MSIX
-        shell: pwsh
         env:
           CERT_BASE64: ${{ secrets.WINDOWS_CERTIFICATE_BASE64 }}
           CERT_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
-        run: |
-          $certPath = "$env:RUNNER_TEMP\cert.pfx"
-          [IO.File]::WriteAllBytes($certPath, [Convert]::FromBase64String($env:CERT_BASE64))
-          $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin" `
-            -Recurse -Filter "signtool.exe" |
-            Sort-Object FullName -Descending |
-            Select-Object -First 1 -ExpandProperty FullName
-          & $signtool sign /fd SHA256 /p $env:CERT_PASSWORD /f $certPath `
-            "$env:RUNNER_TEMP\ShopNCook.msix"
+        run: .github/scripts/publish-stores/sign-msix.ps1
 
       - name: Authenticate Store CLI
-        shell: pwsh
-        run: |
-          msstore reconfigure `
-            --tenantId     "${{ secrets.AZURE_TENANT_ID }}" `
-            --sellerId     "${{ secrets.AZURE_SELLER_ID }}" `
-            --clientId     "${{ secrets.AZURE_CLIENT_ID }}" `
-            --clientSecret "${{ secrets.AZURE_CLIENT_SECRET }}"
+        env:
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_SELLER_ID: ${{ secrets.AZURE_SELLER_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+        run: .github/scripts/publish-stores/authenticate-store-cli.ps1
 
       - name: Publish to Windows Store
-        shell: pwsh
-        run: |
-          $msix      = "$env:RUNNER_TEMP\ShopNCook.msix"
-          $productId = "${{ vars.WINDOWS_PRODUCT_ID }}"
-          if ("${{ needs.prepare.outputs.windows_beta }}" -eq "true") {
-            msstore publish -i $msix --id $productId --flightId "${{ vars.WINDOWS_FLIGHT_ID }}"
-          } else {
-            msstore publish -i $msix --id $productId
-          }
+        env:
+          PRODUCT_ID: ${{ vars.WINDOWS_PRODUCT_ID }}
+          FLIGHT_ID: ${{ vars.WINDOWS_FLIGHT_ID }}
+          WINDOWS_BETA: ${{ needs.prepare.outputs.windows_beta }}
+        run: .github/scripts/publish-stores/publish-to-windows-store.ps1
 
       - name: Rename MSIX for release
-        shell: pwsh
-        run: |
-          Copy-Item "$env:RUNNER_TEMP\ShopNCook.msix" `
-            "shop-n-cook-${{ needs.prepare.outputs.version }}.msix"
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: .github/scripts/publish-stores/rename-msix-for-release.ps1
 
       - name: Upload MSIX artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7

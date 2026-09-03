@@ -44,6 +44,41 @@ export function parseVersion(version) {
 }
 
 /**
+ * The version a bump leads to, from the current one.
+ *
+ * This used to be a `bun -e '...'` program embedded in release-prepare.yml,
+ * with its own copy of the semver regex and its own idea of what "patch" means
+ * on a release candidate. Two definitions of the version format is one too
+ * many: `parseVersion` above is the one the nine version files are written
+ * from, so it should also be the one the next version is computed with.
+ */
+export function nextVersion(current, bump, explicit = "") {
+  if (bump === "explicit") {
+    if (!explicit) throw new Error("bump = explicit requires the version input")
+    // Validated, not just stripped: an unparseable --version input would
+    // otherwise reach the tag and the nine version files unchallenged.
+    return parseVersion(explicit.replace(/^v/, "")).version
+  }
+
+  const { major, minor, patch, rc } = parseVersion(current)
+  switch (bump) {
+    case "major":
+      return `${major + 1}.0.0`
+    case "minor":
+      return `${major}.${minor + 1}.0`
+    // Bumping patch off a release candidate promotes it: 1.5.0-rc2 -> 1.5.0
+    case "patch":
+      return rc === null ? `${major}.${minor}.${patch + 1}` : `${major}.${minor}.${patch}`
+    case "rc":
+      return rc === null
+        ? `${major}.${minor}.${patch + 1}-rc1`
+        : `${major}.${minor}.${patch}-rc${rc + 1}`
+    default:
+      throw new Error(`unknown bump ${bump}`)
+  }
+}
+
+/**
  * Android versionCode. Must increase monotonically across every build ever
  * uploaded, and a stable release must outrank all of its own release candidates.
  *
@@ -282,7 +317,9 @@ function main() {
 
   if (!arg) {
     console.error(
-      "usage: set-version.mjs <version> | --check | --print | --is-newer <version>",
+      "usage: set-version.mjs <version> | --check | --print" +
+        " | --is-newer <version> | --validate <version>" +
+        " | --next <patch|minor|major|rc|explicit> [version]",
     )
     process.exit(2)
   }
@@ -292,6 +329,16 @@ function main() {
   }
   if (arg === "--check") {
     check()
+    return
+  }
+  if (arg === "--validate") {
+    // Exits non-zero on anything parseVersion rejects. The shell callers used
+    // to each carry their own `grep -qP '^\d+\.\d+\.\d+(-rc\d+)?$'`.
+    console.log(parseVersion(process.argv[3] ?? "").version)
+    return
+  }
+  if (arg === "--next") {
+    console.log(nextVersion(currentVersion(), process.argv[3] ?? "", process.argv[4] ?? ""))
     return
   }
   if (arg === "--is-newer") {

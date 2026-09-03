@@ -57,43 +57,30 @@ jobs:
       run_cloudflare: ${{ steps.targets.outputs.cloudflare }}
       run_coolify: ${{ steps.targets.outputs.coolify }}
     steps:
+      # The steps below run scripts from .github/scripts/, and one of them calls
+      # scripts/set-version.mjs, so this job needs the tree even though it
+      # builds nothing from it.
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          persist-credentials: false
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version-file: .bun-version
+
       - name: Resolve tag, version and pre-release flag
         id: release
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.event.release.tag_name || inputs.tag }}
-        run: |
-          set -euo pipefail
-
-          # On workflow_dispatch the release payload is absent, so read the
-          # pre-release flag back from the release itself rather than guessing.
-          PRERELEASE=$(gh release view "$TAG" \
-            --repo "${{ github.repository }}" --json isPrerelease --jq .isPrerelease)
-
-          VERSION="${TAG#v}"
-          if ! echo "$VERSION" | grep -qP '^\d+\.\d+\.\d+(-rc\d+)?$'; then
-            echo "::error::Tag $TAG does not carry a version of the form X.Y.Z or X.Y.Z-rcN."
-            exit 1
-          fi
-
-          echo "tag=$TAG"               >> "$GITHUB_OUTPUT"
-          echo "version=$VERSION"       >> "$GITHUB_OUTPUT"
-          echo "prerelease=$PRERELEASE" >> "$GITHUB_OUTPUT"
-
-          echo "Releasing $TAG (version $VERSION, prerelease=$PRERELEASE)."
+          REPOSITORY: ${{ github.repository }}
+        run: .github/scripts/release/resolve-tag-version-and-pre-release-flag.sh
 
       - name: Resolve targets
         id: targets
         env:
           TARGETS: ${{ inputs.targets || 'all' }}
-        run: |
-          for target in extension stores cloudflare coolify; do
-            if [ "$TARGETS" = "all" ] || [ "$TARGETS" = "$target" ]; then
-              echo "$target=true"  >> "$GITHUB_OUTPUT"
-            else
-              echo "$target=false" >> "$GITHUB_OUTPUT"
-            fi
-          done
+        run: .github/scripts/release/resolve-targets.sh
 
   extension:
     name: Browser extensions
@@ -174,27 +161,28 @@ jobs:
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: read # To check out .github/scripts/ below.
     steps:
+      # The steps below run scripts from .github/scripts/, so this job needs the
+      # repository even though it builds nothing from it.
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          persist-credentials: false
+
       - name: Report
         env:
           TAG: ${{ needs.resolve.outputs.tag }}
-        run: |
-          {
-            echo "## Release $TAG"
-            echo
-            echo "| Target | Result |"
-            echo "| --- | --- |"
-            echo "| Browser extensions | ${{ needs.extension.result }} |"
-            echo "| App stores | ${{ needs.stores.result }} |"
-            echo "| Coolify production (backend) | ${{ needs.coolify.result }} |"
-            echo "| Cloudflare production | ${{ needs.cloudflare.result }} |"
-          } >> "$GITHUB_STEP_SUMMARY"
+          EXTENSION_RESULT: ${{ needs.extension.result }}
+          STORES_RESULT: ${{ needs.stores.result }}
+          COOLIFY_RESULT: ${{ needs.coolify.result }}
+          CLOUDFLARE_RESULT: ${{ needs.cloudflare.result }}
+        run: .github/scripts/release/report.sh
 
       - name: Fail if any target failed
-        if: >-
-          contains(needs.*.result, 'failure') ||
-          contains(needs.*.result, 'cancelled')
-        run: |
-          echo "::error::At least one release target failed. Re-run failed jobs" \
-               "to retry only those, or use the workflow_dispatch 'targets' input."
-          exit 1
+        env:
+          EXTENSION_RESULT: ${{ needs.extension.result }}
+          STORES_RESULT: ${{ needs.stores.result }}
+          COOLIFY_RESULT: ${{ needs.coolify.result }}
+          CLOUDFLARE_RESULT: ${{ needs.cloudflare.result }}
+        run: .github/scripts/release/fail-if-any-target-failed.sh

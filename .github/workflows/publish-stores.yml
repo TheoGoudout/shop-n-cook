@@ -173,7 +173,7 @@ jobs:
       has_windows: ${{ steps.check.outputs.has_windows }}
     steps:
       # For .github/scripts/ only; nothing is built here.
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           ref: ${{ inputs.tag }}
           persist-credentials: false
@@ -217,7 +217,7 @@ jobs:
       contents: write # To attach the APK and AAB to the release.
     if: needs.prepare.outputs.has_android == 'true'
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           ref: ${{ inputs.tag }}
           persist-credentials: false
@@ -312,7 +312,7 @@ jobs:
       contents: read # To check out the project Fastlane builds.
     if: needs.prepare.outputs.has_ios == 'true'
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           ref: ${{ inputs.tag }}
           persist-credentials: false
@@ -370,7 +370,7 @@ jobs:
       run:
         shell: pwsh
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           ref: ${{ inputs.tag }}
           persist-credentials: false

@@ -105,7 +105,7 @@ jobs:
       opera: ${{ steps.check.outputs.opera }}
       safari: ${{ steps.check.outputs.safari }}
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           ref: ${{ inputs.tag }}
           persist-credentials: false
@@ -175,7 +175,7 @@ jobs:
     # Also covers Vivaldi and Brave — both Chromium-based, both using the
     # Chrome Web Store directly.
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           ref: ${{ inputs.tag }}
           persist-credentials: false
@@ -213,7 +213,7 @@ jobs:
     # directly in Firefox Dev Edition.
     if: ${{ !inputs.prerelease && needs.build.outputs.firefox == 'true' }}
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           ref: ${{ inputs.tag }}
           persist-credentials: false
@@ -288,7 +288,7 @@ jobs:
       contents: read # To check out .github/scripts/ below.
     if: ${{ !inputs.prerelease && needs.build.outputs.edge == 'true' }}
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           ref: ${{ inputs.tag }}
           persist-credentials: false
@@ -329,7 +329,7 @@ jobs:
     # Opera has no official REST API; the uploader drives the partner site with
     # Puppeteer, and reCAPTCHA Enterprise sometimes blocks it.
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           ref: ${{ inputs.tag }}
           persist-credentials: false
@@ -375,7 +375,7 @@ jobs:
     # lands in TestFlight first; App Store review has to be submitted by hand
     # from App Store Connect, as there is no API to trigger it.
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           ref: ${{ inputs.tag }}
           persist-credentials: false

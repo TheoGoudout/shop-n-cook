@@ -67,6 +67,13 @@ jobs:
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
           bun-version-file: .bun-version
+          # No cache. This job installs nothing — it runs set-version.mjs, which
+          # is dependency-free — so there is nothing for a restored cache to
+          # speed up, and this workflow is privileged: it is triggered by a
+          # published release and its called workflows hold every store
+          # credential. A cache entry poisoned by a less-privileged workflow has
+          # no business being restored here. (zizmor: cache-poisoning)
+          no-cache: true
 
       - name: Resolve tag, version and pre-release flag
         id: release

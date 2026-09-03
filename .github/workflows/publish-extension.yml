@@ -23,6 +23,50 @@ on:
         description: "Whether this is a pre-release"
         required: true
         type: boolean
+    secrets:
+      # The store credentials this workflow actually uses, named rather than
+      # inherited. `secrets: inherit` would hand a workflow that talks to five
+      # third-party stores every secret the repository holds — the Coolify API
+      # token, the Cloudflare token, the release PAT — for the eighteen below.
+      #
+      # None is required: a missing one skips that store's job rather than
+      # failing the release, which is what the build job's secret check is for.
+      CHROME_EXTENSION_ID:
+        required: false
+      CHROME_SERVICE_ACCOUNT_JSON:
+        required: false
+      FIREFOX_API_KEY:
+        required: false
+      FIREFOX_API_SECRET:
+        required: false
+      EDGE_TENANT_ID:
+        required: false
+      EDGE_CLIENT_ID:
+        required: false
+      EDGE_CLIENT_SECRET:
+        required: false
+      EDGE_PRODUCT_ID:
+        required: false
+      OPERA_EMAIL:
+        required: false
+      OPERA_PASSWORD:
+        required: false
+      OPERA_EXTENSION_ID:
+        required: false
+      APPLE_CERTIFICATE:
+        required: false
+      APPLE_CERTIFICATE_PASSWORD:
+        required: false
+      APPLE_PROVISIONING_PROFILE:
+        required: false
+      APPLE_TEAM_ID:
+        required: false
+      APPLE_API_KEY_CONTENT:
+        required: false
+      APPLE_API_KEY_ID:
+        required: false
+      APPLE_API_KEY_ISSUER_ID:
+        required: false
   workflow_dispatch:
     inputs:
       tag:

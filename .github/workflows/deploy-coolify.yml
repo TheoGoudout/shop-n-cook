@@ -29,6 +29,16 @@ on:
         required: false
         default: false
         type: boolean
+    secrets:
+      # Named rather than inherited. All three are required — the deploy job's
+      # first step fails the run when any is missing, because a backend that
+      # silently did not deploy is a frontend talking to the wrong API.
+      COOLIFY_URL:
+        required: false
+      COOLIFY_API_TOKEN:
+        required: false
+      COOLIFY_APP_UUID:
+        required: false
   workflow_dispatch:
     inputs:
       environment:

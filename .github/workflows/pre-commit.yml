@@ -10,6 +10,8 @@ env:
   # Forks and Dependabot don't have access to secrets
   HAS_SECRETS: ${{ secrets.PRE_COMMIT != '' }}
 
+permissions: {}
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -36,12 +38,19 @@ jobs:
           # And it needs the full history to be able to compute diffs
           fetch-depth: 0
           # A token other than the default GITHUB_TOKEN is needed to be able to trigger CI
-          token: ${{ secrets.PRE_COMMIT }}
+          token: ${{ secrets.PRE_COMMIT }} # zizmor: ignore[secrets-outside-env]
+          # Load-bearing: commit-and-push-changes.sh pushes the autofix commit
+          # through the credential helper this checkout installs. The token is
+          # PRE_COMMIT rather than GITHUB_TOKEN, and this job uploads no
+          # artifacts, so there is nothing for the persisted credential to be
+          # packed into.
+          persist-credentials: true # zizmor: ignore[artipacked] -- required for `git push`; see above
       # pre-commit lite ci needs the default checkout configs to work
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         name: Checkout PR for fork
         if: env.HAS_SECRETS == 'false'
         with:
+          persist-credentials: false
         # To be able to commit it needs the head branch of the PR, the remote one
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
@@ -88,6 +97,7 @@ jobs:
     needs:
       - pre-commit
     runs-on: ubuntu-latest
+    permissions: {} # Reads `needs`; touches nothing.
     timeout-minutes: 10
     steps:
       - name: Dump GitHub context

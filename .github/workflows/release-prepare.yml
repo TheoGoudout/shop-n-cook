@@ -61,7 +61,12 @@ jobs:
           fetch-tags: true
           # A token other than the default GITHUB_TOKEN is needed so the bump
           # commit actually triggers CI (same reason as pre-commit.yml).
-          token: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }} # zizmor: ignore[secrets-outside-env]
+          # Load-bearing: commit-the-bump-to-master.sh pushes through the
+          # credential helper this checkout installs. This job uploads no
+          # artifacts, so there is nothing for the persisted credential to be
+          # packed into.
+          persist-credentials: true # zizmor: ignore[artipacked] -- required for `git push`; see above
 
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:

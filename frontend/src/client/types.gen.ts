@@ -27,6 +27,17 @@ export type DeduplicateResponse = {
 
 export type Difficulty = 'easy' | 'medium' | 'hard';
 
+/**
+ * Which ingredients to price, and in what currency.
+ *
+ * An empty ``ingredient_ids`` means "everything without a curated price",
+ * which is the common case after a bulk import.
+ */
+export type EstimatePricesRequest = {
+    ingredient_ids?: Array<(string)>;
+    currency?: string;
+};
+
 export type HTTPValidationError = {
     detail?: Array<ValidationError>;
 };
@@ -447,6 +458,19 @@ export type IngredientsDeduplicateIngredientsData = {
 };
 
 export type IngredientsDeduplicateIngredientsResponse = (DeduplicateResponse);
+
+export type IngredientsEstimateIngredientPriceRouteData = {
+    currency?: string;
+    id: string;
+};
+
+export type IngredientsEstimateIngredientPriceRouteResponse = (IngredientPublic);
+
+export type IngredientsEstimateIngredientPricesRouteData = {
+    requestBody: EstimatePricesRequest;
+};
+
+export type IngredientsEstimateIngredientPricesRouteResponse = (Message);
 
 export type IngredientsFetchIngredientImageData = {
     id: string;

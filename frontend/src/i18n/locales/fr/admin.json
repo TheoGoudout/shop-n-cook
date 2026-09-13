@@ -76,6 +76,8 @@
     "density_hint": "Permet d'appliquer un prix au poids à des recettes mesurées en volume.",
     "piece_weight": "Poids par pièce (g)",
     "piece_weight_hint": "Permet d'appliquer un prix au poids à des unités comptées comme les gousses.",
-    "optional": "Facultatif"
+    "optional": "Facultatif",
+    "estimate_prices": "Estimer les prix",
+    "price_estimated": "Estimé par IA — modifiez pour confirmer"
   }
 }

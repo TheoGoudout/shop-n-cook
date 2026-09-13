@@ -132,6 +132,31 @@ export const DifficultySchema = {
     title: 'Difficulty'
 } as const;
 
+export const EstimatePricesRequestSchema = {
+    properties: {
+        ingredient_ids: {
+            items: {
+                type: 'string',
+                format: 'uuid'
+            },
+            type: 'array',
+            title: 'Ingredient Ids',
+            default: []
+        },
+        currency: {
+            type: 'string',
+            title: 'Currency',
+            default: 'EUR'
+        }
+    },
+    type: 'object',
+    title: 'EstimatePricesRequest',
+    description: `Which ingredients to price, and in what currency.
+
+An empty \`\`ingredient_ids\`\` means "everything without a curated price",
+which is the common case after a bulk import.`
+} as const;
+
 export const HTTPValidationErrorSchema = {
     properties: {
         detail: {

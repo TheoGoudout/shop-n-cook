@@ -76,6 +76,8 @@
     "density_hint": "Lets a price per weight cover recipes measured by volume.",
     "piece_weight": "Weight per piece (g)",
     "piece_weight_hint": "Lets a price per weight cover counted units like cloves.",
-    "optional": "Optional"
+    "optional": "Optional",
+    "estimate_prices": "Estimate prices",
+    "price_estimated": "Estimated by AI — edit to confirm"
   }
 }

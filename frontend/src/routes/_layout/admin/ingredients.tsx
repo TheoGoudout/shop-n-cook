@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
-import { Combine, Package } from "lucide-react"
+import { Combine, Package, Sparkles } from "lucide-react"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 
@@ -29,6 +29,39 @@ export const Route = createFileRoute("/_layout/admin/ingredients")({
     meta: [{ title: `Ingredients - Admin - ${APP_NAME}` }],
   }),
 })
+
+/**
+ * Fill in prices for every ingredient that has none.
+ *
+ * Estimates never overwrite a price a human curated, so this is safe to run
+ * repeatedly after a bulk recipe import.
+ */
+function EstimatePricesButton() {
+  const queryClient = useQueryClient()
+  const { showSuccessToast, showErrorToast } = useCustomToast()
+  const { t } = useTranslation("admin")
+
+  const mutation = useMutation({
+    mutationFn: () =>
+      IngredientsService.estimateIngredientPricesRoute({ requestBody: {} }),
+    onSuccess: (data) => {
+      showSuccessToast(data.message)
+      queryClient.invalidateQueries({ queryKey: ["ingredient-catalog"] })
+    },
+    onError: handleError.bind(showErrorToast),
+  })
+
+  return (
+    <LoadingButton
+      variant="outline"
+      loading={mutation.isPending}
+      onClick={() => mutation.mutate()}
+    >
+      <Sparkles />
+      {t("ingredient.estimate_prices")}
+    </LoadingButton>
+  )
+}
 
 function DeduplicateButton() {
   const [open, setOpen] = useState(false)
@@ -170,7 +203,23 @@ function IngredientsTableContent() {
                       className="h-7 px-2 -ml-2 font-normal tabular-nums"
                       title={t("ingredient.price_edit", { ns: "admin" })}
                     >
-                      {price ?? (
+                      {price ? (
+                        <span
+                          className={
+                            ingredient.price_source === "estimated"
+                              ? "text-muted-foreground"
+                              : undefined
+                          }
+                          title={
+                            ingredient.price_source === "estimated"
+                              ? t("ingredient.price_estimated", { ns: "admin" })
+                              : undefined
+                          }
+                        >
+                          {price}
+                          {ingredient.price_source === "estimated" && " ~"}
+                        </span>
+                      ) : (
                         <span className="text-muted-foreground italic">
                           {t("ingredient.price_none", { ns: "admin" })}
                         </span>
@@ -220,7 +269,10 @@ function IngredientsPage() {
           </h1>
           <p className="text-muted-foreground">{t("ingredients.subtitle")}</p>
         </div>
-        <DeduplicateButton />
+        <div className="flex flex-wrap gap-2">
+          <EstimatePricesButton />
+          <DeduplicateButton />
+        </div>
       </div>
       <IngredientsTableContent />
     </div>

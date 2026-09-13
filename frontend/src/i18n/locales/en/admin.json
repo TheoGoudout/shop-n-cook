@@ -78,6 +78,9 @@
     "piece_weight_hint": "Lets a price per weight cover counted units like cloves.",
     "optional": "Optional",
     "estimate_prices": "Estimate prices",
-    "price_estimated": "Estimated by AI — edit to confirm"
+    "price_estimated": "Estimated by AI — edit to confirm",
+    "store_prices": "Prices by store",
+    "store_prices_hint": "A store price overrides the reference price above. Stores without one use the reference price scaled by their price index.",
+    "store_label": "Store"
   }
 }

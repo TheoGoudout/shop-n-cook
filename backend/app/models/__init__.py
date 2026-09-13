@@ -44,6 +44,21 @@ from app.models.shopping_list import (
     ShoppingListsPublic,
     ShoppingListUpdate,
 )
+from app.models.store import (
+    IngredientPrice,
+    IngredientPriceCreate,
+    IngredientPricePublic,
+    IngredientPricesPublic,
+    IngredientPriceUpdate,
+    Store,
+    StoreBase,
+    StoreComparison,
+    StoreComparisonEntry,
+    StoreCreate,
+    StorePublic,
+    StoresPublic,
+    StoreUpdate,
+)
 from app.models.user import (
     NewPassword,
     Token,
@@ -126,4 +141,18 @@ __all__ = [
     "ShoppingListRecipe",
     "ShoppingListRecipePublic",
     "ShoppingListRecipeUpdate",
+    # store
+    "Store",
+    "StoreBase",
+    "StoreCreate",
+    "StoreUpdate",
+    "StorePublic",
+    "StoresPublic",
+    "StoreComparison",
+    "StoreComparisonEntry",
+    "IngredientPrice",
+    "IngredientPriceCreate",
+    "IngredientPriceUpdate",
+    "IngredientPricePublic",
+    "IngredientPricesPublic",
 ]

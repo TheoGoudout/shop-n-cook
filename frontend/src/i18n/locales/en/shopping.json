@@ -74,5 +74,12 @@
     "success": "Shopping list deleted"
   },
   "item_removed": "Item removed",
-  "servings_badge": "{{count}} servings"
+  "servings_badge": "{{count}} servings",
+  "store_comparison": {
+    "title": "Compare stores",
+    "description": "What this list would cost at each retailer.",
+    "cheapest": "Cheapest",
+    "savings": "Save {{amount}} vs the most expensive",
+    "empty": "Add items to compare prices across stores."
+  }
 }

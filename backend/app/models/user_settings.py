@@ -29,6 +29,9 @@ class UserSettingsBase(SQLModel):
         default=None, max_digits=10, decimal_places=2, ge=0
     )
     currency: str = Field(default="EUR", min_length=3, max_length=3)
+    #: Which retailer's prices to cost recipes and lists against. ``None``
+    #: means the catalog's own reference prices are used unadjusted.
+    preferred_store_id: uuid.UUID | None = Field(default=None)
 
 
 class UserSettingsUpdate(SQLModel):
@@ -38,6 +41,7 @@ class UserSettingsUpdate(SQLModel):
         default=None, max_digits=10, decimal_places=2, ge=0
     )
     currency: str | None = Field(default=None, min_length=3, max_length=3)
+    preferred_store_id: uuid.UUID | None = None
 
 
 class UserSettingsPublic(UserSettingsBase):
@@ -54,5 +58,8 @@ class UserSettings(UserSettingsBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     user_id: uuid.UUID = Field(
         foreign_key="user.id", nullable=False, ondelete="CASCADE", unique=True
+    )
+    preferred_store_id: uuid.UUID | None = Field(
+        default=None, foreign_key="store.id", ondelete="SET NULL"
     )
     owner: "User" = Relationship(back_populates="settings")

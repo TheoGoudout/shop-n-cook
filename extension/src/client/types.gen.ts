@@ -65,6 +65,29 @@ export type IngredientCreate = {
     image_url?: (string | null);
 };
 
+export type IngredientPriceCreate = {
+    price_amount: (number | string);
+    price_quantity: number;
+    price_unit: Unit;
+    store_id: string;
+};
+
+export type IngredientPricePublic = {
+    price_amount: string;
+    price_quantity: number;
+    price_unit: Unit;
+    id: string;
+    ingredient_id: string;
+    store_id: string;
+    store_name?: (string | null);
+    updated_at?: (string | null);
+};
+
+export type IngredientPricesPublic = {
+    data: Array<IngredientPricePublic>;
+    count: number;
+};
+
 export type IngredientPublic = {
     price_amount?: (string | null);
     price_quantity?: (number | null);
@@ -354,6 +377,58 @@ export type ShoppingListUpdate = {
     end_date?: (string | null);
 };
 
+export type StoreComparison = {
+    data: Array<StoreComparisonEntry>;
+    cheapest_store_id?: (string | null);
+};
+
+/**
+ * What one shopping list would cost at one store.
+ */
+export type StoreComparisonEntry = {
+    store_id: string;
+    store_name: string;
+    store_slug: string;
+    currency: string;
+    estimated_total?: (string | null);
+    unpriced_item_count?: number;
+};
+
+export type StoreCreate = {
+    name: string;
+    slug: string;
+    country?: string;
+    currency?: string;
+    price_index?: number;
+    logo_url?: (string | null);
+    is_active?: boolean;
+};
+
+export type StorePublic = {
+    name: string;
+    slug: string;
+    country?: string;
+    currency?: string;
+    price_index?: number;
+    logo_url?: (string | null);
+    is_active?: boolean;
+    id: string;
+};
+
+export type StoresPublic = {
+    data: Array<StorePublic>;
+    count: number;
+};
+
+export type StoreUpdate = {
+    name?: (string | null);
+    country?: (string | null);
+    currency?: (string | null);
+    price_index?: (number | null);
+    logo_url?: (string | null);
+    is_active?: (boolean | null);
+};
+
 export type Token = {
     access_token: string;
     token_type?: string;
@@ -394,6 +469,7 @@ export type UserSettingsPublic = {
     shopping_frequency?: ShoppingFrequency;
     budget_amount?: (string | null);
     currency?: string;
+    preferred_store_id?: (string | null);
     id: string;
     user_id: string;
 };
@@ -403,6 +479,7 @@ export type UserSettingsUpdate = {
     shopping_frequency?: (ShoppingFrequency | null);
     budget_amount?: (number | string | null);
     currency?: (string | null);
+    preferred_store_id?: (string | null);
 };
 
 export type UsersPublic = {
@@ -432,6 +509,26 @@ export type ValidationError = {
         [key: string]: unknown;
     };
 };
+
+export type IngredientPricesReadIngredientPricesData = {
+    id: string;
+};
+
+export type IngredientPricesReadIngredientPricesResponse = (IngredientPricesPublic);
+
+export type IngredientPricesUpsertIngredientPriceData = {
+    id: string;
+    requestBody: IngredientPriceCreate;
+};
+
+export type IngredientPricesUpsertIngredientPriceResponse = (IngredientPricePublic);
+
+export type IngredientPricesDeleteIngredientPriceData = {
+    id: string;
+    storeId: string;
+};
+
+export type IngredientPricesDeleteIngredientPriceResponse = (Message);
 
 export type IngredientsReadIngredientsData = {
     limit?: number;
@@ -649,6 +746,12 @@ export type ShoppingListsAddRecipeData = {
 
 export type ShoppingListsAddRecipeResponse = (ShoppingListPublic);
 
+export type ShoppingListsCompareStoresData = {
+    id: string;
+};
+
+export type ShoppingListsCompareStoresResponse = (StoreComparison);
+
 export type ShoppingListsUpdatePlannedRecipeData = {
     id: string;
     plannedRecipeId: string;
@@ -663,6 +766,33 @@ export type ShoppingListsDeletePlannedRecipeData = {
 };
 
 export type ShoppingListsDeletePlannedRecipeResponse = (Message);
+
+export type StoresReadStoresData = {
+    activeOnly?: boolean;
+    limit?: number;
+    skip?: number;
+};
+
+export type StoresReadStoresResponse = (StoresPublic);
+
+export type StoresCreateStoreData = {
+    requestBody: StoreCreate;
+};
+
+export type StoresCreateStoreResponse = (StorePublic);
+
+export type StoresUpdateStoreData = {
+    id: string;
+    requestBody: StoreUpdate;
+};
+
+export type StoresUpdateStoreResponse = (StorePublic);
+
+export type StoresDeleteStoreData = {
+    id: string;
+};
+
+export type StoresDeleteStoreResponse = (Message);
 
 export type UsersReadUsersData = {
     limit?: number;

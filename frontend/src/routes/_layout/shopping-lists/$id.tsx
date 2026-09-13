@@ -25,6 +25,7 @@ import {
   type ShoppingListRecipePublic,
   ShoppingListsService,
 } from "@/client"
+import { StoreComparison } from "@/components/ShoppingLists/StoreComparison"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -260,6 +261,7 @@ function ShoppingTab({ list }: { list: ShoppingListPublic }) {
           </p>
         )}
       </div>
+      <StoreComparison listId={list.id} />
       <div className="space-y-4">
         {grouped.map(({ category, items: groupItems }) => (
           <Card key={category}>

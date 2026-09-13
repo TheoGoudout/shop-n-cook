@@ -2,6 +2,7 @@ from sqlmodel import Session, create_engine, select
 
 from app import crud
 from app.core.config import settings
+from app.core.stores_seed import default_store_payloads
 from app.models import User, UserCreate
 
 engine = create_engine(str(settings.SQLALCHEMY_DATABASE_URI))
@@ -31,3 +32,19 @@ def init_db(session: Session) -> None:
             is_superuser=True,
         )
         user = crud.create_user(session=session, user_create=user_in)
+
+    seed_stores(session)
+
+
+def seed_stores(session: Session) -> int:
+    """Ensure the default retailers exist. Returns how many were created.
+
+    Matched on slug and only ever inserted, never updated, so an operator who
+    retunes a store's price index does not have it reset on the next restart.
+    """
+    created = 0
+    for payload in default_store_payloads():
+        if crud.get_store_by_slug(session=session, slug=payload.slug) is None:
+            crud.create_store(session=session, store_in=payload)
+            created += 1
+    return created

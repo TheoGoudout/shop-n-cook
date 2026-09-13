@@ -1,8 +1,14 @@
-import { useQueryClient } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { Trash2 } from "lucide-react"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 
-import { type IngredientPublic, IngredientsService } from "@/client"
+import {
+  IngredientPricesService,
+  type IngredientPublic,
+  IngredientsService,
+  StoresService,
+} from "@/client"
 import { UnitSelect } from "@/components/Common/UnitSelect"
 import { Button } from "@/components/ui/button"
 import {
@@ -17,6 +23,13 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { LoadingButton } from "@/components/ui/loading-button"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { useCrudMutation } from "@/hooks/useCrudMutation"
 
 /**
@@ -41,6 +54,20 @@ export function IngredientPriceDialog({
   const queryClient = useQueryClient()
   const [open, setOpen] = useState(false)
 
+  // Only fetched while the dialog is open — the table renders one of these per
+  // row and none of them need this data until clicked.
+  const { data: stores } = useQuery({
+    queryKey: ["stores"],
+    queryFn: () => StoresService.readStores({}),
+    enabled: open,
+  })
+  const { data: storePrices } = useQuery({
+    queryKey: ["ingredient-prices", ingredient.id],
+    queryFn: () =>
+      IngredientPricesService.readIngredientPrices({ id: ingredient.id }),
+    enabled: open,
+  })
+
   const [amount, setAmount] = useState(ingredient.price_amount ?? "")
   const [quantity, setQuantity] = useState(
     ingredient.price_quantity != null ? String(ingredient.price_quantity) : "1",
@@ -61,6 +88,34 @@ export function IngredientPriceDialog({
     const parsed = Number(trimmed)
     return Number.isFinite(parsed) ? parsed : null
   }
+
+  const [storeId, setStoreId] = useState("")
+  const [storeAmount, setStoreAmount] = useState("")
+
+  const storePriceMutation = useCrudMutation({
+    mutationFn: () =>
+      IngredientPricesService.upsertIngredientPrice({
+        id: ingredient.id,
+        requestBody: {
+          store_id: storeId,
+          price_amount: storeAmount,
+          price_quantity: numberOrNull(quantity) ?? 1,
+          price_unit: unit,
+        },
+      }),
+    successMessage: t("ingredient.price_saved"),
+    invalidateKeys: [["ingredient-prices", ingredient.id]],
+    onSuccess: () => setStoreAmount(""),
+  })
+
+  const removeStorePrice = useCrudMutation({
+    mutationFn: (id: string) =>
+      IngredientPricesService.deleteIngredientPrice({
+        id: ingredient.id,
+        storeId: id,
+      }),
+    invalidateKeys: [["ingredient-prices", ingredient.id]],
+  })
 
   const mutation = useCrudMutation({
     mutationFn: () =>
@@ -165,6 +220,75 @@ export function IngredientPriceDialog({
                 {t("ingredient.piece_weight_hint")}
               </p>
             </div>
+          </div>
+        </div>
+
+        <div className="space-y-2 border-t pt-4">
+          <p className="text-sm font-medium">{t("ingredient.store_prices")}</p>
+          <p className="text-xs text-muted-foreground">
+            {t("ingredient.store_prices_hint")}
+          </p>
+
+          {(storePrices?.data ?? []).map((row) => (
+            <div key={row.id} className="flex items-center gap-2 text-sm">
+              <span className="flex-1 truncate">{row.store_name}</span>
+              <span className="tabular-nums">
+                {row.price_amount} / {row.price_quantity}{" "}
+                {tCommon(`unit_labels.${row.price_unit}`, {
+                  defaultValue: row.price_unit,
+                })}
+              </span>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={() => removeStorePrice.mutate(row.store_id)}
+              >
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            </div>
+          ))}
+
+          <div className="flex items-end gap-2">
+            <div className="flex-1 space-y-1.5">
+              <Label htmlFor="store-select">
+                {t("ingredient.store_label")}
+              </Label>
+              <Select value={storeId} onValueChange={setStoreId}>
+                <SelectTrigger id="store-select">
+                  <SelectValue placeholder={t("ingredient.store_label")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {(stores?.data ?? []).map((store) => (
+                    <SelectItem key={store.id} value={store.id}>
+                      {store.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="w-24 space-y-1.5">
+              <Label htmlFor="store-amount">
+                {t("ingredient.price_amount")}
+              </Label>
+              <Input
+                id="store-amount"
+                type="number"
+                min="0"
+                step="0.01"
+                inputMode="decimal"
+                value={storeAmount}
+                onChange={(e) => setStoreAmount(e.target.value)}
+              />
+            </div>
+            <LoadingButton
+              variant="outline"
+              loading={storePriceMutation.isPending}
+              disabled={!storeId || storeAmount.trim() === ""}
+              onClick={() => storePriceMutation.mutate()}
+            >
+              {tCommon("add")}
+            </LoadingButton>
           </div>
         </div>
 

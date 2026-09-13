@@ -41,7 +41,10 @@
     "budget_hint": "Plafond de dépenses pour une période de courses. Laissez vide pour ne pas définir de budget.",
     "budget_placeholder": "Aucun budget défini",
     "currency_label": "Devise",
-    "currency_hint": "Utilisée pour afficher le coût des recettes et des listes de courses."
+    "currency_hint": "Utilisée pour afficher le coût des recettes et des listes de courses.",
+    "store_label": "Magasin préféré",
+    "store_none": "Aucune préférence",
+    "store_hint": "Les coûts sont affichés aux prix de cette enseigne. Faites vos courses où vous voulez."
   },
   "password": {
     "title": "Changer le mot de passe",

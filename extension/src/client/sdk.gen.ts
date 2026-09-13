@@ -3,7 +3,80 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { IngredientsReadIngredientsData, IngredientsReadIngredientsResponse, IngredientsCreateIngredientData, IngredientsCreateIngredientResponse, IngredientsUpdateIngredientData, IngredientsUpdateIngredientResponse, IngredientsDeduplicateIngredientsData, IngredientsDeduplicateIngredientsResponse, IngredientsEstimateIngredientPriceRouteData, IngredientsEstimateIngredientPriceRouteResponse, IngredientsEstimateIngredientPricesRouteData, IngredientsEstimateIngredientPricesRouteResponse, IngredientsFetchIngredientImageData, IngredientsFetchIngredientImageResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, RecipesReadPublicRecipesData, RecipesReadPublicRecipesResponse, RecipesReadRecipesData, RecipesReadRecipesResponse, RecipesCreateRecipeData, RecipesCreateRecipeResponse, RecipesReadRecipeData, RecipesReadRecipeResponse, RecipesUpdateRecipeData, RecipesUpdateRecipeResponse, RecipesDeleteRecipeData, RecipesDeleteRecipeResponse, RecipesReimportRecipeData, RecipesReimportRecipeResponse, RecipesImportRecipeUrlData, RecipesImportRecipeUrlResponse, RecipesImportRecipePhotosData, RecipesImportRecipePhotosResponse, ShoppingListsReadShoppingListsData, ShoppingListsReadShoppingListsResponse, ShoppingListsCreateShoppingListData, ShoppingListsCreateShoppingListResponse, ShoppingListsReadShoppingListData, ShoppingListsReadShoppingListResponse, ShoppingListsUpdateShoppingListData, ShoppingListsUpdateShoppingListResponse, ShoppingListsDeleteShoppingListData, ShoppingListsDeleteShoppingListResponse, ShoppingListsAddItemData, ShoppingListsAddItemResponse, ShoppingListsUpdateItemData, ShoppingListsUpdateItemResponse, ShoppingListsDeleteItemData, ShoppingListsDeleteItemResponse, ShoppingListsAddRecipeData, ShoppingListsAddRecipeResponse, ShoppingListsUpdatePlannedRecipeData, ShoppingListsUpdatePlannedRecipeResponse, ShoppingListsDeletePlannedRecipeData, ShoppingListsDeletePlannedRecipeResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UserSettingsReadUserSettingsResponse, UserSettingsUpdateUserSettingsData, UserSettingsUpdateUserSettingsResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
+import type { IngredientPricesReadIngredientPricesData, IngredientPricesReadIngredientPricesResponse, IngredientPricesUpsertIngredientPriceData, IngredientPricesUpsertIngredientPriceResponse, IngredientPricesDeleteIngredientPriceData, IngredientPricesDeleteIngredientPriceResponse, IngredientsReadIngredientsData, IngredientsReadIngredientsResponse, IngredientsCreateIngredientData, IngredientsCreateIngredientResponse, IngredientsUpdateIngredientData, IngredientsUpdateIngredientResponse, IngredientsDeduplicateIngredientsData, IngredientsDeduplicateIngredientsResponse, IngredientsEstimateIngredientPriceRouteData, IngredientsEstimateIngredientPriceRouteResponse, IngredientsEstimateIngredientPricesRouteData, IngredientsEstimateIngredientPricesRouteResponse, IngredientsFetchIngredientImageData, IngredientsFetchIngredientImageResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, RecipesReadPublicRecipesData, RecipesReadPublicRecipesResponse, RecipesReadRecipesData, RecipesReadRecipesResponse, RecipesCreateRecipeData, RecipesCreateRecipeResponse, RecipesReadRecipeData, RecipesReadRecipeResponse, RecipesUpdateRecipeData, RecipesUpdateRecipeResponse, RecipesDeleteRecipeData, RecipesDeleteRecipeResponse, RecipesReimportRecipeData, RecipesReimportRecipeResponse, RecipesImportRecipeUrlData, RecipesImportRecipeUrlResponse, RecipesImportRecipePhotosData, RecipesImportRecipePhotosResponse, ShoppingListsReadShoppingListsData, ShoppingListsReadShoppingListsResponse, ShoppingListsCreateShoppingListData, ShoppingListsCreateShoppingListResponse, ShoppingListsReadShoppingListData, ShoppingListsReadShoppingListResponse, ShoppingListsUpdateShoppingListData, ShoppingListsUpdateShoppingListResponse, ShoppingListsDeleteShoppingListData, ShoppingListsDeleteShoppingListResponse, ShoppingListsAddItemData, ShoppingListsAddItemResponse, ShoppingListsUpdateItemData, ShoppingListsUpdateItemResponse, ShoppingListsDeleteItemData, ShoppingListsDeleteItemResponse, ShoppingListsAddRecipeData, ShoppingListsAddRecipeResponse, ShoppingListsCompareStoresData, ShoppingListsCompareStoresResponse, ShoppingListsUpdatePlannedRecipeData, ShoppingListsUpdatePlannedRecipeResponse, ShoppingListsDeletePlannedRecipeData, ShoppingListsDeletePlannedRecipeResponse, StoresReadStoresData, StoresReadStoresResponse, StoresCreateStoreData, StoresCreateStoreResponse, StoresUpdateStoreData, StoresUpdateStoreResponse, StoresDeleteStoreData, StoresDeleteStoreResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UserSettingsReadUserSettingsResponse, UserSettingsUpdateUserSettingsData, UserSettingsUpdateUserSettingsResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
+
+export class IngredientPricesService {
+    /**
+     * Read Ingredient Prices
+     * Every store price recorded for one ingredient.
+     * @param data The data for the request.
+     * @param data.id
+     * @returns IngredientPricesPublic Successful Response
+     * @throws ApiError
+     */
+    public static readIngredientPrices(data: IngredientPricesReadIngredientPricesData): CancelablePromise<IngredientPricesReadIngredientPricesResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/ingredients/{id}/prices',
+            path: {
+                id: data.id
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Upsert Ingredient Price
+     * Set this ingredient's price at one store. Superuser only.
+     * @param data The data for the request.
+     * @param data.id
+     * @param data.requestBody
+     * @returns IngredientPricePublic Successful Response
+     * @throws ApiError
+     */
+    public static upsertIngredientPrice(data: IngredientPricesUpsertIngredientPriceData): CancelablePromise<IngredientPricesUpsertIngredientPriceResponse> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/v1/ingredients/{id}/prices',
+            path: {
+                id: data.id
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Delete Ingredient Price
+     * Remove this ingredient's price at one store. Superuser only.
+     *
+     * The ingredient then falls back to the catalog baseline scaled by that
+     * store's price index.
+     * @param data The data for the request.
+     * @param data.id
+     * @param data.storeId
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static deleteIngredientPrice(data: IngredientPricesDeleteIngredientPriceData): CancelablePromise<IngredientPricesDeleteIngredientPriceResponse> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/ingredients/{id}/prices/{store_id}',
+            path: {
+                id: data.id,
+                store_id: data.storeId
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+}
 
 export class IngredientsService {
     /**
@@ -751,6 +824,31 @@ export class ShoppingListsService {
     }
     
     /**
+     * Compare Stores
+     * What this list would cost at each active retailer.
+     *
+     * This is the "shop where you like" view: every store is costed from the same
+     * basket, so the spread is comparable even where a store has few curated
+     * prices of its own and falls back to the catalog baseline.
+     * @param data The data for the request.
+     * @param data.id
+     * @returns StoreComparison Successful Response
+     * @throws ApiError
+     */
+    public static compareStores(data: ShoppingListsCompareStoresData): CancelablePromise<ShoppingListsCompareStoresResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/shopping-lists/{id}/store-comparison',
+            path: {
+                id: data.id
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
      * Update Planned Recipe
      * Update a planned recipe (e.g. mark as prepared, change servings).
      * @param data The data for the request.
@@ -792,6 +890,98 @@ export class ShoppingListsService {
             path: {
                 id: data.id,
                 planned_recipe_id: data.plannedRecipeId
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+}
+
+export class StoresService {
+    /**
+     * Read Stores
+     * List the retailers prices can be compared across.
+     * @param data The data for the request.
+     * @param data.activeOnly
+     * @param data.skip
+     * @param data.limit
+     * @returns StoresPublic Successful Response
+     * @throws ApiError
+     */
+    public static readStores(data: StoresReadStoresData = {}): CancelablePromise<StoresReadStoresResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/stores/',
+            query: {
+                active_only: data.activeOnly,
+                skip: data.skip,
+                limit: data.limit
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Create Store
+     * Add a retailer. Superuser only.
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns StorePublic Successful Response
+     * @throws ApiError
+     */
+    public static createStore(data: StoresCreateStoreData): CancelablePromise<StoresCreateStoreResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/stores/',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Update Store
+     * Update a retailer. Superuser only.
+     * @param data The data for the request.
+     * @param data.id
+     * @param data.requestBody
+     * @returns StorePublic Successful Response
+     * @throws ApiError
+     */
+    public static updateStore(data: StoresUpdateStoreData): CancelablePromise<StoresUpdateStoreResponse> {
+        return __request(OpenAPI, {
+            method: 'PATCH',
+            url: '/api/v1/stores/{id}',
+            path: {
+                id: data.id
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Delete Store
+     * Delete a retailer and every price recorded against it. Superuser only.
+     * @param data The data for the request.
+     * @param data.id
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static deleteStore(data: StoresDeleteStoreData): CancelablePromise<StoresDeleteStoreResponse> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/stores/{id}',
+            path: {
+                id: data.id
             },
             errors: {
                 422: 'Validation Error'

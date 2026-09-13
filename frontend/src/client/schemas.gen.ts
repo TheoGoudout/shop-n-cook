@@ -301,6 +301,118 @@ export const IngredientCreateSchema = {
     title: 'IngredientCreate'
 } as const;
 
+export const IngredientPriceCreateSchema = {
+    properties: {
+        price_amount: {
+            anyOf: [
+                {
+                    type: 'number',
+                    minimum: 0
+                },
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*(?:\\d{0,6}|(?=[\\d.]{1,11}0*$)\\d{0,6}\\.\\d{0,4}0*$)'
+                }
+            ],
+            title: 'Price Amount'
+        },
+        price_quantity: {
+            type: 'number',
+            exclusiveMinimum: 0,
+            title: 'Price Quantity'
+        },
+        price_unit: {
+            '$ref': '#/components/schemas/Unit'
+        },
+        store_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Store Id'
+        }
+    },
+    type: 'object',
+    required: ['price_amount', 'price_quantity', 'price_unit', 'store_id'],
+    title: 'IngredientPriceCreate'
+} as const;
+
+export const IngredientPricePublicSchema = {
+    properties: {
+        price_amount: {
+            type: 'string',
+            pattern: '^(?!^[-+.]*$)[+-]?0*(?:\\d{0,6}|(?=[\\d.]{1,11}0*$)\\d{0,6}\\.\\d{0,4}0*$)',
+            title: 'Price Amount'
+        },
+        price_quantity: {
+            type: 'number',
+            exclusiveMinimum: 0,
+            title: 'Price Quantity'
+        },
+        price_unit: {
+            '$ref': '#/components/schemas/Unit'
+        },
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        ingredient_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Ingredient Id'
+        },
+        store_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Store Id'
+        },
+        store_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Store Name'
+        },
+        updated_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Updated At'
+        }
+    },
+    type: 'object',
+    required: ['price_amount', 'price_quantity', 'price_unit', 'id', 'ingredient_id', 'store_id'],
+    title: 'IngredientPricePublic'
+} as const;
+
+export const IngredientPricesPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/IngredientPricePublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'IngredientPricesPublic'
+} as const;
+
 export const IngredientPublicSchema = {
     properties: {
         price_amount: {
@@ -2150,6 +2262,295 @@ export const ShoppingListsPublicSchema = {
     title: 'ShoppingListsPublic'
 } as const;
 
+export const StoreComparisonSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/StoreComparisonEntry'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        cheapest_store_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Cheapest Store Id'
+        }
+    },
+    type: 'object',
+    required: ['data'],
+    title: 'StoreComparison'
+} as const;
+
+export const StoreComparisonEntrySchema = {
+    properties: {
+        store_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Store Id'
+        },
+        store_name: {
+            type: 'string',
+            title: 'Store Name'
+        },
+        store_slug: {
+            type: 'string',
+            title: 'Store Slug'
+        },
+        currency: {
+            type: 'string',
+            title: 'Currency'
+        },
+        estimated_total: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Estimated Total'
+        },
+        unpriced_item_count: {
+            type: 'integer',
+            title: 'Unpriced Item Count',
+            default: 0
+        }
+    },
+    type: 'object',
+    required: ['store_id', 'store_name', 'store_slug', 'currency'],
+    title: 'StoreComparisonEntry',
+    description: 'What one shopping list would cost at one store.'
+} as const;
+
+export const StoreCreateSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            maxLength: 255,
+            minLength: 1,
+            title: 'Name'
+        },
+        slug: {
+            type: 'string',
+            maxLength: 255,
+            minLength: 1,
+            title: 'Slug'
+        },
+        country: {
+            type: 'string',
+            maxLength: 2,
+            minLength: 2,
+            title: 'Country',
+            default: 'FR'
+        },
+        currency: {
+            type: 'string',
+            maxLength: 3,
+            minLength: 3,
+            title: 'Currency',
+            default: 'EUR'
+        },
+        price_index: {
+            type: 'number',
+            exclusiveMinimum: 0,
+            title: 'Price Index',
+            default: 1
+        },
+        logo_url: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 2048
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Logo Url'
+        },
+        is_active: {
+            type: 'boolean',
+            title: 'Is Active',
+            default: true
+        }
+    },
+    type: 'object',
+    required: ['name', 'slug'],
+    title: 'StoreCreate'
+} as const;
+
+export const StorePublicSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            maxLength: 255,
+            minLength: 1,
+            title: 'Name'
+        },
+        slug: {
+            type: 'string',
+            maxLength: 255,
+            minLength: 1,
+            title: 'Slug'
+        },
+        country: {
+            type: 'string',
+            maxLength: 2,
+            minLength: 2,
+            title: 'Country',
+            default: 'FR'
+        },
+        currency: {
+            type: 'string',
+            maxLength: 3,
+            minLength: 3,
+            title: 'Currency',
+            default: 'EUR'
+        },
+        price_index: {
+            type: 'number',
+            exclusiveMinimum: 0,
+            title: 'Price Index',
+            default: 1
+        },
+        logo_url: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 2048
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Logo Url'
+        },
+        is_active: {
+            type: 'boolean',
+            title: 'Is Active',
+            default: true
+        },
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        }
+    },
+    type: 'object',
+    required: ['name', 'slug', 'id'],
+    title: 'StorePublic'
+} as const;
+
+export const StoreUpdateSchema = {
+    properties: {
+        name: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 255,
+                    minLength: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name'
+        },
+        country: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 2,
+                    minLength: 2
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Country'
+        },
+        currency: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 3,
+                    minLength: 3
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Currency'
+        },
+        price_index: {
+            anyOf: [
+                {
+                    type: 'number',
+                    exclusiveMinimum: 0
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Price Index'
+        },
+        logo_url: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 2048
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Logo Url'
+        },
+        is_active: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Is Active'
+        }
+    },
+    type: 'object',
+    title: 'StoreUpdate'
+} as const;
+
+export const StoresPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/StorePublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'StoresPublic'
+} as const;
+
 export const TokenSchema = {
     properties: {
         access_token: {
@@ -2351,6 +2752,18 @@ export const UserSettingsPublicSchema = {
             title: 'Currency',
             default: 'EUR'
         },
+        preferred_store_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Preferred Store Id'
+        },
         id: {
             type: 'string',
             format: 'uuid',
@@ -2419,6 +2832,18 @@ export const UserSettingsUpdateSchema = {
                 }
             ],
             title: 'Currency'
+        },
+        preferred_store_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Preferred Store Id'
         }
     },
     type: 'object',

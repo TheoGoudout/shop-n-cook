@@ -20,8 +20,11 @@ from app.models import (
     ShoppingListRecipeUpdate,
     ShoppingListsPublic,
     ShoppingListUpdate,
+    StoreComparison,
+    StoreComparisonEntry,
 )
 from app.services.ingredient_image import fetch_and_update_ingredient_image
+from app.services.pricing import PriceBook
 
 router = APIRouter(prefix="/shopping-lists", tags=["shopping-lists"])
 
@@ -223,6 +226,47 @@ def add_recipe(
         servings=servings,
     )
     return crud.shopping_list_to_public(sl, prices)
+
+
+@router.get("/{id}/store-comparison", response_model=StoreComparison)
+def compare_stores(
+    session: SessionDep,
+    current_user: CurrentUser,
+    id: uuid.UUID,
+) -> Any:
+    """What this list would cost at each active retailer.
+
+    This is the "shop where you like" view: every store is costed from the same
+    basket, so the spread is comparable even where a store has few curated
+    prices of its own and falls back to the catalog baseline.
+    """
+    sl = crud.get_shopping_list(session=session, shopping_list_id=id)
+    sl = _check_list_access(sl, current_user, id)
+
+    items = [(i.name, i.quantity, i.unit) for i in sl.items]
+    stores, _ = crud.get_stores(session=session, active_only=True, limit=100)
+
+    entries: list[StoreComparisonEntry] = []
+    for store in stores:
+        book = PriceBook.for_catalog(session=session, store=store)
+        summary = book.summarize(items)
+        entries.append(
+            StoreComparisonEntry(
+                store_id=store.id,
+                store_name=store.name,
+                store_slug=store.slug,
+                currency=store.currency,
+                estimated_total=summary.total,
+                unpriced_item_count=summary.unpriced_count,
+            )
+        )
+
+    entries.sort(key=lambda e: (e.estimated_total is None, e.estimated_total or 0))
+    cheapest = next((e for e in entries if e.estimated_total is not None), None)
+    return StoreComparison(
+        data=entries,
+        cheapest_store_id=cheapest.store_id if cheapest else None,
+    )
 
 
 # ---- Planned recipes sub-resource ---- #

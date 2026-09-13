@@ -36,6 +36,21 @@ from app.crud.shopping_list import (
     update_shopping_list_item,
     update_shopping_list_recipe,
 )
+from app.crud.store import (
+    create_store,
+    delete_ingredient_price,
+    delete_store,
+    get_ingredient_price,
+    get_ingredient_prices,
+    get_store,
+    get_store_by_slug,
+    get_stores,
+    ingredient_price_to_public,
+    store_to_public,
+    update_ingredient_price,
+    update_store,
+    upsert_ingredient_price,
+)
 from app.crud.user import authenticate, create_user, get_user_by_email, update_user
 from app.crud.user_settings import (
     get_or_create_user_settings,
@@ -44,6 +59,20 @@ from app.crud.user_settings import (
 )
 
 __all__ = [
+    # store
+    "store_to_public",
+    "ingredient_price_to_public",
+    "get_store",
+    "get_store_by_slug",
+    "get_stores",
+    "create_store",
+    "update_store",
+    "delete_store",
+    "get_ingredient_prices",
+    "get_ingredient_price",
+    "upsert_ingredient_price",
+    "update_ingredient_price",
+    "delete_ingredient_price",
     # ingredient catalog
     "get_ingredient",
     "get_ingredient_by_name",

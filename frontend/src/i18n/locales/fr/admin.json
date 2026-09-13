@@ -78,6 +78,9 @@
     "piece_weight_hint": "Permet d'appliquer un prix au poids à des unités comptées comme les gousses.",
     "optional": "Facultatif",
     "estimate_prices": "Estimer les prix",
-    "price_estimated": "Estimé par IA — modifiez pour confirmer"
+    "price_estimated": "Estimé par IA — modifiez pour confirmer",
+    "store_prices": "Prix par magasin",
+    "store_prices_hint": "Un prix magasin remplace le prix de référence ci-dessus. Les magasins sans prix utilisent le prix de référence ajusté par leur indice.",
+    "store_label": "Magasin"
   }
 }

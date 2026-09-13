@@ -187,6 +187,68 @@ export const IngredientCategorySchema = {
 
 export const IngredientCreateSchema = {
     properties: {
+        price_amount: {
+            anyOf: [
+                {
+                    type: 'number',
+                    minimum: 0
+                },
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*(?:\\d{0,6}|(?=[\\d.]{1,11}0*$)\\d{0,6}\\.\\d{0,4}0*$)'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Price Amount'
+        },
+        price_quantity: {
+            anyOf: [
+                {
+                    type: 'number',
+                    exclusiveMinimum: 0
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Price Quantity'
+        },
+        price_unit: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/Unit'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        density_g_per_ml: {
+            anyOf: [
+                {
+                    type: 'number',
+                    exclusiveMinimum: 0
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Density G Per Ml'
+        },
+        piece_weight_g: {
+            anyOf: [
+                {
+                    type: 'number',
+                    exclusiveMinimum: 0
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Piece Weight G'
+        },
         name: {
             type: 'string',
             maxLength: 255,
@@ -216,6 +278,64 @@ export const IngredientCreateSchema = {
 
 export const IngredientPublicSchema = {
     properties: {
+        price_amount: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*(?:\\d{0,6}|(?=[\\d.]{1,11}0*$)\\d{0,6}\\.\\d{0,4}0*$)'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Price Amount'
+        },
+        price_quantity: {
+            anyOf: [
+                {
+                    type: 'number',
+                    exclusiveMinimum: 0
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Price Quantity'
+        },
+        price_unit: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/Unit'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        density_g_per_ml: {
+            anyOf: [
+                {
+                    type: 'number',
+                    exclusiveMinimum: 0
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Density G Per Ml'
+        },
+        piece_weight_g: {
+            anyOf: [
+                {
+                    type: 'number',
+                    exclusiveMinimum: 0
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Piece Weight G'
+        },
         id: {
             type: 'string',
             format: 'uuid',
@@ -249,6 +369,28 @@ export const IngredientPublicSchema = {
                 }
             ],
             title: 'Image Url'
+        },
+        price_source: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/PriceSource'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        price_updated_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Price Updated At'
         }
     },
     type: 'object',
@@ -258,6 +400,68 @@ export const IngredientPublicSchema = {
 
 export const IngredientUpdateSchema = {
     properties: {
+        price_amount: {
+            anyOf: [
+                {
+                    type: 'number',
+                    minimum: 0
+                },
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*(?:\\d{0,6}|(?=[\\d.]{1,11}0*$)\\d{0,6}\\.\\d{0,4}0*$)'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Price Amount'
+        },
+        price_quantity: {
+            anyOf: [
+                {
+                    type: 'number',
+                    exclusiveMinimum: 0
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Price Quantity'
+        },
+        price_unit: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/Unit'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        density_g_per_ml: {
+            anyOf: [
+                {
+                    type: 'number',
+                    exclusiveMinimum: 0
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Density G Per Ml'
+        },
+        piece_weight_g: {
+            anyOf: [
+                {
+                    type: 'number',
+                    exclusiveMinimum: 0
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Piece Weight G'
+        },
         category: {
             anyOf: [
                 {
@@ -568,6 +772,17 @@ export const ParsedStepSchema = {
     title: 'ParsedStep'
 } as const;
 
+export const PriceSourceSchema = {
+    type: 'string',
+    enum: ['manual', 'estimated'],
+    title: 'PriceSource',
+    description: `Where an ingredient's reference price came from.
+
+\`\`ESTIMATED\`\` rows were filled in by the LLM assist and may be overwritten
+by a later estimate run; \`\`MANUAL\`\` rows were curated by a human and never
+are.`
+} as const;
+
 export const PrivateUserCreateSchema = {
     properties: {
         email: {
@@ -867,6 +1082,18 @@ export const RecipeIngredientPublicSchema = {
                 }
             ],
             title: 'Notes'
+        },
+        estimated_cost: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Estimated Cost'
         }
     },
     type: 'object',
@@ -1076,6 +1303,40 @@ export const RecipePublicSchema = {
             type: 'array',
             title: 'Steps',
             default: []
+        },
+        estimated_cost: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Estimated Cost'
+        },
+        estimated_cost_per_serving: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Estimated Cost Per Serving'
+        },
+        unpriced_ingredient_count: {
+            type: 'integer',
+            title: 'Unpriced Ingredient Count',
+            default: 0
+        },
+        currency: {
+            type: 'string',
+            title: 'Currency',
+            default: 'EUR'
         }
     },
     type: 'object',
@@ -1541,6 +1802,18 @@ export const ShoppingListItemPublicSchema = {
                 }
             ],
             title: 'Notes'
+        },
+        estimated_cost: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Estimated Cost'
         }
     },
     type: 'object',
@@ -1669,6 +1942,28 @@ export const ShoppingListPublicSchema = {
             type: 'array',
             title: 'Planned Recipes',
             default: []
+        },
+        estimated_total: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Estimated Total'
+        },
+        unpriced_item_count: {
+            type: 'integer',
+            title: 'Unpriced Item Count',
+            default: 0
+        },
+        currency: {
+            type: 'string',
+            title: 'Currency',
+            default: 'EUR'
         }
     },
     type: 'object',
@@ -1718,6 +2013,18 @@ export const ShoppingListRecipePublicSchema = {
             type: 'array',
             title: 'Ingredients',
             default: []
+        },
+        estimated_cost: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Estimated Cost'
         }
     },
     type: 'object',
@@ -2000,6 +2307,25 @@ export const UserSettingsPublicSchema = {
             '$ref': '#/components/schemas/ShoppingFrequency',
             default: 'weekly'
         },
+        budget_amount: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*(?:\\d{0,8}|(?=[\\d.]{1,11}0*$)\\d{0,8}\\.\\d{0,2}0*$)'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Budget Amount'
+        },
+        currency: {
+            type: 'string',
+            maxLength: 3,
+            minLength: 3,
+            title: 'Currency',
+            default: 'EUR'
+        },
         id: {
             type: 'string',
             format: 'uuid',
@@ -2039,6 +2365,35 @@ export const UserSettingsUpdateSchema = {
                     type: 'null'
                 }
             ]
+        },
+        budget_amount: {
+            anyOf: [
+                {
+                    type: 'number',
+                    minimum: 0
+                },
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*(?:\\d{0,8}|(?=[\\d.]{1,11}0*$)\\d{0,8}\\.\\d{0,2}0*$)'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Budget Amount'
+        },
+        currency: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 3,
+                    minLength: 3
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Currency'
         }
     },
     type: 'object',

@@ -44,17 +44,29 @@ export type ImportUrlRequest = {
 export type IngredientCategory = 'produce' | 'dairy' | 'meat' | 'seafood' | 'grains' | 'pantry' | 'spices' | 'beverages' | 'frozen' | 'bakery' | 'other';
 
 export type IngredientCreate = {
+    price_amount?: (number | string | null);
+    price_quantity?: (number | null);
+    price_unit?: (Unit | null);
+    density_g_per_ml?: (number | null);
+    piece_weight_g?: (number | null);
     name: string;
     category?: IngredientCategory;
     image_url?: (string | null);
 };
 
 export type IngredientPublic = {
+    price_amount?: (string | null);
+    price_quantity?: (number | null);
+    price_unit?: (Unit | null);
+    density_g_per_ml?: (number | null);
+    piece_weight_g?: (number | null);
     id: string;
     name: string;
     name_en: (string | null);
     category: IngredientCategory;
     image_url: (string | null);
+    price_source?: (PriceSource | null);
+    price_updated_at?: (string | null);
 };
 
 export type IngredientsPublic = {
@@ -63,6 +75,11 @@ export type IngredientsPublic = {
 };
 
 export type IngredientUpdate = {
+    price_amount?: (number | string | null);
+    price_quantity?: (number | null);
+    price_unit?: (Unit | null);
+    density_g_per_ml?: (number | null);
+    piece_weight_g?: (number | null);
     category?: (IngredientCategory | null);
     image_url?: (string | null);
 };
@@ -113,6 +130,15 @@ export type ParsedStep = {
     ingredient_names?: Array<(string)>;
 };
 
+/**
+ * Where an ingredient's reference price came from.
+ *
+ * ``ESTIMATED`` rows were filled in by the LLM assist and may be overwritten
+ * by a later estimate run; ``MANUAL`` rows were curated by a human and never
+ * are.
+ */
+export type PriceSource = 'manual' | 'estimated';
+
 export type PrivateUserCreate = {
     email: string;
     password: string;
@@ -159,6 +185,7 @@ export type RecipeIngredientPublic = {
     quantity: number;
     unit: Unit;
     notes?: (string | null);
+    estimated_cost?: (string | null);
 };
 
 export type RecipePublic = {
@@ -185,6 +212,10 @@ export type RecipePublic = {
     created_at?: (string | null);
     ingredients?: Array<RecipeIngredientPublic>;
     steps?: Array<RecipeStepPublic>;
+    estimated_cost?: (string | null);
+    estimated_cost_per_serving?: (string | null);
+    unpriced_ingredient_count?: number;
+    currency?: string;
 };
 
 export type RecipesPublic = {
@@ -261,6 +292,7 @@ export type ShoppingListItemPublic = {
     unit: Unit;
     is_checked: boolean;
     notes?: (string | null);
+    estimated_cost?: (string | null);
 };
 
 export type ShoppingListItemUpdate = {
@@ -279,6 +311,9 @@ export type ShoppingListPublic = {
     created_at?: (string | null);
     items?: Array<ShoppingListItemPublic>;
     planned_recipes?: Array<ShoppingListRecipePublic>;
+    estimated_total?: (string | null);
+    unpriced_item_count?: number;
+    currency?: string;
 };
 
 export type ShoppingListRecipePublic = {
@@ -289,6 +324,7 @@ export type ShoppingListRecipePublic = {
     servings_planned: number;
     is_prepared: boolean;
     ingredients?: Array<RecipeIngredientPublic>;
+    estimated_cost?: (string | null);
 };
 
 export type ShoppingListRecipeUpdate = {
@@ -345,6 +381,8 @@ export type UserRegister = {
 export type UserSettingsPublic = {
     household_size?: number;
     shopping_frequency?: ShoppingFrequency;
+    budget_amount?: (string | null);
+    currency?: string;
     id: string;
     user_id: string;
 };
@@ -352,6 +390,8 @@ export type UserSettingsPublic = {
 export type UserSettingsUpdate = {
     household_size?: (number | null);
     shopping_frequency?: (ShoppingFrequency | null);
+    budget_amount?: (number | string | null);
+    currency?: (string | null);
 };
 
 export type UsersPublic = {

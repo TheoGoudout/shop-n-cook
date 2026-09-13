@@ -4,7 +4,7 @@ from typing import Any
 from fastapi import APIRouter, BackgroundTasks, HTTPException
 
 from app import crud
-from app.api.deps import CurrentUser, SessionDep
+from app.api.deps import CurrentUser, PriceBookDep, SessionDep
 from app.crud.shopping_list import _item_to_public, _sl_recipe_to_public
 from app.models import (
     Message,
@@ -40,6 +40,7 @@ def _check_list_access(
 def read_shopping_lists(
     session: SessionDep,
     current_user: CurrentUser,
+    prices: PriceBookDep,
     skip: int = 0,
     limit: int = 100,
 ) -> Any:
@@ -49,29 +50,36 @@ def read_shopping_lists(
         session=session, owner_id=owner_id, skip=skip, limit=limit
     )
     return ShoppingListsPublic(
-        data=[crud.shopping_list_to_public(sl) for sl in lists], count=count
+        data=[crud.shopping_list_to_public(sl, prices) for sl in lists], count=count
     )
 
 
 @router.get("/{id}", response_model=ShoppingListPublic)
 def read_shopping_list(
-    session: SessionDep, current_user: CurrentUser, id: uuid.UUID
+    session: SessionDep,
+    current_user: CurrentUser,
+    prices: PriceBookDep,
+    id: uuid.UUID,
 ) -> Any:
     """Get a single shopping list with all its items and planned recipes."""
     sl = crud.get_shopping_list(session=session, shopping_list_id=id)
     _check_list_access(sl, current_user, id)
-    return crud.shopping_list_to_public(sl)  # type: ignore[arg-type]
+    return crud.shopping_list_to_public(sl, prices)  # type: ignore[arg-type]
 
 
 @router.post("/", response_model=ShoppingListPublic)
 def create_shopping_list(
-    *, session: SessionDep, current_user: CurrentUser, list_in: ShoppingListCreate
+    *,
+    session: SessionDep,
+    current_user: CurrentUser,
+    prices: PriceBookDep,
+    list_in: ShoppingListCreate,
 ) -> Any:
     """Create a new (empty) shopping list."""
     sl = crud.create_shopping_list(
         session=session, list_in=list_in, owner_id=current_user.id
     )
-    return crud.shopping_list_to_public(sl)
+    return crud.shopping_list_to_public(sl, prices)
 
 
 @router.put("/{id}", response_model=ShoppingListPublic)
@@ -79,6 +87,7 @@ def update_shopping_list(
     *,
     session: SessionDep,
     current_user: CurrentUser,
+    prices: PriceBookDep,
     id: uuid.UUID,
     list_in: ShoppingListUpdate,
 ) -> Any:
@@ -90,7 +99,7 @@ def update_shopping_list(
         db_list=sl,
         list_in=list_in,
     )
-    return crud.shopping_list_to_public(sl)
+    return crud.shopping_list_to_public(sl, prices)
 
 
 @router.delete("/{id}")
@@ -112,6 +121,7 @@ def add_item(
     *,
     session: SessionDep,
     current_user: CurrentUser,
+    prices: PriceBookDep,
     id: uuid.UUID,
     item_in: ShoppingListItemCreate,
     background_tasks: BackgroundTasks,
@@ -129,7 +139,7 @@ def add_item(
         shopping_list=sl,
         item_in=item_in,
     )
-    return crud.shopping_list_to_public(sl)
+    return crud.shopping_list_to_public(sl, prices)
 
 
 @router.put("/{id}/items/{item_id}", response_model=ShoppingListItemPublic)
@@ -185,6 +195,7 @@ def delete_item(
 def add_recipe(
     session: SessionDep,
     current_user: CurrentUser,
+    prices: PriceBookDep,
     id: uuid.UUID,
     recipe_id: uuid.UUID,
     servings: int | None = None,
@@ -211,7 +222,7 @@ def add_recipe(
         recipe=recipe,
         servings=servings,
     )
-    return crud.shopping_list_to_public(sl)
+    return crud.shopping_list_to_public(sl, prices)
 
 
 # ---- Planned recipes sub-resource ---- #
@@ -224,6 +235,7 @@ def update_planned_recipe(
     *,
     session: SessionDep,
     current_user: CurrentUser,
+    prices: PriceBookDep,
     id: uuid.UUID,
     planned_recipe_id: uuid.UUID,
     update_in: ShoppingListRecipeUpdate,
@@ -241,7 +253,7 @@ def update_planned_recipe(
     updated = crud.update_shopping_list_recipe(
         session=session, shopping_list=sl, sl_recipe=sl_recipe, update_in=update_in
     )
-    return _sl_recipe_to_public(updated)
+    return _sl_recipe_to_public(updated, prices)
 
 
 @router.delete("/{id}/planned-recipes/{planned_recipe_id}")

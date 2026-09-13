@@ -36,7 +36,12 @@
       "weekly": "Toutes les semaines",
       "biweekly": "Toutes les deux semaines",
       "monthly": "Tous les mois"
-    }
+    },
+    "budget_label": "Budget",
+    "budget_hint": "Plafond de dépenses pour une période de courses. Laissez vide pour ne pas définir de budget.",
+    "budget_placeholder": "Aucun budget défini",
+    "currency_label": "Devise",
+    "currency_hint": "Utilisée pour afficher le coût des recettes et des listes de courses."
   },
   "password": {
     "title": "Changer le mot de passe",

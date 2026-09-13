@@ -96,5 +96,16 @@
     "frozen": "Surgelés",
     "bakery": "Boulangerie",
     "other": "Autre"
+  },
+  "pricing": {
+    "cost": "Coût",
+    "total": "Total estimé",
+    "per_serving": "par portion",
+    "per_person": "par personne",
+    "unpriced": "sans prix",
+    "unpriced_count_one": "{{count}} article sans prix",
+    "unpriced_count_other": "{{count}} articles sans prix",
+    "partial_total": "Ne couvre que les articles avec un prix",
+    "no_price": "—"
   }
 }

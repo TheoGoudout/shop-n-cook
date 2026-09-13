@@ -34,6 +34,7 @@ import useCustomToast from "@/hooks/useCustomToast"
 import { useIngredientCatalog } from "@/hooks/useIngredientCatalog"
 import { useUnitSystem } from "@/hooks/useUnitSystem"
 import { APP_NAME } from "@/lib/config"
+import { formatMoney } from "@/lib/money"
 import { handleError } from "@/utils"
 
 function getListQueryOptions(id: string) {
@@ -108,7 +109,7 @@ const CATEGORY_ORDER = [
 
 function ShoppingTab({ list }: { list: ShoppingListPublic }) {
   const { t } = useTranslation("shopping")
-  const { t: tCommon } = useTranslation("common")
+  const { t: tCommon, i18n } = useTranslation("common")
   const { convert } = useUnitSystem()
   const queryClient = useQueryClient()
   const { showErrorToast } = useCustomToast()
@@ -190,6 +191,10 @@ function ShoppingTab({ list }: { list: ShoppingListPublic }) {
               defaultValue: converted.unit,
             })}
           </span>
+          <span className="text-sm tabular-nums w-16 text-right text-muted-foreground">
+            {formatMoney(item.estimated_cost, list.currency, i18n.language) ??
+              tCommon("pricing.no_price")}
+          </span>
           <Button
             variant="ghost"
             size="icon"
@@ -228,14 +233,33 @@ function ShoppingTab({ list }: { list: ShoppingListPublic }) {
     )
   }
 
+  const total = formatMoney(list.estimated_total, list.currency, i18n.language)
+
   return (
     <div className="space-y-4">
-      <p className="text-sm text-muted-foreground">
-        {t("detail.items_progress", {
-          checked: checkedCount,
-          total: items.length,
-        })}
-      </p>
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+        <p className="text-sm text-muted-foreground">
+          {t("detail.items_progress", {
+            checked: checkedCount,
+            total: items.length,
+          })}
+        </p>
+        {total && (
+          <p className="text-sm">
+            <span className="text-muted-foreground">
+              {tCommon("pricing.total")}:{" "}
+            </span>
+            <span className="font-semibold tabular-nums">{total}</span>
+            {(list.unpriced_item_count ?? 0) > 0 && (
+              <span className="ml-2 text-xs text-muted-foreground">
+                {tCommon("pricing.unpriced_count", {
+                  count: list.unpriced_item_count,
+                })}
+              </span>
+            )}
+          </p>
+        )}
+      </div>
       <div className="space-y-4">
         {grouped.map(({ category, items: groupItems }) => (
           <Card key={category}>

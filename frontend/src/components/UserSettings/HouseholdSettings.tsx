@@ -10,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
 import {
   Select,
@@ -20,6 +21,9 @@ import {
 } from "@/components/ui/select"
 import useCustomToast from "@/hooks/useCustomToast"
 import { handleError } from "@/utils"
+
+/** Currencies the app formats costs in. */
+const CURRENCIES = ["EUR", "GBP", "USD", "CHF", "CAD"] as const
 
 export function HouseholdSettings() {
   const { t } = useTranslation("settings")
@@ -33,10 +37,16 @@ export function HouseholdSettings() {
 
   const [householdSize, setHouseholdSize] = useState<string>("")
   const [frequency, setFrequency] = useState<string>("")
+  const [budget, setBudget] = useState<string | null>(null)
+  const [currency, setCurrency] = useState<string>("")
 
   // Sync local state when data loads
   const currentSize = householdSize || String(settings?.household_size ?? 2)
   const currentFreq = (frequency || settings?.shopping_frequency) ?? "weekly"
+  // An empty budget field is meaningful — it clears the budget — so the local
+  // value is only treated as unset while it is still null.
+  const currentBudget = budget ?? settings?.budget_amount ?? ""
+  const currentCurrency = currency || (settings?.currency ?? "EUR")
 
   const mutation = useMutation({
     mutationFn: () =>
@@ -45,6 +55,9 @@ export function HouseholdSettings() {
           household_size: Number(currentSize),
           shopping_frequency:
             currentFreq as UserSettingsPublic["shopping_frequency"],
+          budget_amount:
+            String(currentBudget).trim() === "" ? null : String(currentBudget),
+          currency: currentCurrency,
         },
       }),
     onSuccess: () => {
@@ -111,6 +124,43 @@ export function HouseholdSettings() {
             </Select>
             <p className="text-xs text-muted-foreground">
               {t("household.frequency_hint")}
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <p className="text-sm font-medium">{t("household.budget_label")}</p>
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              inputMode="decimal"
+              value={currentBudget}
+              placeholder={t("household.budget_placeholder")}
+              onChange={(e) => setBudget(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              {t("household.budget_hint")}
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <p className="text-sm font-medium">
+              {t("household.currency_label")}
+            </p>
+            <Select value={currentCurrency} onValueChange={setCurrency}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {CURRENCIES.map((code) => (
+                  <SelectItem key={code} value={code}>
+                    {code}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              {t("household.currency_hint")}
             </p>
           </div>
         </div>

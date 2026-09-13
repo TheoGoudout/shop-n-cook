@@ -96,5 +96,16 @@
     "frozen": "Frozen",
     "bakery": "Bakery",
     "other": "Other"
+  },
+  "pricing": {
+    "cost": "Cost",
+    "total": "Estimated total",
+    "per_serving": "per serving",
+    "per_person": "per person",
+    "unpriced": "not priced",
+    "unpriced_count_one": "{{count}} item not priced",
+    "unpriced_count_other": "{{count}} items not priced",
+    "partial_total": "Covers priced items only",
+    "no_price": "—"
   }
 }

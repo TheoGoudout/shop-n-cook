@@ -7,6 +7,7 @@ import {
   ExternalLink,
   Flame,
   Users,
+  Wallet,
 } from "lucide-react"
 import { Suspense } from "react"
 import { useTranslation } from "react-i18next"
@@ -19,6 +20,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useIngredientCatalog } from "@/hooks/useIngredientCatalog"
 import { useUnitSystem } from "@/hooks/useUnitSystem"
 import { APP_NAME } from "@/lib/config"
+import { formatMoney } from "@/lib/money"
 
 function getRecipeQueryOptions(id: string) {
   return {
@@ -36,12 +38,22 @@ export const Route = createFileRoute("/_layout/recipes/$id")({
 
 function RecipeDetailContent() {
   const { t } = useTranslation("recipes")
-  const { t: tCommon } = useTranslation("common")
+  const { t: tCommon, i18n } = useTranslation("common")
   const { convert } = useUnitSystem()
   const { id } = Route.useParams()
   const { data: recipe } = useSuspenseQuery(getRecipeQueryOptions(id))
   const catalog = useIngredientCatalog()
 
+  const recipeCost = formatMoney(
+    recipe.estimated_cost,
+    recipe.currency,
+    i18n.language,
+  )
+  const recipeCostPerServing = formatMoney(
+    recipe.estimated_cost_per_serving,
+    recipe.currency,
+    i18n.language,
+  )
   const totalTime =
     (recipe.prep_time_minutes ?? 0) + (recipe.cook_time_minutes ?? 0)
 
@@ -114,6 +126,26 @@ function RecipeDetailContent() {
           <div className="flex items-center gap-1.5 text-muted-foreground">
             <Flame className="h-4 w-4" />
             <span>{t("detail.kcal", { count: recipe.kcal_per_serving })}</span>
+          </div>
+        )}
+        {recipeCost && (
+          <div className="flex items-center gap-1.5 font-medium">
+            <Wallet className="h-4 w-4" />
+            <span>
+              {recipeCostPerServing
+                ? `${recipeCostPerServing} ${tCommon("pricing.per_serving")}`
+                : recipeCost}
+            </span>
+            {(recipe.unpriced_ingredient_count ?? 0) > 0 && (
+              <span
+                className="text-xs font-normal text-muted-foreground"
+                title={tCommon("pricing.partial_total")}
+              >
+                {tCommon("pricing.unpriced_count", {
+                  count: recipe.unpriced_ingredient_count,
+                })}
+              </span>
+            )}
           </div>
         )}
       </div>

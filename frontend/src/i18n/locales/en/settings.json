@@ -36,7 +36,12 @@
       "weekly": "Weekly",
       "biweekly": "Every two weeks",
       "monthly": "Monthly"
-    }
+    },
+    "budget_label": "Budget",
+    "budget_hint": "Spending cap for one shopping period. Leave empty for no budget.",
+    "budget_placeholder": "No budget set",
+    "currency_label": "Currency",
+    "currency_hint": "Used to display recipe and shopping list costs."
   },
   "password": {
     "title": "Change Password",

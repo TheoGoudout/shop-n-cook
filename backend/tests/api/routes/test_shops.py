@@ -14,6 +14,9 @@ from sqlmodel import Session
 from app import crud
 from app.core.config import settings
 from app.models import (
+    HouseholdCreate,
+    HouseholdMember,
+    HouseholdRole,
     IngredientCategory,
     IngredientUpdate,
     ShoppingList,
@@ -420,3 +423,90 @@ class TestExport:
         market = next(s for s in body["data"] if s["slug"] == "market")
         assert market["transport"] == "offline"
         assert market["capabilities"] == ["list_export"]
+
+
+class TestHouseholdAccess:
+    """Shopping lists are visible to a whole household, and the shop endpoints
+    must honour that — a member who can open a list in the app must not be
+    refused when costing or exporting it."""
+
+    def test_household_member_can_export_a_shared_list(
+        self, client: TestClient, db: Session
+    ) -> None:
+        owner = create_random_user(db)
+        crud.create_household(
+            session=db,
+            household_in=HouseholdCreate(name="Chez Nous"),
+            owner=owner,
+        )
+        member_email = "shops-household-member@example.com"
+        member_headers = authentication_token_from_email(
+            client=client, email=member_email, db=db
+        )
+        member = crud.get_user_by_email(session=db, email=member_email)
+        assert member is not None
+        membership = crud.get_membership(session=db, user_id=owner.id)
+        assert membership is not None
+        db.add(
+            HouseholdMember(
+                household_id=membership.household_id,
+                user_id=member.id,
+                role=HouseholdRole.MEMBER,
+            )
+        )
+        db.commit()
+
+        shopping_list = _list_with_items(db, owner=owner)
+        response = client.post(
+            f"{PREFIX}/market/export",
+            headers=member_headers,
+            json={"shopping_list_id": str(shopping_list.id)},
+        )
+        assert response.status_code == 200, response.text
+        assert response.json()["item_count"] == 2
+
+    def test_household_member_can_price_a_shared_list(
+        self, client: TestClient, db: Session
+    ) -> None:
+        owner = create_random_user(db)
+        crud.create_household(
+            session=db,
+            household_in=HouseholdCreate(name="Colocation"),
+            owner=owner,
+        )
+        member_email = "shops-household-pricer@example.com"
+        member_headers = authentication_token_from_email(
+            client=client, email=member_email, db=db
+        )
+        member = crud.get_user_by_email(session=db, email=member_email)
+        assert member is not None
+        membership = crud.get_membership(session=db, user_id=owner.id)
+        assert membership is not None
+        db.add(
+            HouseholdMember(
+                household_id=membership.household_id,
+                user_id=member.id,
+                role=HouseholdRole.MEMBER,
+            )
+        )
+        db.commit()
+
+        shopping_list = _list_with_items(db, owner=owner)
+        response = client.post(
+            f"{PREFIX}/carrefour/price-list",
+            headers=member_headers,
+            json={"shopping_list_id": str(shopping_list.id)},
+        )
+        assert response.status_code == 200, response.text
+
+    def test_a_stranger_is_still_refused(self, client: TestClient, db: Session) -> None:
+        shopping_list = _list_with_items(db)
+        stranger = authentication_token_from_email(
+            client=client, email="shops-stranger@example.com", db=db
+        )
+        response = client.post(
+            f"{PREFIX}/market/export",
+            headers=stranger,
+            json={"shopping_list_id": str(shopping_list.id)},
+        )
+        assert response.status_code == 403

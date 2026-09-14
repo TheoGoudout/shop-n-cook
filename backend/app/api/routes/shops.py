@@ -68,7 +68,11 @@ def _lines_for_list(
     shopping_list = crud.get_shopping_list(
         session=session, shopping_list_id=shopping_list_id
     )
-    shopping_list = _check_list_access(shopping_list, current_user, shopping_list_id)
+    # `session` is what lets the household rule apply; without it a member of
+    # the owner's household is refused a list they can open everywhere else.
+    shopping_list = _check_list_access(
+        shopping_list, current_user, shopping_list_id, session
+    )
     # Checked-off items are already in the basket or the cupboard.
     items = [item for item in shopping_list.items if not item.is_checked]
 

@@ -9,6 +9,20 @@ from app.crud.ingredient import (
     rename_ingredient_references,
     update_ingredient,
 )
+from app.crud.meal_plan import (
+    add_entry,
+    create_meal_plan,
+    delete_entry,
+    delete_meal_plan,
+    generate_shopping_list,
+    get_meal_plan,
+    get_meal_plan_entry,
+    get_meal_plans,
+    meal_plan_entry_to_public,
+    meal_plan_to_public,
+    update_entry,
+    update_meal_plan,
+)
 from app.crud.recipe import (
     create_recipe,
     delete_recipe,
@@ -59,6 +73,19 @@ from app.crud.user_settings import (
 )
 
 __all__ = [
+    # meal plan
+    "meal_plan_to_public",
+    "meal_plan_entry_to_public",
+    "get_meal_plan",
+    "get_meal_plans",
+    "create_meal_plan",
+    "update_meal_plan",
+    "delete_meal_plan",
+    "get_meal_plan_entry",
+    "add_entry",
+    "update_entry",
+    "delete_entry",
+    "generate_shopping_list",
     # store
     "store_to_public",
     "ingredient_price_to_public",

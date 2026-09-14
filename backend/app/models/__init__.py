@@ -13,6 +13,18 @@ from app.models.ingredient import (
     IngredientUpdate,
     Unit,
 )
+from app.models.meal_plan import (
+    MealPlan,
+    MealPlanBase,
+    MealPlanCreate,
+    MealPlanEntry,
+    MealPlanEntryCreate,
+    MealPlanEntryPublic,
+    MealPlanEntryUpdate,
+    MealPlanPublic,
+    MealPlansPublic,
+    MealPlanUpdate,
+)
 from app.models.recipe import (
     Recipe,
     RecipeBase,
@@ -155,4 +167,15 @@ __all__ = [
     "IngredientPriceUpdate",
     "IngredientPricePublic",
     "IngredientPricesPublic",
+    # meal plan
+    "MealPlan",
+    "MealPlanBase",
+    "MealPlanCreate",
+    "MealPlanUpdate",
+    "MealPlanPublic",
+    "MealPlansPublic",
+    "MealPlanEntry",
+    "MealPlanEntryCreate",
+    "MealPlanEntryUpdate",
+    "MealPlanEntryPublic",
 ]

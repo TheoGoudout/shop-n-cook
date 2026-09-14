@@ -644,6 +644,372 @@ export const IngredientsPublicSchema = {
     title: 'IngredientsPublic'
 } as const;
 
+export const MealPlanCreateSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            maxLength: 255,
+            minLength: 1,
+            title: 'Name'
+        },
+        start_date: {
+            type: 'string',
+            format: 'date',
+            title: 'Start Date'
+        },
+        end_date: {
+            type: 'string',
+            format: 'date',
+            title: 'End Date'
+        }
+    },
+    type: 'object',
+    required: ['name', 'start_date', 'end_date'],
+    title: 'MealPlanCreate'
+} as const;
+
+export const MealPlanEntryCreateSchema = {
+    properties: {
+        entry_date: {
+            type: 'string',
+            format: 'date',
+            title: 'Entry Date'
+        },
+        meal_type: {
+            '$ref': '#/components/schemas/MealType',
+            default: 'dinner'
+        },
+        servings: {
+            type: 'integer',
+            minimum: 1,
+            title: 'Servings',
+            default: 2
+        },
+        recipe_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Recipe Id'
+        }
+    },
+    type: 'object',
+    required: ['entry_date', 'recipe_id'],
+    title: 'MealPlanEntryCreate'
+} as const;
+
+export const MealPlanEntryPublicSchema = {
+    properties: {
+        entry_date: {
+            type: 'string',
+            format: 'date',
+            title: 'Entry Date'
+        },
+        meal_type: {
+            '$ref': '#/components/schemas/MealType',
+            default: 'dinner'
+        },
+        servings: {
+            type: 'integer',
+            minimum: 1,
+            title: 'Servings',
+            default: 2
+        },
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        meal_plan_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Meal Plan Id'
+        },
+        recipe_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Recipe Id'
+        },
+        recipe_title: {
+            type: 'string',
+            title: 'Recipe Title'
+        },
+        recipe_image_url: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Recipe Image Url'
+        },
+        recipe_servings: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Recipe Servings'
+        },
+        prep_time_minutes: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Prep Time Minutes'
+        },
+        cook_time_minutes: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Cook Time Minutes'
+        },
+        estimated_cost: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Estimated Cost'
+        },
+        estimated_cost_per_serving: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Estimated Cost Per Serving'
+        }
+    },
+    type: 'object',
+    required: ['entry_date', 'id', 'meal_plan_id', 'recipe_id', 'recipe_title'],
+    title: 'MealPlanEntryPublic'
+} as const;
+
+export const MealPlanEntryUpdateSchema = {
+    properties: {
+        entry_date: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Entry Date'
+        },
+        meal_type: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/MealType'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        servings: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    minimum: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Servings'
+        },
+        recipe_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Recipe Id'
+        }
+    },
+    type: 'object',
+    title: 'MealPlanEntryUpdate'
+} as const;
+
+export const MealPlanPublicSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            maxLength: 255,
+            minLength: 1,
+            title: 'Name'
+        },
+        start_date: {
+            type: 'string',
+            format: 'date',
+            title: 'Start Date'
+        },
+        end_date: {
+            type: 'string',
+            format: 'date',
+            title: 'End Date'
+        },
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        owner_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Owner Id'
+        },
+        created_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Created At'
+        },
+        shopping_list_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Shopping List Id'
+        },
+        entries: {
+            items: {
+                '$ref': '#/components/schemas/MealPlanEntryPublic'
+            },
+            type: 'array',
+            title: 'Entries',
+            default: []
+        },
+        estimated_total: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Estimated Total'
+        },
+        unpriced_entry_count: {
+            type: 'integer',
+            title: 'Unpriced Entry Count',
+            default: 0
+        },
+        currency: {
+            type: 'string',
+            title: 'Currency',
+            default: 'EUR'
+        }
+    },
+    type: 'object',
+    required: ['name', 'start_date', 'end_date', 'id', 'owner_id'],
+    title: 'MealPlanPublic'
+} as const;
+
+export const MealPlanUpdateSchema = {
+    properties: {
+        name: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 255,
+                    minLength: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name'
+        },
+        start_date: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Start Date'
+        },
+        end_date: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'End Date'
+        }
+    },
+    type: 'object',
+    title: 'MealPlanUpdate'
+} as const;
+
+export const MealPlansPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/MealPlanPublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'MealPlansPublic'
+} as const;
+
 export const MealTypeSchema = {
     type: 'string',
     enum: ['breakfast', 'lunch', 'dinner', 'snack', 'dessert', 'drink', 'other'],

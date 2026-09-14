@@ -118,6 +118,67 @@ export type IngredientUpdate = {
     image_url?: (string | null);
 };
 
+export type MealPlanCreate = {
+    name: string;
+    start_date: string;
+    end_date: string;
+};
+
+export type MealPlanEntryCreate = {
+    entry_date: string;
+    meal_type?: MealType;
+    servings?: number;
+    recipe_id: string;
+};
+
+export type MealPlanEntryPublic = {
+    entry_date: string;
+    meal_type?: MealType;
+    servings?: number;
+    id: string;
+    meal_plan_id: string;
+    recipe_id: string;
+    recipe_title: string;
+    recipe_image_url?: (string | null);
+    recipe_servings?: (number | null);
+    prep_time_minutes?: (number | null);
+    cook_time_minutes?: (number | null);
+    estimated_cost?: (string | null);
+    estimated_cost_per_serving?: (string | null);
+};
+
+export type MealPlanEntryUpdate = {
+    entry_date?: (string | null);
+    meal_type?: (MealType | null);
+    servings?: (number | null);
+    recipe_id?: (string | null);
+};
+
+export type MealPlanPublic = {
+    name: string;
+    start_date: string;
+    end_date: string;
+    id: string;
+    owner_id: string;
+    created_at?: (string | null);
+    shopping_list_id?: (string | null);
+    entries?: Array<MealPlanEntryPublic>;
+    estimated_total?: (string | null);
+    unpriced_entry_count?: number;
+    currency?: string;
+};
+
+export type MealPlansPublic = {
+    data: Array<MealPlanPublic>;
+    count: number;
+};
+
+export type MealPlanUpdate = {
+    name?: (string | null);
+    start_date?: (string | null);
+    end_date?: (string | null);
+};
+
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'dessert' | 'drink' | 'other';
 
 export type Message = {
@@ -600,6 +661,67 @@ export type LoginRecoverPasswordHtmlContentData = {
 };
 
 export type LoginRecoverPasswordHtmlContentResponse = (string);
+
+export type MealPlansReadMealPlansData = {
+    limit?: number;
+    skip?: number;
+};
+
+export type MealPlansReadMealPlansResponse = (MealPlansPublic);
+
+export type MealPlansCreateMealPlanData = {
+    requestBody: MealPlanCreate;
+};
+
+export type MealPlansCreateMealPlanResponse = (MealPlanPublic);
+
+export type MealPlansReadMealPlanData = {
+    id: string;
+};
+
+export type MealPlansReadMealPlanResponse = (MealPlanPublic);
+
+export type MealPlansUpdateMealPlanData = {
+    id: string;
+    requestBody: MealPlanUpdate;
+};
+
+export type MealPlansUpdateMealPlanResponse = (MealPlanPublic);
+
+export type MealPlansDeleteMealPlanData = {
+    id: string;
+};
+
+export type MealPlansDeleteMealPlanResponse = (Message);
+
+export type MealPlansAddEntryData = {
+    id: string;
+    requestBody: MealPlanEntryCreate;
+};
+
+export type MealPlansAddEntryResponse = (MealPlanEntryPublic);
+
+export type MealPlansUpdateEntryData = {
+    entryId: string;
+    id: string;
+    requestBody: MealPlanEntryUpdate;
+};
+
+export type MealPlansUpdateEntryResponse = (MealPlanEntryPublic);
+
+export type MealPlansDeleteEntryData = {
+    entryId: string;
+    id: string;
+};
+
+export type MealPlansDeleteEntryResponse = (Message);
+
+export type MealPlansGenerateShoppingListData = {
+    id: string;
+    name?: (string | null);
+};
+
+export type MealPlansGenerateShoppingListResponse = (ShoppingListPublic);
 
 export type PrivateCreateUserData = {
     requestBody: PrivateUserCreate;

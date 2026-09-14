@@ -139,9 +139,9 @@ class TestScoring:
         assert score_name("crème fraîche", "Creme fraiche epaisse") > 0.5
 
     def test_extra_packaging_words_do_not_sink_a_match(self) -> None:
-        assert score_name(
-            "tomates cerises", "Tomates cerises rouges barquette 250g"
-        ) > 0.6
+        assert (
+            score_name("tomates cerises", "Tomates cerises rouges barquette 250g") > 0.6
+        )
 
     def test_unrelated_product_scores_low(self) -> None:
         assert score_name("tomates cerises", "Lessive liquide 3L") < 0.3

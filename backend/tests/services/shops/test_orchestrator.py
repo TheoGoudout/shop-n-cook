@@ -148,8 +148,7 @@ class TestPricing:
         )
         assert len(result.items) == len(LINES)
         assert all(
-            item.match_status is MatchStatus.SEARCH_UNSUPPORTED
-            for item in result.items
+            item.match_status is MatchStatus.SEARCH_UNSUPPORTED for item in result.items
         )
         assert result.notes == [DegradationNote.SEARCH_UNSUPPORTED]
 
@@ -170,9 +169,7 @@ class TestCartHandoff:
         assert handoff.transport is Transport.EXTENSION
         assert handoff.url is None
         assert handoff.plan is not None
-        assert [e.query for e in handoff.plan.entries] == [
-            line.name for line in LINES
-        ]
+        assert [e.query for e in handoff.plan.entries] == [line.name for line in LINES]
         # Nothing is "unresolved": the extension resolves on-site, so claiming
         # a failure here would be wrong.
         assert handoff.unresolved_item_names == []

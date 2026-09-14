@@ -26,7 +26,10 @@ from app.services.shops.registry import ANY_COUNTRY, get_provider, iter_provider
 
 LINES = [
     ListLine(
-        name="Oignons", quantity=200, unit=Unit.GRAM, category=IngredientCategory.PRODUCE
+        name="Oignons",
+        quantity=200,
+        unit=Unit.GRAM,
+        category=IngredientCategory.PRODUCE,
     ),
     ListLine(
         name="oignon",
@@ -72,7 +75,7 @@ class TestMerging:
         assert counts["Bavette"] == 1
 
     def test_incompatible_units_stay_separate(self) -> None:
-        """"2 cloves" and "1 bulb" are both true; adding them is not."""
+        """ "2 cloves" and "1 bulb" are both true; adding them is not."""
         merged = merge_lines(
             [
                 ListLine(name="ail", quantity=2, unit=Unit.CLOVE),
@@ -172,9 +175,11 @@ class TestExport:
         assert "1.5 kg Oignons" in _market().export_list(LINES).content
 
     def test_markdown_uses_headings_and_dashes(self) -> None:
-        content = _market().export_list(
-            LINES, export_format=ListExportFormat.MARKDOWN
-        ).content
+        content = (
+            _market()
+            .export_list(LINES, export_format=ListExportFormat.MARKDOWN)
+            .content
+        )
         assert content.startswith("## ")
         assert "- 1.5 kg Oignons" in content
 
@@ -182,9 +187,9 @@ class TestExport:
         import csv
         import io
 
-        content = _market().export_list(
-            LINES, export_format=ListExportFormat.CSV
-        ).content
+        content = (
+            _market().export_list(LINES, export_format=ListExportFormat.CSV).content
+        )
         rows = list(csv.reader(io.StringIO(content)))
         assert rows[0] == ["category", "item", "quantity", "unit", "note"]
         assert len(rows) == 5

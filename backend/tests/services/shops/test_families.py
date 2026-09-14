@@ -5,8 +5,9 @@ matching the convention the recipe-import tests use.
 """
 
 from typing import Any
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
+import httpx
 import pytest
 
 from app.models.ingredient import Unit
@@ -200,9 +201,7 @@ class TestMagento:
         return MagentoProvider(
             slug="biocoop",
             display_name="Biocoop",
-            config=MagentoConfig(
-                origin="https://www.biocoop.fr", access_token="token"
-            ),
+            config=MagentoConfig(origin="https://www.biocoop.fr", access_token="token"),
         )
 
     def test_search_maps_graphql_items(self) -> None:
@@ -351,8 +350,6 @@ class TestHtmlCatalogExtraction:
 
 class TestMagentoFailures:
     def test_http_error_becomes_shop_unavailable(self) -> None:
-        import httpx
-
         provider = MagentoProvider(
             slug="x",
             display_name="X",
@@ -364,15 +361,10 @@ class TestMagentoFailures:
 
     def test_auth_gated_storefront_becomes_shop_unavailable(self) -> None:
         """Biocoop and Naturalia both answer 401 without a token."""
-        import httpx
-        from unittest.mock import Mock
-
         response = Mock(spec=httpx.Response)
         response.status_code = 401
         response.raise_for_status = Mock(
-            side_effect=httpx.HTTPStatusError(
-                "401", request=Mock(), response=response
-            )
+            side_effect=httpx.HTTPStatusError("401", request=Mock(), response=response)
         )
         provider = MagentoProvider(
             slug="x",

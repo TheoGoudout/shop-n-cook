@@ -73,5 +73,36 @@
       "en": "English",
       "fr": "Français"
     }
+  },
+  "household_sharing": {
+    "title": "Partage du foyer",
+    "description": "Partagez vos listes de courses et vos menus avec les personnes pour qui vous cuisinez.",
+    "none_title": "Vous ne partagez avec personne",
+    "none_description": "Créez un foyer pour partager listes et menus. Tous ses membres voient et modifient les mêmes listes.",
+    "name_label": "Nom du foyer",
+    "name_placeholder": "Notre cuisine",
+    "create": "Créer le foyer",
+    "created": "Foyer créé",
+    "members": "Membres",
+    "invites": "Invitations en attente",
+    "role_owner": "Propriétaire",
+    "role_member": "Membre",
+    "invite_label": "Inviter par e-mail",
+    "invite_placeholder": "nom@exemple.com",
+    "invite": "Envoyer l'invitation",
+    "invited": "Invitation envoyée",
+    "revoke": "Révoquer",
+    "revoked": "Invitation révoquée",
+    "remove": "Retirer",
+    "removed": "Membre retiré",
+    "leave": "Quitter le foyer",
+    "left": "Vous avez quitté le foyer",
+    "leave_confirm": "Quitter ce foyer ? Vous ne verrez plus ses listes et menus partagés.",
+    "disband": "Supprimer le foyer",
+    "disbanded": "Foyer supprimé",
+    "disband_confirm": "Supprimer ce foyer ? Le partage cesse pour tout le monde. Aucune recette, liste ou menu personnel n'est supprimé.",
+    "seats_remaining": "{{count}} place restante",
+    "seats_remaining_other": "{{count}} places restantes",
+    "full": "Ce foyer est complet."
   }
 }

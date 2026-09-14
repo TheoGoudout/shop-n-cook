@@ -58,6 +58,53 @@ export type GenerateMenuRequest = {
     seed?: number;
 };
 
+export type HouseholdCreate = {
+    name: string;
+};
+
+export type HouseholdInviteCreate = {
+    email: string;
+};
+
+export type HouseholdInvitePublic = {
+    id: string;
+    email: string;
+    expires_at: string;
+    accepted_at?: (string | null);
+};
+
+export type HouseholdMemberPublic = {
+    id: string;
+    user_id: string;
+    email: string;
+    full_name?: (string | null);
+    role: HouseholdRole;
+    joined_at?: (string | null);
+};
+
+export type HouseholdPublic = {
+    name: string;
+    id: string;
+    owner_id: string;
+    created_at?: (string | null);
+    members?: Array<HouseholdMemberPublic>;
+    invites?: Array<HouseholdInvitePublic>;
+    seats_remaining?: number;
+};
+
+/**
+ * What a member may do.
+ *
+ * ``OWNER`` can rename the household, invite, and remove members;
+ * ``MEMBER`` can see and edit the shared lists and plans but not the
+ * membership itself.
+ */
+export type HouseholdRole = 'owner' | 'member';
+
+export type HouseholdUpdate = {
+    name?: (string | null);
+};
+
 export type HTTPValidationError = {
     detail?: Array<ValidationError>;
 };
@@ -590,6 +637,48 @@ export type ValidationError = {
         [key: string]: unknown;
     };
 };
+
+export type HouseholdsReadMyHouseholdResponse = (HouseholdPublic);
+
+export type HouseholdsDeleteMyHouseholdResponse = (Message);
+
+export type HouseholdsUpdateMyHouseholdData = {
+    requestBody: HouseholdUpdate;
+};
+
+export type HouseholdsUpdateMyHouseholdResponse = (HouseholdPublic);
+
+export type HouseholdsCreateHouseholdData = {
+    requestBody: HouseholdCreate;
+};
+
+export type HouseholdsCreateHouseholdResponse = (HouseholdPublic);
+
+export type HouseholdsLeaveMyHouseholdResponse = (Message);
+
+export type HouseholdsRemoveMemberData = {
+    memberId: string;
+};
+
+export type HouseholdsRemoveMemberResponse = (Message);
+
+export type HouseholdsInviteMemberData = {
+    requestBody: HouseholdInviteCreate;
+};
+
+export type HouseholdsInviteMemberResponse = (HouseholdPublic);
+
+export type HouseholdsRevokeInviteData = {
+    inviteId: string;
+};
+
+export type HouseholdsRevokeInviteResponse = (Message);
+
+export type HouseholdsAcceptInviteData = {
+    inviteId: string;
+};
+
+export type HouseholdsAcceptInviteResponse = (HouseholdPublic);
 
 export type IngredientPricesReadIngredientPricesData = {
     id: string;

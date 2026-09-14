@@ -6,6 +6,7 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
+from sqlmodel import Session
 
 from app import crud
 from app.api.deps import CurrentUser, PriceBookDep, SessionDep
@@ -30,12 +31,23 @@ from app.services.menu_generator import (
 router = APIRouter(prefix="/meal-plans", tags=["meal-plans"])
 
 
-def _check_plan_access(plan: MealPlan | None, current_user: User) -> MealPlan:
+def _check_plan_access(
+    plan: MealPlan | None, current_user: User, session: Session | None = None
+) -> MealPlan:
+    """Gate every read and write of one plan.
+
+    Delegates to ``crud.user_can_access`` so the household rule has a single
+    definition shared with shopping lists.
+    """
     if not plan:
         raise HTTPException(status_code=404, detail="Meal plan not found")
-    if not current_user.is_superuser and plan.owner_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Not enough permissions")
-    return plan
+    if current_user.is_superuser or plan.owner_id == current_user.id:
+        return plan
+    if session is not None and crud.user_can_access(
+        session=session, user=current_user, owner_id=plan.owner_id
+    ):
+        return plan
+    raise HTTPException(status_code=403, detail="Not enough permissions")
 
 
 def _check_recipe_usable(
@@ -62,9 +74,14 @@ def read_meal_plans(
     limit: int = 100,
 ) -> Any:
     """List meal plans. Superusers see all; regular users see only their own."""
-    owner_id = None if current_user.is_superuser else current_user.id
+    # A household member sees the whole household's plans, not just their own.
+    owner_ids = (
+        None
+        if current_user.is_superuser
+        else crud.household_member_ids(session=session, user_id=current_user.id)
+    )
     plans, count = crud.get_meal_plans(
-        session=session, owner_id=owner_id, skip=skip, limit=limit
+        session=session, owner_ids=owner_ids, skip=skip, limit=limit
     )
     return MealPlansPublic(
         data=[crud.meal_plan_to_public(p, prices) for p in plans], count=count
@@ -80,7 +97,7 @@ def read_meal_plan(
 ) -> Any:
     """Get one meal plan with all of its entries."""
     plan = crud.get_meal_plan(session=session, plan_id=id)
-    plan = _check_plan_access(plan, current_user)
+    plan = _check_plan_access(plan, current_user, session)
     return crud.meal_plan_to_public(plan, prices)
 
 
@@ -114,7 +131,7 @@ def update_meal_plan(
 ) -> Any:
     """Rename a meal plan or move its date range."""
     plan = crud.get_meal_plan(session=session, plan_id=id)
-    plan = _check_plan_access(plan, current_user)
+    plan = _check_plan_access(plan, current_user, session)
     start = plan_in.start_date or plan.start_date
     end = plan_in.end_date or plan.end_date
     if end < start:
@@ -131,7 +148,7 @@ def delete_meal_plan(
 ) -> Message:
     """Delete a meal plan and its entries. Any generated list is kept."""
     plan = crud.get_meal_plan(session=session, plan_id=id)
-    plan = _check_plan_access(plan, current_user)
+    plan = _check_plan_access(plan, current_user, session)
     crud.delete_meal_plan(session=session, plan=plan)
     return Message(message="Meal plan deleted successfully")
 
@@ -152,7 +169,7 @@ def add_entry(
 ) -> Any:
     """Put a recipe in one of the plan's slots."""
     plan = crud.get_meal_plan(session=session, plan_id=id)
-    plan = _check_plan_access(plan, current_user)
+    plan = _check_plan_access(plan, current_user, session)
     _check_recipe_usable(
         session=session, recipe_id=entry_in.recipe_id, current_user=current_user
     )
@@ -172,7 +189,7 @@ def update_entry(
 ) -> Any:
     """Move an entry to another slot, change its servings, or swap its recipe."""
     plan = crud.get_meal_plan(session=session, plan_id=id)
-    plan = _check_plan_access(plan, current_user)
+    plan = _check_plan_access(plan, current_user, session)
     entry = crud.get_meal_plan_entry(session=session, entry_id=entry_id)
     if not entry or entry.meal_plan_id != id:
         raise HTTPException(status_code=404, detail="Entry not found")
@@ -193,7 +210,7 @@ def delete_entry(
 ) -> Message:
     """Remove one entry from the plan."""
     plan = crud.get_meal_plan(session=session, plan_id=id)
-    plan = _check_plan_access(plan, current_user)
+    plan = _check_plan_access(plan, current_user, session)
     entry = crud.get_meal_plan_entry(session=session, entry_id=entry_id)
     if not entry or entry.meal_plan_id != id:
         raise HTTPException(status_code=404, detail="Entry not found")
@@ -222,7 +239,7 @@ def generate_shopping_list(
     lands on a single row.
     """
     plan = crud.get_meal_plan(session=session, plan_id=id)
-    plan = _check_plan_access(plan, current_user)
+    plan = _check_plan_access(plan, current_user, session)
     if not plan.entries:
         raise HTTPException(status_code=422, detail="Meal plan has no entries")
     shopping_list = crud.generate_shopping_list(session=session, plan=plan, name=name)
@@ -362,7 +379,7 @@ def swap_entry(
     a pasta night does not hand back another one.
     """
     plan = crud.get_meal_plan(session=session, plan_id=id)
-    plan = _check_plan_access(plan, current_user)
+    plan = _check_plan_access(plan, current_user, session)
     entry = crud.get_meal_plan_entry(session=session, entry_id=entry_id)
     if not entry or entry.meal_plan_id != id:
         raise HTTPException(status_code=404, detail="Entry not found")

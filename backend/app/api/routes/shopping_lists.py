@@ -2,6 +2,7 @@ import uuid
 from typing import Any
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException
+from sqlmodel import Session
 
 from app import crud
 from app.api.deps import CurrentUser, PriceBookDep, SessionDep
@@ -30,13 +31,28 @@ router = APIRouter(prefix="/shopping-lists", tags=["shopping-lists"])
 
 
 def _check_list_access(
-    shopping_list: ShoppingList | None, current_user: Any, _list_id: uuid.UUID
+    shopping_list: ShoppingList | None,
+    current_user: Any,
+    _list_id: uuid.UUID,
+    session: Session | None = None,
 ) -> ShoppingList:
+    """Gate every read and write of one list.
+
+    Access is decided by ``crud.user_can_access`` — your own lists, your
+    household's, or anything if you are a superuser — so the household rule
+    lives in exactly one place. ``session`` is optional only so the handful of
+    superuser/self cases that cannot reach the database still work; every route
+    here passes it.
+    """
     if not shopping_list:
         raise HTTPException(status_code=404, detail="Shopping list not found")
-    if not current_user.is_superuser and shopping_list.owner_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Not enough permissions")
-    return shopping_list
+    if current_user.is_superuser or shopping_list.owner_id == current_user.id:
+        return shopping_list
+    if session is not None and crud.user_can_access(
+        session=session, user=current_user, owner_id=shopping_list.owner_id
+    ):
+        return shopping_list
+    raise HTTPException(status_code=403, detail="Not enough permissions")
 
 
 @router.get("/", response_model=ShoppingListsPublic)
@@ -48,9 +64,14 @@ def read_shopping_lists(
     limit: int = 100,
 ) -> Any:
     """List shopping lists. Superusers see all; regular users see only their own."""
-    owner_id = None if current_user.is_superuser else current_user.id
+    # A household member sees the whole household's lists, not just their own.
+    owner_ids = (
+        None
+        if current_user.is_superuser
+        else crud.household_member_ids(session=session, user_id=current_user.id)
+    )
     lists, count = crud.get_shopping_lists(
-        session=session, owner_id=owner_id, skip=skip, limit=limit
+        session=session, owner_ids=owner_ids, skip=skip, limit=limit
     )
     return ShoppingListsPublic(
         data=[crud.shopping_list_to_public(sl, prices) for sl in lists], count=count
@@ -66,7 +87,7 @@ def read_shopping_list(
 ) -> Any:
     """Get a single shopping list with all its items and planned recipes."""
     sl = crud.get_shopping_list(session=session, shopping_list_id=id)
-    _check_list_access(sl, current_user, id)
+    _check_list_access(sl, current_user, id, session)
     return crud.shopping_list_to_public(sl, prices)  # type: ignore[arg-type]
 
 
@@ -96,7 +117,7 @@ def update_shopping_list(
 ) -> Any:
     """Update a shopping list name and/or date range."""
     sl = crud.get_shopping_list(session=session, shopping_list_id=id)
-    sl = _check_list_access(sl, current_user, id)
+    sl = _check_list_access(sl, current_user, id, session)
     sl = crud.update_shopping_list(
         session=session,
         db_list=sl,
@@ -111,7 +132,7 @@ def delete_shopping_list(
 ) -> Message:
     """Delete a shopping list and all its items."""
     sl = crud.get_shopping_list(session=session, shopping_list_id=id)
-    _check_list_access(sl, current_user, id)
+    _check_list_access(sl, current_user, id, session)
     crud.delete_shopping_list(session=session, shopping_list=sl)  # type: ignore[arg-type]
     return Message(message="Shopping list deleted successfully")
 
@@ -131,7 +152,7 @@ def add_item(
 ) -> Any:
     """Add an item to a shopping list."""
     sl = crud.get_shopping_list(session=session, shopping_list_id=id)
-    sl = _check_list_access(sl, current_user, id)
+    sl = _check_list_access(sl, current_user, id, session)
     ingredient, created = crud.get_or_create_ingredient(
         session=session, name=item_in.name
     )
@@ -158,7 +179,7 @@ def update_item(
     sl: ShoppingList | None = crud.get_shopping_list(
         session=session, shopping_list_id=id
     )
-    _check_list_access(sl, current_user, id)
+    _check_list_access(sl, current_user, id, session)
     item: ShoppingListItem | None = crud.get_shopping_list_item(
         session=session, item_id=item_id
     )
@@ -181,7 +202,7 @@ def delete_item(
     sl: ShoppingList | None = crud.get_shopping_list(
         session=session, shopping_list_id=id
     )
-    _check_list_access(sl, current_user, id)
+    _check_list_access(sl, current_user, id, session)
     item: ShoppingListItem | None = crud.get_shopping_list_item(
         session=session, item_id=item_id
     )
@@ -209,7 +230,7 @@ def add_recipe(
     A ShoppingListRecipe record is created to track this recipe in the list.
     """
     sl = crud.get_shopping_list(session=session, shopping_list_id=id)
-    sl = _check_list_access(sl, current_user, id)
+    sl = _check_list_access(sl, current_user, id, session)
     recipe = crud.get_recipe(session=session, recipe_id=recipe_id)
     if not recipe:
         raise HTTPException(status_code=404, detail="Recipe not found")
@@ -241,7 +262,7 @@ def compare_stores(
     prices of its own and falls back to the catalog baseline.
     """
     sl = crud.get_shopping_list(session=session, shopping_list_id=id)
-    sl = _check_list_access(sl, current_user, id)
+    sl = _check_list_access(sl, current_user, id, session)
 
     items = [(i.name, i.quantity, i.unit) for i in sl.items]
     stores, _ = crud.get_stores(session=session, active_only=True, limit=100)
@@ -288,7 +309,7 @@ def update_planned_recipe(
     sl: ShoppingList | None = crud.get_shopping_list(
         session=session, shopping_list_id=id
     )
-    sl = _check_list_access(sl, current_user, id)
+    sl = _check_list_access(sl, current_user, id, session)
     sl_recipe: ShoppingListRecipe | None = crud.get_shopping_list_recipe(
         session=session, sl_recipe_id=planned_recipe_id
     )
@@ -311,7 +332,7 @@ def delete_planned_recipe(
     sl: ShoppingList | None = crud.get_shopping_list(
         session=session, shopping_list_id=id
     )
-    sl = _check_list_access(sl, current_user, id)
+    sl = _check_list_access(sl, current_user, id, session)
     sl_recipe: ShoppingListRecipe | None = crud.get_shopping_list_recipe(
         session=session, sl_recipe_id=planned_recipe_id
     )

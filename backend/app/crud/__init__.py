@@ -1,3 +1,22 @@
+from app.crud.household import (
+    accept_invite,
+    create_household,
+    create_invite,
+    delete_household,
+    delete_invite,
+    get_household,
+    get_household_for_user,
+    get_invite,
+    get_member,
+    get_membership,
+    get_pending_invite_by_email,
+    household_member_ids,
+    household_to_public,
+    remove_member,
+    seats_used,
+    update_household,
+    user_can_access,
+)
 from app.crud.ingredient import (
     create_ingredient,
     delete_ingredient,
@@ -73,6 +92,24 @@ from app.crud.user_settings import (
 )
 
 __all__ = [
+    # household
+    "household_to_public",
+    "user_can_access",
+    "household_member_ids",
+    "get_household",
+    "get_household_for_user",
+    "get_membership",
+    "get_member",
+    "create_household",
+    "update_household",
+    "delete_household",
+    "remove_member",
+    "seats_used",
+    "get_invite",
+    "get_pending_invite_by_email",
+    "create_invite",
+    "delete_invite",
+    "accept_invite",
     # meal plan
     "meal_plan_to_public",
     "meal_plan_entry_to_public",

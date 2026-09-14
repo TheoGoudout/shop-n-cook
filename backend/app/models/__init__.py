@@ -4,6 +4,19 @@
 from sqlmodel import SQLModel  # noqa: F401 — re-exported for alembic env.py
 
 from app.models.base import Message, get_datetime_utc
+from app.models.household import (
+    Household,
+    HouseholdBase,
+    HouseholdCreate,
+    HouseholdInvite,
+    HouseholdInviteCreate,
+    HouseholdInvitePublic,
+    HouseholdMember,
+    HouseholdMemberPublic,
+    HouseholdPublic,
+    HouseholdRole,
+    HouseholdUpdate,
+)
 from app.models.ingredient import (
     Ingredient,
     IngredientCategory,
@@ -178,4 +191,16 @@ __all__ = [
     "MealPlanEntryCreate",
     "MealPlanEntryUpdate",
     "MealPlanEntryPublic",
+    # household
+    "Household",
+    "HouseholdBase",
+    "HouseholdCreate",
+    "HouseholdUpdate",
+    "HouseholdPublic",
+    "HouseholdRole",
+    "HouseholdMember",
+    "HouseholdMemberPublic",
+    "HouseholdInvite",
+    "HouseholdInviteCreate",
+    "HouseholdInvitePublic",
 ]

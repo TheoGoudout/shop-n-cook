@@ -285,6 +285,204 @@ export const HTTPValidationErrorSchema = {
     title: 'HTTPValidationError'
 } as const;
 
+export const HouseholdCreateSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            maxLength: 255,
+            minLength: 1,
+            title: 'Name'
+        }
+    },
+    type: 'object',
+    required: ['name'],
+    title: 'HouseholdCreate'
+} as const;
+
+export const HouseholdInviteCreateSchema = {
+    properties: {
+        email: {
+            type: 'string',
+            maxLength: 255,
+            minLength: 3,
+            title: 'Email'
+        }
+    },
+    type: 'object',
+    required: ['email'],
+    title: 'HouseholdInviteCreate'
+} as const;
+
+export const HouseholdInvitePublicSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        email: {
+            type: 'string',
+            title: 'Email'
+        },
+        expires_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Expires At'
+        },
+        accepted_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Accepted At'
+        }
+    },
+    type: 'object',
+    required: ['id', 'email', 'expires_at'],
+    title: 'HouseholdInvitePublic'
+} as const;
+
+export const HouseholdMemberPublicSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        user_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'User Id'
+        },
+        email: {
+            type: 'string',
+            title: 'Email'
+        },
+        full_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Full Name'
+        },
+        role: {
+            '$ref': '#/components/schemas/HouseholdRole'
+        },
+        joined_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Joined At'
+        }
+    },
+    type: 'object',
+    required: ['id', 'user_id', 'email', 'role'],
+    title: 'HouseholdMemberPublic'
+} as const;
+
+export const HouseholdPublicSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            maxLength: 255,
+            minLength: 1,
+            title: 'Name'
+        },
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        owner_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Owner Id'
+        },
+        created_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Created At'
+        },
+        members: {
+            items: {
+                '$ref': '#/components/schemas/HouseholdMemberPublic'
+            },
+            type: 'array',
+            title: 'Members',
+            default: []
+        },
+        invites: {
+            items: {
+                '$ref': '#/components/schemas/HouseholdInvitePublic'
+            },
+            type: 'array',
+            title: 'Invites',
+            default: []
+        },
+        seats_remaining: {
+            type: 'integer',
+            title: 'Seats Remaining',
+            default: 0
+        }
+    },
+    type: 'object',
+    required: ['name', 'id', 'owner_id'],
+    title: 'HouseholdPublic'
+} as const;
+
+export const HouseholdRoleSchema = {
+    type: 'string',
+    enum: ['owner', 'member'],
+    title: 'HouseholdRole',
+    description: `What a member may do.
+
+\`\`OWNER\`\` can rename the household, invite, and remove members;
+\`\`MEMBER\`\` can see and edit the shared lists and plans but not the
+membership itself.`
+} as const;
+
+export const HouseholdUpdateSchema = {
+    properties: {
+        name: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 255,
+                    minLength: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name'
+        }
+    },
+    type: 'object',
+    title: 'HouseholdUpdate'
+} as const;
+
 export const ImportSourceSchema = {
     type: 'string',
     enum: ['url', 'photo'],

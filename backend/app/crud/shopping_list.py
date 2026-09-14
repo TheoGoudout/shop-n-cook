@@ -109,13 +109,23 @@ def get_shopping_lists(
     *,
     session: Session,
     owner_id: uuid.UUID | None = None,
+    owner_ids: set[uuid.UUID] | None = None,
     skip: int = 0,
     limit: int = 100,
 ) -> tuple[list[ShoppingList], int]:
+    """List shopping lists, optionally restricted to a set of owners.
+
+    ``owner_ids`` is how a household sees its shared lists: pass every member's
+    id and the result covers all of them. It takes precedence over ``owner_id``.
+    """
     query = select(ShoppingList)
     count_query = select(func.count()).select_from(ShoppingList)
 
-    if owner_id is not None:
+    if owner_ids is not None:
+        owner_filter = col(ShoppingList.owner_id).in_(owner_ids)
+        query = query.where(owner_filter)
+        count_query = count_query.where(owner_filter)
+    elif owner_id is not None:
         query = query.where(ShoppingList.owner_id == owner_id)
         count_query = count_query.where(ShoppingList.owner_id == owner_id)
 

@@ -96,12 +96,22 @@ def get_meal_plans(
     *,
     session: Session,
     owner_id: uuid.UUID | None = None,
+    owner_ids: set[uuid.UUID] | None = None,
     skip: int = 0,
     limit: int = 100,
 ) -> tuple[list[MealPlan], int]:
+    """List meal plans, optionally restricted to a set of owners.
+
+    ``owner_ids`` is how a household sees its shared plans; it takes precedence
+    over ``owner_id``.
+    """
     query = select(MealPlan)
     count_query = select(func.count()).select_from(MealPlan)
-    if owner_id is not None:
+    if owner_ids is not None:
+        owner_filter = col(MealPlan.owner_id).in_(owner_ids)
+        query = query.where(owner_filter)
+        count_query = count_query.where(owner_filter)
+    elif owner_id is not None:
         query = query.where(MealPlan.owner_id == owner_id)
         count_query = count_query.where(MealPlan.owner_id == owner_id)
 

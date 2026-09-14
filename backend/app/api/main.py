@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from app.api.routes import (
+    households,
     ingredients,
     login,
     meal_plans,
@@ -25,6 +26,7 @@ api_router.include_router(ingredients.router)
 api_router.include_router(stores.router)
 api_router.include_router(stores.price_router)
 api_router.include_router(meal_plans.router)
+api_router.include_router(households.router)
 
 
 if settings.ENVIRONMENT == "local":

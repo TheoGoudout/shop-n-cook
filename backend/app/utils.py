@@ -100,6 +100,25 @@ def generate_new_account_email(
     return EmailData(html_content=html_content, subject=subject)
 
 
+def generate_household_invite_email(
+    *, inviter: str, household_name: str, invite_id: str
+) -> EmailData:
+    project_name = settings.PROJECT_NAME
+    subject = f"{project_name} - {inviter} invited you to their household"
+    link = f"{settings.FRONTEND_HOST}/settings?invite={invite_id}"
+    html_content = render_email_template(
+        template_name="household_invite.html",
+        context={
+            "project_name": project_name,
+            "inviter": inviter,
+            "household_name": household_name,
+            "link": link,
+            "valid_hours": settings.HOUSEHOLD_INVITE_EXPIRE_HOURS,
+        },
+    )
+    return EmailData(html_content=html_content, subject=subject)
+
+
 def generate_password_reset_token(email: str) -> str:
     delta = timedelta(hours=settings.EMAIL_RESET_TOKEN_EXPIRE_HOURS)
     now = datetime.now(timezone.utc)

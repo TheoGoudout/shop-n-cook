@@ -3,7 +3,183 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { IngredientPricesReadIngredientPricesData, IngredientPricesReadIngredientPricesResponse, IngredientPricesUpsertIngredientPriceData, IngredientPricesUpsertIngredientPriceResponse, IngredientPricesDeleteIngredientPriceData, IngredientPricesDeleteIngredientPriceResponse, IngredientsReadIngredientsData, IngredientsReadIngredientsResponse, IngredientsCreateIngredientData, IngredientsCreateIngredientResponse, IngredientsUpdateIngredientData, IngredientsUpdateIngredientResponse, IngredientsDeduplicateIngredientsData, IngredientsDeduplicateIngredientsResponse, IngredientsEstimateIngredientPriceRouteData, IngredientsEstimateIngredientPriceRouteResponse, IngredientsEstimateIngredientPricesRouteData, IngredientsEstimateIngredientPricesRouteResponse, IngredientsFetchIngredientImageData, IngredientsFetchIngredientImageResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, MealPlansReadMealPlansData, MealPlansReadMealPlansResponse, MealPlansCreateMealPlanData, MealPlansCreateMealPlanResponse, MealPlansReadMealPlanData, MealPlansReadMealPlanResponse, MealPlansUpdateMealPlanData, MealPlansUpdateMealPlanResponse, MealPlansDeleteMealPlanData, MealPlansDeleteMealPlanResponse, MealPlansAddEntryData, MealPlansAddEntryResponse, MealPlansUpdateEntryData, MealPlansUpdateEntryResponse, MealPlansDeleteEntryData, MealPlansDeleteEntryResponse, MealPlansGenerateShoppingListData, MealPlansGenerateShoppingListResponse, MealPlansGenerateMenuRouteData, MealPlansGenerateMenuRouteResponse, MealPlansSwapEntryData, MealPlansSwapEntryResponse, PrivateCreateUserData, PrivateCreateUserResponse, RecipesReadPublicRecipesData, RecipesReadPublicRecipesResponse, RecipesReadRecipesData, RecipesReadRecipesResponse, RecipesCreateRecipeData, RecipesCreateRecipeResponse, RecipesReadRecipeData, RecipesReadRecipeResponse, RecipesUpdateRecipeData, RecipesUpdateRecipeResponse, RecipesDeleteRecipeData, RecipesDeleteRecipeResponse, RecipesReimportRecipeData, RecipesReimportRecipeResponse, RecipesImportRecipeUrlData, RecipesImportRecipeUrlResponse, RecipesImportRecipePhotosData, RecipesImportRecipePhotosResponse, ShoppingListsReadShoppingListsData, ShoppingListsReadShoppingListsResponse, ShoppingListsCreateShoppingListData, ShoppingListsCreateShoppingListResponse, ShoppingListsReadShoppingListData, ShoppingListsReadShoppingListResponse, ShoppingListsUpdateShoppingListData, ShoppingListsUpdateShoppingListResponse, ShoppingListsDeleteShoppingListData, ShoppingListsDeleteShoppingListResponse, ShoppingListsAddItemData, ShoppingListsAddItemResponse, ShoppingListsUpdateItemData, ShoppingListsUpdateItemResponse, ShoppingListsDeleteItemData, ShoppingListsDeleteItemResponse, ShoppingListsAddRecipeData, ShoppingListsAddRecipeResponse, ShoppingListsCompareStoresData, ShoppingListsCompareStoresResponse, ShoppingListsUpdatePlannedRecipeData, ShoppingListsUpdatePlannedRecipeResponse, ShoppingListsDeletePlannedRecipeData, ShoppingListsDeletePlannedRecipeResponse, StoresReadStoresData, StoresReadStoresResponse, StoresCreateStoreData, StoresCreateStoreResponse, StoresUpdateStoreData, StoresUpdateStoreResponse, StoresDeleteStoreData, StoresDeleteStoreResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UserSettingsReadUserSettingsResponse, UserSettingsUpdateUserSettingsData, UserSettingsUpdateUserSettingsResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
+import type { HouseholdsReadMyHouseholdResponse, HouseholdsDeleteMyHouseholdResponse, HouseholdsUpdateMyHouseholdData, HouseholdsUpdateMyHouseholdResponse, HouseholdsCreateHouseholdData, HouseholdsCreateHouseholdResponse, HouseholdsLeaveMyHouseholdResponse, HouseholdsRemoveMemberData, HouseholdsRemoveMemberResponse, HouseholdsInviteMemberData, HouseholdsInviteMemberResponse, HouseholdsRevokeInviteData, HouseholdsRevokeInviteResponse, HouseholdsAcceptInviteData, HouseholdsAcceptInviteResponse, IngredientPricesReadIngredientPricesData, IngredientPricesReadIngredientPricesResponse, IngredientPricesUpsertIngredientPriceData, IngredientPricesUpsertIngredientPriceResponse, IngredientPricesDeleteIngredientPriceData, IngredientPricesDeleteIngredientPriceResponse, IngredientsReadIngredientsData, IngredientsReadIngredientsResponse, IngredientsCreateIngredientData, IngredientsCreateIngredientResponse, IngredientsUpdateIngredientData, IngredientsUpdateIngredientResponse, IngredientsDeduplicateIngredientsData, IngredientsDeduplicateIngredientsResponse, IngredientsEstimateIngredientPriceRouteData, IngredientsEstimateIngredientPriceRouteResponse, IngredientsEstimateIngredientPricesRouteData, IngredientsEstimateIngredientPricesRouteResponse, IngredientsFetchIngredientImageData, IngredientsFetchIngredientImageResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, MealPlansReadMealPlansData, MealPlansReadMealPlansResponse, MealPlansCreateMealPlanData, MealPlansCreateMealPlanResponse, MealPlansReadMealPlanData, MealPlansReadMealPlanResponse, MealPlansUpdateMealPlanData, MealPlansUpdateMealPlanResponse, MealPlansDeleteMealPlanData, MealPlansDeleteMealPlanResponse, MealPlansAddEntryData, MealPlansAddEntryResponse, MealPlansUpdateEntryData, MealPlansUpdateEntryResponse, MealPlansDeleteEntryData, MealPlansDeleteEntryResponse, MealPlansGenerateShoppingListData, MealPlansGenerateShoppingListResponse, MealPlansGenerateMenuRouteData, MealPlansGenerateMenuRouteResponse, MealPlansSwapEntryData, MealPlansSwapEntryResponse, PrivateCreateUserData, PrivateCreateUserResponse, RecipesReadPublicRecipesData, RecipesReadPublicRecipesResponse, RecipesReadRecipesData, RecipesReadRecipesResponse, RecipesCreateRecipeData, RecipesCreateRecipeResponse, RecipesReadRecipeData, RecipesReadRecipeResponse, RecipesUpdateRecipeData, RecipesUpdateRecipeResponse, RecipesDeleteRecipeData, RecipesDeleteRecipeResponse, RecipesReimportRecipeData, RecipesReimportRecipeResponse, RecipesImportRecipeUrlData, RecipesImportRecipeUrlResponse, RecipesImportRecipePhotosData, RecipesImportRecipePhotosResponse, ShoppingListsReadShoppingListsData, ShoppingListsReadShoppingListsResponse, ShoppingListsCreateShoppingListData, ShoppingListsCreateShoppingListResponse, ShoppingListsReadShoppingListData, ShoppingListsReadShoppingListResponse, ShoppingListsUpdateShoppingListData, ShoppingListsUpdateShoppingListResponse, ShoppingListsDeleteShoppingListData, ShoppingListsDeleteShoppingListResponse, ShoppingListsAddItemData, ShoppingListsAddItemResponse, ShoppingListsUpdateItemData, ShoppingListsUpdateItemResponse, ShoppingListsDeleteItemData, ShoppingListsDeleteItemResponse, ShoppingListsAddRecipeData, ShoppingListsAddRecipeResponse, ShoppingListsCompareStoresData, ShoppingListsCompareStoresResponse, ShoppingListsUpdatePlannedRecipeData, ShoppingListsUpdatePlannedRecipeResponse, ShoppingListsDeletePlannedRecipeData, ShoppingListsDeletePlannedRecipeResponse, StoresReadStoresData, StoresReadStoresResponse, StoresCreateStoreData, StoresCreateStoreResponse, StoresUpdateStoreData, StoresUpdateStoreResponse, StoresDeleteStoreData, StoresDeleteStoreResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UserSettingsReadUserSettingsResponse, UserSettingsUpdateUserSettingsData, UserSettingsUpdateUserSettingsResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
+
+export class HouseholdsService {
+    /**
+     * Read My Household
+     * The household this user belongs to, with its members and open invites.
+     * @returns HouseholdPublic Successful Response
+     * @throws ApiError
+     */
+    public static readMyHousehold(): CancelablePromise<HouseholdsReadMyHouseholdResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/households/me'
+        });
+    }
+    
+    /**
+     * Delete My Household
+     * Disband the household. Owner only.
+     *
+     * Members' own recipes, lists and plans are untouched — only the sharing
+     * between them ends.
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static deleteMyHousehold(): CancelablePromise<HouseholdsDeleteMyHouseholdResponse> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/households/me'
+        });
+    }
+    
+    /**
+     * Update My Household
+     * Rename the household. Owner only.
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns HouseholdPublic Successful Response
+     * @throws ApiError
+     */
+    public static updateMyHousehold(data: HouseholdsUpdateMyHouseholdData): CancelablePromise<HouseholdsUpdateMyHouseholdResponse> {
+        return __request(OpenAPI, {
+            method: 'PATCH',
+            url: '/api/v1/households/me',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Create Household
+     * Start a household, becoming its first member and owner.
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns HouseholdPublic Successful Response
+     * @throws ApiError
+     */
+    public static createHousehold(data: HouseholdsCreateHouseholdData): CancelablePromise<HouseholdsCreateHouseholdResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/households/',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Leave My Household
+     * Leave the household.
+     *
+     * The owner cannot leave — they disband it instead, which makes the outcome
+     * explicit rather than silently orphaning everyone else.
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static leaveMyHousehold(): CancelablePromise<HouseholdsLeaveMyHouseholdResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/households/me/leave'
+        });
+    }
+    
+    /**
+     * Remove Member
+     * Remove someone from the household. Owner only.
+     * @param data The data for the request.
+     * @param data.memberId
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static removeMember(data: HouseholdsRemoveMemberData): CancelablePromise<HouseholdsRemoveMemberResponse> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/households/me/members/{member_id}',
+            path: {
+                member_id: data.memberId
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Invite Member
+     * Invite someone by email. Owner only.
+     *
+     * A pending invite holds a seat, so inviting five people and waiting does not
+     * let a sixth in through the gap.
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns HouseholdPublic Successful Response
+     * @throws ApiError
+     */
+    public static inviteMember(data: HouseholdsInviteMemberData): CancelablePromise<HouseholdsInviteMemberResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/households/me/invites',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Revoke Invite
+     * Withdraw an invitation that has not been accepted. Owner only.
+     * @param data The data for the request.
+     * @param data.inviteId
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static revokeInvite(data: HouseholdsRevokeInviteData): CancelablePromise<HouseholdsRevokeInviteResponse> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/households/me/invites/{invite_id}',
+            path: {
+                invite_id: data.inviteId
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Accept Invite
+     * Join a household you were invited to.
+     *
+     * The invite is checked against the *logged-in user's own email*, so knowing
+     * an invite id is not enough to join someone else's household.
+     * @param data The data for the request.
+     * @param data.inviteId
+     * @returns HouseholdPublic Successful Response
+     * @throws ApiError
+     */
+    public static acceptInvite(data: HouseholdsAcceptInviteData): CancelablePromise<HouseholdsAcceptInviteResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/households/invites/{invite_id}/accept',
+            path: {
+                invite_id: data.inviteId
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+}
 
 export class IngredientPricesService {
     /**

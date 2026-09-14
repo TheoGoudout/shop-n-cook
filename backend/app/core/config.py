@@ -148,6 +148,13 @@ class Settings(BaseSettings):
     # Spoonacular ingredient images (https://spoonacular.com/food-api)
     SPOONACULAR_API_KEY: str | None = None
 
+    # Shop integrations. Magento storefronts (Biocoop, Naturalia) expose the
+    # stock /rest/V1 and /graphql surface but gate it behind auth, so they are
+    # registered only when a token is present — otherwise the UI would be
+    # offered a capability that fails on every call.
+    BIOCOOP_API_TOKEN: str | None = None
+    NATURALIA_API_TOKEN: str | None = None
+
     # LangSmith tracing (optional)
     LANGCHAIN_TRACING_V2: bool = False
     LANGCHAIN_API_KEY: str | None = None

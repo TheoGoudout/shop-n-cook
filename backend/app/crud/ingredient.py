@@ -1,10 +1,16 @@
 import json
 import uuid
+from collections.abc import Sequence
 
 from sqlalchemy import update
 from sqlmodel import Session, func, select
 
-from app.models.ingredient import Ingredient, IngredientCreate, IngredientUpdate
+from app.models.ingredient import (
+    Ingredient,
+    IngredientCategory,
+    IngredientCreate,
+    IngredientUpdate,
+)
 from app.models.recipe import RecipeIngredient
 from app.models.shopping_list import ShoppingListItem
 
@@ -13,6 +19,24 @@ def get_ingredient_by_name(session: Session, name: str) -> Ingredient | None:
     return session.exec(
         select(Ingredient).where(func.lower(Ingredient.name) == name.lower())
     ).first()
+
+
+def get_ingredient_categories_by_name(
+    *, session: Session, names: Sequence[str]
+) -> dict[str, IngredientCategory]:
+    """Map lower-cased ingredient names to their catalogue category.
+
+    One query for a whole shopping list rather than one per line. Names with no
+    catalogue entry are simply absent from the result, which callers treat as
+    "aisle unknown".
+    """
+    wanted = {name.strip().lower() for name in names if name.strip()}
+    if not wanted:
+        return {}
+    rows = session.exec(
+        select(Ingredient).where(func.lower(Ingredient.name).in_(wanted))
+    ).all()
+    return {row.name.strip().lower(): row.category for row in rows}
 
 
 def get_or_create_ingredient(session: Session, name: str) -> tuple[Ingredient, bool]:

@@ -23,6 +23,7 @@ from app.crud.ingredient import (
     get_duplicate_groups,
     get_ingredient,
     get_ingredient_by_name,
+    get_ingredient_categories_by_name,
     get_ingredients,
     get_or_create_ingredient,
     rename_ingredient_references,
@@ -140,6 +141,7 @@ __all__ = [
     # ingredient catalog
     "get_ingredient",
     "get_ingredient_by_name",
+    "get_ingredient_categories_by_name",
     "get_ingredients",
     "get_or_create_ingredient",
     "create_ingredient",

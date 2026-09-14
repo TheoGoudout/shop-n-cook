@@ -84,6 +84,166 @@ export const Body_recipes_import_recipe_photosSchema = {
     title: 'Body_recipes-import_recipe_photos'
 } as const;
 
+export const CapabilitySchema = {
+    type: 'string',
+    enum: ['search', 'prices', 'store_locator', 'cart_link', 'cart_push', 'list_export'],
+    title: 'Capability',
+    description: 'A discrete thing a shop can do. Providers declare a subset.'
+} as const;
+
+export const CartHandoffSchema = {
+    properties: {
+        shop_slug: {
+            type: 'string',
+            title: 'Shop Slug'
+        },
+        transport: {
+            '$ref': '#/components/schemas/Transport'
+        },
+        url: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Url'
+        },
+        plan: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/CartPlan'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        unresolved_item_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Unresolved Item Names'
+        }
+    },
+    type: 'object',
+    required: ['shop_slug', 'transport'],
+    title: 'CartHandoff',
+    description: `How the user gets from our list into the shop's basket.
+
+Exactly one of \`\`url\`\` / \`\`plan\`\` is set, selected by \`\`transport\`\`. Both
+transports share this one return type so the frontend branches once, in the
+render layer, instead of everywhere.`
+} as const;
+
+export const CartPlanSchema = {
+    properties: {
+        shop_slug: {
+            type: 'string',
+            title: 'Shop Slug'
+        },
+        origin: {
+            type: 'string',
+            title: 'Origin'
+        },
+        store_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Store Id'
+        },
+        entries: {
+            items: {
+                '$ref': '#/components/schemas/CartPlanEntry'
+            },
+            type: 'array',
+            title: 'Entries'
+        }
+    },
+    type: 'object',
+    required: ['shop_slug', 'origin'],
+    title: 'CartPlan',
+    description: `A declarative, retailer-agnostic script the extension executes.
+
+The extension owns *how* (selectors, waits, retries) via its own adapter
+keyed on \`\`shop_slug\`\`; the backend owns *what*. Keeping the selectors out
+of the backend means a retailer redesign ships as an extension update, not
+a backend deploy.`
+} as const;
+
+export const CartPlanEntrySchema = {
+    properties: {
+        sku: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Sku'
+        },
+        query: {
+            type: 'string',
+            title: 'Query'
+        },
+        name: {
+            type: 'string',
+            title: 'Name'
+        },
+        quantity: {
+            type: 'integer',
+            minimum: 1,
+            title: 'Quantity'
+        },
+        product_url: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Product Url'
+        },
+        requested_quantity: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Requested Quantity'
+        },
+        requested_unit: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/Unit'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        }
+    },
+    type: 'object',
+    required: ['query', 'name', 'quantity'],
+    title: 'CartPlanEntry',
+    description: "One line of work for the extension to perform on the retailer's site."
+} as const;
+
 export const DeduplicateMergeSchema = {
     properties: {
         kept: {
@@ -126,6 +286,16 @@ export const DeduplicateResponseSchema = {
     title: 'DeduplicateResponse'
 } as const;
 
+export const DegradationNoteSchema = {
+    type: 'string',
+    enum: ['search_unsupported', 'prices_unsupported', 'prices_require_store', 'shop_unavailable', 'some_items_unmatched'],
+    title: 'DegradationNote',
+    description: `Stable machine codes explaining why a result is partial.
+
+Codes rather than sentences: the frontend translates them through the i18n
+layer, so the backend never ships user-facing prose.`
+} as const;
+
 export const DifficultySchema = {
     type: 'string',
     enum: ['easy', 'medium', 'hard'],
@@ -155,6 +325,106 @@ export const EstimatePricesRequestSchema = {
 
 An empty \`\`ingredient_ids\`\` means "everything without a curated price",
 which is the common case after a bulk import.`
+} as const;
+
+export const ExportedListSchema = {
+    properties: {
+        shop_slug: {
+            type: 'string',
+            title: 'Shop Slug'
+        },
+        shop_name: {
+            type: 'string',
+            title: 'Shop Name'
+        },
+        format: {
+            '$ref': '#/components/schemas/ListExportFormat'
+        },
+        groups: {
+            items: {
+                '$ref': '#/components/schemas/ExportedListGroup'
+            },
+            type: 'array',
+            title: 'Groups'
+        },
+        content: {
+            type: 'string',
+            title: 'Content',
+            default: ''
+        },
+        item_count: {
+            type: 'integer',
+            title: 'Item Count',
+            default: 0
+        },
+        merged_line_count: {
+            type: 'integer',
+            title: 'Merged Line Count',
+            default: 0
+        }
+    },
+    type: 'object',
+    required: ['shop_slug', 'shop_name', 'format'],
+    title: 'ExportedList',
+    description: `A list to shop from by hand.
+
+Carries both a structured form (\`\`groups\`\`, for the app to render natively)
+and a rendered one (\`\`content\`\`, to copy, print or send to someone else).
+Producing both avoids the frontend having to reimplement the aisle ordering
+just to show the same thing twice.`
+} as const;
+
+export const ExportedListGroupSchema = {
+    properties: {
+        category: {
+            '$ref': '#/components/schemas/IngredientCategory'
+        },
+        items: {
+            items: {
+                '$ref': '#/components/schemas/ExportedListItem'
+            },
+            type: 'array',
+            title: 'Items'
+        }
+    },
+    type: 'object',
+    required: ['category'],
+    title: 'ExportedListGroup'
+} as const;
+
+export const ExportedListItemSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            title: 'Name'
+        },
+        quantity: {
+            type: 'number',
+            title: 'Quantity'
+        },
+        unit: {
+            '$ref': '#/components/schemas/Unit'
+        },
+        note: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Note'
+        },
+        merged_from: {
+            type: 'integer',
+            title: 'Merged From',
+            default: 1
+        }
+    },
+    type: 'object',
+    required: ['name', 'quantity', 'unit'],
+    title: 'ExportedListItem'
 } as const;
 
 export const GenerateMenuRequestSchema = {
@@ -956,6 +1226,50 @@ export const IngredientsPublicSchema = {
     title: 'IngredientsPublic'
 } as const;
 
+export const ListExportFormatSchema = {
+    type: 'string',
+    enum: ['text', 'markdown', 'csv'],
+    title: 'ListExportFormat',
+    description: 'How a list-only shop renders its output.'
+} as const;
+
+export const ListExportRequestSchema = {
+    properties: {
+        shopping_list_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Shopping List Id'
+        },
+        format: {
+            '$ref': '#/components/schemas/ListExportFormat',
+            default: 'text'
+        },
+        category_labels: {
+            anyOf: [
+                {
+                    additionalProperties: {
+                        type: 'string'
+                    },
+                    type: 'object'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Category Labels'
+        }
+    },
+    type: 'object',
+    required: ['shopping_list_id'],
+    title: 'ListExportRequest'
+} as const;
+
+export const MatchStatusSchema = {
+    type: 'string',
+    enum: ['matched', 'low_confidence', 'no_candidates', 'search_unsupported', 'shop_unavailable'],
+    title: 'MatchStatus'
+} as const;
+
 export const MealPlanCreateSchema = {
     properties: {
         name: {
@@ -1358,6 +1672,12 @@ export const NewPasswordSchema = {
     title: 'NewPassword'
 } as const;
 
+export const PackStatusSchema = {
+    type: 'string',
+    enum: ['exact', 'rounded_up', 'assumed_single', 'unknown_pack_size'],
+    title: 'PackStatus'
+} as const;
+
 export const ParsedIngredientSchema = {
     properties: {
         name: {
@@ -1596,6 +1916,85 @@ export const PriceSourceSchema = {
 \`\`ESTIMATED\`\` rows were filled in by the LLM assist and may be overwritten
 by a later estimate run; \`\`MANUAL\`\` rows were curated by a human and never
 are.`
+} as const;
+
+export const PriceStatusSchema = {
+    type: 'string',
+    enum: ['priced', 'not_supported', 'requires_store', 'unknown'],
+    title: 'PriceStatus'
+} as const;
+
+export const PricedListSchema = {
+    properties: {
+        shop_slug: {
+            type: 'string',
+            title: 'Shop Slug'
+        },
+        shop_name: {
+            type: 'string',
+            title: 'Shop Name'
+        },
+        store_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Store Id'
+        },
+        currency: {
+            type: 'string',
+            title: 'Currency',
+            default: 'EUR'
+        },
+        items: {
+            items: {
+                '$ref': '#/components/schemas/ResolvedItem'
+            },
+            type: 'array',
+            title: 'Items'
+        },
+        total: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Total'
+        },
+        priced_item_count: {
+            type: 'integer',
+            title: 'Priced Item Count',
+            default: 0
+        },
+        unpriced_item_count: {
+            type: 'integer',
+            title: 'Unpriced Item Count',
+            default: 0
+        },
+        partial: {
+            type: 'boolean',
+            title: 'Partial',
+            default: false
+        },
+        notes: {
+            items: {
+                '$ref': '#/components/schemas/DegradationNote'
+            },
+            type: 'array',
+            title: 'Notes'
+        }
+    },
+    type: 'object',
+    required: ['shop_slug', 'shop_name'],
+    title: 'PricedList',
+    description: 'The aggregate answer for "cost this list at this shop".'
 } as const;
 
 export const PrivateUserCreateSchema = {
@@ -2496,10 +2895,311 @@ export const ReimportRequestSchema = {
     title: 'ReimportRequest'
 } as const;
 
+export const ResolvedItemSchema = {
+    properties: {
+        item_name: {
+            type: 'string',
+            title: 'Item Name'
+        },
+        requested_quantity: {
+            type: 'number',
+            title: 'Requested Quantity'
+        },
+        requested_unit: {
+            '$ref': '#/components/schemas/Unit'
+        },
+        product: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/ShopProduct'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        match_status: {
+            '$ref': '#/components/schemas/MatchStatus',
+            default: 'no_candidates'
+        },
+        match_score: {
+            type: 'number',
+            title: 'Match Score',
+            default: 0
+        },
+        pack_count: {
+            type: 'integer',
+            title: 'Pack Count',
+            default: 1
+        },
+        pack_status: {
+            '$ref': '#/components/schemas/PackStatus',
+            default: 'assumed_single'
+        },
+        line_total: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Line Total'
+        },
+        price_status: {
+            '$ref': '#/components/schemas/PriceStatus',
+            default: 'unknown'
+        },
+        alternatives: {
+            items: {
+                '$ref': '#/components/schemas/ShopProduct'
+            },
+            type: 'array',
+            title: 'Alternatives'
+        }
+    },
+    type: 'object',
+    required: ['item_name', 'requested_quantity', 'requested_unit'],
+    title: 'ResolvedItem',
+    description: `One shopping-list line, resolved against one shop.
+
+Every field that can be absent has a status explaining *why*, so the caller
+never has to guess whether \`\`price is None\`\` means "free", "unknown" or
+"this shop does not do prices".`
+} as const;
+
 export const SeasonSchema = {
     type: 'string',
     enum: ['spring', 'summer', 'autumn', 'winter'],
     title: 'Season'
+} as const;
+
+export const ShopListRequestSchema = {
+    properties: {
+        shopping_list_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Shopping List Id'
+        },
+        store_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Store Id'
+        }
+    },
+    type: 'object',
+    required: ['shopping_list_id'],
+    title: 'ShopListRequest',
+    description: "Ask a shop to cost, or take delivery of, one of the user's lists."
+} as const;
+
+export const ShopProductSchema = {
+    properties: {
+        sku: {
+            type: 'string',
+            title: 'Sku'
+        },
+        name: {
+            type: 'string',
+            title: 'Name'
+        },
+        brand: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Brand'
+        },
+        url: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Url'
+        },
+        image_url: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Image Url'
+        },
+        price: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Price'
+        },
+        currency: {
+            type: 'string',
+            title: 'Currency',
+            default: 'EUR'
+        },
+        pack_quantity: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Pack Quantity'
+        },
+        pack_unit: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/Unit'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        in_stock: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'In Stock'
+        },
+        barcode: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Barcode'
+        }
+    },
+    type: 'object',
+    required: ['sku', 'name'],
+    title: 'ShopProduct',
+    description: `One purchasable product at one shop.
+
+\`\`price\`\` is deliberately optional: a provider with SEARCH but not PRICES
+returns fully-formed products with no price rather than nothing at all.`
+} as const;
+
+export const ShopPublicSchema = {
+    properties: {
+        slug: {
+            type: 'string',
+            title: 'Slug'
+        },
+        display_name: {
+            type: 'string',
+            title: 'Display Name'
+        },
+        country: {
+            type: 'string',
+            title: 'Country'
+        },
+        transport: {
+            '$ref': '#/components/schemas/Transport'
+        },
+        capabilities: {
+            items: {
+                '$ref': '#/components/schemas/Capability'
+            },
+            type: 'array',
+            title: 'Capabilities'
+        },
+        requires_store: {
+            type: 'boolean',
+            title: 'Requires Store',
+            default: false
+        },
+        requires_extension: {
+            type: 'boolean',
+            title: 'Requires Extension',
+            default: false
+        },
+        website_url: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Website Url'
+        },
+        attribution: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Attribution'
+        }
+    },
+    type: 'object',
+    required: ['slug', 'display_name', 'country', 'transport', 'capabilities'],
+    title: 'ShopPublic'
+} as const;
+
+export const ShopSearchResultsSchema = {
+    properties: {
+        shop_slug: {
+            type: 'string',
+            title: 'Shop Slug'
+        },
+        query: {
+            type: 'string',
+            title: 'Query'
+        },
+        products: {
+            items: {
+                '$ref': '#/components/schemas/ShopProduct'
+            },
+            type: 'array',
+            title: 'Products'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count',
+            default: 0
+        }
+    },
+    type: 'object',
+    required: ['shop_slug', 'query'],
+    title: 'ShopSearchResults'
 } as const;
 
 export const ShoppingFrequencySchema = {
@@ -2940,6 +3640,25 @@ export const ShoppingListsPublicSchema = {
     title: 'ShoppingListsPublic'
 } as const;
 
+export const ShopsPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/ShopPublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'ShopsPublic'
+} as const;
+
 export const StoreComparisonSchema = {
     properties: {
         data: {
@@ -3244,6 +3963,13 @@ export const TokenSchema = {
     type: 'object',
     required: ['access_token'],
     title: 'Token'
+} as const;
+
+export const TransportSchema = {
+    type: 'string',
+    enum: ['server', 'extension', 'offline'],
+    title: 'Transport',
+    description: 'Who talks to the retailer.'
 } as const;
 
 export const UnitSchema = {

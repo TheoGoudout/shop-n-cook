@@ -14,6 +14,54 @@ export type Body_recipes_import_recipe_photos = {
     language?: (string | null);
 };
 
+/**
+ * A discrete thing a shop can do. Providers declare a subset.
+ */
+export type Capability = 'search' | 'prices' | 'store_locator' | 'cart_link' | 'cart_push' | 'list_export';
+
+/**
+ * How the user gets from our list into the shop's basket.
+ *
+ * Exactly one of ``url`` / ``plan`` is set, selected by ``transport``. Both
+ * transports share this one return type so the frontend branches once, in the
+ * render layer, instead of everywhere.
+ */
+export type CartHandoff = {
+    shop_slug: string;
+    transport: Transport;
+    url?: (string | null);
+    plan?: (CartPlan | null);
+    unresolved_item_names?: Array<(string)>;
+};
+
+/**
+ * A declarative, retailer-agnostic script the extension executes.
+ *
+ * The extension owns *how* (selectors, waits, retries) via its own adapter
+ * keyed on ``shop_slug``; the backend owns *what*. Keeping the selectors out
+ * of the backend means a retailer redesign ships as an extension update, not
+ * a backend deploy.
+ */
+export type CartPlan = {
+    shop_slug: string;
+    origin: string;
+    store_id?: (string | null);
+    entries?: Array<CartPlanEntry>;
+};
+
+/**
+ * One line of work for the extension to perform on the retailer's site.
+ */
+export type CartPlanEntry = {
+    sku?: (string | null);
+    query: string;
+    name: string;
+    quantity: number;
+    product_url?: (string | null);
+    requested_quantity?: (number | null);
+    requested_unit?: (Unit | null);
+};
+
 export type DeduplicateMerge = {
     kept: string;
     removed: Array<(string)>;
@@ -24,6 +72,14 @@ export type DeduplicateResponse = {
     groups: Array<DeduplicateMerge>;
     removed_count: number;
 };
+
+/**
+ * Stable machine codes explaining why a result is partial.
+ *
+ * Codes rather than sentences: the frontend translates them through the i18n
+ * layer, so the backend never ships user-facing prose.
+ */
+export type DegradationNote = 'search_unsupported' | 'prices_unsupported' | 'prices_require_store' | 'shop_unavailable' | 'some_items_unmatched';
 
 export type Difficulty = 'easy' | 'medium' | 'hard';
 
@@ -36,6 +92,37 @@ export type Difficulty = 'easy' | 'medium' | 'hard';
 export type EstimatePricesRequest = {
     ingredient_ids?: Array<(string)>;
     currency?: string;
+};
+
+/**
+ * A list to shop from by hand.
+ *
+ * Carries both a structured form (``groups``, for the app to render natively)
+ * and a rendered one (``content``, to copy, print or send to someone else).
+ * Producing both avoids the frontend having to reimplement the aisle ordering
+ * just to show the same thing twice.
+ */
+export type ExportedList = {
+    shop_slug: string;
+    shop_name: string;
+    format: ListExportFormat;
+    groups?: Array<ExportedListGroup>;
+    content?: string;
+    item_count?: number;
+    merged_line_count?: number;
+};
+
+export type ExportedListGroup = {
+    category: IngredientCategory;
+    items?: Array<ExportedListItem>;
+};
+
+export type ExportedListItem = {
+    name: string;
+    quantity: number;
+    unit: Unit;
+    note?: (string | null);
+    merged_from?: number;
 };
 
 /**
@@ -185,6 +272,21 @@ export type IngredientUpdate = {
     image_url?: (string | null);
 };
 
+/**
+ * How a list-only shop renders its output.
+ */
+export type ListExportFormat = 'text' | 'markdown' | 'csv';
+
+export type ListExportRequest = {
+    shopping_list_id: string;
+    format?: ListExportFormat;
+    category_labels?: ({
+    [key: string]: (string);
+} | null);
+};
+
+export type MatchStatus = 'matched' | 'low_confidence' | 'no_candidates' | 'search_unsupported' | 'shop_unavailable';
+
 export type MealPlanCreate = {
     name: string;
     start_date: string;
@@ -257,6 +359,8 @@ export type NewPassword = {
     new_password: string;
 };
 
+export type PackStatus = 'exact' | 'rounded_up' | 'assumed_single' | 'unknown_pack_size';
+
 export type ParsedIngredient = {
     name: string;
     name_en?: (string | null);
@@ -293,6 +397,22 @@ export type ParsedStep = {
 };
 
 /**
+ * The aggregate answer for "cost this list at this shop".
+ */
+export type PricedList = {
+    shop_slug: string;
+    shop_name: string;
+    store_id?: (string | null);
+    currency?: string;
+    items?: Array<ResolvedItem>;
+    total?: (number | null);
+    priced_item_count?: number;
+    unpriced_item_count?: number;
+    partial?: boolean;
+    notes?: Array<DegradationNote>;
+};
+
+/**
  * Where an ingredient's reference price came from.
  *
  * ``ESTIMATED`` rows were filled in by the LLM assist and may be overwritten
@@ -300,6 +420,8 @@ export type ParsedStep = {
  * are.
  */
 export type PriceSource = 'manual' | 'estimated';
+
+export type PriceStatus = 'priced' | 'not_supported' | 'requires_store' | 'unknown';
 
 export type PrivateUserCreate = {
     email: string;
@@ -429,7 +551,36 @@ export type ReimportRequest = {
     language?: (string | null);
 };
 
+/**
+ * One shopping-list line, resolved against one shop.
+ *
+ * Every field that can be absent has a status explaining *why*, so the caller
+ * never has to guess whether ``price is None`` means "free", "unknown" or
+ * "this shop does not do prices".
+ */
+export type ResolvedItem = {
+    item_name: string;
+    requested_quantity: number;
+    requested_unit: Unit;
+    product?: (ShopProduct | null);
+    match_status?: MatchStatus;
+    match_score?: number;
+    pack_count?: number;
+    pack_status?: PackStatus;
+    line_total?: (number | null);
+    price_status?: PriceStatus;
+    alternatives?: Array<ShopProduct>;
+};
+
 export type Season = 'spring' | 'summer' | 'autumn' | 'winter';
+
+/**
+ * Ask a shop to cost, or take delivery of, one of the user's lists.
+ */
+export type ShopListRequest = {
+    shopping_list_id: string;
+    store_id?: (string | null);
+};
 
 export type ShoppingFrequency = 'weekly' | 'biweekly' | 'monthly';
 
@@ -505,6 +656,50 @@ export type ShoppingListUpdate = {
     end_date?: (string | null);
 };
 
+/**
+ * One purchasable product at one shop.
+ *
+ * ``price`` is deliberately optional: a provider with SEARCH but not PRICES
+ * returns fully-formed products with no price rather than nothing at all.
+ */
+export type ShopProduct = {
+    sku: string;
+    name: string;
+    brand?: (string | null);
+    url?: (string | null);
+    image_url?: (string | null);
+    price?: (number | null);
+    currency?: string;
+    pack_quantity?: (number | null);
+    pack_unit?: (Unit | null);
+    in_stock?: (boolean | null);
+    barcode?: (string | null);
+};
+
+export type ShopPublic = {
+    slug: string;
+    display_name: string;
+    country: string;
+    transport: Transport;
+    capabilities: Array<Capability>;
+    requires_store?: boolean;
+    requires_extension?: boolean;
+    website_url?: (string | null);
+    attribution?: (string | null);
+};
+
+export type ShopSearchResults = {
+    shop_slug: string;
+    query: string;
+    products?: Array<ShopProduct>;
+    count?: number;
+};
+
+export type ShopsPublic = {
+    data: Array<ShopPublic>;
+    count: number;
+};
+
 export type StoreComparison = {
     data: Array<StoreComparisonEntry>;
     cheapest_store_id?: (string | null);
@@ -561,6 +756,11 @@ export type Token = {
     access_token: string;
     token_type?: string;
 };
+
+/**
+ * Who talks to the retailer.
+ */
+export type Transport = 'server' | 'extension' | 'offline';
 
 export type Unit = 'g' | 'kg' | 'ml' | 'cl' | 'dl' | 'L' | 'piece' | 'tbsp' | 'tsp' | 'cup' | 'oz' | 'lb' | 'bunch' | 'pinch' | 'clove' | 'slice' | 'can' | 'package';
 
@@ -1011,6 +1211,42 @@ export type ShoppingListsDeletePlannedRecipeData = {
 };
 
 export type ShoppingListsDeletePlannedRecipeResponse = (Message);
+
+export type ShopsReadShopsData = {
+    country?: (string | null);
+};
+
+export type ShopsReadShopsResponse = (ShopsPublic);
+
+export type ShopsSearchShopData = {
+    limit?: number;
+    q: string;
+    slug: string;
+    storeId?: (string | null);
+};
+
+export type ShopsSearchShopResponse = (ShopSearchResults);
+
+export type ShopsPriceListAtShopData = {
+    requestBody: ShopListRequest;
+    slug: string;
+};
+
+export type ShopsPriceListAtShopResponse = (PricedList);
+
+export type ShopsBuildCartData = {
+    requestBody: ShopListRequest;
+    slug: string;
+};
+
+export type ShopsBuildCartResponse = (CartHandoff);
+
+export type ShopsExportListForShopData = {
+    requestBody: ListExportRequest;
+    slug: string;
+};
+
+export type ShopsExportListForShopResponse = (ExportedList);
 
 export type StoresReadStoresData = {
     activeOnly?: boolean;

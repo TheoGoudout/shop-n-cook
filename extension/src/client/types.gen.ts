@@ -38,6 +38,26 @@ export type EstimatePricesRequest = {
     currency?: string;
 };
 
+/**
+ * What to compose, and the constraints it must respect.
+ */
+export type GenerateMenuRequest = {
+    name?: (string | null);
+    start_date: string;
+    days?: number;
+    meal_types?: Array<MealType>;
+    servings?: (number | null);
+    budget?: (number | string | null);
+    require_vegan?: boolean;
+    require_vegetarian?: boolean;
+    require_gluten_free?: boolean;
+    require_dairy_free?: boolean;
+    max_prep_minutes?: (number | null);
+    match_season?: boolean;
+    include_public?: boolean;
+    seed?: number;
+};
+
 export type HTTPValidationError = {
     detail?: Array<ValidationError>;
 };
@@ -722,6 +742,20 @@ export type MealPlansGenerateShoppingListData = {
 };
 
 export type MealPlansGenerateShoppingListResponse = (ShoppingListPublic);
+
+export type MealPlansGenerateMenuRouteData = {
+    requestBody: GenerateMenuRequest;
+};
+
+export type MealPlansGenerateMenuRouteResponse = (MealPlanPublic);
+
+export type MealPlansSwapEntryData = {
+    entryId: string;
+    id: string;
+    requestBody?: (GenerateMenuRequest | null);
+};
+
+export type MealPlansSwapEntryResponse = (MealPlanEntryPublic);
 
 export type PrivateCreateUserData = {
     requestBody: PrivateUserCreate;

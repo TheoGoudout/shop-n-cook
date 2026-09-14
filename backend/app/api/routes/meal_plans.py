@@ -1,11 +1,15 @@
 import uuid
+from dataclasses import replace
+from datetime import date, timedelta
+from decimal import Decimal
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel, Field
 
 from app import crud
 from app.api.deps import CurrentUser, PriceBookDep, SessionDep
-from app.models import Message, ShoppingListPublic, User
+from app.models import Message, Recipe, ShoppingListPublic, User
 from app.models.meal_plan import (
     MealPlan,
     MealPlanCreate,
@@ -15,6 +19,12 @@ from app.models.meal_plan import (
     MealPlanPublic,
     MealPlansPublic,
     MealPlanUpdate,
+)
+from app.models.recipe import MealType
+from app.services.menu_generator import (
+    GenerationRequest,
+    generate_menu,
+    pick_replacement,
 )
 
 router = APIRouter(prefix="/meal-plans", tags=["meal-plans"])
@@ -217,3 +227,170 @@ def generate_shopping_list(
         raise HTTPException(status_code=422, detail="Meal plan has no entries")
     shopping_list = crud.generate_shopping_list(session=session, plan=plan, name=name)
     return crud.shopping_list_to_public(shopping_list, prices)
+
+
+# --------------------------------------------------------------------------- #
+# Generation                                                                   #
+# --------------------------------------------------------------------------- #
+
+
+class GenerateMenuRequest(BaseModel):
+    """What to compose, and the constraints it must respect."""
+
+    name: str | None = None
+    start_date: date
+    days: int = Field(default=7, ge=1, le=31)
+    meal_types: list[MealType] = Field(default_factory=lambda: [MealType.DINNER])
+    servings: int | None = Field(default=None, ge=1)
+    budget: Decimal | None = Field(default=None, ge=0)
+    require_vegan: bool = False
+    require_vegetarian: bool = False
+    require_gluten_free: bool = False
+    require_dairy_free: bool = False
+    max_prep_minutes: int | None = Field(default=None, ge=0)
+    match_season: bool = True
+    include_public: bool = True
+    seed: int = 0
+
+
+def _candidate_recipes(
+    *, session: SessionDep, current_user: User, include_public: bool
+) -> list[Recipe]:
+    """Everything this user may cook: their own recipes, plus public ones."""
+    own, _ = crud.get_recipes(session=session, owner_id=current_user.id, limit=500)
+    if not include_public:
+        return own
+    public, _ = crud.get_public_recipes(session=session, limit=500)
+    by_id = {r.id: r for r in own}
+    for recipe in public:
+        by_id.setdefault(recipe.id, recipe)
+    return list(by_id.values())
+
+
+def _generation_request(
+    body: GenerateMenuRequest, *, servings: int
+) -> GenerationRequest:
+    return GenerationRequest(
+        start_date=body.start_date,
+        days=body.days,
+        meal_types=tuple(body.meal_types),
+        servings=servings,
+        budget=body.budget,
+        require_vegan=body.require_vegan,
+        require_vegetarian=body.require_vegetarian,
+        require_gluten_free=body.require_gluten_free,
+        require_dairy_free=body.require_dairy_free,
+        max_prep_minutes=body.max_prep_minutes,
+        match_season=body.match_season,
+        seed=body.seed,
+    )
+
+
+@router.post("/generate", response_model=MealPlanPublic)
+def generate_menu_route(
+    *,
+    session: SessionDep,
+    current_user: CurrentUser,
+    prices: PriceBookDep,
+    body: GenerateMenuRequest,
+) -> Any:
+    """Compose a menu and save it as a new plan.
+
+    Household size and budget fall back to the user's settings when the request
+    does not override them, so the common case is a single button with no form.
+    """
+    user_settings = crud.get_or_create_user_settings(
+        session=session, user_id=current_user.id
+    )
+    servings = body.servings or user_settings.household_size
+    budget = body.budget if body.budget is not None else user_settings.budget_amount
+
+    candidates = _candidate_recipes(
+        session=session, current_user=current_user, include_public=body.include_public
+    )
+    if not candidates:
+        raise HTTPException(
+            status_code=422, detail="No recipes available to build a menu from"
+        )
+
+    request = _generation_request(body, servings=servings)
+    request = replace(request, budget=budget)
+    meals = generate_menu(candidates, request, prices)
+    if not meals:
+        raise HTTPException(
+            status_code=422,
+            detail="No recipes match those constraints",
+        )
+
+    plan = crud.create_meal_plan(
+        session=session,
+        plan_in=MealPlanCreate(
+            name=body.name or f"Menu {body.start_date.isoformat()}",
+            start_date=body.start_date,
+            end_date=body.start_date + timedelta(days=body.days - 1),
+        ),
+        owner_id=current_user.id,
+    )
+    for meal in meals:
+        crud.add_entry(
+            session=session,
+            plan=plan,
+            entry_in=MealPlanEntryCreate(
+                recipe_id=meal.recipe.id,
+                entry_date=meal.entry_date,
+                meal_type=meal.meal_type,
+                servings=meal.servings,
+            ),
+        )
+    session.refresh(plan)
+    return crud.meal_plan_to_public(plan, prices)
+
+
+@router.post("/{id}/entries/{entry_id}/swap", response_model=MealPlanEntryPublic)
+def swap_entry(
+    *,
+    session: SessionDep,
+    current_user: CurrentUser,
+    prices: PriceBookDep,
+    id: uuid.UUID,
+    entry_id: uuid.UUID,
+    body: GenerateMenuRequest | None = None,
+) -> Any:
+    """Replace one meal without disturbing the rest of the plan.
+
+    The replacement still respects the week's variety rules, so swapping out of
+    a pasta night does not hand back another one.
+    """
+    plan = crud.get_meal_plan(session=session, plan_id=id)
+    plan = _check_plan_access(plan, current_user)
+    entry = crud.get_meal_plan_entry(session=session, entry_id=entry_id)
+    if not entry or entry.meal_plan_id != id:
+        raise HTTPException(status_code=404, detail="Entry not found")
+
+    body = body or GenerateMenuRequest(start_date=entry.entry_date)
+    candidates = _candidate_recipes(
+        session=session, current_user=current_user, include_public=body.include_public
+    )
+    request = _generation_request(body, servings=entry.servings)
+    others = frozenset(e.recipe_id for e in plan.entries if e.id != entry.id)
+
+    replacement = pick_replacement(
+        candidates,
+        request,
+        entry.entry_date,
+        entry.meal_type,
+        current_recipe_id=entry.recipe_id,
+        other_recipe_ids=others,
+        prices=prices,
+    )
+    if replacement is None:
+        raise HTTPException(
+            status_code=422, detail="No alternative recipe matches those constraints"
+        )
+
+    entry = crud.update_entry(
+        session=session,
+        entry=entry,
+        update_in=MealPlanEntryUpdate(recipe_id=replacement.id),
+    )
+    return crud.meal_plan_entry_to_public(entry, prices)

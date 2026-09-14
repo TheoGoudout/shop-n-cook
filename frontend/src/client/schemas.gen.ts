@@ -157,6 +157,120 @@ An empty \`\`ingredient_ids\`\` means "everything without a curated price",
 which is the common case after a bulk import.`
 } as const;
 
+export const GenerateMenuRequestSchema = {
+    properties: {
+        name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name'
+        },
+        start_date: {
+            type: 'string',
+            format: 'date',
+            title: 'Start Date'
+        },
+        days: {
+            type: 'integer',
+            maximum: 31,
+            minimum: 1,
+            title: 'Days',
+            default: 7
+        },
+        meal_types: {
+            items: {
+                '$ref': '#/components/schemas/MealType'
+            },
+            type: 'array',
+            title: 'Meal Types'
+        },
+        servings: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    minimum: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Servings'
+        },
+        budget: {
+            anyOf: [
+                {
+                    type: 'number',
+                    minimum: 0
+                },
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Budget'
+        },
+        require_vegan: {
+            type: 'boolean',
+            title: 'Require Vegan',
+            default: false
+        },
+        require_vegetarian: {
+            type: 'boolean',
+            title: 'Require Vegetarian',
+            default: false
+        },
+        require_gluten_free: {
+            type: 'boolean',
+            title: 'Require Gluten Free',
+            default: false
+        },
+        require_dairy_free: {
+            type: 'boolean',
+            title: 'Require Dairy Free',
+            default: false
+        },
+        max_prep_minutes: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    minimum: 0
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Max Prep Minutes'
+        },
+        match_season: {
+            type: 'boolean',
+            title: 'Match Season',
+            default: true
+        },
+        include_public: {
+            type: 'boolean',
+            title: 'Include Public',
+            default: true
+        },
+        seed: {
+            type: 'integer',
+            title: 'Seed',
+            default: 0
+        }
+    },
+    type: 'object',
+    required: ['start_date'],
+    title: 'GenerateMenuRequest',
+    description: 'What to compose, and the constraints it must respect.'
+} as const;
+
 export const HTTPValidationErrorSchema = {
     properties: {
         detail: {

@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next"
 
 import { MealPlansService } from "@/client"
 import { AddMealPlan } from "@/components/MealPlans/AddMealPlan"
+import { GenerateMenuDialog } from "@/components/MealPlans/GenerateMenuDialog"
 import PendingItems from "@/components/Pending/PendingItems"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { APP_NAME } from "@/lib/config"
@@ -97,7 +98,10 @@ function MealPlans() {
           </h1>
           <p className="text-muted-foreground">{t("page.subtitle")}</p>
         </div>
-        <AddMealPlan />
+        <div className="flex flex-wrap gap-2">
+          <GenerateMenuDialog />
+          <AddMealPlan />
+        </div>
       </div>
       <Suspense fallback={<PendingItems />}>
         <MealPlansContent />

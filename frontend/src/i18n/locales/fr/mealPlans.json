@@ -41,5 +41,28 @@
     "dessert": "Dessert",
     "drink": "Boisson",
     "other": "Autre"
+  },
+  "generate": {
+    "trigger": "Générer un menu",
+    "title": "Générer un menu",
+    "description": "Composez une semaine à partir de vos recettes. La taille du foyer et le budget proviennent de vos paramètres, sauf modification ici.",
+    "days_label": "Jours",
+    "servings_label": "Portions",
+    "budget_label": "Budget pour tout le menu",
+    "budget_placeholder": "Depuis vos paramètres",
+    "max_prep_label": "Temps max par repas (minutes)",
+    "max_prep_placeholder": "Sans limite",
+    "diet_label": "Régime alimentaire",
+    "vegan": "Végétalien",
+    "vegetarian": "Végétarien",
+    "gluten_free": "Sans gluten",
+    "dairy_free": "Sans lactose",
+    "season_label": "Privilégier les recettes de saison",
+    "public_label": "Inclure les recettes de la communauté",
+    "submit": "Générer",
+    "success": "Menu généré",
+    "swap": "Remplacer ce repas",
+    "swapped": "Repas remplacé",
+    "servings_placeholder": "Selon la taille du foyer"
   }
 }

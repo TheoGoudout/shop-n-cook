@@ -1,6 +1,6 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
-import { ArrowLeft, ShoppingCart, Trash2 } from "lucide-react"
+import { ArrowLeft, ShoppingCart, Shuffle, Trash2 } from "lucide-react"
 import { Suspense } from "react"
 import { useTranslation } from "react-i18next"
 
@@ -72,6 +72,17 @@ function EntryRow({
     invalidateKeys: [["meal-plan", planId], ["meal-plans"]],
   })
 
+  const swap = useCrudMutation({
+    mutationFn: () =>
+      MealPlansService.swapEntry({
+        id: planId,
+        entryId: entry.id,
+        requestBody: { start_date: entry.entry_date },
+      }),
+    successMessage: t("generate.swapped"),
+    invalidateKeys: [["meal-plan", planId], ["meal-plans"]],
+  })
+
   const cost = formatMoney(entry.estimated_cost, currency, i18n.language)
 
   return (
@@ -93,15 +104,27 @@ function EntryRow({
           {cost ? ` · ${cost}` : ""}
         </p>
       </div>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="h-6 w-6 opacity-0 group-hover:opacity-100 shrink-0"
-        title={t("detail.remove")}
-        onClick={() => remove.mutate()}
-      >
-        <Trash2 className="h-3 w-3" />
-      </Button>
+      <div className="flex shrink-0 opacity-0 group-hover:opacity-100">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-6 w-6"
+          title={t("generate.swap")}
+          disabled={swap.isPending}
+          onClick={() => swap.mutate()}
+        >
+          <Shuffle className="h-3 w-3" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-6 w-6"
+          title={t("detail.remove")}
+          onClick={() => remove.mutate()}
+        >
+          <Trash2 className="h-3 w-3" />
+        </Button>
+      </div>
     </div>
   )
 }

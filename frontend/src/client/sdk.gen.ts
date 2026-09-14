@@ -3,7 +3,7 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { IngredientPricesReadIngredientPricesData, IngredientPricesReadIngredientPricesResponse, IngredientPricesUpsertIngredientPriceData, IngredientPricesUpsertIngredientPriceResponse, IngredientPricesDeleteIngredientPriceData, IngredientPricesDeleteIngredientPriceResponse, IngredientsReadIngredientsData, IngredientsReadIngredientsResponse, IngredientsCreateIngredientData, IngredientsCreateIngredientResponse, IngredientsUpdateIngredientData, IngredientsUpdateIngredientResponse, IngredientsDeduplicateIngredientsData, IngredientsDeduplicateIngredientsResponse, IngredientsEstimateIngredientPriceRouteData, IngredientsEstimateIngredientPriceRouteResponse, IngredientsEstimateIngredientPricesRouteData, IngredientsEstimateIngredientPricesRouteResponse, IngredientsFetchIngredientImageData, IngredientsFetchIngredientImageResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, MealPlansReadMealPlansData, MealPlansReadMealPlansResponse, MealPlansCreateMealPlanData, MealPlansCreateMealPlanResponse, MealPlansReadMealPlanData, MealPlansReadMealPlanResponse, MealPlansUpdateMealPlanData, MealPlansUpdateMealPlanResponse, MealPlansDeleteMealPlanData, MealPlansDeleteMealPlanResponse, MealPlansAddEntryData, MealPlansAddEntryResponse, MealPlansUpdateEntryData, MealPlansUpdateEntryResponse, MealPlansDeleteEntryData, MealPlansDeleteEntryResponse, MealPlansGenerateShoppingListData, MealPlansGenerateShoppingListResponse, PrivateCreateUserData, PrivateCreateUserResponse, RecipesReadPublicRecipesData, RecipesReadPublicRecipesResponse, RecipesReadRecipesData, RecipesReadRecipesResponse, RecipesCreateRecipeData, RecipesCreateRecipeResponse, RecipesReadRecipeData, RecipesReadRecipeResponse, RecipesUpdateRecipeData, RecipesUpdateRecipeResponse, RecipesDeleteRecipeData, RecipesDeleteRecipeResponse, RecipesReimportRecipeData, RecipesReimportRecipeResponse, RecipesImportRecipeUrlData, RecipesImportRecipeUrlResponse, RecipesImportRecipePhotosData, RecipesImportRecipePhotosResponse, ShoppingListsReadShoppingListsData, ShoppingListsReadShoppingListsResponse, ShoppingListsCreateShoppingListData, ShoppingListsCreateShoppingListResponse, ShoppingListsReadShoppingListData, ShoppingListsReadShoppingListResponse, ShoppingListsUpdateShoppingListData, ShoppingListsUpdateShoppingListResponse, ShoppingListsDeleteShoppingListData, ShoppingListsDeleteShoppingListResponse, ShoppingListsAddItemData, ShoppingListsAddItemResponse, ShoppingListsUpdateItemData, ShoppingListsUpdateItemResponse, ShoppingListsDeleteItemData, ShoppingListsDeleteItemResponse, ShoppingListsAddRecipeData, ShoppingListsAddRecipeResponse, ShoppingListsCompareStoresData, ShoppingListsCompareStoresResponse, ShoppingListsUpdatePlannedRecipeData, ShoppingListsUpdatePlannedRecipeResponse, ShoppingListsDeletePlannedRecipeData, ShoppingListsDeletePlannedRecipeResponse, StoresReadStoresData, StoresReadStoresResponse, StoresCreateStoreData, StoresCreateStoreResponse, StoresUpdateStoreData, StoresUpdateStoreResponse, StoresDeleteStoreData, StoresDeleteStoreResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UserSettingsReadUserSettingsResponse, UserSettingsUpdateUserSettingsData, UserSettingsUpdateUserSettingsResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
+import type { IngredientPricesReadIngredientPricesData, IngredientPricesReadIngredientPricesResponse, IngredientPricesUpsertIngredientPriceData, IngredientPricesUpsertIngredientPriceResponse, IngredientPricesDeleteIngredientPriceData, IngredientPricesDeleteIngredientPriceResponse, IngredientsReadIngredientsData, IngredientsReadIngredientsResponse, IngredientsCreateIngredientData, IngredientsCreateIngredientResponse, IngredientsUpdateIngredientData, IngredientsUpdateIngredientResponse, IngredientsDeduplicateIngredientsData, IngredientsDeduplicateIngredientsResponse, IngredientsEstimateIngredientPriceRouteData, IngredientsEstimateIngredientPriceRouteResponse, IngredientsEstimateIngredientPricesRouteData, IngredientsEstimateIngredientPricesRouteResponse, IngredientsFetchIngredientImageData, IngredientsFetchIngredientImageResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, MealPlansReadMealPlansData, MealPlansReadMealPlansResponse, MealPlansCreateMealPlanData, MealPlansCreateMealPlanResponse, MealPlansReadMealPlanData, MealPlansReadMealPlanResponse, MealPlansUpdateMealPlanData, MealPlansUpdateMealPlanResponse, MealPlansDeleteMealPlanData, MealPlansDeleteMealPlanResponse, MealPlansAddEntryData, MealPlansAddEntryResponse, MealPlansUpdateEntryData, MealPlansUpdateEntryResponse, MealPlansDeleteEntryData, MealPlansDeleteEntryResponse, MealPlansGenerateShoppingListData, MealPlansGenerateShoppingListResponse, MealPlansGenerateMenuRouteData, MealPlansGenerateMenuRouteResponse, MealPlansSwapEntryData, MealPlansSwapEntryResponse, PrivateCreateUserData, PrivateCreateUserResponse, RecipesReadPublicRecipesData, RecipesReadPublicRecipesResponse, RecipesReadRecipesData, RecipesReadRecipesResponse, RecipesCreateRecipeData, RecipesCreateRecipeResponse, RecipesReadRecipeData, RecipesReadRecipeResponse, RecipesUpdateRecipeData, RecipesUpdateRecipeResponse, RecipesDeleteRecipeData, RecipesDeleteRecipeResponse, RecipesReimportRecipeData, RecipesReimportRecipeResponse, RecipesImportRecipeUrlData, RecipesImportRecipeUrlResponse, RecipesImportRecipePhotosData, RecipesImportRecipePhotosResponse, ShoppingListsReadShoppingListsData, ShoppingListsReadShoppingListsResponse, ShoppingListsCreateShoppingListData, ShoppingListsCreateShoppingListResponse, ShoppingListsReadShoppingListData, ShoppingListsReadShoppingListResponse, ShoppingListsUpdateShoppingListData, ShoppingListsUpdateShoppingListResponse, ShoppingListsDeleteShoppingListData, ShoppingListsDeleteShoppingListResponse, ShoppingListsAddItemData, ShoppingListsAddItemResponse, ShoppingListsUpdateItemData, ShoppingListsUpdateItemResponse, ShoppingListsDeleteItemData, ShoppingListsDeleteItemResponse, ShoppingListsAddRecipeData, ShoppingListsAddRecipeResponse, ShoppingListsCompareStoresData, ShoppingListsCompareStoresResponse, ShoppingListsUpdatePlannedRecipeData, ShoppingListsUpdatePlannedRecipeResponse, ShoppingListsDeletePlannedRecipeData, ShoppingListsDeletePlannedRecipeResponse, StoresReadStoresData, StoresReadStoresResponse, StoresCreateStoreData, StoresCreateStoreResponse, StoresUpdateStoreData, StoresUpdateStoreResponse, StoresDeleteStoreData, StoresDeleteStoreResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UserSettingsReadUserSettingsResponse, UserSettingsUpdateUserSettingsData, UserSettingsUpdateUserSettingsResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
 
 export class IngredientPricesService {
     /**
@@ -544,6 +544,58 @@ export class MealPlansService {
             query: {
                 name: data.name
             },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Generate Menu Route
+     * Compose a menu and save it as a new plan.
+     *
+     * Household size and budget fall back to the user's settings when the request
+     * does not override them, so the common case is a single button with no form.
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns MealPlanPublic Successful Response
+     * @throws ApiError
+     */
+    public static generateMenuRoute(data: MealPlansGenerateMenuRouteData): CancelablePromise<MealPlansGenerateMenuRouteResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/meal-plans/generate',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Swap Entry
+     * Replace one meal without disturbing the rest of the plan.
+     *
+     * The replacement still respects the week's variety rules, so swapping out of
+     * a pasta night does not hand back another one.
+     * @param data The data for the request.
+     * @param data.id
+     * @param data.entryId
+     * @param data.requestBody
+     * @returns MealPlanEntryPublic Successful Response
+     * @throws ApiError
+     */
+    public static swapEntry(data: MealPlansSwapEntryData): CancelablePromise<MealPlansSwapEntryResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/meal-plans/{id}/entries/{entry_id}/swap',
+            path: {
+                id: data.id,
+                entry_id: data.entryId
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
             errors: {
                 422: 'Validation Error'
             }

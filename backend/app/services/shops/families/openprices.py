@@ -14,9 +14,11 @@ UI is obliged to show it.
 from __future__ import annotations
 
 from collections.abc import Sequence
+from decimal import Decimal, InvalidOperation
 from typing import Any
 
 from app.models.ingredient import Unit
+from app.services.pricing import quantize_money
 from app.services.shops.base import ShopProvider
 from app.services.shops.families import http_client
 from app.services.shops.models import Capability, ShopProduct, Transport
@@ -100,7 +102,7 @@ class OpenPricesProvider(ShopProvider):
 
     # ----------------------------------------------------------------- #
 
-    def _latest_price(self, barcode: str) -> float | None:
+    def _latest_price(self, barcode: str) -> Decimal | None:
         payload = http_client.get_json(
             f"{self.base_url}/prices",
             params={"product_code": barcode, "size": 1, "order_by": "-date"},
@@ -109,9 +111,13 @@ class OpenPricesProvider(ShopProvider):
         if not items:
             return None
         raw_price = items[0].get("price")
+        if raw_price is None:
+            return None
         try:
-            return round(float(raw_price), 2)
-        except (TypeError, ValueError):
+            # Parsed straight from the string, never via float: a price is
+            # exact money and 1.15 must not arrive as 1.14999999999999991.
+            return quantize_money(Decimal(str(raw_price)))
+        except (InvalidOperation, ValueError):
             return None
 
     def _to_product(self, raw: Any) -> ShopProduct | None:

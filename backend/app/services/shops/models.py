@@ -18,6 +18,7 @@ None of them is an error. They are the answer.
 from __future__ import annotations
 
 import uuid
+from decimal import Decimal
 from enum import Enum
 
 from pydantic import BaseModel, Field
@@ -104,8 +105,11 @@ class PackStatus(str, Enum):
     EXACT = "exact"
     ROUNDED_UP = "rounded_up"
     ASSUMED_SINGLE = "assumed_single"
-    """Recipe unit and pack unit are not inter-convertible (200 g vs "1 bunch"),
-    so we buy one and say so rather than guessing."""
+    """Recipe unit and pack unit are not inter-convertible, so we buy one and
+    say so rather than guessing. Covers mass against volume (no density on the
+    ingredient) and any two different discrete units — a bunch is not a piece.
+    ``app.core.units.convert`` decides; this is what it returning ``None``
+    means for a basket."""
 
     UNKNOWN_PACK_SIZE = "unknown_pack_size"
     """The shop did not tell us the net content of the pack."""
@@ -158,7 +162,9 @@ class ShopProduct(BaseModel):
     brand: str | None = None
     url: str | None = None
     image_url: str | None = None
-    price: float | None = None
+    price: Decimal | None = None
+    """Decimal, never float — a price is exact money, not a measurement.
+    Serialises as a JSON string, which `frontend/src/lib/money.ts` expects."""
     currency: str = "EUR"
     pack_quantity: float | None = None
     """Net content of one pack, in ``pack_unit``."""
@@ -195,7 +201,7 @@ class ResolvedItem(BaseModel):
     pack_count: int = 1
     pack_status: PackStatus = PackStatus.ASSUMED_SINGLE
 
-    line_total: float | None = None
+    line_total: Decimal | None = None
     price_status: PriceStatus = PriceStatus.UNKNOWN
 
     alternatives: list[ShopProduct] = Field(default_factory=list)
@@ -211,8 +217,9 @@ class PricedList(BaseModel):
 
     items: list[ResolvedItem] = Field(default_factory=list)
 
-    total: float | None = None
-    """Sum of the priced lines only. ``None`` when nothing could be priced."""
+    total: Decimal | None = None
+    """Sum of the priced lines only. ``None`` when nothing could be priced —
+    never ``0``, which would read as free."""
     priced_item_count: int = 0
     unpriced_item_count: int = 0
     partial: bool = False

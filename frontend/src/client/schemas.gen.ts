@@ -1960,7 +1960,8 @@ export const PricedListSchema = {
         total: {
             anyOf: [
                 {
-                    type: 'number'
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$'
                 },
                 {
                     type: 'null'
@@ -2939,7 +2940,8 @@ export const ResolvedItemSchema = {
         line_total: {
             anyOf: [
                 {
-                    type: 'number'
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$'
                 },
                 {
                     type: 'null'
@@ -3046,7 +3048,8 @@ export const ShopProductSchema = {
         price: {
             anyOf: [
                 {
-                    type: 'number'
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$'
                 },
                 {
                     type: 'null'

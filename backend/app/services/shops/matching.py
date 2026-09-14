@@ -5,14 +5,15 @@ of a shop integration, and it is identical for every retailer. Providers only
 fetch catalogues; all the judgement lives here, so twelve shops cannot drift
 into twelve different answers for the same list.
 
-Two deliberate refusals, because a wrong number here is worse than an absent
-one:
+Unit arithmetic is **not** done here. ``app.core.units`` is the single place
+that converts, and this module calls it — which is what keeps a list costed
+through a shop provider agreeing with the same list costed through the store
+comparison. Its refusals carry straight through:
 
-- Units in different dimensions never convert. There is no density table, so
-  "200 g" against a pack sold in "ml" yields ASSUMED_SINGLE, not a guess.
-- Sub-portion units (clove, slice, pinch) describe a *part* of a purchasable
-  item. "3 cloves" must not become "buy 3 heads of garlic", so they never
-  drive a pack count.
+- mass and volume never cross without the ingredient's density, so "200 g"
+  against a pack sold in "ml" yields ASSUMED_SINGLE rather than a guess;
+- discrete units convert only to themselves, so "3 cloves" can never become
+  "buy 3 heads of garlic", and a bunch is never silently a piece.
 """
 
 from __future__ import annotations
@@ -22,9 +23,10 @@ import re
 import unicodedata
 from collections.abc import Iterable, Sequence
 from difflib import SequenceMatcher
-from enum import Enum
 
+from app.core.units import convert
 from app.models.ingredient import Unit
+from app.services.pricing import quantize_money
 from app.services.shops.models import (
     ListLine,
     MatchStatus,
@@ -39,62 +41,7 @@ from app.services.shops.models import (
 # --------------------------------------------------------------------------- #
 
 
-class Dimension(str, Enum):
-    MASS = "mass"
-    VOLUME = "volume"
-    COUNT = "count"
-    IMPRECISE = "imprecise"
-    """Sub-portions of a purchasable item. Convertible only to themselves."""
-
-
-#: Every member of ``Unit`` mapped to its dimension and its factor to that
-#: dimension's base (gram / millilitre / piece). ``Unit`` is the source of
-#: truth: ``test_unit_coverage`` fails if a new member is added without a
-#: mapping here, so this can never silently fall behind the enum.
-UNIT_CONVERSIONS: dict[Unit, tuple[Dimension, float]] = {
-    Unit.GRAM: (Dimension.MASS, 1.0),
-    Unit.KILOGRAM: (Dimension.MASS, 1000.0),
-    Unit.OUNCE: (Dimension.MASS, 28.349523125),
-    Unit.POUND: (Dimension.MASS, 453.59237),
-    Unit.MILLILITER: (Dimension.VOLUME, 1.0),
-    Unit.CENTILITER: (Dimension.VOLUME, 10.0),
-    Unit.DECILITER: (Dimension.VOLUME, 100.0),
-    Unit.LITER: (Dimension.VOLUME, 1000.0),
-    Unit.CUP: (Dimension.VOLUME, 240.0),
-    Unit.TABLESPOON: (Dimension.VOLUME, 15.0),
-    Unit.TEASPOON: (Dimension.VOLUME, 5.0),
-    # Purchasable whole items.
-    Unit.PIECE: (Dimension.COUNT, 1.0),
-    Unit.BUNCH: (Dimension.COUNT, 1.0),
-    Unit.CAN: (Dimension.COUNT, 1.0),
-    Unit.PACKAGE: (Dimension.COUNT, 1.0),
-    # Parts of a purchasable item — never scale a basket.
-    Unit.CLOVE: (Dimension.IMPRECISE, 1.0),
-    Unit.SLICE: (Dimension.IMPRECISE, 1.0),
-    Unit.PINCH: (Dimension.IMPRECISE, 1.0),
-}
-
-#: Upper bound on packs for one line. Beyond this the shop's pack metadata is
-#: far likelier to be wrong than the recipe, so we stop rather than put "1 400"
-#: tins of tomatoes in someone's basket.
 MAX_PACK_COUNT = 99
-
-
-def convert(quantity: float, from_unit: Unit, to_unit: Unit) -> float | None:
-    """Convert between units, or ``None`` when the conversion is not defined.
-
-    ``None`` is a real answer meaning "not comparable" (mass vs volume, or any
-    sub-portion unit against a different unit), never an error.
-    """
-    if from_unit is to_unit:
-        return quantity
-    from_dim, from_factor = UNIT_CONVERSIONS[from_unit]
-    to_dim, to_factor = UNIT_CONVERSIONS[to_unit]
-    if from_dim is not to_dim or from_dim is Dimension.IMPRECISE:
-        return None
-    if to_factor == 0:
-        return None
-    return quantity * from_factor / to_factor
 
 
 def compute_pack_count(
@@ -283,7 +230,7 @@ def resolve_item(
 
     if best.price is not None:
         base.price_status = PriceStatus.PRICED
-        base.line_total = round(best.price * pack_count, 2)
+        base.line_total = quantize_money(best.price * pack_count)
 
     return base
 
@@ -365,24 +312,6 @@ def parse_quantity(text: str) -> tuple[float, Unit] | None:
 # --------------------------------------------------------------------------- #
 # List tidying                                                                 #
 # --------------------------------------------------------------------------- #
-
-#: When a total reaches this many base units, step up to the larger unit so a
-#: printed list reads "1.5 kg" rather than "1500 g".
-_SCALE_UP: dict[Unit, tuple[float, Unit]] = {
-    Unit.GRAM: (1000.0, Unit.KILOGRAM),
-    Unit.MILLILITER: (1000.0, Unit.LITER),
-    Unit.CENTILITER: (100.0, Unit.LITER),
-}
-
-
-def prettify_quantity(quantity: float, unit: Unit) -> tuple[float, Unit]:
-    """Scale a quantity to the unit a person would actually write down."""
-    rule = _SCALE_UP.get(unit)
-    if rule is not None and quantity >= rule[0]:
-        converted = convert(quantity, unit, rule[1])
-        if converted is not None:
-            return round(converted, 3), rule[1]
-    return round(quantity, 3), unit
 
 
 def _merge_key(name: str) -> str:

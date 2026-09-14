@@ -21,9 +21,10 @@ import io
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 
+from app.core.units import prettify
 from app.models.ingredient import IngredientCategory, Unit
 from app.services.shops.base import ShopProvider
-from app.services.shops.matching import merge_lines, prettify_quantity
+from app.services.shops.matching import merge_lines
 from app.services.shops.models import (
     Capability,
     ExportedList,
@@ -129,7 +130,7 @@ class ListOnlyProvider(ShopProvider):
     def _group(self, merged: Sequence[tuple[ListLine, int]]) -> list[ExportedListGroup]:
         buckets: dict[IngredientCategory, list[ExportedListItem]] = {}
         for line, count in merged:
-            quantity, unit = prettify_quantity(line.quantity, line.unit)
+            quantity, unit = prettify(line.quantity, line.unit)
             category = (
                 (line.category or IngredientCategory.OTHER)
                 if self.config.group_by_aisle
@@ -138,7 +139,9 @@ class ListOnlyProvider(ShopProvider):
             buckets.setdefault(category, []).append(
                 ExportedListItem(
                     name=line.name,
-                    quantity=quantity,
+                    # prettify works in floats; round before it reaches a payload
+                    # so the structured form never shows 0.30000000000000004.
+                    quantity=round(quantity, 3),
                     unit=unit,
                     note=line.note,
                     merged_from=count,

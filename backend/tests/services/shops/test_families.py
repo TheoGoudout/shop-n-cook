@@ -4,6 +4,7 @@ HTTP is mocked at the submodule path (``...families.http_client.get_text``),
 matching the convention the recipe-import tests use.
 """
 
+from decimal import Decimal
 from typing import Any
 from unittest.mock import Mock, patch
 
@@ -158,7 +159,7 @@ class TestOpenPrices:
         ):
             products = provider.search("tomate")
             priced = provider.attach_prices(products)
-        assert priced[0].price == pytest.approx(1.29)
+        assert priced[0].price == Decimal("1.29")
 
     def test_missing_price_leaves_the_product_intact(self) -> None:
         provider = OpenPricesProvider()
@@ -209,7 +210,7 @@ class TestMagento:
         with patch.object(provider, "_graphql", return_value=self.RESPONSE):
             products = provider.search("lentilles")
         assert products[0].sku == "BIO-123"
-        assert products[0].price == pytest.approx(3.45)
+        assert products[0].price == Decimal("3.45")
         assert products[0].pack_quantity == 500
         assert products[0].in_stock is True
         assert products[0].url == "https://www.biocoop.fr/lentilles-vertes-bio.html"
@@ -295,7 +296,7 @@ class TestHtmlCatalogExtraction:
         ):
             products = provider.search("lentilles")
         assert products[0].name == "Lentilles vertes 500 g"
-        assert products[0].price == pytest.approx(3.45)
+        assert products[0].price == Decimal("3.45")
         assert products[0].image_url == "https://img.test/l.jpg"
         assert provider.supports(Capability.PRICES)
 
@@ -319,7 +320,7 @@ class TestHtmlCatalogExtraction:
             products = provider.search("farine")
         assert products[0].sku == "XYZ"
         assert products[0].name == "Farine T55 1kg"
-        assert products[0].price == pytest.approx(2.10)
+        assert products[0].price == Decimal("2.10")
         assert products[0].image_url == "https://img.test/f.jpg"
         assert products[0].pack_quantity == 1.0
         assert products[0].pack_unit is Unit.KILOGRAM

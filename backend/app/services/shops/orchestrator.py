@@ -22,7 +22,9 @@ surveyed:
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
+from decimal import Decimal
 
+from app.services.pricing import quantize_money
 from app.services.shops.base import ShopProvider
 from app.services.shops.errors import (
     CapabilityNotSupportedError,
@@ -242,7 +244,7 @@ def _attach_missing_prices(
             continue
         item.product = item.product.model_copy(update={"price": price})
         item.price_status = PriceStatus.PRICED
-        item.line_total = round(price * item.pack_count, 2)
+        item.line_total = quantize_money(price * item.pack_count)
 
 
 def _finalise(
@@ -253,7 +255,11 @@ def _finalise(
     result.priced_item_count = len(priced)
     result.unpriced_item_count = len(result.items) - len(priced)
     result.total = (
-        round(sum(item.line_total or 0.0 for item in priced), 2) if priced else None
+        quantize_money(
+            sum((item.line_total or Decimal(0) for item in priced), Decimal(0))
+        )
+        if priced
+        else None
     )
 
     if result.items and result.currency == "EUR":

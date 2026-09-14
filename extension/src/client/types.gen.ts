@@ -405,7 +405,7 @@ export type PricedList = {
     store_id?: (string | null);
     currency?: string;
     items?: Array<ResolvedItem>;
-    total?: (number | null);
+    total?: (string | null);
     priced_item_count?: number;
     unpriced_item_count?: number;
     partial?: boolean;
@@ -567,7 +567,7 @@ export type ResolvedItem = {
     match_score?: number;
     pack_count?: number;
     pack_status?: PackStatus;
-    line_total?: (number | null);
+    line_total?: (string | null);
     price_status?: PriceStatus;
     alternatives?: Array<ShopProduct>;
 };
@@ -668,7 +668,7 @@ export type ShopProduct = {
     brand?: (string | null);
     url?: (string | null);
     image_url?: (string | null);
-    price?: (number | null);
+    price?: (string | null);
     currency?: string;
     pack_quantity?: (number | null);
     pack_unit?: (Unit | null);

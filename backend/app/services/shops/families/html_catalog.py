@@ -15,10 +15,12 @@ from __future__ import annotations
 import re
 from collections.abc import Sequence
 from dataclasses import dataclass
+from decimal import Decimal, InvalidOperation
 from urllib.parse import quote, urljoin
 
 from bs4 import BeautifulSoup, Tag
 
+from app.services.pricing import quantize_money
 from app.services.shops.base import ShopProvider
 from app.services.shops.families import http_client
 from app.services.shops.matching import parse_quantity
@@ -205,19 +207,22 @@ class HtmlCatalogProvider(ShopProvider):
                 return src
         return None
 
-    def _extract_price(self, element: Tag) -> float | None:
+    def _extract_price(self, element: Tag) -> Decimal | None:
         node = element.select_one('[itemprop="price"]')
         if isinstance(node, Tag):
             content = node.get("content")
             if isinstance(content, str):
                 try:
-                    return round(float(content.replace(",", ".")), 2)
-                except ValueError:
+                    return quantize_money(Decimal(content.replace(",", ".")))
+                except InvalidOperation:
                     pass
         if self.config.price_selector:
             priced = element.select_one(self.config.price_selector)
             if isinstance(priced, Tag):
                 match = _PRICE_RE.search(priced.get_text(" ", strip=True))
                 if match:
-                    return round(float(match.group(1).replace(",", ".")), 2)
+                    try:
+                        return quantize_money(Decimal(match.group(1).replace(",", ".")))
+                    except InvalidOperation:
+                        return None
         return None

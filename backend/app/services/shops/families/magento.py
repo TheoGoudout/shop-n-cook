@@ -18,11 +18,13 @@ from __future__ import annotations
 import json
 from collections.abc import Sequence
 from dataclasses import dataclass
+from decimal import Decimal, InvalidOperation
 from typing import Any
 from urllib.parse import quote, urljoin
 
 import httpx
 
+from app.services.pricing import quantize_money
 from app.services.shops.base import ShopProvider
 from app.services.shops.errors import ShopUnavailableError
 from app.services.shops.families.http_client import DEFAULT_TIMEOUT, USER_AGENT
@@ -149,16 +151,16 @@ class MagentoProvider(ShopProvider):
         if not sku or not name:
             return None
 
-        price: float | None = None
+        price: Decimal | None = None
         currency = "EUR"
         final = (
             raw.get("price_range", {}).get("minimum_price", {}).get("final_price", {})
         )
         if isinstance(final, dict) and final.get("value") is not None:
             try:
-                price = round(float(final["value"]), 2)
+                price = quantize_money(Decimal(str(final["value"])))
                 currency = final.get("currency") or currency
-            except (TypeError, ValueError):
+            except (InvalidOperation, ValueError):
                 price = None
 
         url: str | None = None

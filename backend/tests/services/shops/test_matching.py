@@ -1,14 +1,14 @@
 """The shared resolution layer. Every shop depends on this being right."""
 
+from decimal import Decimal
+
 import pytest
 
+from app.core.units import UnitDimension, convert, dimension, is_discrete
 from app.models.ingredient import Unit
 from app.services.shops.matching import (
     MAX_PACK_COUNT,
-    UNIT_CONVERSIONS,
-    Dimension,
     compute_pack_count,
-    convert,
     parse_quantity,
     rank_candidates,
     resolve_item,
@@ -22,10 +22,20 @@ from app.services.shops.models import (
 )
 
 
-def test_every_unit_has_a_conversion() -> None:
-    """``Unit`` is the source of truth; a new member must not silently fall
-    through to 'not convertible'."""
-    assert set(UNIT_CONVERSIONS) == set(Unit)
+def test_every_unit_survives_the_pack_maths() -> None:
+    """A new ``Unit`` member must not crash pack counting or fall through to a
+    silent wrong answer. Conversion itself is ``app.core.units``' job and is
+    tested there; this pins that every member reaches this layer intact."""
+    for unit in Unit:
+        assert convert(1, unit, unit) == 1
+        count, status = compute_pack_count(
+            required_quantity=2,
+            required_unit=unit,
+            pack_quantity=1,
+            pack_unit=unit,
+        )
+        assert count == 2
+        assert status is PackStatus.EXACT
 
 
 @pytest.mark.parametrize(
@@ -35,7 +45,8 @@ def test_every_unit_has_a_conversion() -> None:
         (500, Unit.GRAM, Unit.KILOGRAM, 0.5),
         (1, Unit.LITER, Unit.MILLILITER, 1000.0),
         (75, Unit.CENTILITER, Unit.MILLILITER, 750.0),
-        (2, Unit.TABLESPOON, Unit.MILLILITER, 30.0),
+        # US customary, per app.core.units — not the 15 ml round number.
+        (2, Unit.TABLESPOON, Unit.MILLILITER, 29.5735295625),
         (1, Unit.POUND, Unit.GRAM, 453.59237),
         (3, Unit.PIECE, Unit.PIECE, 3.0),
     ],
@@ -56,15 +67,19 @@ def test_convert_within_dimension(
         (Unit.CLOVE, Unit.PIECE),  # a clove is part of a purchasable item
         (Unit.SLICE, Unit.GRAM),
         (Unit.PINCH, Unit.TEASPOON),
+        # Every discrete unit stands alone: a bunch of parsley is not "a piece".
+        (Unit.BUNCH, Unit.PIECE),
+        (Unit.CAN, Unit.PACKAGE),
     ],
 )
 def test_convert_across_dimensions_returns_none(source: Unit, target: Unit) -> None:
     assert convert(1, source, target) is None
 
 
-def test_imprecise_units_are_their_own_dimension() -> None:
-    for unit in (Unit.CLOVE, Unit.SLICE, Unit.PINCH):
-        assert UNIT_CONVERSIONS[unit][0] is Dimension.IMPRECISE
+def test_countable_units_are_discrete() -> None:
+    for unit in (Unit.CLOVE, Unit.SLICE, Unit.PINCH, Unit.BUNCH, Unit.CAN):
+        assert is_discrete(unit)
+        assert dimension(unit) is UnitDimension.DISCRETE
 
 
 class TestPackCount:
@@ -123,6 +138,18 @@ class TestPackCount:
         )
         assert (count, status) == (1, PackStatus.UNKNOWN_PACK_SIZE)
 
+    def test_pack_maths_uses_the_shared_unit_table(self) -> None:
+        """67 tbsp is 990 ml by US customary measure, so one 1 L bottle is
+        enough. The old local table rounded a tablespoon to 15 ml and would
+        have sent the shopper back for a second one."""
+        count, _ = compute_pack_count(
+            required_quantity=67,
+            required_unit=Unit.TABLESPOON,
+            pack_quantity=1,
+            pack_unit=Unit.LITER,
+        )
+        assert count == 1
+
     def test_absurd_ratio_is_capped(self) -> None:
         count, status = compute_pack_count(
             required_quantity=10,
@@ -174,7 +201,7 @@ class TestResolveItem:
         product = ShopProduct(
             sku="A1",
             name="Tomates cerises rouges 250g",
-            price=2.49,
+            price=Decimal("2.49"),
             pack_quantity=250,
             pack_unit=Unit.GRAM,
         )
@@ -187,7 +214,7 @@ class TestResolveItem:
         assert resolved.match_status is MatchStatus.MATCHED
         assert resolved.pack_count == 2
         assert resolved.price_status is PriceStatus.PRICED
-        assert resolved.line_total == pytest.approx(4.98)
+        assert resolved.line_total == Decimal("4.98")
 
     def test_no_candidates(self) -> None:
         resolved = resolve_item(

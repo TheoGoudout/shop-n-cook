@@ -1,5 +1,7 @@
 """Degradation: what each shop produces when it cannot do the whole job."""
 
+from decimal import Decimal
+
 import pytest
 
 from app.models.ingredient import Unit
@@ -30,14 +32,14 @@ CATALOGUE = {
     "tomates cerises": ShopProduct(
         sku="A1",
         name="Tomates cerises rouges 250g",
-        price=2.49,
+        price=Decimal("2.49"),
         pack_quantity=250,
         pack_unit=Unit.GRAM,
     ),
     "lait demi-écrémé": ShopProduct(
         sku="A2",
         name="Lait demi-écrémé 1 L",
-        price=1.15,
+        price=Decimal("1.15"),
         pack_quantity=1,
         pack_unit=Unit.LITER,
     ),
@@ -116,7 +118,7 @@ class TestPricing:
         result = price_shopping_list(
             provider=_FullShop(slug="full", display_name="Full"), lines=LINES
         )
-        assert result.total == pytest.approx(6.13)
+        assert result.total == Decimal("6.13")
         assert result.priced_item_count == 2
         assert result.unpriced_item_count == 1
         assert result.partial is True
@@ -225,7 +227,7 @@ class _LatePricingShop(ShopProvider):
         self.price_calls += 1
         if self.fail_pricing:
             raise ShopUnavailableError("price service down")
-        return [p.model_copy(update={"price": 2.0}) for p in products]
+        return [p.model_copy(update={"price": Decimal("2.00")}) for p in products]
 
 
 class TestLatePricing:
@@ -236,14 +238,14 @@ class TestLatePricing:
         assert result.priced_item_count == 2
         # 500 g of cherry tomatoes in 250 g packs = 2 x 2.00, plus 1 L of milk
         # in 1 L packs = 1 x 2.00. The unmatched third line contributes nothing.
-        assert result.total == pytest.approx(6.0)
+        assert result.total == Decimal("6.00")
 
     def test_line_total_uses_the_pack_count(self) -> None:
         provider = _LatePricingShop(slug="late", display_name="Late")
         result = price_shopping_list(provider=provider, lines=LINES[:1])
         # 500 g wanted, 250 g packs, 2.00 each.
         assert result.items[0].pack_count == 2
-        assert result.items[0].line_total == pytest.approx(4.0)
+        assert result.items[0].line_total == Decimal("4.00")
         assert result.items[0].price_status is PriceStatus.PRICED
 
     def test_pricing_failure_degrades_rather_than_raises(self) -> None:

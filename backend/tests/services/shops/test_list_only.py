@@ -6,6 +6,7 @@ towards: whatever else fails, the user should still get a list they can carry.
 
 import pytest
 
+from app.core.units import prettify
 from app.models.ingredient import IngredientCategory, Unit
 from app.services.shops.errors import CapabilityNotSupportedError
 from app.services.shops.families.list_only import (
@@ -14,7 +15,7 @@ from app.services.shops.families.list_only import (
     ListOnlyConfig,
     ListOnlyProvider,
 )
-from app.services.shops.matching import merge_lines, prettify_quantity
+from app.services.shops.matching import merge_lines
 from app.services.shops.models import (
     Capability,
     ListExportFormat,
@@ -118,10 +119,8 @@ class TestMerging:
         (3, Unit.PIECE, (3.0, Unit.PIECE)),
     ],
 )
-def test_prettify_quantity(
-    quantity: float, unit: Unit, expected: tuple[float, Unit]
-) -> None:
-    assert prettify_quantity(quantity, unit) == expected
+def test_prettify(quantity: float, unit: Unit, expected: tuple[float, Unit]) -> None:
+    assert prettify(quantity, unit) == expected
 
 
 class TestExport:

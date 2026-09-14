@@ -74,6 +74,38 @@ Never use `--no-verify` — fix the underlying issue.
   `tCommon(\`unit_labels.${u}\`, { defaultValue: u })`.
 - The shared `<UnitSelect>` (`frontend/src/components/Common/UnitSelect.tsx`)
   wraps this pattern. Prefer it over building a Select from scratch.
+- **Never convert units by hand.** `backend/app/core/units.py` classifies every
+  `Unit` into a dimension (mass / volume / discrete) and is the only place that
+  converts. Mass and volume convert freely within themselves; discrete units
+  (`piece`, `clove`, `slice`, …) convert only to themselves, so a clove is never
+  silently treated as a piece. `merge_key(unit)` gives the key two quantities
+  must share to be added together.
+- Crossing mass↔volume or discrete↔mass is a property of the *ingredient*, not
+  the unit: `Ingredient.density_g_per_ml` and `Ingredient.piece_weight_g`. When
+  the bridge is missing, the answer is `None`, never a guess.
+
+**Pricing**
+- Prices are `Decimal`, never float, and are stored the way a price is quoted:
+  `price_amount` per `price_quantity` `price_unit`.
+- `PriceBook` (`backend/app/services/pricing.py`) is built once per request via
+  the `PriceBookDep` dependency and passed into the `*_to_public` helpers. Never
+  price ingredients one query at a time.
+- **An unpriced item is `None`, never `0`.** Every public schema that carries a
+  total also carries an unpriced count; the UI must render the two differently.
+  `frontend/src/lib/money.ts` enforces this — `formatMoney` returns `null` for
+  an unpriced value so no screen can show a missing price as a free one.
+- Cost fields belong on `*Public` (read) schemas only. The browser extension
+  consumes `RecipeCreate` and friends; keeping writes untouched keeps it working.
+- Store prices resolve as: the store's own price → the catalog price scaled by
+  `Store.price_index` → unpriced. A curated store price is never index-scaled.
+
+**Access control for shared resources**
+- Shopping lists and meal plans are visible to a user's whole household. The
+  rule lives in exactly one function, `crud.user_can_access`
+  (`backend/app/crud/household.py`) — call it rather than comparing `owner_id`.
+- List endpoints must filter on `crud.household_member_ids(...)`, not on
+  `current_user.id`, or a member can open a shared list by URL but never see it
+  listed.
 
 **Mutations**
 - Use the `useCrudMutation` hook (`frontend/src/hooks/useCrudMutation.ts`)
@@ -103,6 +135,9 @@ Never use `--no-verify` — fix the underlying issue.
 
 **i18n**
 - Strings live in `frontend/src/i18n/locales/{en,fr}/<namespace>.json`.
+- Namespaces: `admin, auth, common, dashboard, mealPlans, navigation, recipes,
+  settings, shopping`. A new one must be registered in the `resources` map in
+  `frontend/src/i18n/index.ts` as well as created in both locales.
 - Every new key must land in both `en` and `fr` simultaneously.
 - Use the shared `common` namespace for verbs (`cancel`, `save`,
   `delete`), unit labels, and other cross-feature strings.

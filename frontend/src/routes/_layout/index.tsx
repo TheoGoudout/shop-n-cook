@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next"
 
 import { RecipesService, ShoppingListsService } from "@/client"
 import { ActiveShoppingList } from "@/components/Dashboard/ActiveShoppingList"
+import { BudgetSummary } from "@/components/Dashboard/BudgetSummary"
 import { EmptyState } from "@/components/Dashboard/EmptyState"
 import { QuickActions } from "@/components/Dashboard/QuickActions"
 import { RecentRecipes } from "@/components/Dashboard/RecentRecipes"
@@ -54,10 +55,13 @@ function Dashboard() {
       {isEmpty && recipesData !== undefined && listsData !== undefined ? (
         <EmptyState />
       ) : (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <RecentRecipes data={recipesData} />
-          <ActiveShoppingList data={listsData} />
-        </div>
+        <>
+          <BudgetSummary />
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <RecentRecipes data={recipesData} />
+            <ActiveShoppingList data={listsData} />
+          </div>
+        </>
       )}
     </div>
   )

@@ -49,14 +49,42 @@ Install the app as a Progressive Web App on mobile or desktop. On mobile, you ca
 ### Shopping List Management
 Create shopping lists from your recipes. Adding a recipe to a list automatically populates it with the required ingredients. Track item completion as you shop.
 
+### Ingredient Pricing
+The ingredient catalog carries a reference price, quoted the way a shelf quotes
+one — an amount per a quantity of a unit. Recipes report a cost per serving and
+shopping lists a running total. Anything that cannot be priced is reported as
+*unpriced* rather than counted as free. Superusers can curate prices by hand or
+have the LLM estimate the gaps; an estimate never overwrites a curated price.
+
+### Store Price Comparison
+Prices can be recorded per retailer, and a shopping list can be costed against
+every store at once to show the spread. Where a store has no price of its own,
+the catalog price is scaled by that store's price index, so the comparison works
+before the price matrix is complete.
+
+### Meal Planning
+Plan a week by pinning recipes to day-and-meal slots, then generate a single
+shopping list from the whole plan. Repeated recipes merge onto one row.
+
+### Menu Generation
+Compose a week automatically from your recipes, respecting dietary requirements,
+seasons, maximum cooking time and a budget. Any single meal can be swapped
+without disturbing the rest of the plan.
+
+### Household Sharing
+Invite up to four people to share shopping lists and meal plans.
+
 ### Household Settings
-Configure household size, shopping frequency (daily, weekly, monthly), and budget preferences per user.
+Configure household size, shopping frequency, a spending budget, a currency and
+a preferred store per user.
 
 ### Profile Pages
 Each user has a public profile page listing their public recipes.
 
 ### Dashboard
-A stats overview showing total counts for recipes, ingredients, and shopping lists, with a bar chart visualization.
+A stats overview showing total counts for recipes, ingredients, and shopping
+lists, with a bar chart visualization, plus budget-against-spend for the current
+shopping lists.
 
 ### Internationalization
 The interface is available in English and French, with automatic language detection from the browser.

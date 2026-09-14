@@ -34,5 +34,15 @@
     "subtitle": "Commencez par ajouter votre première recette ou créer une liste de courses.",
     "add_recipe": "Ajouter une recette",
     "create_list": "Créer une liste"
+  },
+  "budget": {
+    "title": "Budget",
+    "budget": "Budget",
+    "spend": "Dépense estimée",
+    "remaining": "Restant",
+    "over": "Dépassement",
+    "over_hint": "Vos listes coûtent plus que votre budget.",
+    "unpriced": "{{count}} article de vos listes n'a pas encore de prix",
+    "unpriced_other": "{{count}} articles de vos listes n'ont pas encore de prix"
   }
 }

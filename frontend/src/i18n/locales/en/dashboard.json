@@ -34,5 +34,15 @@
     "subtitle": "Start by adding your first recipe or creating a shopping list.",
     "add_recipe": "Add a Recipe",
     "create_list": "Create a List"
+  },
+  "budget": {
+    "title": "Budget",
+    "budget": "Budget",
+    "spend": "Estimated spend",
+    "remaining": "Remaining",
+    "over": "Over budget",
+    "over_hint": "Your lists cost more than your budget.",
+    "unpriced": "{{count}} item across your lists has no price yet",
+    "unpriced_other": "{{count}} items across your lists have no price yet"
   }
 }

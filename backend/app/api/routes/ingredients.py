@@ -3,9 +3,11 @@ import uuid
 from typing import Annotated, Any
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from pydantic import BaseModel
 
 from app import crud
 from app.api.deps import CurrentUser, SessionDep, get_current_active_superuser
+from app.models.base import Message
 from app.models.ingredient import (
     DeduplicateMerge,
     DeduplicateResponse,
@@ -15,6 +17,10 @@ from app.models.ingredient import (
     IngredientUpdate,
 )
 from app.services.ingredient_image import fetch_and_update_ingredient_image
+from app.services.ingredient_price import (
+    estimate_ingredient_price,
+    estimate_prices_batch,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +67,7 @@ def update_ingredient(
     id: uuid.UUID,
     update_in: IngredientUpdate,
 ) -> Any:
-    """Update an ingredient's category or image. Superuser only."""
+    """Update an ingredient's category, image or reference price. Superuser only."""
     ingredient = crud.get_ingredient(session=session, ingredient_id=id)
     if not ingredient:
         raise HTTPException(status_code=404, detail="Ingredient not found")
@@ -107,6 +113,62 @@ def deduplicate_ingredients(
     return DeduplicateResponse(
         dry_run=dry_run, groups=merges, removed_count=removed_count
     )
+
+
+class EstimatePricesRequest(BaseModel):
+    """Which ingredients to price, and in what currency.
+
+    An empty ``ingredient_ids`` means "everything without a curated price",
+    which is the common case after a bulk import.
+    """
+
+    ingredient_ids: list[uuid.UUID] = []
+    currency: str = "EUR"
+
+
+@router.post("/{id}/estimate-price", response_model=IngredientPublic)
+def estimate_ingredient_price_route(
+    *,
+    session: SessionDep,
+    _current_user: Annotated[Any, Depends(get_current_active_superuser)],
+    id: uuid.UUID,
+    background_tasks: BackgroundTasks,
+    currency: str = "EUR",
+) -> Any:
+    """Queue an LLM price estimate for this ingredient. Superuser only.
+
+    A price a human curated is never overwritten — see
+    ``services.ingredient_price.may_overwrite``.
+    """
+    ingredient = crud.get_ingredient(session=session, ingredient_id=id)
+    if not ingredient:
+        raise HTTPException(status_code=404, detail="Ingredient not found")
+    background_tasks.add_task(
+        estimate_ingredient_price, ingredient.id, currency=currency
+    )
+    return IngredientPublic.model_validate(ingredient)
+
+
+@router.post("/estimate-prices", response_model=Message)
+def estimate_ingredient_prices_route(
+    *,
+    session: SessionDep,
+    _current_user: Annotated[Any, Depends(get_current_active_superuser)],
+    body: EstimatePricesRequest,
+    background_tasks: BackgroundTasks,
+) -> Any:
+    """Queue LLM price estimates for many ingredients. Superuser only."""
+    if body.ingredient_ids:
+        ids = body.ingredient_ids
+    else:
+        ingredients, _ = crud.get_ingredients(session=session, skip=0, limit=1000)
+        ids = [i.id for i in ingredients if i.price_amount is None]
+
+    if not ids:
+        return Message(message="No ingredients need a price estimate")
+
+    background_tasks.add_task(estimate_prices_batch, list(ids), currency=body.currency)
+    return Message(message=f"Estimating prices for {len(ids)} ingredient(s)")
 
 
 @router.post("/{id}/fetch-image", response_model=IngredientPublic)

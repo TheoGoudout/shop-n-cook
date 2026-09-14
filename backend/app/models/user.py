@@ -80,6 +80,9 @@ class User(UserBase, table=True):
     shopping_lists: list["ShoppingList"] = Relationship(  # type: ignore[name-defined]  # noqa: F821
         back_populates="owner", cascade_delete=True
     )
+    meal_plans: list["MealPlan"] = Relationship(  # type: ignore[name-defined]  # noqa: F821
+        back_populates="owner", cascade_delete=True
+    )
     settings: "UserSettings" = Relationship(back_populates="owner", cascade_delete=True)  # type: ignore[name-defined]  # noqa: F821
 
 

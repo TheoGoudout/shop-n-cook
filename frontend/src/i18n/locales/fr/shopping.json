@@ -74,5 +74,12 @@
     "success": "Liste de courses supprimée"
   },
   "item_removed": "Article supprimé",
-  "servings_badge": "{{count}} portions"
+  "servings_badge": "{{count}} portions",
+  "store_comparison": {
+    "title": "Comparer les magasins",
+    "description": "Ce que cette liste coûterait dans chaque enseigne.",
+    "cheapest": "Le moins cher",
+    "savings": "Économisez {{amount}} par rapport au plus cher",
+    "empty": "Ajoutez des articles pour comparer les prix entre magasins."
+  }
 }

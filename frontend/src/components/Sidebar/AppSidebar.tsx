@@ -1,4 +1,11 @@
-import { ChefHat, Globe, Home, ShoppingCart, Users } from "lucide-react"
+import {
+  CalendarDays,
+  ChefHat,
+  Globe,
+  Home,
+  ShoppingCart,
+  Users,
+} from "lucide-react"
 import { useTranslation } from "react-i18next"
 
 import { SidebarAppearance } from "@/components/Common/Appearance"
@@ -21,6 +28,7 @@ export function AppSidebar() {
     { icon: Home, title: t("dashboard"), path: "/" },
     { icon: ChefHat, title: t("recipes"), path: "/recipes" },
     { icon: Globe, title: t("community"), path: "/recipes/public" },
+    { icon: CalendarDays, title: t("meal_plans"), path: "/meal-plans" },
     { icon: ShoppingCart, title: t("shopping_lists"), path: "/shopping-lists" },
   ]
 

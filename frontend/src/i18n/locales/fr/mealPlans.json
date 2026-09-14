@@ -1,0 +1,68 @@
+{
+  "page": {
+    "title": "Menus",
+    "subtitle": "Planifiez la semaine, puis générez une seule liste de courses.",
+    "empty_title": "Aucun menu pour l'instant",
+    "empty_subtitle": "Créez un menu pour répartir vos recettes sur la semaine."
+  },
+  "add": {
+    "trigger": "Nouveau menu",
+    "title": "Nouveau menu",
+    "description": "Nommez le menu et choisissez la semaine qu'il couvre.",
+    "name_label": "Nom",
+    "name_placeholder": "Semaine du 2",
+    "start_label": "Début",
+    "end_label": "Fin",
+    "success": "Menu créé"
+  },
+  "detail": {
+    "entries": "{{count}} repas planifié",
+    "entries_other": "{{count}} repas planifiés",
+    "empty_day": "Rien de prévu",
+    "add_recipe": "Ajouter une recette",
+    "add_to_slot": "Ajouter à {{day}}",
+    "servings": "{{count}} portion",
+    "servings_other": "{{count}} portions",
+    "remove": "Retirer du menu",
+    "generate": "Générer la liste de courses",
+    "generated": "Liste de courses créée",
+    "open_list": "Ouvrir la liste de courses",
+    "regenerate": "Générer une nouvelle liste",
+    "week_total": "Total de la semaine",
+    "delete_title": "Supprimer ce menu ?",
+    "delete_description": "Le menu et ses repas sont supprimés. Toute liste de courses générée est conservée.",
+    "deleted": "Menu supprimé"
+  },
+  "meal_types": {
+    "breakfast": "Petit-déjeuner",
+    "lunch": "Déjeuner",
+    "dinner": "Dîner",
+    "snack": "Encas",
+    "dessert": "Dessert",
+    "drink": "Boisson",
+    "other": "Autre"
+  },
+  "generate": {
+    "trigger": "Générer un menu",
+    "title": "Générer un menu",
+    "description": "Composez une semaine à partir de vos recettes. La taille du foyer et le budget proviennent de vos paramètres, sauf modification ici.",
+    "days_label": "Jours",
+    "servings_label": "Portions",
+    "budget_label": "Budget pour tout le menu",
+    "budget_placeholder": "Depuis vos paramètres",
+    "max_prep_label": "Temps max par repas (minutes)",
+    "max_prep_placeholder": "Sans limite",
+    "diet_label": "Régime alimentaire",
+    "vegan": "Végétalien",
+    "vegetarian": "Végétarien",
+    "gluten_free": "Sans gluten",
+    "dairy_free": "Sans lactose",
+    "season_label": "Privilégier les recettes de saison",
+    "public_label": "Inclure les recettes de la communauté",
+    "submit": "Générer",
+    "success": "Menu généré",
+    "swap": "Remplacer ce repas",
+    "swapped": "Repas remplacé",
+    "servings_placeholder": "Selon la taille du foyer"
+  }
+}

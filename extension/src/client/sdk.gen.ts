@@ -3,7 +3,256 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { IngredientsReadIngredientsData, IngredientsReadIngredientsResponse, IngredientsCreateIngredientData, IngredientsCreateIngredientResponse, IngredientsUpdateIngredientData, IngredientsUpdateIngredientResponse, IngredientsDeduplicateIngredientsData, IngredientsDeduplicateIngredientsResponse, IngredientsFetchIngredientImageData, IngredientsFetchIngredientImageResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, RecipesReadPublicRecipesData, RecipesReadPublicRecipesResponse, RecipesReadRecipesData, RecipesReadRecipesResponse, RecipesCreateRecipeData, RecipesCreateRecipeResponse, RecipesReadRecipeData, RecipesReadRecipeResponse, RecipesUpdateRecipeData, RecipesUpdateRecipeResponse, RecipesDeleteRecipeData, RecipesDeleteRecipeResponse, RecipesReimportRecipeData, RecipesReimportRecipeResponse, RecipesImportRecipeUrlData, RecipesImportRecipeUrlResponse, RecipesImportRecipePhotosData, RecipesImportRecipePhotosResponse, ShoppingListsReadShoppingListsData, ShoppingListsReadShoppingListsResponse, ShoppingListsCreateShoppingListData, ShoppingListsCreateShoppingListResponse, ShoppingListsReadShoppingListData, ShoppingListsReadShoppingListResponse, ShoppingListsUpdateShoppingListData, ShoppingListsUpdateShoppingListResponse, ShoppingListsDeleteShoppingListData, ShoppingListsDeleteShoppingListResponse, ShoppingListsAddItemData, ShoppingListsAddItemResponse, ShoppingListsUpdateItemData, ShoppingListsUpdateItemResponse, ShoppingListsDeleteItemData, ShoppingListsDeleteItemResponse, ShoppingListsAddRecipeData, ShoppingListsAddRecipeResponse, ShoppingListsUpdatePlannedRecipeData, ShoppingListsUpdatePlannedRecipeResponse, ShoppingListsDeletePlannedRecipeData, ShoppingListsDeletePlannedRecipeResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UserSettingsReadUserSettingsResponse, UserSettingsUpdateUserSettingsData, UserSettingsUpdateUserSettingsResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
+import type { HouseholdsReadMyHouseholdResponse, HouseholdsDeleteMyHouseholdResponse, HouseholdsUpdateMyHouseholdData, HouseholdsUpdateMyHouseholdResponse, HouseholdsCreateHouseholdData, HouseholdsCreateHouseholdResponse, HouseholdsLeaveMyHouseholdResponse, HouseholdsRemoveMemberData, HouseholdsRemoveMemberResponse, HouseholdsInviteMemberData, HouseholdsInviteMemberResponse, HouseholdsRevokeInviteData, HouseholdsRevokeInviteResponse, HouseholdsAcceptInviteData, HouseholdsAcceptInviteResponse, IngredientPricesReadIngredientPricesData, IngredientPricesReadIngredientPricesResponse, IngredientPricesUpsertIngredientPriceData, IngredientPricesUpsertIngredientPriceResponse, IngredientPricesDeleteIngredientPriceData, IngredientPricesDeleteIngredientPriceResponse, IngredientsReadIngredientsData, IngredientsReadIngredientsResponse, IngredientsCreateIngredientData, IngredientsCreateIngredientResponse, IngredientsUpdateIngredientData, IngredientsUpdateIngredientResponse, IngredientsDeduplicateIngredientsData, IngredientsDeduplicateIngredientsResponse, IngredientsEstimateIngredientPriceRouteData, IngredientsEstimateIngredientPriceRouteResponse, IngredientsEstimateIngredientPricesRouteData, IngredientsEstimateIngredientPricesRouteResponse, IngredientsFetchIngredientImageData, IngredientsFetchIngredientImageResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, MealPlansReadMealPlansData, MealPlansReadMealPlansResponse, MealPlansCreateMealPlanData, MealPlansCreateMealPlanResponse, MealPlansReadMealPlanData, MealPlansReadMealPlanResponse, MealPlansUpdateMealPlanData, MealPlansUpdateMealPlanResponse, MealPlansDeleteMealPlanData, MealPlansDeleteMealPlanResponse, MealPlansAddEntryData, MealPlansAddEntryResponse, MealPlansUpdateEntryData, MealPlansUpdateEntryResponse, MealPlansDeleteEntryData, MealPlansDeleteEntryResponse, MealPlansGenerateShoppingListData, MealPlansGenerateShoppingListResponse, MealPlansGenerateMenuRouteData, MealPlansGenerateMenuRouteResponse, MealPlansSwapEntryData, MealPlansSwapEntryResponse, PrivateCreateUserData, PrivateCreateUserResponse, RecipesReadPublicRecipesData, RecipesReadPublicRecipesResponse, RecipesReadRecipesData, RecipesReadRecipesResponse, RecipesCreateRecipeData, RecipesCreateRecipeResponse, RecipesReadRecipeData, RecipesReadRecipeResponse, RecipesUpdateRecipeData, RecipesUpdateRecipeResponse, RecipesDeleteRecipeData, RecipesDeleteRecipeResponse, RecipesReimportRecipeData, RecipesReimportRecipeResponse, RecipesImportRecipeUrlData, RecipesImportRecipeUrlResponse, RecipesImportRecipePhotosData, RecipesImportRecipePhotosResponse, ShoppingListsReadShoppingListsData, ShoppingListsReadShoppingListsResponse, ShoppingListsCreateShoppingListData, ShoppingListsCreateShoppingListResponse, ShoppingListsReadShoppingListData, ShoppingListsReadShoppingListResponse, ShoppingListsUpdateShoppingListData, ShoppingListsUpdateShoppingListResponse, ShoppingListsDeleteShoppingListData, ShoppingListsDeleteShoppingListResponse, ShoppingListsAddItemData, ShoppingListsAddItemResponse, ShoppingListsUpdateItemData, ShoppingListsUpdateItemResponse, ShoppingListsDeleteItemData, ShoppingListsDeleteItemResponse, ShoppingListsAddRecipeData, ShoppingListsAddRecipeResponse, ShoppingListsCompareStoresData, ShoppingListsCompareStoresResponse, ShoppingListsUpdatePlannedRecipeData, ShoppingListsUpdatePlannedRecipeResponse, ShoppingListsDeletePlannedRecipeData, ShoppingListsDeletePlannedRecipeResponse, StoresReadStoresData, StoresReadStoresResponse, StoresCreateStoreData, StoresCreateStoreResponse, StoresUpdateStoreData, StoresUpdateStoreResponse, StoresDeleteStoreData, StoresDeleteStoreResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UserSettingsReadUserSettingsResponse, UserSettingsUpdateUserSettingsData, UserSettingsUpdateUserSettingsResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
+
+export class HouseholdsService {
+    /**
+     * Read My Household
+     * The household this user belongs to, with its members and open invites.
+     * @returns HouseholdPublic Successful Response
+     * @throws ApiError
+     */
+    public static readMyHousehold(): CancelablePromise<HouseholdsReadMyHouseholdResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/households/me'
+        });
+    }
+    
+    /**
+     * Delete My Household
+     * Disband the household. Owner only.
+     *
+     * Members' own recipes, lists and plans are untouched — only the sharing
+     * between them ends.
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static deleteMyHousehold(): CancelablePromise<HouseholdsDeleteMyHouseholdResponse> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/households/me'
+        });
+    }
+    
+    /**
+     * Update My Household
+     * Rename the household. Owner only.
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns HouseholdPublic Successful Response
+     * @throws ApiError
+     */
+    public static updateMyHousehold(data: HouseholdsUpdateMyHouseholdData): CancelablePromise<HouseholdsUpdateMyHouseholdResponse> {
+        return __request(OpenAPI, {
+            method: 'PATCH',
+            url: '/api/v1/households/me',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Create Household
+     * Start a household, becoming its first member and owner.
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns HouseholdPublic Successful Response
+     * @throws ApiError
+     */
+    public static createHousehold(data: HouseholdsCreateHouseholdData): CancelablePromise<HouseholdsCreateHouseholdResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/households/',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Leave My Household
+     * Leave the household.
+     *
+     * The owner cannot leave — they disband it instead, which makes the outcome
+     * explicit rather than silently orphaning everyone else.
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static leaveMyHousehold(): CancelablePromise<HouseholdsLeaveMyHouseholdResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/households/me/leave'
+        });
+    }
+    
+    /**
+     * Remove Member
+     * Remove someone from the household. Owner only.
+     * @param data The data for the request.
+     * @param data.memberId
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static removeMember(data: HouseholdsRemoveMemberData): CancelablePromise<HouseholdsRemoveMemberResponse> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/households/me/members/{member_id}',
+            path: {
+                member_id: data.memberId
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Invite Member
+     * Invite someone by email. Owner only.
+     *
+     * A pending invite holds a seat, so inviting five people and waiting does not
+     * let a sixth in through the gap.
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns HouseholdPublic Successful Response
+     * @throws ApiError
+     */
+    public static inviteMember(data: HouseholdsInviteMemberData): CancelablePromise<HouseholdsInviteMemberResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/households/me/invites',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Revoke Invite
+     * Withdraw an invitation that has not been accepted. Owner only.
+     * @param data The data for the request.
+     * @param data.inviteId
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static revokeInvite(data: HouseholdsRevokeInviteData): CancelablePromise<HouseholdsRevokeInviteResponse> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/households/me/invites/{invite_id}',
+            path: {
+                invite_id: data.inviteId
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Accept Invite
+     * Join a household you were invited to.
+     *
+     * The invite is checked against the *logged-in user's own email*, so knowing
+     * an invite id is not enough to join someone else's household.
+     * @param data The data for the request.
+     * @param data.inviteId
+     * @returns HouseholdPublic Successful Response
+     * @throws ApiError
+     */
+    public static acceptInvite(data: HouseholdsAcceptInviteData): CancelablePromise<HouseholdsAcceptInviteResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/households/invites/{invite_id}/accept',
+            path: {
+                invite_id: data.inviteId
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+}
+
+export class IngredientPricesService {
+    /**
+     * Read Ingredient Prices
+     * Every store price recorded for one ingredient.
+     * @param data The data for the request.
+     * @param data.id
+     * @returns IngredientPricesPublic Successful Response
+     * @throws ApiError
+     */
+    public static readIngredientPrices(data: IngredientPricesReadIngredientPricesData): CancelablePromise<IngredientPricesReadIngredientPricesResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/ingredients/{id}/prices',
+            path: {
+                id: data.id
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Upsert Ingredient Price
+     * Set this ingredient's price at one store. Superuser only.
+     * @param data The data for the request.
+     * @param data.id
+     * @param data.requestBody
+     * @returns IngredientPricePublic Successful Response
+     * @throws ApiError
+     */
+    public static upsertIngredientPrice(data: IngredientPricesUpsertIngredientPriceData): CancelablePromise<IngredientPricesUpsertIngredientPriceResponse> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/v1/ingredients/{id}/prices',
+            path: {
+                id: data.id
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Delete Ingredient Price
+     * Remove this ingredient's price at one store. Superuser only.
+     *
+     * The ingredient then falls back to the catalog baseline scaled by that
+     * store's price index.
+     * @param data The data for the request.
+     * @param data.id
+     * @param data.storeId
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static deleteIngredientPrice(data: IngredientPricesDeleteIngredientPriceData): CancelablePromise<IngredientPricesDeleteIngredientPriceResponse> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/ingredients/{id}/prices/{store_id}',
+            path: {
+                id: data.id,
+                store_id: data.storeId
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+}
 
 export class IngredientsService {
     /**
@@ -51,7 +300,7 @@ export class IngredientsService {
     
     /**
      * Update Ingredient
-     * Update an ingredient's category or image. Superuser only.
+     * Update an ingredient's category, image or reference price. Superuser only.
      * @param data The data for the request.
      * @param data.id
      * @param data.requestBody
@@ -92,6 +341,54 @@ export class IngredientsService {
             query: {
                 dry_run: data.dryRun
             },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Estimate Ingredient Price Route
+     * Queue an LLM price estimate for this ingredient. Superuser only.
+     *
+     * A price a human curated is never overwritten — see
+     * ``services.ingredient_price.may_overwrite``.
+     * @param data The data for the request.
+     * @param data.id
+     * @param data.currency
+     * @returns IngredientPublic Successful Response
+     * @throws ApiError
+     */
+    public static estimateIngredientPriceRoute(data: IngredientsEstimateIngredientPriceRouteData): CancelablePromise<IngredientsEstimateIngredientPriceRouteResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/ingredients/{id}/estimate-price',
+            path: {
+                id: data.id
+            },
+            query: {
+                currency: data.currency
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Estimate Ingredient Prices Route
+     * Queue LLM price estimates for many ingredients. Superuser only.
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static estimateIngredientPricesRoute(data: IngredientsEstimateIngredientPricesRouteData): CancelablePromise<IngredientsEstimateIngredientPricesRouteResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/ingredients/estimate-prices',
+            body: data.requestBody,
+            mediaType: 'application/json',
             errors: {
                 422: 'Validation Error'
             }
@@ -210,6 +507,271 @@ export class LoginService {
             path: {
                 email: data.email
             },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+}
+
+export class MealPlansService {
+    /**
+     * Read Meal Plans
+     * List meal plans. Superusers see all; regular users see only their own.
+     * @param data The data for the request.
+     * @param data.skip
+     * @param data.limit
+     * @returns MealPlansPublic Successful Response
+     * @throws ApiError
+     */
+    public static readMealPlans(data: MealPlansReadMealPlansData = {}): CancelablePromise<MealPlansReadMealPlansResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/meal-plans/',
+            query: {
+                skip: data.skip,
+                limit: data.limit
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Create Meal Plan
+     * Create an empty meal plan over a date range.
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns MealPlanPublic Successful Response
+     * @throws ApiError
+     */
+    public static createMealPlan(data: MealPlansCreateMealPlanData): CancelablePromise<MealPlansCreateMealPlanResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/meal-plans/',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Read Meal Plan
+     * Get one meal plan with all of its entries.
+     * @param data The data for the request.
+     * @param data.id
+     * @returns MealPlanPublic Successful Response
+     * @throws ApiError
+     */
+    public static readMealPlan(data: MealPlansReadMealPlanData): CancelablePromise<MealPlansReadMealPlanResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/meal-plans/{id}',
+            path: {
+                id: data.id
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Update Meal Plan
+     * Rename a meal plan or move its date range.
+     * @param data The data for the request.
+     * @param data.id
+     * @param data.requestBody
+     * @returns MealPlanPublic Successful Response
+     * @throws ApiError
+     */
+    public static updateMealPlan(data: MealPlansUpdateMealPlanData): CancelablePromise<MealPlansUpdateMealPlanResponse> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/v1/meal-plans/{id}',
+            path: {
+                id: data.id
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Delete Meal Plan
+     * Delete a meal plan and its entries. Any generated list is kept.
+     * @param data The data for the request.
+     * @param data.id
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static deleteMealPlan(data: MealPlansDeleteMealPlanData): CancelablePromise<MealPlansDeleteMealPlanResponse> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/meal-plans/{id}',
+            path: {
+                id: data.id
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Add Entry
+     * Put a recipe in one of the plan's slots.
+     * @param data The data for the request.
+     * @param data.id
+     * @param data.requestBody
+     * @returns MealPlanEntryPublic Successful Response
+     * @throws ApiError
+     */
+    public static addEntry(data: MealPlansAddEntryData): CancelablePromise<MealPlansAddEntryResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/meal-plans/{id}/entries',
+            path: {
+                id: data.id
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Update Entry
+     * Move an entry to another slot, change its servings, or swap its recipe.
+     * @param data The data for the request.
+     * @param data.id
+     * @param data.entryId
+     * @param data.requestBody
+     * @returns MealPlanEntryPublic Successful Response
+     * @throws ApiError
+     */
+    public static updateEntry(data: MealPlansUpdateEntryData): CancelablePromise<MealPlansUpdateEntryResponse> {
+        return __request(OpenAPI, {
+            method: 'PATCH',
+            url: '/api/v1/meal-plans/{id}/entries/{entry_id}',
+            path: {
+                id: data.id,
+                entry_id: data.entryId
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Delete Entry
+     * Remove one entry from the plan.
+     * @param data The data for the request.
+     * @param data.id
+     * @param data.entryId
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static deleteEntry(data: MealPlansDeleteEntryData): CancelablePromise<MealPlansDeleteEntryResponse> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/meal-plans/{id}/entries/{entry_id}',
+            path: {
+                id: data.id,
+                entry_id: data.entryId
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Generate Shopping List
+     * Turn this plan into a shopping list.
+     *
+     * Every entry is added at its planned servings through the same merge rules
+     * used when adding a recipe by hand, so a recipe cooked twice in one week
+     * lands on a single row.
+     * @param data The data for the request.
+     * @param data.id
+     * @param data.name
+     * @returns ShoppingListPublic Successful Response
+     * @throws ApiError
+     */
+    public static generateShoppingList(data: MealPlansGenerateShoppingListData): CancelablePromise<MealPlansGenerateShoppingListResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/meal-plans/{id}/shopping-list',
+            path: {
+                id: data.id
+            },
+            query: {
+                name: data.name
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Generate Menu Route
+     * Compose a menu and save it as a new plan.
+     *
+     * Household size and budget fall back to the user's settings when the request
+     * does not override them, so the common case is a single button with no form.
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns MealPlanPublic Successful Response
+     * @throws ApiError
+     */
+    public static generateMenuRoute(data: MealPlansGenerateMenuRouteData): CancelablePromise<MealPlansGenerateMenuRouteResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/meal-plans/generate',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Swap Entry
+     * Replace one meal without disturbing the rest of the plan.
+     *
+     * The replacement still respects the week's variety rules, so swapping out of
+     * a pasta night does not hand back another one.
+     * @param data The data for the request.
+     * @param data.id
+     * @param data.entryId
+     * @param data.requestBody
+     * @returns MealPlanEntryPublic Successful Response
+     * @throws ApiError
+     */
+    public static swapEntry(data: MealPlansSwapEntryData): CancelablePromise<MealPlansSwapEntryResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/meal-plans/{id}/entries/{entry_id}/swap',
+            path: {
+                id: data.id,
+                entry_id: data.entryId
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
             errors: {
                 422: 'Validation Error'
             }
@@ -703,6 +1265,31 @@ export class ShoppingListsService {
     }
     
     /**
+     * Compare Stores
+     * What this list would cost at each active retailer.
+     *
+     * This is the "shop where you like" view: every store is costed from the same
+     * basket, so the spread is comparable even where a store has few curated
+     * prices of its own and falls back to the catalog baseline.
+     * @param data The data for the request.
+     * @param data.id
+     * @returns StoreComparison Successful Response
+     * @throws ApiError
+     */
+    public static compareStores(data: ShoppingListsCompareStoresData): CancelablePromise<ShoppingListsCompareStoresResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/shopping-lists/{id}/store-comparison',
+            path: {
+                id: data.id
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
      * Update Planned Recipe
      * Update a planned recipe (e.g. mark as prepared, change servings).
      * @param data The data for the request.
@@ -744,6 +1331,98 @@ export class ShoppingListsService {
             path: {
                 id: data.id,
                 planned_recipe_id: data.plannedRecipeId
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+}
+
+export class StoresService {
+    /**
+     * Read Stores
+     * List the retailers prices can be compared across.
+     * @param data The data for the request.
+     * @param data.activeOnly
+     * @param data.skip
+     * @param data.limit
+     * @returns StoresPublic Successful Response
+     * @throws ApiError
+     */
+    public static readStores(data: StoresReadStoresData = {}): CancelablePromise<StoresReadStoresResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/stores/',
+            query: {
+                active_only: data.activeOnly,
+                skip: data.skip,
+                limit: data.limit
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Create Store
+     * Add a retailer. Superuser only.
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns StorePublic Successful Response
+     * @throws ApiError
+     */
+    public static createStore(data: StoresCreateStoreData): CancelablePromise<StoresCreateStoreResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/stores/',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Update Store
+     * Update a retailer. Superuser only.
+     * @param data The data for the request.
+     * @param data.id
+     * @param data.requestBody
+     * @returns StorePublic Successful Response
+     * @throws ApiError
+     */
+    public static updateStore(data: StoresUpdateStoreData): CancelablePromise<StoresUpdateStoreResponse> {
+        return __request(OpenAPI, {
+            method: 'PATCH',
+            url: '/api/v1/stores/{id}',
+            path: {
+                id: data.id
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Delete Store
+     * Delete a retailer and every price recorded against it. Superuser only.
+     * @param data The data for the request.
+     * @param data.id
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static deleteStore(data: StoresDeleteStoreData): CancelablePromise<StoresDeleteStoreResponse> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/stores/{id}',
+            path: {
+                id: data.id
             },
             errors: {
                 422: 'Validation Error'

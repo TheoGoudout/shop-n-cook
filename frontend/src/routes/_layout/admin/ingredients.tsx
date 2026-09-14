@@ -1,11 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
-import { Combine, Package } from "lucide-react"
+import { Combine, Package, Sparkles } from "lucide-react"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import { IngredientsService } from "@/client"
 import { IngredientActionsMenu } from "@/components/Admin/IngredientActionsMenu"
+import { IngredientPriceDialog } from "@/components/Admin/IngredientPriceDialog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -19,6 +20,7 @@ import {
 import { LoadingButton } from "@/components/ui/loading-button"
 import useCustomToast from "@/hooks/useCustomToast"
 import { APP_NAME } from "@/lib/config"
+import { formatMoney } from "@/lib/money"
 import { handleError } from "@/utils"
 
 export const Route = createFileRoute("/_layout/admin/ingredients")({
@@ -27,6 +29,39 @@ export const Route = createFileRoute("/_layout/admin/ingredients")({
     meta: [{ title: `Ingredients - Admin - ${APP_NAME}` }],
   }),
 })
+
+/**
+ * Fill in prices for every ingredient that has none.
+ *
+ * Estimates never overwrite a price a human curated, so this is safe to run
+ * repeatedly after a bulk recipe import.
+ */
+function EstimatePricesButton() {
+  const queryClient = useQueryClient()
+  const { showSuccessToast, showErrorToast } = useCustomToast()
+  const { t } = useTranslation("admin")
+
+  const mutation = useMutation({
+    mutationFn: () =>
+      IngredientsService.estimateIngredientPricesRoute({ requestBody: {} }),
+    onSuccess: (data) => {
+      showSuccessToast(data.message)
+      queryClient.invalidateQueries({ queryKey: ["ingredient-catalog"] })
+    },
+    onError: handleError.bind(showErrorToast),
+  })
+
+  return (
+    <LoadingButton
+      variant="outline"
+      loading={mutation.isPending}
+      onClick={() => mutation.mutate()}
+    >
+      <Sparkles />
+      {t("ingredient.estimate_prices")}
+    </LoadingButton>
+  )
+}
 
 function DeduplicateButton() {
   const [open, setOpen] = useState(false)
@@ -87,7 +122,7 @@ function DeduplicateButton() {
 }
 
 function IngredientsTableContent() {
-  const { t } = useTranslation("common")
+  const { t, i18n } = useTranslation("common")
   const { data } = useQuery({
     queryKey: ["ingredient-catalog"],
     queryFn: () => IngredientsService.readIngredients({}),
@@ -111,6 +146,9 @@ function IngredientsTableContent() {
             <th className="text-left font-medium p-3 w-10" />
             <th className="text-left font-medium p-3">{t("name")}</th>
             <th className="text-left font-medium p-3">{t("category")}</th>
+            <th className="text-left font-medium p-3">
+              {t("ingredient.price_column", { ns: "admin" })}
+            </th>
             <th className="text-left font-medium p-3 hidden sm:table-cell">
               {t("ingredient.image_url", { ns: "admin" })}
             </th>
@@ -122,6 +160,18 @@ function IngredientsTableContent() {
         <tbody>
           {ingredients.map((ingredient) => {
             const categoryKey = ingredient.category ?? "other"
+            const amount = formatMoney(
+              ingredient.price_amount,
+              undefined,
+              i18n.language,
+            )
+            const price =
+              amount && ingredient.price_unit
+                ? `${amount} / ${ingredient.price_quantity ?? 1} ${t(
+                    `unit_labels.${ingredient.price_unit}`,
+                    { defaultValue: ingredient.price_unit },
+                  )}`
+                : null
             return (
               <tr key={ingredient.id} className="border-b last:border-0">
                 <td className="p-3">
@@ -144,6 +194,38 @@ function IngredientsTableContent() {
                       defaultValue: categoryKey,
                     })}
                   </Badge>
+                </td>
+                <td className="p-3">
+                  <IngredientPriceDialog ingredient={ingredient}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 -ml-2 font-normal tabular-nums"
+                      title={t("ingredient.price_edit", { ns: "admin" })}
+                    >
+                      {price ? (
+                        <span
+                          className={
+                            ingredient.price_source === "estimated"
+                              ? "text-muted-foreground"
+                              : undefined
+                          }
+                          title={
+                            ingredient.price_source === "estimated"
+                              ? t("ingredient.price_estimated", { ns: "admin" })
+                              : undefined
+                          }
+                        >
+                          {price}
+                          {ingredient.price_source === "estimated" && " ~"}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground italic">
+                          {t("ingredient.price_none", { ns: "admin" })}
+                        </span>
+                      )}
+                    </Button>
+                  </IngredientPriceDialog>
                 </td>
                 <td className="p-3 hidden sm:table-cell">
                   {ingredient.image_url ? (
@@ -187,7 +269,10 @@ function IngredientsPage() {
           </h1>
           <p className="text-muted-foreground">{t("ingredients.subtitle")}</p>
         </div>
-        <DeduplicateButton />
+        <div className="flex flex-wrap gap-2">
+          <EstimatePricesButton />
+          <DeduplicateButton />
+        </div>
       </div>
       <IngredientsTableContent />
     </div>

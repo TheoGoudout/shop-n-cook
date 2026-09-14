@@ -17,7 +17,12 @@ from sqlmodel import Session, col, select
 from starlette.concurrency import run_in_threadpool
 
 from app import crud
-from app.api.deps import CurrentUser, SessionDep, get_current_active_superuser
+from app.api.deps import (
+    CurrentUser,
+    PriceBookDep,
+    SessionDep,
+    get_current_active_superuser,
+)
 from app.core.config import settings
 from app.core.limiter import limiter, user_or_ip_key
 from app.models import (
@@ -167,6 +172,7 @@ def _parsed_to_update(parsed: ParsedRecipe) -> RecipeUpdate:
 def read_public_recipes(
     session: SessionDep,
     _current_user: CurrentUser,
+    prices: PriceBookDep,
     owner_id: uuid.UUID | None = None,
     search: str | None = None,
     skip: int = 0,
@@ -196,13 +202,16 @@ def read_public_recipes(
         meal_type=meal_type,
         cuisine_type=cuisine_type,
     )
-    return RecipesPublic(data=[crud.recipe_to_public(r) for r in recipes], count=count)
+    return RecipesPublic(
+        data=[crud.recipe_to_public(r, prices=prices) for r in recipes], count=count
+    )
 
 
 @router.get("/", response_model=RecipesPublic)
 def read_recipes(
     session: SessionDep,
     current_user: CurrentUser,
+    prices: PriceBookDep,
     search: str | None = None,
     skip: int = 0,
     limit: int = 100,
@@ -232,11 +241,18 @@ def read_recipes(
         meal_type=meal_type,
         cuisine_type=cuisine_type,
     )
-    return RecipesPublic(data=[crud.recipe_to_public(r) for r in recipes], count=count)
+    return RecipesPublic(
+        data=[crud.recipe_to_public(r, prices=prices) for r in recipes], count=count
+    )
 
 
 @router.get("/{id}", response_model=RecipePublic)
-def read_recipe(session: SessionDep, current_user: CurrentUser, id: uuid.UUID) -> Any:
+def read_recipe(
+    session: SessionDep,
+    current_user: CurrentUser,
+    prices: PriceBookDep,
+    id: uuid.UUID,
+) -> Any:
     """Get a single recipe by ID. Public recipes are visible to all authenticated users."""
     recipe = crud.get_recipe(session=session, recipe_id=id)
     if not recipe:
@@ -247,7 +263,7 @@ def read_recipe(session: SessionDep, current_user: CurrentUser, id: uuid.UUID) -
         and not recipe.is_public
     ):
         raise HTTPException(status_code=403, detail="Not enough permissions")
-    return crud.recipe_to_public(recipe)
+    return crud.recipe_to_public(recipe, prices=prices)
 
 
 def _sync_ingredient_catalog(
@@ -288,6 +304,7 @@ def create_recipe(
     *,
     session: SessionDep,
     current_user: CurrentUser,
+    prices: PriceBookDep,
     recipe_in: RecipeCreate,
     background_tasks: BackgroundTasks,
 ) -> Any:
@@ -296,7 +313,7 @@ def create_recipe(
         session=session, recipe_in=recipe_in, owner_id=current_user.id
     )
     _sync_ingredient_catalog(session, background_tasks, recipe_in.ingredients or [])
-    return crud.recipe_to_public(recipe)
+    return crud.recipe_to_public(recipe, prices=prices)
 
 
 @router.put("/{id}", response_model=RecipePublic)
@@ -304,6 +321,7 @@ def update_recipe(
     *,
     session: SessionDep,
     current_user: CurrentUser,
+    prices: PriceBookDep,
     id: uuid.UUID,
     recipe_in: RecipeUpdate,
     background_tasks: BackgroundTasks,
@@ -320,7 +338,7 @@ def update_recipe(
         )
     recipe = crud.update_recipe(session=session, db_recipe=recipe, recipe_in=recipe_in)
     _sync_ingredient_catalog(session, background_tasks, recipe_in.ingredients or [])
-    return crud.recipe_to_public(recipe)
+    return crud.recipe_to_public(recipe, prices=prices)
 
 
 @router.post("/{id}/reimport", response_model=RecipePublic)
@@ -328,6 +346,7 @@ def reimport_recipe(
     *,
     session: SessionDep,
     _current_user: Annotated[User, Depends(get_current_active_superuser)],
+    prices: PriceBookDep,
     id: uuid.UUID,
     body: ReimportRequest,
     background_tasks: BackgroundTasks,
@@ -355,7 +374,7 @@ def reimport_recipe(
     recipe_in = _parsed_to_update(parsed)
     recipe = crud.update_recipe(session=session, db_recipe=recipe, recipe_in=recipe_in)
     _sync_ingredient_catalog(session, background_tasks, recipe_in.ingredients or [])
-    return crud.recipe_to_public(recipe)
+    return crud.recipe_to_public(recipe, prices=prices)
 
 
 @router.delete("/{id}")

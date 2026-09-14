@@ -4,10 +4,21 @@ import { AppPreferences } from "@/components/UserSettings/AppPreferences"
 import ChangePassword from "@/components/UserSettings/ChangePassword"
 import DeleteAccount from "@/components/UserSettings/DeleteAccount"
 import { HouseholdSettings } from "@/components/UserSettings/HouseholdSettings"
+import { HouseholdSharing } from "@/components/UserSettings/HouseholdSharing"
 import UserInformation from "@/components/UserSettings/UserInformation"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import useAuth from "@/hooks/useAuth"
 import { APP_NAME } from "@/lib/config"
+
+/** The household tab covers both its preferences and who it is shared with. */
+function HouseholdTab() {
+  return (
+    <div className="space-y-6">
+      <HouseholdSettings />
+      <HouseholdSharing />
+    </div>
+  )
+}
 
 export const Route = createFileRoute("/_layout/settings")({
   component: UserSettings,
@@ -33,7 +44,7 @@ function UserSettings() {
     {
       value: "household",
       title: t("tabs.household"),
-      component: HouseholdSettings,
+      component: HouseholdTab,
     },
     {
       value: "preferences",

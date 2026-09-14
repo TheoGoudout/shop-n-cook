@@ -1,0 +1,68 @@
+{
+  "page": {
+    "title": "Meal plans",
+    "subtitle": "Plan the week, then turn it into one shopping list.",
+    "empty_title": "No meal plans yet",
+    "empty_subtitle": "Create a plan to schedule recipes across the week."
+  },
+  "add": {
+    "trigger": "New plan",
+    "title": "New meal plan",
+    "description": "Name the plan and choose the week it covers.",
+    "name_label": "Name",
+    "name_placeholder": "Week of the 2nd",
+    "start_label": "Starts",
+    "end_label": "Ends",
+    "success": "Meal plan created"
+  },
+  "detail": {
+    "entries": "{{count}} meal planned",
+    "entries_other": "{{count}} meals planned",
+    "empty_day": "Nothing planned",
+    "add_recipe": "Add a recipe",
+    "add_to_slot": "Add to {{day}}",
+    "servings": "{{count}} serving",
+    "servings_other": "{{count}} servings",
+    "remove": "Remove from plan",
+    "generate": "Generate shopping list",
+    "generated": "Shopping list created",
+    "open_list": "Open shopping list",
+    "regenerate": "Generate a new list",
+    "week_total": "Week total",
+    "delete_title": "Delete this meal plan?",
+    "delete_description": "The plan and its entries are removed. Any shopping list you generated from it is kept.",
+    "deleted": "Meal plan deleted"
+  },
+  "meal_types": {
+    "breakfast": "Breakfast",
+    "lunch": "Lunch",
+    "dinner": "Dinner",
+    "snack": "Snack",
+    "dessert": "Dessert",
+    "drink": "Drink",
+    "other": "Other"
+  },
+  "generate": {
+    "trigger": "Generate a menu",
+    "title": "Generate a menu",
+    "description": "Compose a week from your recipes. Household size and budget come from your settings unless you change them here.",
+    "days_label": "Days",
+    "servings_label": "Servings",
+    "budget_label": "Budget for the whole plan",
+    "budget_placeholder": "From your settings",
+    "max_prep_label": "Max time per meal (minutes)",
+    "max_prep_placeholder": "No limit",
+    "diet_label": "Dietary requirements",
+    "vegan": "Vegan",
+    "vegetarian": "Vegetarian",
+    "gluten_free": "Gluten free",
+    "dairy_free": "Dairy free",
+    "season_label": "Prefer seasonal recipes",
+    "public_label": "Include community recipes",
+    "submit": "Generate",
+    "success": "Menu generated",
+    "swap": "Swap this meal",
+    "swapped": "Meal swapped",
+    "servings_placeholder": "From your household size"
+  }
+}

@@ -64,6 +64,23 @@
     "deduplicate_success": "{{count}} doublon(s) supprimé(s)",
     "deduplicate_none": "Aucun doublon trouvé",
     "edit": "Modifier",
-    "edit_title": "Modifier : {{name}}"
+    "edit_title": "Modifier : {{name}}",
+    "price_title": "Prix de référence",
+    "price_description": "Indiquez le prix de {{name}} tel qu'il est affiché en rayon.",
+    "price_amount": "Prix",
+    "price_column": "Prix",
+    "price_edit": "Modifier le prix",
+    "price_saved": "Prix mis à jour",
+    "price_none": "Aucun prix",
+    "density": "Densité (g/ml)",
+    "density_hint": "Permet d'appliquer un prix au poids à des recettes mesurées en volume.",
+    "piece_weight": "Poids par pièce (g)",
+    "piece_weight_hint": "Permet d'appliquer un prix au poids à des unités comptées comme les gousses.",
+    "optional": "Facultatif",
+    "estimate_prices": "Estimer les prix",
+    "price_estimated": "Estimé par IA — modifiez pour confirmer",
+    "store_prices": "Prix par magasin",
+    "store_prices_hint": "Un prix magasin remplace le prix de référence ci-dessus. Les magasins sans prix utilisent le prix de référence ajusté par leur indice.",
+    "store_label": "Magasin"
   }
 }

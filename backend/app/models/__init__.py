@@ -4,6 +4,19 @@
 from sqlmodel import SQLModel  # noqa: F401 — re-exported for alembic env.py
 
 from app.models.base import Message, get_datetime_utc
+from app.models.household import (
+    Household,
+    HouseholdBase,
+    HouseholdCreate,
+    HouseholdInvite,
+    HouseholdInviteCreate,
+    HouseholdInvitePublic,
+    HouseholdMember,
+    HouseholdMemberPublic,
+    HouseholdPublic,
+    HouseholdRole,
+    HouseholdUpdate,
+)
 from app.models.ingredient import (
     Ingredient,
     IngredientCategory,
@@ -12,6 +25,18 @@ from app.models.ingredient import (
     IngredientsPublic,
     IngredientUpdate,
     Unit,
+)
+from app.models.meal_plan import (
+    MealPlan,
+    MealPlanBase,
+    MealPlanCreate,
+    MealPlanEntry,
+    MealPlanEntryCreate,
+    MealPlanEntryPublic,
+    MealPlanEntryUpdate,
+    MealPlanPublic,
+    MealPlansPublic,
+    MealPlanUpdate,
 )
 from app.models.recipe import (
     Recipe,
@@ -43,6 +68,21 @@ from app.models.shopping_list import (
     ShoppingListRecipeUpdate,
     ShoppingListsPublic,
     ShoppingListUpdate,
+)
+from app.models.store import (
+    IngredientPrice,
+    IngredientPriceCreate,
+    IngredientPricePublic,
+    IngredientPricesPublic,
+    IngredientPriceUpdate,
+    Store,
+    StoreBase,
+    StoreComparison,
+    StoreComparisonEntry,
+    StoreCreate,
+    StorePublic,
+    StoresPublic,
+    StoreUpdate,
 )
 from app.models.user import (
     NewPassword,
@@ -126,4 +166,41 @@ __all__ = [
     "ShoppingListRecipe",
     "ShoppingListRecipePublic",
     "ShoppingListRecipeUpdate",
+    # store
+    "Store",
+    "StoreBase",
+    "StoreCreate",
+    "StoreUpdate",
+    "StorePublic",
+    "StoresPublic",
+    "StoreComparison",
+    "StoreComparisonEntry",
+    "IngredientPrice",
+    "IngredientPriceCreate",
+    "IngredientPriceUpdate",
+    "IngredientPricePublic",
+    "IngredientPricesPublic",
+    # meal plan
+    "MealPlan",
+    "MealPlanBase",
+    "MealPlanCreate",
+    "MealPlanUpdate",
+    "MealPlanPublic",
+    "MealPlansPublic",
+    "MealPlanEntry",
+    "MealPlanEntryCreate",
+    "MealPlanEntryUpdate",
+    "MealPlanEntryPublic",
+    # household
+    "Household",
+    "HouseholdBase",
+    "HouseholdCreate",
+    "HouseholdUpdate",
+    "HouseholdPublic",
+    "HouseholdRole",
+    "HouseholdMember",
+    "HouseholdMemberPublic",
+    "HouseholdInvite",
+    "HouseholdInviteCreate",
+    "HouseholdInvitePublic",
 ]

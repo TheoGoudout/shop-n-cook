@@ -36,7 +36,15 @@
       "weekly": "Weekly",
       "biweekly": "Every two weeks",
       "monthly": "Monthly"
-    }
+    },
+    "budget_label": "Budget",
+    "budget_hint": "Spending cap for one shopping period. Leave empty for no budget.",
+    "budget_placeholder": "No budget set",
+    "currency_label": "Currency",
+    "currency_hint": "Used to display recipe and shopping list costs.",
+    "store_label": "Preferred store",
+    "store_none": "No preference",
+    "store_hint": "Costs are shown at this retailer's prices. Shop wherever you like."
   },
   "password": {
     "title": "Change Password",
@@ -65,5 +73,36 @@
       "en": "English",
       "fr": "Français"
     }
+  },
+  "household_sharing": {
+    "title": "Household sharing",
+    "description": "Share your shopping lists and meal plans with the people you cook for.",
+    "none_title": "You are not sharing with anyone",
+    "none_description": "Create a household to share lists and plans. Everyone in it sees and edits the same lists.",
+    "name_label": "Household name",
+    "name_placeholder": "Our kitchen",
+    "create": "Create household",
+    "created": "Household created",
+    "members": "Members",
+    "invites": "Pending invitations",
+    "role_owner": "Owner",
+    "role_member": "Member",
+    "invite_label": "Invite by email",
+    "invite_placeholder": "name@example.com",
+    "invite": "Send invitation",
+    "invited": "Invitation sent",
+    "revoke": "Revoke",
+    "revoked": "Invitation revoked",
+    "remove": "Remove",
+    "removed": "Member removed",
+    "leave": "Leave household",
+    "left": "You have left the household",
+    "leave_confirm": "Leave this household? You will stop seeing its shared lists and plans.",
+    "disband": "Delete household",
+    "disbanded": "Household deleted",
+    "disband_confirm": "Delete this household? Sharing ends for everyone. Nobody's own recipes, lists or plans are deleted.",
+    "seats_remaining": "{{count}} seat left",
+    "seats_remaining_other": "{{count}} seats left",
+    "full": "This household is full."
   }
 }

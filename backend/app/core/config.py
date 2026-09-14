@@ -110,6 +110,11 @@ class Settings(BaseSettings):
 
     EMAIL_RESET_TOKEN_EXPIRE_HOURS: int = 48
 
+    #: Owner plus four, matching what a household realistically needs and
+    #: keeping a shared list from turning into a public one.
+    MAX_HOUSEHOLD_MEMBERS: int = 5
+    HOUSEHOLD_INVITE_EXPIRE_HOURS: int = 168
+
     @computed_field  # type: ignore[prop-decorator]
     @property
     def emails_enabled(self) -> bool:

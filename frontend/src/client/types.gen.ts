@@ -27,6 +27,84 @@ export type DeduplicateResponse = {
 
 export type Difficulty = 'easy' | 'medium' | 'hard';
 
+/**
+ * Which ingredients to price, and in what currency.
+ *
+ * An empty ``ingredient_ids`` means "everything without a curated price",
+ * which is the common case after a bulk import.
+ */
+export type EstimatePricesRequest = {
+    ingredient_ids?: Array<(string)>;
+    currency?: string;
+};
+
+/**
+ * What to compose, and the constraints it must respect.
+ */
+export type GenerateMenuRequest = {
+    name?: (string | null);
+    start_date: string;
+    days?: number;
+    meal_types?: Array<MealType>;
+    servings?: (number | null);
+    budget?: (number | string | null);
+    require_vegan?: boolean;
+    require_vegetarian?: boolean;
+    require_gluten_free?: boolean;
+    require_dairy_free?: boolean;
+    max_prep_minutes?: (number | null);
+    match_season?: boolean;
+    include_public?: boolean;
+    seed?: number;
+};
+
+export type HouseholdCreate = {
+    name: string;
+};
+
+export type HouseholdInviteCreate = {
+    email: string;
+};
+
+export type HouseholdInvitePublic = {
+    id: string;
+    email: string;
+    expires_at: string;
+    accepted_at?: (string | null);
+};
+
+export type HouseholdMemberPublic = {
+    id: string;
+    user_id: string;
+    email: string;
+    full_name?: (string | null);
+    role: HouseholdRole;
+    joined_at?: (string | null);
+};
+
+export type HouseholdPublic = {
+    name: string;
+    id: string;
+    owner_id: string;
+    created_at?: (string | null);
+    members?: Array<HouseholdMemberPublic>;
+    invites?: Array<HouseholdInvitePublic>;
+    seats_remaining?: number;
+};
+
+/**
+ * What a member may do.
+ *
+ * ``OWNER`` can rename the household, invite, and remove members;
+ * ``MEMBER`` can see and edit the shared lists and plans but not the
+ * membership itself.
+ */
+export type HouseholdRole = 'owner' | 'member';
+
+export type HouseholdUpdate = {
+    name?: (string | null);
+};
+
 export type HTTPValidationError = {
     detail?: Array<ValidationError>;
 };
@@ -44,17 +122,52 @@ export type ImportUrlRequest = {
 export type IngredientCategory = 'produce' | 'dairy' | 'meat' | 'seafood' | 'grains' | 'pantry' | 'spices' | 'beverages' | 'frozen' | 'bakery' | 'other';
 
 export type IngredientCreate = {
+    price_amount?: (number | string | null);
+    price_quantity?: (number | null);
+    price_unit?: (Unit | null);
+    density_g_per_ml?: (number | null);
+    piece_weight_g?: (number | null);
     name: string;
     category?: IngredientCategory;
     image_url?: (string | null);
 };
 
+export type IngredientPriceCreate = {
+    price_amount: (number | string);
+    price_quantity: number;
+    price_unit: Unit;
+    store_id: string;
+};
+
+export type IngredientPricePublic = {
+    price_amount: string;
+    price_quantity: number;
+    price_unit: Unit;
+    id: string;
+    ingredient_id: string;
+    store_id: string;
+    store_name?: (string | null);
+    updated_at?: (string | null);
+};
+
+export type IngredientPricesPublic = {
+    data: Array<IngredientPricePublic>;
+    count: number;
+};
+
 export type IngredientPublic = {
+    price_amount?: (string | null);
+    price_quantity?: (number | null);
+    price_unit?: (Unit | null);
+    density_g_per_ml?: (number | null);
+    piece_weight_g?: (number | null);
     id: string;
     name: string;
     name_en: (string | null);
     category: IngredientCategory;
     image_url: (string | null);
+    price_source?: (PriceSource | null);
+    price_updated_at?: (string | null);
 };
 
 export type IngredientsPublic = {
@@ -63,8 +176,74 @@ export type IngredientsPublic = {
 };
 
 export type IngredientUpdate = {
+    price_amount?: (number | string | null);
+    price_quantity?: (number | null);
+    price_unit?: (Unit | null);
+    density_g_per_ml?: (number | null);
+    piece_weight_g?: (number | null);
     category?: (IngredientCategory | null);
     image_url?: (string | null);
+};
+
+export type MealPlanCreate = {
+    name: string;
+    start_date: string;
+    end_date: string;
+};
+
+export type MealPlanEntryCreate = {
+    entry_date: string;
+    meal_type?: MealType;
+    servings?: number;
+    recipe_id: string;
+};
+
+export type MealPlanEntryPublic = {
+    entry_date: string;
+    meal_type?: MealType;
+    servings?: number;
+    id: string;
+    meal_plan_id: string;
+    recipe_id: string;
+    recipe_title: string;
+    recipe_image_url?: (string | null);
+    recipe_servings?: (number | null);
+    prep_time_minutes?: (number | null);
+    cook_time_minutes?: (number | null);
+    estimated_cost?: (string | null);
+    estimated_cost_per_serving?: (string | null);
+};
+
+export type MealPlanEntryUpdate = {
+    entry_date?: (string | null);
+    meal_type?: (MealType | null);
+    servings?: (number | null);
+    recipe_id?: (string | null);
+};
+
+export type MealPlanPublic = {
+    name: string;
+    start_date: string;
+    end_date: string;
+    id: string;
+    owner_id: string;
+    created_at?: (string | null);
+    shopping_list_id?: (string | null);
+    entries?: Array<MealPlanEntryPublic>;
+    estimated_total?: (string | null);
+    unpriced_entry_count?: number;
+    currency?: string;
+};
+
+export type MealPlansPublic = {
+    data: Array<MealPlanPublic>;
+    count: number;
+};
+
+export type MealPlanUpdate = {
+    name?: (string | null);
+    start_date?: (string | null);
+    end_date?: (string | null);
 };
 
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'dessert' | 'drink' | 'other';
@@ -113,6 +292,15 @@ export type ParsedStep = {
     ingredient_names?: Array<(string)>;
 };
 
+/**
+ * Where an ingredient's reference price came from.
+ *
+ * ``ESTIMATED`` rows were filled in by the LLM assist and may be overwritten
+ * by a later estimate run; ``MANUAL`` rows were curated by a human and never
+ * are.
+ */
+export type PriceSource = 'manual' | 'estimated';
+
 export type PrivateUserCreate = {
     email: string;
     password: string;
@@ -159,6 +347,7 @@ export type RecipeIngredientPublic = {
     quantity: number;
     unit: Unit;
     notes?: (string | null);
+    estimated_cost?: (string | null);
 };
 
 export type RecipePublic = {
@@ -185,6 +374,10 @@ export type RecipePublic = {
     created_at?: (string | null);
     ingredients?: Array<RecipeIngredientPublic>;
     steps?: Array<RecipeStepPublic>;
+    estimated_cost?: (string | null);
+    estimated_cost_per_serving?: (string | null);
+    unpriced_ingredient_count?: number;
+    currency?: string;
 };
 
 export type RecipesPublic = {
@@ -261,6 +454,7 @@ export type ShoppingListItemPublic = {
     unit: Unit;
     is_checked: boolean;
     notes?: (string | null);
+    estimated_cost?: (string | null);
 };
 
 export type ShoppingListItemUpdate = {
@@ -279,6 +473,9 @@ export type ShoppingListPublic = {
     created_at?: (string | null);
     items?: Array<ShoppingListItemPublic>;
     planned_recipes?: Array<ShoppingListRecipePublic>;
+    estimated_total?: (string | null);
+    unpriced_item_count?: number;
+    currency?: string;
 };
 
 export type ShoppingListRecipePublic = {
@@ -289,6 +486,7 @@ export type ShoppingListRecipePublic = {
     servings_planned: number;
     is_prepared: boolean;
     ingredients?: Array<RecipeIngredientPublic>;
+    estimated_cost?: (string | null);
 };
 
 export type ShoppingListRecipeUpdate = {
@@ -305,6 +503,58 @@ export type ShoppingListUpdate = {
     name?: (string | null);
     start_date?: (string | null);
     end_date?: (string | null);
+};
+
+export type StoreComparison = {
+    data: Array<StoreComparisonEntry>;
+    cheapest_store_id?: (string | null);
+};
+
+/**
+ * What one shopping list would cost at one store.
+ */
+export type StoreComparisonEntry = {
+    store_id: string;
+    store_name: string;
+    store_slug: string;
+    currency: string;
+    estimated_total?: (string | null);
+    unpriced_item_count?: number;
+};
+
+export type StoreCreate = {
+    name: string;
+    slug: string;
+    country?: string;
+    currency?: string;
+    price_index?: number;
+    logo_url?: (string | null);
+    is_active?: boolean;
+};
+
+export type StorePublic = {
+    name: string;
+    slug: string;
+    country?: string;
+    currency?: string;
+    price_index?: number;
+    logo_url?: (string | null);
+    is_active?: boolean;
+    id: string;
+};
+
+export type StoresPublic = {
+    data: Array<StorePublic>;
+    count: number;
+};
+
+export type StoreUpdate = {
+    name?: (string | null);
+    country?: (string | null);
+    currency?: (string | null);
+    price_index?: (number | null);
+    logo_url?: (string | null);
+    is_active?: (boolean | null);
 };
 
 export type Token = {
@@ -345,6 +595,9 @@ export type UserRegister = {
 export type UserSettingsPublic = {
     household_size?: number;
     shopping_frequency?: ShoppingFrequency;
+    budget_amount?: (string | null);
+    currency?: string;
+    preferred_store_id?: (string | null);
     id: string;
     user_id: string;
 };
@@ -352,6 +605,9 @@ export type UserSettingsPublic = {
 export type UserSettingsUpdate = {
     household_size?: (number | null);
     shopping_frequency?: (ShoppingFrequency | null);
+    budget_amount?: (number | string | null);
+    currency?: (string | null);
+    preferred_store_id?: (string | null);
 };
 
 export type UsersPublic = {
@@ -382,6 +638,68 @@ export type ValidationError = {
     };
 };
 
+export type HouseholdsReadMyHouseholdResponse = (HouseholdPublic);
+
+export type HouseholdsDeleteMyHouseholdResponse = (Message);
+
+export type HouseholdsUpdateMyHouseholdData = {
+    requestBody: HouseholdUpdate;
+};
+
+export type HouseholdsUpdateMyHouseholdResponse = (HouseholdPublic);
+
+export type HouseholdsCreateHouseholdData = {
+    requestBody: HouseholdCreate;
+};
+
+export type HouseholdsCreateHouseholdResponse = (HouseholdPublic);
+
+export type HouseholdsLeaveMyHouseholdResponse = (Message);
+
+export type HouseholdsRemoveMemberData = {
+    memberId: string;
+};
+
+export type HouseholdsRemoveMemberResponse = (Message);
+
+export type HouseholdsInviteMemberData = {
+    requestBody: HouseholdInviteCreate;
+};
+
+export type HouseholdsInviteMemberResponse = (HouseholdPublic);
+
+export type HouseholdsRevokeInviteData = {
+    inviteId: string;
+};
+
+export type HouseholdsRevokeInviteResponse = (Message);
+
+export type HouseholdsAcceptInviteData = {
+    inviteId: string;
+};
+
+export type HouseholdsAcceptInviteResponse = (HouseholdPublic);
+
+export type IngredientPricesReadIngredientPricesData = {
+    id: string;
+};
+
+export type IngredientPricesReadIngredientPricesResponse = (IngredientPricesPublic);
+
+export type IngredientPricesUpsertIngredientPriceData = {
+    id: string;
+    requestBody: IngredientPriceCreate;
+};
+
+export type IngredientPricesUpsertIngredientPriceResponse = (IngredientPricePublic);
+
+export type IngredientPricesDeleteIngredientPriceData = {
+    id: string;
+    storeId: string;
+};
+
+export type IngredientPricesDeleteIngredientPriceResponse = (Message);
+
 export type IngredientsReadIngredientsData = {
     limit?: number;
     skip?: number;
@@ -407,6 +725,19 @@ export type IngredientsDeduplicateIngredientsData = {
 };
 
 export type IngredientsDeduplicateIngredientsResponse = (DeduplicateResponse);
+
+export type IngredientsEstimateIngredientPriceRouteData = {
+    currency?: string;
+    id: string;
+};
+
+export type IngredientsEstimateIngredientPriceRouteResponse = (IngredientPublic);
+
+export type IngredientsEstimateIngredientPricesRouteData = {
+    requestBody: EstimatePricesRequest;
+};
+
+export type IngredientsEstimateIngredientPricesRouteResponse = (Message);
 
 export type IngredientsFetchIngredientImageData = {
     id: string;
@@ -439,6 +770,81 @@ export type LoginRecoverPasswordHtmlContentData = {
 };
 
 export type LoginRecoverPasswordHtmlContentResponse = (string);
+
+export type MealPlansReadMealPlansData = {
+    limit?: number;
+    skip?: number;
+};
+
+export type MealPlansReadMealPlansResponse = (MealPlansPublic);
+
+export type MealPlansCreateMealPlanData = {
+    requestBody: MealPlanCreate;
+};
+
+export type MealPlansCreateMealPlanResponse = (MealPlanPublic);
+
+export type MealPlansReadMealPlanData = {
+    id: string;
+};
+
+export type MealPlansReadMealPlanResponse = (MealPlanPublic);
+
+export type MealPlansUpdateMealPlanData = {
+    id: string;
+    requestBody: MealPlanUpdate;
+};
+
+export type MealPlansUpdateMealPlanResponse = (MealPlanPublic);
+
+export type MealPlansDeleteMealPlanData = {
+    id: string;
+};
+
+export type MealPlansDeleteMealPlanResponse = (Message);
+
+export type MealPlansAddEntryData = {
+    id: string;
+    requestBody: MealPlanEntryCreate;
+};
+
+export type MealPlansAddEntryResponse = (MealPlanEntryPublic);
+
+export type MealPlansUpdateEntryData = {
+    entryId: string;
+    id: string;
+    requestBody: MealPlanEntryUpdate;
+};
+
+export type MealPlansUpdateEntryResponse = (MealPlanEntryPublic);
+
+export type MealPlansDeleteEntryData = {
+    entryId: string;
+    id: string;
+};
+
+export type MealPlansDeleteEntryResponse = (Message);
+
+export type MealPlansGenerateShoppingListData = {
+    id: string;
+    name?: (string | null);
+};
+
+export type MealPlansGenerateShoppingListResponse = (ShoppingListPublic);
+
+export type MealPlansGenerateMenuRouteData = {
+    requestBody: GenerateMenuRequest;
+};
+
+export type MealPlansGenerateMenuRouteResponse = (MealPlanPublic);
+
+export type MealPlansSwapEntryData = {
+    entryId: string;
+    id: string;
+    requestBody?: (GenerateMenuRequest | null);
+};
+
+export type MealPlansSwapEntryResponse = (MealPlanEntryPublic);
 
 export type PrivateCreateUserData = {
     requestBody: PrivateUserCreate;
@@ -585,6 +991,12 @@ export type ShoppingListsAddRecipeData = {
 
 export type ShoppingListsAddRecipeResponse = (ShoppingListPublic);
 
+export type ShoppingListsCompareStoresData = {
+    id: string;
+};
+
+export type ShoppingListsCompareStoresResponse = (StoreComparison);
+
 export type ShoppingListsUpdatePlannedRecipeData = {
     id: string;
     plannedRecipeId: string;
@@ -599,6 +1011,33 @@ export type ShoppingListsDeletePlannedRecipeData = {
 };
 
 export type ShoppingListsDeletePlannedRecipeResponse = (Message);
+
+export type StoresReadStoresData = {
+    activeOnly?: boolean;
+    limit?: number;
+    skip?: number;
+};
+
+export type StoresReadStoresResponse = (StoresPublic);
+
+export type StoresCreateStoreData = {
+    requestBody: StoreCreate;
+};
+
+export type StoresCreateStoreResponse = (StorePublic);
+
+export type StoresUpdateStoreData = {
+    id: string;
+    requestBody: StoreUpdate;
+};
+
+export type StoresUpdateStoreResponse = (StorePublic);
+
+export type StoresDeleteStoreData = {
+    id: string;
+};
+
+export type StoresDeleteStoreResponse = (Message);
 
 export type UsersReadUsersData = {
     limit?: number;

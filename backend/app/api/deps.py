@@ -12,6 +12,7 @@ from app.core import security
 from app.core.config import settings
 from app.core.db import engine
 from app.models import TokenPayload, User
+from app.services.pricing import PriceBook
 
 reusable_oauth2 = OAuth2PasswordBearer(
     tokenUrl=f"{settings.API_V1_STR}/login/access-token"
@@ -55,3 +56,35 @@ def get_current_active_superuser(current_user: CurrentUser) -> User:
             status_code=403, detail="The user doesn't have enough privileges"
         )
     return current_user
+
+
+def get_price_book(session: SessionDep, current_user: CurrentUser) -> PriceBook:
+    """Prices for this request, at the caller's chosen store and currency.
+
+    Loads the catalog once per request so that pricing a list of recipes costs
+    a single query rather than one per ingredient.
+    """
+    from app import crud
+
+    user_settings = crud.get_or_create_user_settings(
+        session=session, user_id=current_user.id
+    )
+    store = (
+        crud.get_store(session=session, store_id=user_settings.preferred_store_id)
+        if user_settings.preferred_store_id
+        else None
+    )
+    return PriceBook.for_catalog(
+        session=session, currency=user_settings.currency, store=store
+    )
+
+
+PriceBookDep = Annotated[PriceBook, Depends(get_price_book)]
+
+
+def get_anonymous_price_book(session: SessionDep) -> PriceBook:
+    """Reference prices for routes with no authenticated user."""
+    return PriceBook.for_catalog(session=session)
+
+
+AnonPriceBookDep = Annotated[PriceBook, Depends(get_anonymous_price_book)]

@@ -132,6 +132,145 @@ export const DifficultySchema = {
     title: 'Difficulty'
 } as const;
 
+export const EstimatePricesRequestSchema = {
+    properties: {
+        ingredient_ids: {
+            items: {
+                type: 'string',
+                format: 'uuid'
+            },
+            type: 'array',
+            title: 'Ingredient Ids',
+            default: []
+        },
+        currency: {
+            type: 'string',
+            title: 'Currency',
+            default: 'EUR'
+        }
+    },
+    type: 'object',
+    title: 'EstimatePricesRequest',
+    description: `Which ingredients to price, and in what currency.
+
+An empty \`\`ingredient_ids\`\` means "everything without a curated price",
+which is the common case after a bulk import.`
+} as const;
+
+export const GenerateMenuRequestSchema = {
+    properties: {
+        name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name'
+        },
+        start_date: {
+            type: 'string',
+            format: 'date',
+            title: 'Start Date'
+        },
+        days: {
+            type: 'integer',
+            maximum: 31,
+            minimum: 1,
+            title: 'Days',
+            default: 7
+        },
+        meal_types: {
+            items: {
+                '$ref': '#/components/schemas/MealType'
+            },
+            type: 'array',
+            title: 'Meal Types'
+        },
+        servings: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    minimum: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Servings'
+        },
+        budget: {
+            anyOf: [
+                {
+                    type: 'number',
+                    minimum: 0
+                },
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Budget'
+        },
+        require_vegan: {
+            type: 'boolean',
+            title: 'Require Vegan',
+            default: false
+        },
+        require_vegetarian: {
+            type: 'boolean',
+            title: 'Require Vegetarian',
+            default: false
+        },
+        require_gluten_free: {
+            type: 'boolean',
+            title: 'Require Gluten Free',
+            default: false
+        },
+        require_dairy_free: {
+            type: 'boolean',
+            title: 'Require Dairy Free',
+            default: false
+        },
+        max_prep_minutes: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    minimum: 0
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Max Prep Minutes'
+        },
+        match_season: {
+            type: 'boolean',
+            title: 'Match Season',
+            default: true
+        },
+        include_public: {
+            type: 'boolean',
+            title: 'Include Public',
+            default: true
+        },
+        seed: {
+            type: 'integer',
+            title: 'Seed',
+            default: 0
+        }
+    },
+    type: 'object',
+    required: ['start_date'],
+    title: 'GenerateMenuRequest',
+    description: 'What to compose, and the constraints it must respect.'
+} as const;
+
 export const HTTPValidationErrorSchema = {
     properties: {
         detail: {
@@ -144,6 +283,204 @@ export const HTTPValidationErrorSchema = {
     },
     type: 'object',
     title: 'HTTPValidationError'
+} as const;
+
+export const HouseholdCreateSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            maxLength: 255,
+            minLength: 1,
+            title: 'Name'
+        }
+    },
+    type: 'object',
+    required: ['name'],
+    title: 'HouseholdCreate'
+} as const;
+
+export const HouseholdInviteCreateSchema = {
+    properties: {
+        email: {
+            type: 'string',
+            maxLength: 255,
+            minLength: 3,
+            title: 'Email'
+        }
+    },
+    type: 'object',
+    required: ['email'],
+    title: 'HouseholdInviteCreate'
+} as const;
+
+export const HouseholdInvitePublicSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        email: {
+            type: 'string',
+            title: 'Email'
+        },
+        expires_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Expires At'
+        },
+        accepted_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Accepted At'
+        }
+    },
+    type: 'object',
+    required: ['id', 'email', 'expires_at'],
+    title: 'HouseholdInvitePublic'
+} as const;
+
+export const HouseholdMemberPublicSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        user_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'User Id'
+        },
+        email: {
+            type: 'string',
+            title: 'Email'
+        },
+        full_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Full Name'
+        },
+        role: {
+            '$ref': '#/components/schemas/HouseholdRole'
+        },
+        joined_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Joined At'
+        }
+    },
+    type: 'object',
+    required: ['id', 'user_id', 'email', 'role'],
+    title: 'HouseholdMemberPublic'
+} as const;
+
+export const HouseholdPublicSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            maxLength: 255,
+            minLength: 1,
+            title: 'Name'
+        },
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        owner_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Owner Id'
+        },
+        created_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Created At'
+        },
+        members: {
+            items: {
+                '$ref': '#/components/schemas/HouseholdMemberPublic'
+            },
+            type: 'array',
+            title: 'Members',
+            default: []
+        },
+        invites: {
+            items: {
+                '$ref': '#/components/schemas/HouseholdInvitePublic'
+            },
+            type: 'array',
+            title: 'Invites',
+            default: []
+        },
+        seats_remaining: {
+            type: 'integer',
+            title: 'Seats Remaining',
+            default: 0
+        }
+    },
+    type: 'object',
+    required: ['name', 'id', 'owner_id'],
+    title: 'HouseholdPublic'
+} as const;
+
+export const HouseholdRoleSchema = {
+    type: 'string',
+    enum: ['owner', 'member'],
+    title: 'HouseholdRole',
+    description: `What a member may do.
+
+\`\`OWNER\`\` can rename the household, invite, and remove members;
+\`\`MEMBER\`\` can see and edit the shared lists and plans but not the
+membership itself.`
+} as const;
+
+export const HouseholdUpdateSchema = {
+    properties: {
+        name: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 255,
+                    minLength: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name'
+        }
+    },
+    type: 'object',
+    title: 'HouseholdUpdate'
 } as const;
 
 export const ImportSourceSchema = {
@@ -187,6 +524,68 @@ export const IngredientCategorySchema = {
 
 export const IngredientCreateSchema = {
     properties: {
+        price_amount: {
+            anyOf: [
+                {
+                    type: 'number',
+                    minimum: 0
+                },
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*(?:\\d{0,6}|(?=[\\d.]{1,11}0*$)\\d{0,6}\\.\\d{0,4}0*$)'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Price Amount'
+        },
+        price_quantity: {
+            anyOf: [
+                {
+                    type: 'number',
+                    exclusiveMinimum: 0
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Price Quantity'
+        },
+        price_unit: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/Unit'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        density_g_per_ml: {
+            anyOf: [
+                {
+                    type: 'number',
+                    exclusiveMinimum: 0
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Density G Per Ml'
+        },
+        piece_weight_g: {
+            anyOf: [
+                {
+                    type: 'number',
+                    exclusiveMinimum: 0
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Piece Weight G'
+        },
         name: {
             type: 'string',
             maxLength: 255,
@@ -214,8 +613,178 @@ export const IngredientCreateSchema = {
     title: 'IngredientCreate'
 } as const;
 
+export const IngredientPriceCreateSchema = {
+    properties: {
+        price_amount: {
+            anyOf: [
+                {
+                    type: 'number',
+                    minimum: 0
+                },
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*(?:\\d{0,6}|(?=[\\d.]{1,11}0*$)\\d{0,6}\\.\\d{0,4}0*$)'
+                }
+            ],
+            title: 'Price Amount'
+        },
+        price_quantity: {
+            type: 'number',
+            exclusiveMinimum: 0,
+            title: 'Price Quantity'
+        },
+        price_unit: {
+            '$ref': '#/components/schemas/Unit'
+        },
+        store_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Store Id'
+        }
+    },
+    type: 'object',
+    required: ['price_amount', 'price_quantity', 'price_unit', 'store_id'],
+    title: 'IngredientPriceCreate'
+} as const;
+
+export const IngredientPricePublicSchema = {
+    properties: {
+        price_amount: {
+            type: 'string',
+            pattern: '^(?!^[-+.]*$)[+-]?0*(?:\\d{0,6}|(?=[\\d.]{1,11}0*$)\\d{0,6}\\.\\d{0,4}0*$)',
+            title: 'Price Amount'
+        },
+        price_quantity: {
+            type: 'number',
+            exclusiveMinimum: 0,
+            title: 'Price Quantity'
+        },
+        price_unit: {
+            '$ref': '#/components/schemas/Unit'
+        },
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        ingredient_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Ingredient Id'
+        },
+        store_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Store Id'
+        },
+        store_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Store Name'
+        },
+        updated_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Updated At'
+        }
+    },
+    type: 'object',
+    required: ['price_amount', 'price_quantity', 'price_unit', 'id', 'ingredient_id', 'store_id'],
+    title: 'IngredientPricePublic'
+} as const;
+
+export const IngredientPricesPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/IngredientPricePublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'IngredientPricesPublic'
+} as const;
+
 export const IngredientPublicSchema = {
     properties: {
+        price_amount: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*(?:\\d{0,6}|(?=[\\d.]{1,11}0*$)\\d{0,6}\\.\\d{0,4}0*$)'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Price Amount'
+        },
+        price_quantity: {
+            anyOf: [
+                {
+                    type: 'number',
+                    exclusiveMinimum: 0
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Price Quantity'
+        },
+        price_unit: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/Unit'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        density_g_per_ml: {
+            anyOf: [
+                {
+                    type: 'number',
+                    exclusiveMinimum: 0
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Density G Per Ml'
+        },
+        piece_weight_g: {
+            anyOf: [
+                {
+                    type: 'number',
+                    exclusiveMinimum: 0
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Piece Weight G'
+        },
         id: {
             type: 'string',
             format: 'uuid',
@@ -249,6 +818,28 @@ export const IngredientPublicSchema = {
                 }
             ],
             title: 'Image Url'
+        },
+        price_source: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/PriceSource'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        price_updated_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Price Updated At'
         }
     },
     type: 'object',
@@ -258,6 +849,68 @@ export const IngredientPublicSchema = {
 
 export const IngredientUpdateSchema = {
     properties: {
+        price_amount: {
+            anyOf: [
+                {
+                    type: 'number',
+                    minimum: 0
+                },
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*(?:\\d{0,6}|(?=[\\d.]{1,11}0*$)\\d{0,6}\\.\\d{0,4}0*$)'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Price Amount'
+        },
+        price_quantity: {
+            anyOf: [
+                {
+                    type: 'number',
+                    exclusiveMinimum: 0
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Price Quantity'
+        },
+        price_unit: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/Unit'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        density_g_per_ml: {
+            anyOf: [
+                {
+                    type: 'number',
+                    exclusiveMinimum: 0
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Density G Per Ml'
+        },
+        piece_weight_g: {
+            anyOf: [
+                {
+                    type: 'number',
+                    exclusiveMinimum: 0
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Piece Weight G'
+        },
         category: {
             anyOf: [
                 {
@@ -301,6 +954,372 @@ export const IngredientsPublicSchema = {
     type: 'object',
     required: ['data', 'count'],
     title: 'IngredientsPublic'
+} as const;
+
+export const MealPlanCreateSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            maxLength: 255,
+            minLength: 1,
+            title: 'Name'
+        },
+        start_date: {
+            type: 'string',
+            format: 'date',
+            title: 'Start Date'
+        },
+        end_date: {
+            type: 'string',
+            format: 'date',
+            title: 'End Date'
+        }
+    },
+    type: 'object',
+    required: ['name', 'start_date', 'end_date'],
+    title: 'MealPlanCreate'
+} as const;
+
+export const MealPlanEntryCreateSchema = {
+    properties: {
+        entry_date: {
+            type: 'string',
+            format: 'date',
+            title: 'Entry Date'
+        },
+        meal_type: {
+            '$ref': '#/components/schemas/MealType',
+            default: 'dinner'
+        },
+        servings: {
+            type: 'integer',
+            minimum: 1,
+            title: 'Servings',
+            default: 2
+        },
+        recipe_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Recipe Id'
+        }
+    },
+    type: 'object',
+    required: ['entry_date', 'recipe_id'],
+    title: 'MealPlanEntryCreate'
+} as const;
+
+export const MealPlanEntryPublicSchema = {
+    properties: {
+        entry_date: {
+            type: 'string',
+            format: 'date',
+            title: 'Entry Date'
+        },
+        meal_type: {
+            '$ref': '#/components/schemas/MealType',
+            default: 'dinner'
+        },
+        servings: {
+            type: 'integer',
+            minimum: 1,
+            title: 'Servings',
+            default: 2
+        },
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        meal_plan_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Meal Plan Id'
+        },
+        recipe_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Recipe Id'
+        },
+        recipe_title: {
+            type: 'string',
+            title: 'Recipe Title'
+        },
+        recipe_image_url: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Recipe Image Url'
+        },
+        recipe_servings: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Recipe Servings'
+        },
+        prep_time_minutes: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Prep Time Minutes'
+        },
+        cook_time_minutes: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Cook Time Minutes'
+        },
+        estimated_cost: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Estimated Cost'
+        },
+        estimated_cost_per_serving: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Estimated Cost Per Serving'
+        }
+    },
+    type: 'object',
+    required: ['entry_date', 'id', 'meal_plan_id', 'recipe_id', 'recipe_title'],
+    title: 'MealPlanEntryPublic'
+} as const;
+
+export const MealPlanEntryUpdateSchema = {
+    properties: {
+        entry_date: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Entry Date'
+        },
+        meal_type: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/MealType'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        servings: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    minimum: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Servings'
+        },
+        recipe_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Recipe Id'
+        }
+    },
+    type: 'object',
+    title: 'MealPlanEntryUpdate'
+} as const;
+
+export const MealPlanPublicSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            maxLength: 255,
+            minLength: 1,
+            title: 'Name'
+        },
+        start_date: {
+            type: 'string',
+            format: 'date',
+            title: 'Start Date'
+        },
+        end_date: {
+            type: 'string',
+            format: 'date',
+            title: 'End Date'
+        },
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        owner_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Owner Id'
+        },
+        created_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Created At'
+        },
+        shopping_list_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Shopping List Id'
+        },
+        entries: {
+            items: {
+                '$ref': '#/components/schemas/MealPlanEntryPublic'
+            },
+            type: 'array',
+            title: 'Entries',
+            default: []
+        },
+        estimated_total: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Estimated Total'
+        },
+        unpriced_entry_count: {
+            type: 'integer',
+            title: 'Unpriced Entry Count',
+            default: 0
+        },
+        currency: {
+            type: 'string',
+            title: 'Currency',
+            default: 'EUR'
+        }
+    },
+    type: 'object',
+    required: ['name', 'start_date', 'end_date', 'id', 'owner_id'],
+    title: 'MealPlanPublic'
+} as const;
+
+export const MealPlanUpdateSchema = {
+    properties: {
+        name: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 255,
+                    minLength: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name'
+        },
+        start_date: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Start Date'
+        },
+        end_date: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'End Date'
+        }
+    },
+    type: 'object',
+    title: 'MealPlanUpdate'
+} as const;
+
+export const MealPlansPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/MealPlanPublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'MealPlansPublic'
 } as const;
 
 export const MealTypeSchema = {
@@ -566,6 +1585,17 @@ export const ParsedStepSchema = {
     type: 'object',
     required: ['instruction'],
     title: 'ParsedStep'
+} as const;
+
+export const PriceSourceSchema = {
+    type: 'string',
+    enum: ['manual', 'estimated'],
+    title: 'PriceSource',
+    description: `Where an ingredient's reference price came from.
+
+\`\`ESTIMATED\`\` rows were filled in by the LLM assist and may be overwritten
+by a later estimate run; \`\`MANUAL\`\` rows were curated by a human and never
+are.`
 } as const;
 
 export const PrivateUserCreateSchema = {
@@ -867,6 +1897,18 @@ export const RecipeIngredientPublicSchema = {
                 }
             ],
             title: 'Notes'
+        },
+        estimated_cost: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Estimated Cost'
         }
     },
     type: 'object',
@@ -1076,6 +2118,40 @@ export const RecipePublicSchema = {
             type: 'array',
             title: 'Steps',
             default: []
+        },
+        estimated_cost: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Estimated Cost'
+        },
+        estimated_cost_per_serving: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Estimated Cost Per Serving'
+        },
+        unpriced_ingredient_count: {
+            type: 'integer',
+            title: 'Unpriced Ingredient Count',
+            default: 0
+        },
+        currency: {
+            type: 'string',
+            title: 'Currency',
+            default: 'EUR'
         }
     },
     type: 'object',
@@ -1541,6 +2617,18 @@ export const ShoppingListItemPublicSchema = {
                 }
             ],
             title: 'Notes'
+        },
+        estimated_cost: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Estimated Cost'
         }
     },
     type: 'object',
@@ -1669,6 +2757,28 @@ export const ShoppingListPublicSchema = {
             type: 'array',
             title: 'Planned Recipes',
             default: []
+        },
+        estimated_total: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Estimated Total'
+        },
+        unpriced_item_count: {
+            type: 'integer',
+            title: 'Unpriced Item Count',
+            default: 0
+        },
+        currency: {
+            type: 'string',
+            title: 'Currency',
+            default: 'EUR'
         }
     },
     type: 'object',
@@ -1718,6 +2828,18 @@ export const ShoppingListRecipePublicSchema = {
             type: 'array',
             title: 'Ingredients',
             default: []
+        },
+        estimated_cost: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Estimated Cost'
         }
     },
     type: 'object',
@@ -1816,6 +2938,295 @@ export const ShoppingListsPublicSchema = {
     type: 'object',
     required: ['data', 'count'],
     title: 'ShoppingListsPublic'
+} as const;
+
+export const StoreComparisonSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/StoreComparisonEntry'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        cheapest_store_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Cheapest Store Id'
+        }
+    },
+    type: 'object',
+    required: ['data'],
+    title: 'StoreComparison'
+} as const;
+
+export const StoreComparisonEntrySchema = {
+    properties: {
+        store_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Store Id'
+        },
+        store_name: {
+            type: 'string',
+            title: 'Store Name'
+        },
+        store_slug: {
+            type: 'string',
+            title: 'Store Slug'
+        },
+        currency: {
+            type: 'string',
+            title: 'Currency'
+        },
+        estimated_total: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Estimated Total'
+        },
+        unpriced_item_count: {
+            type: 'integer',
+            title: 'Unpriced Item Count',
+            default: 0
+        }
+    },
+    type: 'object',
+    required: ['store_id', 'store_name', 'store_slug', 'currency'],
+    title: 'StoreComparisonEntry',
+    description: 'What one shopping list would cost at one store.'
+} as const;
+
+export const StoreCreateSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            maxLength: 255,
+            minLength: 1,
+            title: 'Name'
+        },
+        slug: {
+            type: 'string',
+            maxLength: 255,
+            minLength: 1,
+            title: 'Slug'
+        },
+        country: {
+            type: 'string',
+            maxLength: 2,
+            minLength: 2,
+            title: 'Country',
+            default: 'FR'
+        },
+        currency: {
+            type: 'string',
+            maxLength: 3,
+            minLength: 3,
+            title: 'Currency',
+            default: 'EUR'
+        },
+        price_index: {
+            type: 'number',
+            exclusiveMinimum: 0,
+            title: 'Price Index',
+            default: 1
+        },
+        logo_url: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 2048
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Logo Url'
+        },
+        is_active: {
+            type: 'boolean',
+            title: 'Is Active',
+            default: true
+        }
+    },
+    type: 'object',
+    required: ['name', 'slug'],
+    title: 'StoreCreate'
+} as const;
+
+export const StorePublicSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            maxLength: 255,
+            minLength: 1,
+            title: 'Name'
+        },
+        slug: {
+            type: 'string',
+            maxLength: 255,
+            minLength: 1,
+            title: 'Slug'
+        },
+        country: {
+            type: 'string',
+            maxLength: 2,
+            minLength: 2,
+            title: 'Country',
+            default: 'FR'
+        },
+        currency: {
+            type: 'string',
+            maxLength: 3,
+            minLength: 3,
+            title: 'Currency',
+            default: 'EUR'
+        },
+        price_index: {
+            type: 'number',
+            exclusiveMinimum: 0,
+            title: 'Price Index',
+            default: 1
+        },
+        logo_url: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 2048
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Logo Url'
+        },
+        is_active: {
+            type: 'boolean',
+            title: 'Is Active',
+            default: true
+        },
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        }
+    },
+    type: 'object',
+    required: ['name', 'slug', 'id'],
+    title: 'StorePublic'
+} as const;
+
+export const StoreUpdateSchema = {
+    properties: {
+        name: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 255,
+                    minLength: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name'
+        },
+        country: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 2,
+                    minLength: 2
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Country'
+        },
+        currency: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 3,
+                    minLength: 3
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Currency'
+        },
+        price_index: {
+            anyOf: [
+                {
+                    type: 'number',
+                    exclusiveMinimum: 0
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Price Index'
+        },
+        logo_url: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 2048
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Logo Url'
+        },
+        is_active: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Is Active'
+        }
+    },
+    type: 'object',
+    title: 'StoreUpdate'
+} as const;
+
+export const StoresPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/StorePublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'StoresPublic'
 } as const;
 
 export const TokenSchema = {
@@ -2000,6 +3411,37 @@ export const UserSettingsPublicSchema = {
             '$ref': '#/components/schemas/ShoppingFrequency',
             default: 'weekly'
         },
+        budget_amount: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*(?:\\d{0,8}|(?=[\\d.]{1,11}0*$)\\d{0,8}\\.\\d{0,2}0*$)'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Budget Amount'
+        },
+        currency: {
+            type: 'string',
+            maxLength: 3,
+            minLength: 3,
+            title: 'Currency',
+            default: 'EUR'
+        },
+        preferred_store_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Preferred Store Id'
+        },
         id: {
             type: 'string',
             format: 'uuid',
@@ -2039,6 +3481,47 @@ export const UserSettingsUpdateSchema = {
                     type: 'null'
                 }
             ]
+        },
+        budget_amount: {
+            anyOf: [
+                {
+                    type: 'number',
+                    minimum: 0
+                },
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*(?:\\d{0,8}|(?=[\\d.]{1,11}0*$)\\d{0,8}\\.\\d{0,2}0*$)'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Budget Amount'
+        },
+        currency: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 3,
+                    minLength: 3
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Currency'
+        },
+        preferred_store_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Preferred Store Id'
         }
     },
     type: 'object',

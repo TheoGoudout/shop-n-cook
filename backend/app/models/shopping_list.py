@@ -1,5 +1,6 @@
 import uuid
 from datetime import date, datetime
+from decimal import Decimal
 from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime
@@ -36,6 +37,8 @@ class ShoppingListRecipePublic(SQLModel):
     servings_planned: int
     is_prepared: bool
     ingredients: list[RecipeIngredientPublic] = []
+    #: Cost of this recipe at ``servings_planned``, not at its own ``servings``.
+    estimated_cost: Decimal | None = None
 
 
 # --------------------------------------------------------------------------- #
@@ -86,6 +89,7 @@ class ShoppingListItemPublic(SQLModel):
     unit: Unit
     is_checked: bool
     notes: str | None = None
+    estimated_cost: Decimal | None = None
 
 
 # --------------------------------------------------------------------------- #
@@ -160,6 +164,11 @@ class ShoppingListPublic(ShoppingListBase):
     created_at: datetime | None = None
     items: list[ShoppingListItemPublic] = []
     planned_recipes: list[ShoppingListRecipePublic] = []
+    #: Sum over the priced items only; ``unpriced_item_count`` says how much of
+    #: the list that total is silent about.
+    estimated_total: Decimal | None = None
+    unpriced_item_count: int = 0
+    currency: str = "EUR"
 
 
 class ShoppingListsPublic(SQLModel):

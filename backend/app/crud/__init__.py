@@ -1,3 +1,22 @@
+from app.crud.household import (
+    accept_invite,
+    create_household,
+    create_invite,
+    delete_household,
+    delete_invite,
+    get_household,
+    get_household_for_user,
+    get_invite,
+    get_member,
+    get_membership,
+    get_pending_invite_by_email,
+    household_member_ids,
+    household_to_public,
+    remove_member,
+    seats_used,
+    update_household,
+    user_can_access,
+)
 from app.crud.ingredient import (
     create_ingredient,
     delete_ingredient,
@@ -8,6 +27,20 @@ from app.crud.ingredient import (
     get_or_create_ingredient,
     rename_ingredient_references,
     update_ingredient,
+)
+from app.crud.meal_plan import (
+    add_entry,
+    create_meal_plan,
+    delete_entry,
+    delete_meal_plan,
+    generate_shopping_list,
+    get_meal_plan,
+    get_meal_plan_entry,
+    get_meal_plans,
+    meal_plan_entry_to_public,
+    meal_plan_to_public,
+    update_entry,
+    update_meal_plan,
 )
 from app.crud.recipe import (
     create_recipe,
@@ -36,6 +69,21 @@ from app.crud.shopping_list import (
     update_shopping_list_item,
     update_shopping_list_recipe,
 )
+from app.crud.store import (
+    create_store,
+    delete_ingredient_price,
+    delete_store,
+    get_ingredient_price,
+    get_ingredient_prices,
+    get_store,
+    get_store_by_slug,
+    get_stores,
+    ingredient_price_to_public,
+    store_to_public,
+    update_ingredient_price,
+    update_store,
+    upsert_ingredient_price,
+)
 from app.crud.user import authenticate, create_user, get_user_by_email, update_user
 from app.crud.user_settings import (
     get_or_create_user_settings,
@@ -44,6 +92,51 @@ from app.crud.user_settings import (
 )
 
 __all__ = [
+    # household
+    "household_to_public",
+    "user_can_access",
+    "household_member_ids",
+    "get_household",
+    "get_household_for_user",
+    "get_membership",
+    "get_member",
+    "create_household",
+    "update_household",
+    "delete_household",
+    "remove_member",
+    "seats_used",
+    "get_invite",
+    "get_pending_invite_by_email",
+    "create_invite",
+    "delete_invite",
+    "accept_invite",
+    # meal plan
+    "meal_plan_to_public",
+    "meal_plan_entry_to_public",
+    "get_meal_plan",
+    "get_meal_plans",
+    "create_meal_plan",
+    "update_meal_plan",
+    "delete_meal_plan",
+    "get_meal_plan_entry",
+    "add_entry",
+    "update_entry",
+    "delete_entry",
+    "generate_shopping_list",
+    # store
+    "store_to_public",
+    "ingredient_price_to_public",
+    "get_store",
+    "get_store_by_slug",
+    "get_stores",
+    "create_store",
+    "update_store",
+    "delete_store",
+    "get_ingredient_prices",
+    "get_ingredient_price",
+    "upsert_ingredient_price",
+    "update_ingredient_price",
+    "delete_ingredient_price",
     # ingredient catalog
     "get_ingredient",
     "get_ingredient_by_name",

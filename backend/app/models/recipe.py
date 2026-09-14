@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+from decimal import Decimal
 from enum import Enum
 from typing import TYPE_CHECKING
 
@@ -74,6 +75,9 @@ class RecipeIngredientPublic(SQLModel):
     quantity: float
     unit: Unit
     notes: str | None = None
+    #: ``None`` when the catalog has no reference price for this ingredient, or
+    #: none that can be converted into the unit the recipe calls for.
+    estimated_cost: Decimal | None = None
 
 
 # --------------------------------------------------------------------------- #
@@ -258,6 +262,13 @@ class RecipePublic(RecipeBase):
     created_at: datetime | None = None
     ingredients: list[RecipeIngredientPublic] = []
     steps: list[RecipeStepPublic] = []
+    #: Cost of one batch at ``servings``. ``None`` when nothing could be priced.
+    estimated_cost: Decimal | None = None
+    estimated_cost_per_serving: Decimal | None = None
+    #: How many ingredients carry no usable price. A non-zero count means
+    #: ``estimated_cost`` is a floor, not the real total.
+    unpriced_ingredient_count: int = 0
+    currency: str = "EUR"
 
 
 class RecipesPublic(SQLModel):

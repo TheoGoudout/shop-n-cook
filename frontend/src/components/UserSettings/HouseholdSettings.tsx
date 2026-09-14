@@ -2,7 +2,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 
-import { type UserSettingsPublic, UserSettingsService } from "@/client"
+import {
+  StoresService,
+  type UserSettingsPublic,
+  UserSettingsService,
+} from "@/client"
 import {
   Card,
   CardContent,
@@ -10,6 +14,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
 import {
   Select,
@@ -21,6 +26,12 @@ import {
 import useCustomToast from "@/hooks/useCustomToast"
 import { handleError } from "@/utils"
 
+/** Currencies the app formats costs in. */
+const CURRENCIES = ["EUR", "GBP", "USD", "CHF", "CAD"] as const
+
+/** Stands in for "no preferred store" — Select has no empty value. */
+const NO_STORE = "__none__"
+
 export function HouseholdSettings() {
   const { t } = useTranslation("settings")
   const queryClient = useQueryClient()
@@ -31,12 +42,26 @@ export function HouseholdSettings() {
     queryFn: () => UserSettingsService.readUserSettings(),
   })
 
+  const { data: stores } = useQuery({
+    queryKey: ["stores"],
+    queryFn: () => StoresService.readStores({}),
+  })
+
   const [householdSize, setHouseholdSize] = useState<string>("")
   const [frequency, setFrequency] = useState<string>("")
+  const [budget, setBudget] = useState<string | null>(null)
+  const [currency, setCurrency] = useState<string>("")
+  const [storeId, setStoreId] = useState<string>("")
 
   // Sync local state when data loads
   const currentSize = householdSize || String(settings?.household_size ?? 2)
   const currentFreq = (frequency || settings?.shopping_frequency) ?? "weekly"
+  // An empty budget field is meaningful — it clears the budget — so the local
+  // value is only treated as unset while it is still null.
+  const currentBudget = budget ?? settings?.budget_amount ?? ""
+  const currentCurrency = currency || (settings?.currency ?? "EUR")
+  // The select cannot hold an empty value, so "no preference" gets a sentinel.
+  const currentStore = storeId || (settings?.preferred_store_id ?? NO_STORE)
 
   const mutation = useMutation({
     mutationFn: () =>
@@ -45,6 +70,10 @@ export function HouseholdSettings() {
           household_size: Number(currentSize),
           shopping_frequency:
             currentFreq as UserSettingsPublic["shopping_frequency"],
+          budget_amount:
+            String(currentBudget).trim() === "" ? null : String(currentBudget),
+          currency: currentCurrency,
+          preferred_store_id: currentStore === NO_STORE ? null : currentStore,
         },
       }),
     onSuccess: () => {
@@ -111,6 +140,65 @@ export function HouseholdSettings() {
             </Select>
             <p className="text-xs text-muted-foreground">
               {t("household.frequency_hint")}
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <p className="text-sm font-medium">{t("household.budget_label")}</p>
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              inputMode="decimal"
+              value={currentBudget}
+              placeholder={t("household.budget_placeholder")}
+              onChange={(e) => setBudget(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              {t("household.budget_hint")}
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <p className="text-sm font-medium">
+              {t("household.currency_label")}
+            </p>
+            <Select value={currentCurrency} onValueChange={setCurrency}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {CURRENCIES.map((code) => (
+                  <SelectItem key={code} value={code}>
+                    {code}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              {t("household.currency_hint")}
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <p className="text-sm font-medium">{t("household.store_label")}</p>
+            <Select value={currentStore} onValueChange={setStoreId}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={NO_STORE}>
+                  {t("household.store_none")}
+                </SelectItem>
+                {(stores?.data ?? []).map((store) => (
+                  <SelectItem key={store.id} value={store.id}>
+                    {store.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              {t("household.store_hint")}
             </p>
           </div>
         </div>

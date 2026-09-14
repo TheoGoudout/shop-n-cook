@@ -21,15 +21,35 @@ from app.models import (
 )
 from app.models.recipe import Difficulty, MealType, Season
 from app.models.user import User
+from app.services.pricing import CostSummary, PriceBook, quantize_money
 
 
-def recipe_ingredient_to_public(ri: RecipeIngredient) -> RecipeIngredientPublic:
+def recipe_ingredient_to_public(
+    ri: RecipeIngredient,
+    prices: PriceBook | None = None,
+    *,
+    scale: float = 1.0,
+) -> RecipeIngredientPublic:
+    """Public shape of a recipe ingredient, priced when a ``PriceBook`` is given.
+
+    ``scale`` adjusts the quantity before pricing without changing the quantity
+    reported, which is what lets a shopping list price a recipe at its planned
+    servings rather than the recipe's own.
+    """
+    estimated_cost = (
+        prices.cost(ri.ingredient_name, ri.quantity * scale, ri.unit)
+        if prices is not None
+        else None
+    )
     return RecipeIngredientPublic(
         id=ri.id,
         ingredient_name=ri.ingredient_name,
         quantity=ri.quantity,
         unit=ri.unit,
         notes=ri.notes,
+        estimated_cost=quantize_money(estimated_cost)
+        if estimated_cost is not None
+        else None,
     )
 
 
@@ -52,9 +72,24 @@ def _owner_display_name(owner: User) -> str:
     return owner.full_name or owner.email.split("@")[0]
 
 
-def recipe_to_public(recipe: Recipe, owner: User | None = None) -> RecipePublic:
+def recipe_cost(
+    recipe: Recipe, prices: PriceBook, *, scale: float = 1.0
+) -> CostSummary:
+    """Total what ``recipe`` costs to cook, at ``scale`` times its own servings."""
+    return prices.summarize(
+        [
+            (ri.ingredient_name, ri.quantity * scale, ri.unit)
+            for ri in recipe.recipe_ingredients
+        ]
+    )
+
+
+def recipe_to_public(
+    recipe: Recipe, owner: User | None = None, prices: PriceBook | None = None
+) -> RecipePublic:
     resolved_owner = owner or recipe.owner
     owner_name = _owner_display_name(resolved_owner) if resolved_owner else None
+    cost = recipe_cost(recipe, prices) if prices is not None else None
     return RecipePublic(
         id=recipe.id,
         title=recipe.title,
@@ -69,7 +104,7 @@ def recipe_to_public(recipe: Recipe, owner: User | None = None) -> RecipePublic:
         owner_name=owner_name,
         created_at=recipe.created_at,
         ingredients=[
-            recipe_ingredient_to_public(ri) for ri in recipe.recipe_ingredients
+            recipe_ingredient_to_public(ri, prices) for ri in recipe.recipe_ingredients
         ],
         steps=sorted(
             [_step_to_public(s) for s in recipe.steps],
@@ -84,6 +119,10 @@ def recipe_to_public(recipe: Recipe, owner: User | None = None) -> RecipePublic:
         difficulty=recipe.difficulty,
         meal_type=recipe.meal_type,
         cuisine_type=recipe.cuisine_type,
+        estimated_cost=cost.total if cost else None,
+        estimated_cost_per_serving=cost.per_unit(recipe.servings) if cost else None,
+        unpriced_ingredient_count=cost.unpriced_count if cost else 0,
+        currency=prices.currency if prices is not None else "EUR",
     )
 
 

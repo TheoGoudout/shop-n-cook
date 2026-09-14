@@ -21,7 +21,13 @@ function extensionBuildPlugin(): Plugin {
       }
 
       if (this.meta.watchMode) {
-        manifest.background = { service_worker: "dev-reload.js" }
+        // Keep the real service worker: dev-reload imports it, so the cart
+        // runner still works while watching instead of being replaced by the
+        // reloader.
+        manifest.background = {
+          service_worker: "dev-reload.js",
+          type: "module",
+        }
         writeFileSync(
           `${distDir}/manifest.json`,
           JSON.stringify(manifest, null, 2),
@@ -30,7 +36,7 @@ function extensionBuildPlugin(): Plugin {
         writeFileSync(`${distDir}/build-time.txt`, Date.now().toString())
         writeFileSync(
           `${distDir}/dev-reload.js`,
-          `let t=null;async function p(){try{const r=await fetch(chrome.runtime.getURL("build-time.txt")+"?_="+Date.now());const s=await r.text();if(t===null)t=s;else if(t!==s){chrome.runtime.reload();return;}}catch(_){}setTimeout(p,1000);}p();`,
+          `import "./background.js";\nlet t=null;async function p(){try{const r=await fetch(chrome.runtime.getURL("build-time.txt")+"?_="+Date.now());const s=await r.text();if(t===null)t=s;else if(t!==s){chrome.runtime.reload();return;}}catch(_){}setTimeout(p,1000);}p();`,
         )
       } else {
         writeFileSync(
@@ -62,6 +68,13 @@ export default defineConfig(({ mode }) => {
       rollupOptions: {
         input: {
           popup: resolve(__dirname, "popup.html"),
+          // MV3 names these files in the manifest, so they must land at the
+          // dist root under predictable names rather than hashed asset paths.
+          background: resolve(__dirname, "src/background.ts"),
+          bridge: resolve(__dirname, "src/content/bridge.ts"),
+        },
+        output: {
+          entryFileNames: "[name].js",
         },
       },
     },

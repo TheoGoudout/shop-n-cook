@@ -8,7 +8,6 @@ from app.api.routes import (
     private,
     recipes,
     shopping_lists,
-    shops,
     stores,
     user_settings,
     users,
@@ -24,7 +23,6 @@ api_router.include_router(recipes.router)
 api_router.include_router(shopping_lists.router)
 api_router.include_router(user_settings.router)
 api_router.include_router(ingredients.router)
-api_router.include_router(shops.router)
 api_router.include_router(stores.router)
 api_router.include_router(stores.price_router)
 api_router.include_router(meal_plans.router)

@@ -1,21 +1,21 @@
 """Use-case layer: cost a list, or hand it off to a basket.
 
-This is where "the shop cannot do that" stops being an error and becomes an
+This is where "the store cannot do that" stops being an error and becomes an
 answer. The primitives in ``base.py`` are strict — call an undeclared
 capability and they raise. The functions here are the opposite: they check
-capabilities first and shape the best result the shop can actually produce,
+capabilities first and shape the best result the store can actually produce,
 annotating exactly what is missing and why.
 
-The three degradations that matter, all exercised by shops we actually
+The three degradations that matter, all exercised by stores we actually
 surveyed:
 
 - **no search** (Carrefour, behind Akamai) — the backend cannot look anything
   up, so cart entries carry the list's own wording for the extension to
   resolve on-site.
 - **no prices** (Auchan, whose catalogue is priceless until a store is picked)
-  — products resolve fine, every line reports ``REQUIRES_STORE``, and the
+  — products resolve fine, every line reports ``REQUIRES_BRANCH``, and the
   total is ``None`` rather than a misleading zero.
-- **shop down** — the first transport failure stops further calls, and the
+- **store down** — the first transport failure stops further calls, and the
   remaining lines are marked rather than each waiting out its own timeout.
 """
 
@@ -25,13 +25,13 @@ from collections.abc import Mapping, Sequence
 from decimal import Decimal
 
 from app.services.pricing import quantize_money
-from app.services.shops.base import ShopProvider
-from app.services.shops.errors import (
+from app.services.store_providers.base import StoreProvider
+from app.services.store_providers.errors import (
     CapabilityNotSupportedError,
-    ShopUnavailableError,
+    ProviderUnavailableError,
 )
-from app.services.shops.matching import resolve_item
-from app.services.shops.models import (
+from app.services.store_providers.matching import resolve_item
+from app.services.store_providers.models import (
     Capability,
     CartHandoff,
     CartPlanEntry,
@@ -43,7 +43,7 @@ from app.services.shops.models import (
     PricedList,
     PriceStatus,
     ResolvedItem,
-    ShopProduct,
+    StoreProduct,
     Transport,
 )
 
@@ -57,15 +57,15 @@ _USABLE_MATCHES = frozenset({MatchStatus.MATCHED, MatchStatus.LOW_CONFIDENCE})
 
 def price_shopping_list(
     *,
-    provider: ShopProvider,
+    provider: StoreProvider,
     lines: Sequence[ListLine],
-    store_id: str | None = None,
+    branch_id: str | None = None,
 ) -> PricedList:
-    """Cost a list at one shop, degrading rather than failing."""
+    """Cost a list at one store, degrading rather than failing."""
     result = PricedList(
-        shop_slug=provider.slug,
-        shop_name=provider.display_name,
-        store_id=store_id,
+        store_slug=provider.slug,
+        store_name=provider.display_name,
+        branch_id=branch_id,
     )
 
     if not provider.supports(Capability.SEARCH):
@@ -85,23 +85,23 @@ def price_shopping_list(
         return result
 
     result.items = _resolve_lines(
-        provider=provider, lines=lines, store_id=store_id, result=result
+        provider=provider, lines=lines, branch_id=branch_id, result=result
     )
 
     if provider.supports(Capability.PRICES):
         _attach_missing_prices(
-            provider=provider, items=result.items, store_id=store_id, result=result
+            provider=provider, items=result.items, branch_id=branch_id, result=result
         )
 
-    _finalise(provider=provider, result=result, store_id=store_id)
+    _finalise(provider=provider, result=result, branch_id=branch_id)
     return result
 
 
 def build_cart_handoff(
     *,
-    provider: ShopProvider,
+    provider: StoreProvider,
     lines: Sequence[ListLine],
-    store_id: str | None = None,
+    branch_id: str | None = None,
 ) -> CartHandoff:
     """Turn a list into either a link or an extension plan.
 
@@ -116,28 +116,28 @@ def build_cart_handoff(
         )
 
     entries, unresolved = _build_entries(
-        provider=provider, lines=lines, store_id=store_id
+        provider=provider, lines=lines, branch_id=branch_id
     )
 
     if provider.supports(Capability.CART_PUSH):
         return CartHandoff(
-            shop_slug=provider.slug,
+            store_slug=provider.slug,
             transport=provider.transport,
-            plan=provider.cart_plan(entries, store_id=store_id),
+            plan=provider.cart_plan(entries, branch_id=branch_id),
             unresolved_item_names=unresolved,
         )
 
     return CartHandoff(
-        shop_slug=provider.slug,
+        store_slug=provider.slug,
         transport=Transport.SERVER,
-        url=provider.cart_link(entries, store_id=store_id),
+        url=provider.cart_link(entries, branch_id=branch_id),
         unresolved_item_names=unresolved,
     )
 
 
 def export_shopping_list(
     *,
-    provider: ShopProvider,
+    provider: StoreProvider,
     lines: Sequence[ListLine],
     export_format: ListExportFormat = ListExportFormat.TEXT,
     category_labels: Mapping[str, str] | None = None,
@@ -147,7 +147,7 @@ def export_shopping_list(
     Unlike the other use cases there is nothing here to degrade: no network, no
     catalogue, nothing to be unavailable. A provider that declares
     ``LIST_EXPORT`` can always deliver, which is precisely why it is the right
-    fallback to offer for a shop we cannot integrate with at all.
+    fallback to offer for a store we cannot integrate with at all.
     """
     if not provider.supports(Capability.LIST_EXPORT):
         raise CapabilityNotSupportedError(
@@ -165,28 +165,28 @@ def export_shopping_list(
 
 def _resolve_lines(
     *,
-    provider: ShopProvider,
+    provider: StoreProvider,
     lines: Sequence[ListLine],
-    store_id: str | None,
+    branch_id: str | None,
     result: PricedList,
 ) -> list[ResolvedItem]:
     items: list[ResolvedItem] = []
-    shop_down = False
+    store_down = False
 
     for line in lines:
-        if shop_down:
+        if store_down:
             items.append(_unavailable_item(line, provider.unpriced_reason))
             continue
 
         try:
             candidates = provider.search(
-                line.name, limit=SEARCH_LIMIT, store_id=store_id
+                line.name, limit=SEARCH_LIMIT, branch_id=branch_id
             )
-        except ShopUnavailableError:
-            # One failure is enough to conclude the shop is unreachable; making
+        except ProviderUnavailableError:
+            # One failure is enough to conclude the store is unreachable; making
             # the remaining lines each wait out a timeout helps nobody.
-            shop_down = True
-            result.notes.append(DegradationNote.SHOP_UNAVAILABLE)
+            store_down = True
+            result.notes.append(DegradationNote.STORE_UNAVAILABLE)
             items.append(_unavailable_item(line, provider.unpriced_reason))
             continue
 
@@ -207,20 +207,20 @@ def _unavailable_item(line: ListLine, unpriced_reason: PriceStatus) -> ResolvedI
         item_name=line.name,
         requested_quantity=line.quantity,
         requested_unit=line.unit,
-        match_status=MatchStatus.SHOP_UNAVAILABLE,
+        match_status=MatchStatus.STORE_UNAVAILABLE,
         price_status=unpriced_reason,
     )
 
 
 def _attach_missing_prices(
     *,
-    provider: ShopProvider,
+    provider: StoreProvider,
     items: Sequence[ResolvedItem],
-    store_id: str | None,
+    branch_id: str | None,
     result: PricedList,
 ) -> None:
     """Price every still-unpriced product in one call, not one call per line."""
-    pending: list[ShopProduct] = [
+    pending: list[StoreProduct] = [
         item.product
         for item in items
         if item.product is not None and item.product.price is None
@@ -229,10 +229,10 @@ def _attach_missing_prices(
         return
 
     try:
-        priced = provider.attach_prices(pending, store_id=store_id)
-    except ShopUnavailableError:
-        if DegradationNote.SHOP_UNAVAILABLE not in result.notes:
-            result.notes.append(DegradationNote.SHOP_UNAVAILABLE)
+        priced = provider.attach_prices(pending, branch_id=branch_id)
+    except ProviderUnavailableError:
+        if DegradationNote.STORE_UNAVAILABLE not in result.notes:
+            result.notes.append(DegradationNote.STORE_UNAVAILABLE)
         return
 
     price_by_sku = {p.sku: p.price for p in priced if p.price is not None}
@@ -248,7 +248,7 @@ def _attach_missing_prices(
 
 
 def _finalise(
-    *, provider: ShopProvider, result: PricedList, store_id: str | None
+    *, provider: StoreProvider, result: PricedList, branch_id: str | None
 ) -> None:
     """Compute totals and say plainly how complete the answer is."""
     priced = [item for item in result.items if item.line_total is not None]
@@ -274,10 +274,10 @@ def _finalise(
     if unmatched and DegradationNote.SOME_ITEMS_UNMATCHED not in result.notes:
         result.notes.append(DegradationNote.SOME_ITEMS_UNMATCHED)
 
-    # Same ordering as ``ShopProvider.unpriced_reason``: tell the user the
+    # Same ordering as ``StoreProvider.unpriced_reason``: tell the user the
     # thing they can act on before the thing they cannot.
-    if provider.requires_store and store_id is None:
-        result.notes.append(DegradationNote.PRICES_REQUIRE_STORE)
+    if provider.requires_branch and branch_id is None:
+        result.notes.append(DegradationNote.PRICES_REQUIRE_BRANCH)
     elif not provider.supports(Capability.PRICES):
         result.notes.append(DegradationNote.PRICES_UNSUPPORTED)
 
@@ -286,9 +286,9 @@ def _finalise(
 
 def _build_entries(
     *,
-    provider: ShopProvider,
+    provider: StoreProvider,
     lines: Sequence[ListLine],
-    store_id: str | None,
+    branch_id: str | None,
 ) -> tuple[list[CartPlanEntry], list[str]]:
     """Plan entries, using the catalogue when there is one and the list's own
     wording when there is not."""
@@ -306,7 +306,7 @@ def _build_entries(
             for line in lines
         ], []
 
-    priced = price_shopping_list(provider=provider, lines=lines, store_id=store_id)
+    priced = price_shopping_list(provider=provider, lines=lines, branch_id=branch_id)
     entries: list[CartPlanEntry] = []
     unresolved: list[str] = []
     for item in priced.items:

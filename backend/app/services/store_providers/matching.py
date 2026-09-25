@@ -1,13 +1,13 @@
-"""Ingredient -> product resolution. Shop-independent, on purpose.
+"""Ingredient -> product resolution. Store-independent, on purpose.
 
 Turning "200 g tomates" into "this 500 g SKU, buy 1" is the genuinely hard part
-of a shop integration, and it is identical for every retailer. Providers only
-fetch catalogues; all the judgement lives here, so twelve shops cannot drift
+of a store integration, and it is identical for every retailer. Providers only
+fetch catalogues; all the judgement lives here, so twelve stores cannot drift
 into twelve different answers for the same list.
 
 Unit arithmetic is **not** done here. ``app.core.units`` is the single place
 that converts, and this module calls it — which is what keeps a list costed
-through a shop provider agreeing with the same list costed through the store
+through a store provider agreeing with the same list costed through the store
 comparison. Its refusals carry straight through:
 
 - mass and volume never cross without the ingredient's density, so "200 g"
@@ -27,13 +27,13 @@ from difflib import SequenceMatcher
 from app.core.units import convert
 from app.models.ingredient import Unit
 from app.services.pricing import quantize_money
-from app.services.shops.models import (
+from app.services.store_providers.models import (
     ListLine,
     MatchStatus,
     PackStatus,
     PriceStatus,
     ResolvedItem,
-    ShopProduct,
+    StoreProduct,
 )
 
 # --------------------------------------------------------------------------- #
@@ -164,10 +164,10 @@ _OUT_OF_STOCK_PENALTY = 0.05
 
 
 def rank_candidates(
-    query: str, candidates: Iterable[ShopProduct]
-) -> list[tuple[ShopProduct, float]]:
+    query: str, candidates: Iterable[StoreProduct]
+) -> list[tuple[StoreProduct, float]]:
     """Score and order candidates best-first."""
-    scored: list[tuple[ShopProduct, float]] = []
+    scored: list[tuple[StoreProduct, float]] = []
     for product in candidates:
         value = score_name(query, product.name)
         if product.in_stock is False:
@@ -189,7 +189,7 @@ def resolve_item(
     item_name: str,
     quantity: float,
     unit: Unit,
-    candidates: Sequence[ShopProduct],
+    candidates: Sequence[StoreProduct],
     unpriced_reason: PriceStatus = PriceStatus.UNKNOWN,
 ) -> ResolvedItem:
     """Pick the best product for one list line and explain the outcome."""
@@ -239,7 +239,7 @@ def resolve_item(
 # Net-content parsing                                                          #
 # --------------------------------------------------------------------------- #
 
-#: Written unit tokens (FR + EN) to ``Unit``. Shops very often express pack size
+#: Written unit tokens (FR + EN) to ``Unit``. Stores very often express pack size
 #: only inside the product name ("Tomates pelées 400 g"), so every family needs
 #: this; keeping it beside the unit table means one place to extend.
 _UNIT_TOKENS: dict[str, Unit] = {

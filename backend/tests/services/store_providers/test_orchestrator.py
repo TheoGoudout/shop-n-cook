@@ -1,26 +1,29 @@
-"""Degradation: what each shop produces when it cannot do the whole job."""
+"""Degradation: what each store produces when it cannot do the whole job."""
 
 from decimal import Decimal
 
 import pytest
 
 from app.models.ingredient import Unit
-from app.services.shops.base import ShopProvider
-from app.services.shops.errors import (
+from app.services.store_providers.base import StoreProvider
+from app.services.store_providers.errors import (
     CapabilityNotSupportedError,
-    ShopUnavailableError,
+    ProviderUnavailableError,
 )
-from app.services.shops.models import (
+from app.services.store_providers.models import (
     Capability,
     CartPlanEntry,
     DegradationNote,
     ListLine,
     MatchStatus,
     PriceStatus,
-    ShopProduct,
+    StoreProduct,
     Transport,
 )
-from app.services.shops.orchestrator import build_cart_handoff, price_shopping_list
+from app.services.store_providers.orchestrator import (
+    build_cart_handoff,
+    price_shopping_list,
+)
 
 LINES = [
     ListLine(name="tomates cerises", quantity=500, unit=Unit.GRAM),
@@ -29,14 +32,14 @@ LINES = [
 ]
 
 CATALOGUE = {
-    "tomates cerises": ShopProduct(
+    "tomates cerises": StoreProduct(
         sku="A1",
         name="Tomates cerises rouges 250g",
         price=Decimal("2.49"),
         pack_quantity=250,
         pack_unit=Unit.GRAM,
     ),
-    "lait demi-écrémé": ShopProduct(
+    "lait demi-écrémé": StoreProduct(
         sku="A2",
         name="Lait demi-écrémé 1 L",
         price=Decimal("1.15"),
@@ -46,38 +49,38 @@ CATALOGUE = {
 }
 
 
-class _FullShop(ShopProvider):
+class _FullStore(StoreProvider):
     capabilities = frozenset(
         {Capability.SEARCH, Capability.PRICES, Capability.CART_LINK}
     )
 
     def search(
-        self, query: str, *, limit: int = 10, store_id: str | None = None
-    ) -> list[ShopProduct]:
+        self, query: str, *, limit: int = 10, branch_id: str | None = None
+    ) -> list[StoreProduct]:
         product = CATALOGUE.get(query)
         return [product] if product else []
 
-    def attach_prices(self, products, *, store_id=None):  # type: ignore[no-untyped-def]
+    def attach_prices(self, products, *, branch_id=None):  # type: ignore[no-untyped-def]
         return list(products)
 
-    def cart_link(self, entries, *, store_id=None) -> str:  # type: ignore[no-untyped-def]
+    def cart_link(self, entries, *, branch_id=None) -> str:  # type: ignore[no-untyped-def]
         return "https://example.test/cart"
 
 
-class _SearchOnlyShop(ShopProvider):
+class _SearchOnlyStore(StoreProvider):
     """Auchan's shape: a real catalogue, priceless without a store session."""
 
     capabilities = frozenset({Capability.SEARCH})
-    requires_store = True
+    requires_branch = True
 
     def search(
-        self, query: str, *, limit: int = 10, store_id: str | None = None
-    ) -> list[ShopProduct]:
+        self, query: str, *, limit: int = 10, branch_id: str | None = None
+    ) -> list[StoreProduct]:
         product = CATALOGUE.get(query)
         return [product.model_copy(update={"price": None})] if product else []
 
 
-class _DownShop(ShopProvider):
+class _DownStore(StoreProvider):
     capabilities = frozenset({Capability.SEARCH})
 
     def __init__(self, **kwargs: object) -> None:
@@ -85,38 +88,38 @@ class _DownShop(ShopProvider):
         self.calls = 0
 
     def search(
-        self, query: str, *, limit: int = 10, store_id: str | None = None
-    ) -> list[ShopProduct]:
+        self, query: str, *, limit: int = 10, branch_id: str | None = None
+    ) -> list[StoreProduct]:
         self.calls += 1
-        raise ShopUnavailableError("403 from the anti-bot shield")
+        raise ProviderUnavailableError("403 from the anti-bot shield")
 
 
-class _PushShop(ShopProvider):
+class _PushStore(StoreProvider):
     """Carrefour's shape: no server search at all, extension-only basket."""
 
     transport = Transport.EXTENSION
     capabilities = frozenset({Capability.CART_PUSH})
-    requires_store = True
+    requires_branch = True
 
-    def cart_plan(self, entries, *, store_id=None):  # type: ignore[no-untyped-def]
-        from app.services.shops.models import CartPlan
+    def cart_plan(self, entries, *, branch_id=None):  # type: ignore[no-untyped-def]
+        from app.services.store_providers.models import CartPlan
 
         return CartPlan(
-            shop_slug=self.slug,
+            store_slug=self.slug,
             origin="https://example.test",
-            store_id=store_id,
+            branch_id=branch_id,
             entries=list(entries),
         )
 
 
-class _InertShop(ShopProvider):
+class _InertStore(StoreProvider):
     capabilities = frozenset()
 
 
 class TestPricing:
-    def test_full_shop_prices_what_it_can_and_flags_the_rest(self) -> None:
+    def test_full_store_prices_what_it_can_and_flags_the_rest(self) -> None:
         result = price_shopping_list(
-            provider=_FullShop(slug="full", display_name="Full"), lines=LINES
+            provider=_FullStore(slug="full", display_name="Full"), lines=LINES
         )
         assert result.total == Decimal("6.13")
         assert result.priced_item_count == 2
@@ -127,26 +130,26 @@ class TestPricing:
 
     def test_search_without_prices_yields_products_but_no_total(self) -> None:
         result = price_shopping_list(
-            provider=_SearchOnlyShop(slug="so", display_name="SO"), lines=LINES
+            provider=_SearchOnlyStore(slug="so", display_name="SO"), lines=LINES
         )
         assert result.total is None
         assert result.items[0].product is not None
         assert result.items[0].match_status is MatchStatus.MATCHED
-        assert result.items[0].price_status is PriceStatus.REQUIRES_STORE
-        assert DegradationNote.PRICES_REQUIRE_STORE in result.notes
+        assert result.items[0].price_status is PriceStatus.REQUIRES_BRANCH
+        assert DegradationNote.PRICES_REQUIRE_BRANCH in result.notes
 
-    def test_unreachable_shop_stops_after_one_failure(self) -> None:
-        provider = _DownShop(slug="down", display_name="Down")
+    def test_unreachable_store_stops_after_one_failure(self) -> None:
+        provider = _DownStore(slug="down", display_name="Down")
         result = price_shopping_list(provider=provider, lines=LINES)
         assert provider.calls == 1, "should not time out once per line"
         assert all(
-            item.match_status is MatchStatus.SHOP_UNAVAILABLE for item in result.items
+            item.match_status is MatchStatus.STORE_UNAVAILABLE for item in result.items
         )
-        assert DegradationNote.SHOP_UNAVAILABLE in result.notes
+        assert DegradationNote.STORE_UNAVAILABLE in result.notes
 
-    def test_shop_without_search_still_returns_every_line(self) -> None:
+    def test_store_without_search_still_returns_every_line(self) -> None:
         result = price_shopping_list(
-            provider=_PushShop(slug="push", display_name="Push"), lines=LINES
+            provider=_PushStore(slug="push", display_name="Push"), lines=LINES
         )
         assert len(result.items) == len(LINES)
         assert all(
@@ -156,7 +159,7 @@ class TestPricing:
 
     def test_empty_list_is_not_partial(self) -> None:
         result = price_shopping_list(
-            provider=_FullShop(slug="full", display_name="Full"), lines=[]
+            provider=_FullStore(slug="full", display_name="Full"), lines=[]
         )
         assert result.items == []
         assert result.partial is False
@@ -166,7 +169,7 @@ class TestPricing:
 class TestCartHandoff:
     def test_extension_transport_emits_a_plan_from_raw_wording(self) -> None:
         handoff = build_cart_handoff(
-            provider=_PushShop(slug="push", display_name="Push"), lines=LINES
+            provider=_PushStore(slug="push", display_name="Push"), lines=LINES
         )
         assert handoff.transport is Transport.EXTENSION
         assert handoff.url is None
@@ -179,22 +182,22 @@ class TestCartHandoff:
 
     def test_server_transport_returns_a_url_and_names_what_it_dropped(self) -> None:
         handoff = build_cart_handoff(
-            provider=_FullShop(slug="full", display_name="Full"), lines=LINES
+            provider=_FullStore(slug="full", display_name="Full"), lines=LINES
         )
         assert handoff.transport is Transport.SERVER
         assert handoff.url == "https://example.test/cart"
         assert handoff.unresolved_item_names == ["zeste de yuzu"]
 
-    def test_shop_with_no_handoff_at_all_raises(self) -> None:
+    def test_store_with_no_handoff_at_all_raises(self) -> None:
         with pytest.raises(CapabilityNotSupportedError):
             build_cart_handoff(
-                provider=_InertShop(slug="inert", display_name="Inert"), lines=LINES
+                provider=_InertStore(slug="inert", display_name="Inert"), lines=LINES
             )
 
 
 def test_calling_an_undeclared_capability_raises() -> None:
     """The primitives stay strict even though the use cases degrade."""
-    provider = _InertShop(slug="inert", display_name="Inert")
+    provider = _InertStore(slug="inert", display_name="Inert")
     with pytest.raises(CapabilityNotSupportedError):
         provider.search("tomates")
     with pytest.raises(CapabilityNotSupportedError):
@@ -207,7 +210,7 @@ def test_calling_an_undeclared_capability_raises() -> None:
         provider.cart_plan([])
 
 
-class _LatePricingShop(ShopProvider):
+class _LatePricingStore(StoreProvider):
     """Search and pricing are separate calls, as with a barcode price database."""
 
     capabilities = frozenset({Capability.SEARCH, Capability.PRICES})
@@ -218,21 +221,21 @@ class _LatePricingShop(ShopProvider):
         self.fail_pricing = False
 
     def search(
-        self, query: str, *, limit: int = 10, store_id: str | None = None
-    ) -> list[ShopProduct]:
+        self, query: str, *, limit: int = 10, branch_id: str | None = None
+    ) -> list[StoreProduct]:
         product = CATALOGUE.get(query)
         return [product.model_copy(update={"price": None})] if product else []
 
-    def attach_prices(self, products, *, store_id=None):  # type: ignore[no-untyped-def]
+    def attach_prices(self, products, *, branch_id=None):  # type: ignore[no-untyped-def]
         self.price_calls += 1
         if self.fail_pricing:
-            raise ShopUnavailableError("price service down")
+            raise ProviderUnavailableError("price service down")
         return [p.model_copy(update={"price": Decimal("2.00")}) for p in products]
 
 
 class TestLatePricing:
     def test_prices_are_fetched_once_for_the_whole_list(self) -> None:
-        provider = _LatePricingShop(slug="late", display_name="Late")
+        provider = _LatePricingStore(slug="late", display_name="Late")
         result = price_shopping_list(provider=provider, lines=LINES)
         assert provider.price_calls == 1, "one batch call, not one call per line"
         assert result.priced_item_count == 2
@@ -241,7 +244,7 @@ class TestLatePricing:
         assert result.total == Decimal("6.00")
 
     def test_line_total_uses_the_pack_count(self) -> None:
-        provider = _LatePricingShop(slug="late", display_name="Late")
+        provider = _LatePricingStore(slug="late", display_name="Late")
         result = price_shopping_list(provider=provider, lines=LINES[:1])
         # 500 g wanted, 250 g packs, 2.00 each.
         assert result.items[0].pack_count == 2
@@ -249,16 +252,16 @@ class TestLatePricing:
         assert result.items[0].price_status is PriceStatus.PRICED
 
     def test_pricing_failure_degrades_rather_than_raises(self) -> None:
-        provider = _LatePricingShop(slug="late", display_name="Late")
+        provider = _LatePricingStore(slug="late", display_name="Late")
         provider.fail_pricing = True
         result = price_shopping_list(provider=provider, lines=LINES)
-        assert DegradationNote.SHOP_UNAVAILABLE in result.notes
+        assert DegradationNote.STORE_UNAVAILABLE in result.notes
         assert result.total is None
         # The products themselves were found, and are still worth showing.
         assert result.items[0].product is not None
 
     def test_nothing_to_price_skips_the_call(self) -> None:
-        provider = _LatePricingShop(slug="late", display_name="Late")
+        provider = _LatePricingStore(slug="late", display_name="Late")
         result = price_shopping_list(provider=provider, lines=[LINES[2]])
         assert provider.price_calls == 0
         assert result.items[0].product is None

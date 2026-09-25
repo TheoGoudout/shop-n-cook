@@ -7,32 +7,33 @@ orchestrator tying them together.
                         enums that let a partial answer stay honest
 - ``errors.py``       — faults, as distinct from unsupported features
 - ``matching.py``     — units and ingredient -> product resolution, shared by
-                        every shop so twelve retailers cannot produce twelve
+                        every store so twelve retailers cannot produce twelve
                         different answers for one list
 - ``base.py``         — the provider contract
 - ``registry.py``     — registration plus the import-time consistency check
 - ``families/``       — reusable provider implementations, parameterised by
                         config (html_catalog, magento, extension, openprices)
-- ``definitions.py``  — the actual shops, as configuration
+- ``definitions.py``  — the actual stores, as configuration
 - ``orchestrator.py`` — the use cases, and all the degradation logic
 
 The load-bearing idea: **capabilities are declared data**. A provider says what
 it can do; the orchestrator shapes the best available answer around what it
 cannot. Nothing in the stack discovers a missing feature by catching an
-exception, and the UI gates on the same declared set, so a shop that can search
-but not price renders correctly without a single shop-specific branch.
+exception, and the UI gates on the same declared set, so a store that can search
+but not price renders correctly without a single store-specific branch.
 """
 
-from app.services.shops.base import ShopProvider
-from app.services.shops.definitions import register_default_shops
-from app.services.shops.errors import (
+from app.services.store_providers.base import StoreProvider
+from app.services.store_providers.definitions import register_default_providers
+from app.services.store_providers.errors import (
     CapabilityNotSupportedError,
-    ShopConfigurationError,
-    ShopError,
-    ShopNotFoundError,
-    ShopUnavailableError,
+    ProviderConfigurationError,
+    ProviderError,
+    ProviderNotFoundError,
+    ProviderUnavailableError,
 )
-from app.services.shops.models import (
+from app.services.store_providers.models import (
+    AisleLayout,
     Capability,
     CartHandoff,
     CartPlan,
@@ -48,26 +49,27 @@ from app.services.shops.models import (
     PackStatus,
     PricedList,
     PriceStatus,
+    ProviderPublic,
+    ProviderSearchResults,
+    ProvidersPublic,
     ResolvedItem,
-    ShopListRequest,
-    ShopProduct,
-    ShopPublic,
-    ShopSearchResults,
-    ShopsPublic,
-    ShopStore,
-    ShopStores,
+    StoreListRequest,
+    StoreLocation,
+    StoreLocations,
+    StoreProduct,
     Transport,
 )
-from app.services.shops.orchestrator import (
+from app.services.store_providers.orchestrator import (
     build_cart_handoff,
     export_shopping_list,
     price_shopping_list,
 )
-from app.services.shops.registry import get_provider, iter_providers, register
+from app.services.store_providers.registry import get_provider, iter_providers, register
 
-register_default_shops()
+register_default_providers()
 
 __all__ = [
+    "AisleLayout",
     "Capability",
     "CapabilityNotSupportedError",
     "CartHandoff",
@@ -85,18 +87,18 @@ __all__ = [
     "PriceStatus",
     "PricedList",
     "ResolvedItem",
-    "ShopConfigurationError",
-    "ShopError",
-    "ShopListRequest",
-    "ShopNotFoundError",
-    "ShopProduct",
-    "ShopProvider",
-    "ShopPublic",
-    "ShopSearchResults",
-    "ShopStore",
-    "ShopStores",
-    "ShopUnavailableError",
-    "ShopsPublic",
+    "ProviderConfigurationError",
+    "ProviderError",
+    "StoreListRequest",
+    "ProviderNotFoundError",
+    "StoreProduct",
+    "StoreProvider",
+    "ProviderPublic",
+    "ProviderSearchResults",
+    "StoreLocation",
+    "StoreLocations",
+    "ProviderUnavailableError",
+    "ProvidersPublic",
     "Transport",
     "build_cart_handoff",
     "export_shopping_list",

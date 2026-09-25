@@ -2,10 +2,13 @@
 
 import pytest
 
-from app.services.shops.base import ShopProvider
-from app.services.shops.errors import ShopConfigurationError, ShopNotFoundError
-from app.services.shops.models import Capability, ShopProduct
-from app.services.shops.registry import (
+from app.services.store_providers.base import StoreProvider
+from app.services.store_providers.errors import (
+    ProviderConfigurationError,
+    ProviderNotFoundError,
+)
+from app.services.store_providers.models import Capability, StoreProduct
+from app.services.store_providers.registry import (
     CAPABILITY_METHODS,
     check_provider,
     get_provider,
@@ -13,29 +16,29 @@ from app.services.shops.registry import (
 )
 
 
-class _Declared(ShopProvider):
+class _Declared(StoreProvider):
     """Declares SEARCH without implementing it."""
 
     capabilities = frozenset({Capability.SEARCH})
 
 
-class _Undeclared(ShopProvider):
+class _Undeclared(StoreProvider):
     """Implements search() without declaring it."""
 
     capabilities = frozenset()
 
     def search(
-        self, query: str, *, limit: int = 10, store_id: str | None = None
-    ) -> list[ShopProduct]:
+        self, query: str, *, limit: int = 10, branch_id: str | None = None
+    ) -> list[StoreProduct]:
         return []
 
 
-class _Consistent(ShopProvider):
+class _Consistent(StoreProvider):
     capabilities = frozenset({Capability.SEARCH})
 
     def search(
-        self, query: str, *, limit: int = 10, store_id: str | None = None
-    ) -> list[ShopProduct]:
+        self, query: str, *, limit: int = 10, branch_id: str | None = None
+    ) -> list[StoreProduct]:
         return []
 
 
@@ -44,13 +47,13 @@ def test_every_capability_maps_to_a_method() -> None:
 
 
 def test_declared_but_unimplemented_is_rejected() -> None:
-    with pytest.raises(ShopConfigurationError, match="does not override"):
+    with pytest.raises(ProviderConfigurationError, match="does not override"):
         check_provider(_Declared(slug="a", display_name="A"))
 
 
 def test_implemented_but_undeclared_is_rejected() -> None:
     """Otherwise the feature exists but the capability-gated UI never shows it."""
-    with pytest.raises(ShopConfigurationError, match="does not declare"):
+    with pytest.raises(ProviderConfigurationError, match="does not declare"):
         check_provider(_Undeclared(slug="b", display_name="B"))
 
 
@@ -59,16 +62,16 @@ def test_consistent_provider_passes() -> None:
 
 
 def test_empty_slug_is_rejected() -> None:
-    with pytest.raises(ShopConfigurationError, match="empty slug"):
+    with pytest.raises(ProviderConfigurationError, match="empty slug"):
         check_provider(_Consistent(slug="", display_name="D"))
 
 
-def test_unknown_shop_raises() -> None:
-    with pytest.raises(ShopNotFoundError):
+def test_unknown_store_raises() -> None:
+    with pytest.raises(ProviderNotFoundError):
         get_provider("does-not-exist")
 
 
-def test_default_shops_are_registered_and_consistent() -> None:
+def test_default_stores_are_registered_and_consistent() -> None:
     providers = iter_providers()
     slugs = {p.slug for p in providers}
     assert {"auchan", "carrefour", "openprices"} <= slugs
@@ -77,10 +80,10 @@ def test_default_shops_are_registered_and_consistent() -> None:
 
 
 def test_country_filter() -> None:
-    """Country narrows the retailers but never hides the list-only shops,
-    which carry ``ANY_COUNTRY`` because a list you take with you needs no
-    local presence."""
-    elsewhere = {p.slug for p in iter_providers(country="ZZ")}
-    assert not {"auchan", "carrefour", "openprices"} & elsewhere
-    assert {"market", "printable"} <= elsewhere
+    """Country narrows the registry to retailers that operate there.
+
+    Nothing survives a foreign filter any more: printing a list is a layout,
+    not a store, so there is no longer a country-agnostic member.
+    """
+    assert {p.slug for p in iter_providers(country="ZZ")} == set()
     assert {"auchan", "carrefour"} <= {p.slug for p in iter_providers(country="FR")}

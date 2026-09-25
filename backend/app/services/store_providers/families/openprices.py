@@ -19,9 +19,9 @@ from typing import Any
 
 from app.models.ingredient import Unit
 from app.services.pricing import quantize_money
-from app.services.shops.base import ShopProvider
-from app.services.shops.families import http_client
-from app.services.shops.models import Capability, ShopProduct, Transport
+from app.services.store_providers.base import StoreProvider
+from app.services.store_providers.families import http_client
+from app.services.store_providers.models import Capability, StoreProduct, Transport
 
 BASE_URL = "https://prices.openfoodfacts.org/api/v1"
 
@@ -35,12 +35,12 @@ _UNIT_BY_NAME: dict[str, Unit] = {
 }
 
 
-class OpenPricesProvider(ShopProvider):
+class OpenPricesProvider(StoreProvider):
     """Search and price by barcode against the Open Prices database."""
 
     transport = Transport.SERVER
     capabilities = frozenset({Capability.SEARCH, Capability.PRICES})
-    requires_store = False
+    requires_branch = False
 
     def __init__(
         self,
@@ -64,8 +64,8 @@ class OpenPricesProvider(ShopProvider):
     # ----------------------------------------------------------------- #
 
     def search(
-        self, query: str, *, limit: int = 10, store_id: str | None = None
-    ) -> list[ShopProduct]:
+        self, query: str, *, limit: int = 10, branch_id: str | None = None
+    ) -> list[StoreProduct]:
         payload = http_client.get_json(
             f"{self.base_url}/products",
             params={
@@ -82,14 +82,14 @@ class OpenPricesProvider(ShopProvider):
         ]
 
     def attach_prices(
-        self, products: Sequence[ShopProduct], *, store_id: str | None = None
-    ) -> list[ShopProduct]:
+        self, products: Sequence[StoreProduct], *, branch_id: str | None = None
+    ) -> list[StoreProduct]:
         """Fill in ``price`` for any product carrying a barcode.
 
         Products without a barcode, or with no price on record, are returned
         untouched — a missing price is data, not a failure.
         """
-        enriched: list[ShopProduct] = []
+        enriched: list[StoreProduct] = []
         for product in products:
             if product.price is not None or not product.barcode:
                 enriched.append(product)
@@ -120,7 +120,7 @@ class OpenPricesProvider(ShopProvider):
         except (InvalidOperation, ValueError):
             return None
 
-    def _to_product(self, raw: Any) -> ShopProduct | None:
+    def _to_product(self, raw: Any) -> StoreProduct | None:
         if not isinstance(raw, dict):
             return None
         code = raw.get("code")
@@ -140,7 +140,7 @@ class OpenPricesProvider(ShopProvider):
                 pack_quantity = None
                 pack_unit = None
 
-        return ShopProduct(
+        return StoreProduct(
             sku=str(code),
             barcode=str(code),
             name=str(name),

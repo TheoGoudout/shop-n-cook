@@ -1,6 +1,6 @@
-"""The shop that contacts nobody.
+"""The store that contacts nobody.
 
-Worth testing hard because it is the fallback every other shop degrades
+Worth testing hard because it is the fallback every other store degrades
 towards: whatever else fails, the user should still get a list they can carry.
 """
 
@@ -8,22 +8,21 @@ import pytest
 
 from app.core.units import prettify
 from app.models.ingredient import IngredientCategory, Unit
-from app.services.shops.errors import CapabilityNotSupportedError
-from app.services.shops.families.list_only import (
+from app.services.store_providers.families.list_only import (
     MARKET_AISLES,
     SUPERMARKET_AISLES,
     ListOnlyConfig,
     ListOnlyProvider,
 )
-from app.services.shops.matching import merge_lines
-from app.services.shops.models import (
+from app.services.store_providers.layouts import AisleLayout, get_layout
+from app.services.store_providers.matching import merge_lines
+from app.services.store_providers.models import (
     Capability,
     ListExportFormat,
     ListLine,
     Transport,
 )
-from app.services.shops.orchestrator import export_shopping_list
-from app.services.shops.registry import ANY_COUNTRY, get_provider, iter_providers
+from app.services.store_providers.orchestrator import export_shopping_list
 
 LINES = [
     ListLine(
@@ -220,23 +219,38 @@ class TestExport:
         assert exported.item_count == 0
 
 
-class TestRegistration:
-    def test_list_only_shops_serve_every_country(self) -> None:
-        """A list you carry needs no local presence, so it must not be
-        filtered out of any country's picker."""
-        for slug in ("market", "printable"):
-            assert get_provider(slug).country == ANY_COUNTRY
-        for country in ("FR", "BE", "ZZ"):
-            slugs = {p.slug for p in iter_providers(country=country)}
-            assert {"market", "printable"} <= slugs
+class TestLayouts:
+    """Print orders are layouts, not stores — nobody shops at "Printable list"."""
 
-    def test_export_on_a_shop_that_cannot_is_refused(self) -> None:
-        with pytest.raises(CapabilityNotSupportedError):
-            export_shopping_list(provider=get_provider("carrefour"), lines=LINES)
+    def test_both_layouts_resolve(self) -> None:
+        for layout in AisleLayout:
+            assert get_layout(layout).supports(Capability.LIST_EXPORT)
+
+    def test_market_and_supermarket_walk_differently(self) -> None:
+        market = [
+            g.category for g in get_layout(AisleLayout.MARKET).export_list(LINES).groups
+        ]
+        supermarket = [
+            g.category
+            for g in get_layout(AisleLayout.SUPERMARKET).export_list(LINES).groups
+        ]
+        assert market.index(IngredientCategory.MEAT) < market.index(
+            IngredientCategory.BAKERY
+        )
+        assert supermarket.index(IngredientCategory.BAKERY) < supermarket.index(
+            IngredientCategory.MEAT
+        )
+
+    def test_layouts_are_not_in_the_store_registry(self) -> None:
+        from app.services.store_providers import iter_providers
+
+        slugs = {p.slug for p in iter_providers()}
+        assert "market" not in slugs
+        assert "printable" not in slugs
 
     def test_orchestrator_passes_format_and_labels_through(self) -> None:
         exported = export_shopping_list(
-            provider=get_provider("market"),
+            provider=get_layout(AisleLayout.MARKET),
             lines=LINES,
             export_format=ListExportFormat.CSV,
             category_labels={"meat": "Boucher"},

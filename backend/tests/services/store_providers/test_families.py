@@ -12,18 +12,18 @@ import httpx
 import pytest
 
 from app.models.ingredient import Unit
-from app.services.shops.errors import ShopUnavailableError
-from app.services.shops.families.extension import (
+from app.services.store_providers.errors import ProviderUnavailableError
+from app.services.store_providers.families.extension import (
     ExtensionProvider,
-    ExtensionShopConfig,
+    ExtensionStoreConfig,
 )
-from app.services.shops.families.html_catalog import (
+from app.services.store_providers.families.html_catalog import (
     HtmlCatalogConfig,
     HtmlCatalogProvider,
 )
-from app.services.shops.families.magento import MagentoConfig, MagentoProvider
-from app.services.shops.families.openprices import OpenPricesProvider
-from app.services.shops.models import Capability, CartPlanEntry, Transport
+from app.services.store_providers.families.magento import MagentoConfig, MagentoProvider
+from app.services.store_providers.families.openprices import OpenPricesProvider
+from app.services.store_providers.models import Capability, CartPlanEntry, Transport
 
 # Trimmed from a real auchan.fr search response: schema.org microdata, the name
 # carried only on an image alt, the SKU only in the href, and the availability
@@ -53,7 +53,7 @@ AUCHAN_CONFIG = HtmlCatalogConfig(
     search_url_template="https://www.auchan.fr/recherche?text={query}",
     sku_pattern=r"/pr-([A-Za-z0-9]+)",
     out_of_stock_marker="outOfStock",
-    prices_require_store=True,
+    prices_require_branch=True,
 )
 
 
@@ -66,7 +66,7 @@ def _auchan() -> HtmlCatalogProvider:
 class TestHtmlCatalog:
     def test_parses_microdata_products(self) -> None:
         with patch(
-            "app.services.shops.families.http_client.get_text",
+            "app.services.store_providers.families.http_client.get_text",
             return_value=AUCHAN_HTML,
         ):
             products = _auchan().search("tomate")
@@ -81,7 +81,7 @@ class TestHtmlCatalog:
 
     def test_reads_availability_and_decimal_pack_sizes(self) -> None:
         with patch(
-            "app.services.shops.families.http_client.get_text",
+            "app.services.store_providers.families.http_client.get_text",
             return_value=AUCHAN_HTML,
         ):
             products = _auchan().search("tomate")
@@ -92,14 +92,14 @@ class TestHtmlCatalog:
 
     def test_products_without_a_name_are_skipped_not_fatal(self) -> None:
         with patch(
-            "app.services.shops.families.http_client.get_text",
+            "app.services.store_providers.families.http_client.get_text",
             return_value=AUCHAN_HTML,
         ):
             assert len(_auchan().search("tomate")) == 2
 
     def test_limit_is_honoured(self) -> None:
         with patch(
-            "app.services.shops.families.http_client.get_text",
+            "app.services.store_providers.families.http_client.get_text",
             return_value=AUCHAN_HTML,
         ):
             assert len(_auchan().search("tomate", limit=1)) == 1
@@ -107,17 +107,17 @@ class TestHtmlCatalog:
     def test_no_prices_capability_when_store_gated(self) -> None:
         provider = _auchan()
         assert not provider.supports(Capability.PRICES)
-        assert provider.requires_store is True
+        assert provider.requires_branch is True
 
     def test_transport_failure_propagates_for_the_orchestrator_to_catch(self) -> None:
         with patch(
-            "app.services.shops.families.http_client.get_text",
-            side_effect=ShopUnavailableError("403"),
+            "app.services.store_providers.families.http_client.get_text",
+            side_effect=ProviderUnavailableError("403"),
         ):
-            with pytest.raises(ShopUnavailableError):
+            with pytest.raises(ProviderUnavailableError):
                 _auchan().search("tomate")
 
-    def test_cart_link_points_at_the_shop_search(self) -> None:
+    def test_cart_link_points_at_the_store_search(self) -> None:
         link = _auchan().cart_link(
             [CartPlanEntry(query="crème fraîche", name="crème fraîche", quantity=1)]
         )
@@ -142,7 +142,7 @@ class TestOpenPrices:
 
     def test_search_maps_products(self) -> None:
         with patch(
-            "app.services.shops.families.http_client.get_json",
+            "app.services.store_providers.families.http_client.get_json",
             return_value=self.PRODUCTS,
         ):
             products = OpenPricesProvider().search("tomate")
@@ -154,7 +154,7 @@ class TestOpenPrices:
     def test_attach_prices_fills_in_by_barcode(self) -> None:
         provider = OpenPricesProvider()
         with patch(
-            "app.services.shops.families.http_client.get_json",
+            "app.services.store_providers.families.http_client.get_json",
             side_effect=[self.PRODUCTS, {"items": [{"price": "1.29"}]}],
         ):
             products = provider.search("tomate")
@@ -164,7 +164,7 @@ class TestOpenPrices:
     def test_missing_price_leaves_the_product_intact(self) -> None:
         provider = OpenPricesProvider()
         with patch(
-            "app.services.shops.families.http_client.get_json",
+            "app.services.store_providers.families.http_client.get_json",
             side_effect=[self.PRODUCTS, {"items": []}],
         ):
             products = provider.search("tomate")
@@ -216,7 +216,7 @@ class TestMagento:
         assert products[0].url == "https://www.biocoop.fr/lentilles-vertes-bio.html"
 
     def test_one_implementation_serves_any_magento_domain(self) -> None:
-        """The point of a family: a second shop is config, not code."""
+        """The point of a family: a second store is config, not code."""
         naturalia = MagentoProvider(
             slug="naturalia",
             display_name="Naturalia",
@@ -232,11 +232,11 @@ class TestExtensionFamily:
         return ExtensionProvider(
             slug="carrefour",
             display_name="Carrefour",
-            config=ExtensionShopConfig(
+            config=ExtensionStoreConfig(
                 origin="https://www.carrefour.fr",
                 search_url_template="https://www.carrefour.fr/s?q={query}",
                 cart_url="https://www.carrefour.fr/mon-panier",
-                requires_store=True,
+                requires_branch=True,
             ),
         )
 
@@ -250,9 +250,9 @@ class TestExtensionFamily:
         entries = [
             CartPlanEntry(query="lait", name="lait", quantity=2, sku="SKU1"),
         ]
-        plan = self._provider().cart_plan(entries, store_id="store-9")
+        plan = self._provider().cart_plan(entries, branch_id="store-9")
         assert plan.origin == "https://www.carrefour.fr"
-        assert plan.store_id == "store-9"
+        assert plan.branch_id == "store-9"
         assert plan.entries[0].quantity == 2
 
     def test_cart_link_is_the_fallback_for_users_without_the_extension(self) -> None:
@@ -260,8 +260,8 @@ class TestExtensionFamily:
 
 
 class TestHtmlCatalogExtraction:
-    """Shops vary in where they put the name, the price and the image.
-    The family handles the standard placements so a new shop needs no code."""
+    """Stores vary in where they put the name, the price and the image.
+    The family handles the standard placements so a new store needs no code."""
 
     MICRODATA = """
     <div itemscope itemtype="https://schema.org/Product" class="card">
@@ -291,7 +291,7 @@ class TestHtmlCatalogExtraction:
             ),
         )
         with patch(
-            "app.services.shops.families.http_client.get_text",
+            "app.services.store_providers.families.http_client.get_text",
             return_value=self.MICRODATA,
         ):
             products = provider.search("lentilles")
@@ -300,7 +300,7 @@ class TestHtmlCatalogExtraction:
         assert products[0].image_url == "https://img.test/l.jpg"
         assert provider.supports(Capability.PRICES)
 
-    def test_custom_selectors_cover_a_non_microdata_shop(self) -> None:
+    def test_custom_selectors_cover_a_non_microdata_store(self) -> None:
         provider = HtmlCatalogProvider(
             slug="c",
             display_name="C",
@@ -314,7 +314,7 @@ class TestHtmlCatalogExtraction:
             ),
         )
         with patch(
-            "app.services.shops.families.http_client.get_text",
+            "app.services.store_providers.families.http_client.get_text",
             return_value=self.CUSTOM,
         ):
             products = provider.search("farine")
@@ -343,24 +343,25 @@ class TestHtmlCatalogExtraction:
             '<span class="amount">prix non communiqué</span></div>'
         )
         with patch(
-            "app.services.shops.families.http_client.get_text", return_value=html
+            "app.services.store_providers.families.http_client.get_text",
+            return_value=html,
         ):
             products = provider.search("sel")
         assert products[0].price is None
 
 
 class TestMagentoFailures:
-    def test_http_error_becomes_shop_unavailable(self) -> None:
+    def test_http_error_becomes_store_unavailable(self) -> None:
         provider = MagentoProvider(
             slug="x",
             display_name="X",
             config=MagentoConfig(origin="https://x.test"),
         )
         with patch("httpx.post", side_effect=httpx.ConnectTimeout("nope")):
-            with pytest.raises(ShopUnavailableError):
+            with pytest.raises(ProviderUnavailableError):
                 provider.search("lentilles")
 
-    def test_auth_gated_storefront_becomes_shop_unavailable(self) -> None:
+    def test_auth_gated_storefront_becomes_store_unavailable(self) -> None:
         """Biocoop and Naturalia both answer 401 without a token."""
         response = Mock(spec=httpx.Response)
         response.status_code = 401
@@ -373,7 +374,7 @@ class TestMagentoFailures:
             config=MagentoConfig(origin="https://x.test"),
         )
         with patch("httpx.post", return_value=response):
-            with pytest.raises(ShopUnavailableError, match="401"):
+            with pytest.raises(ProviderUnavailableError, match="401"):
                 provider.search("lentilles")
 
     def test_malformed_items_are_skipped(self) -> None:

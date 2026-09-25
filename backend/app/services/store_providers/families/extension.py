@@ -1,4 +1,4 @@
-"""Shops reachable only through the user's own browser.
+"""Stores reachable only through the user's own browser.
 
 Carrefour (Akamai), Intermarché and Leclerc Drive (DataDome) return 403 to any
 server-side request, and no amount of header spoofing changes that. The
@@ -11,7 +11,7 @@ The division of labour is deliberate and is what keeps this maintainable:
 
 - the **backend** owns *what* to buy (SKUs, quantities, search terms);
 - the **extension** owns *how* (selectors, waits, retries), in an adapter keyed
-  on ``shop_slug``.
+  on ``store_slug``.
 
 A retailer redesign therefore ships as an extension update, not a backend
 deploy — which matters because the DOM is the part that breaks.
@@ -23,8 +23,8 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from urllib.parse import quote
 
-from app.services.shops.base import ShopProvider
-from app.services.shops.models import (
+from app.services.store_providers.base import StoreProvider
+from app.services.store_providers.models import (
     Capability,
     CartPlan,
     CartPlanEntry,
@@ -33,18 +33,18 @@ from app.services.shops.models import (
 
 
 @dataclass(frozen=True)
-class ExtensionShopConfig:
+class ExtensionStoreConfig:
     origin: str
     """Scheme + host the extension operates on."""
     search_url_template: str
     """Must contain ``{query}``. Used both for the link fallback and by the
     extension adapter when an entry has no SKU."""
     cart_url: str | None = None
-    requires_store: bool = False
+    requires_branch: bool = False
 
 
-class ExtensionProvider(ShopProvider):
-    """A shop whose basket is filled by the browser extension.
+class ExtensionProvider(StoreProvider):
+    """A store whose basket is filled by the browser extension.
 
     Note the capability set: no SEARCH. The backend genuinely cannot search
     these retailers, and saying so is the point — the orchestrator then builds
@@ -60,7 +60,7 @@ class ExtensionProvider(ShopProvider):
         *,
         slug: str,
         display_name: str,
-        config: ExtensionShopConfig,
+        config: ExtensionStoreConfig,
         country: str = "FR",
     ) -> None:
         super().__init__(
@@ -70,10 +70,10 @@ class ExtensionProvider(ShopProvider):
             website_url=config.origin,
         )
         self.config = config
-        self.requires_store = config.requires_store
+        self.requires_branch = config.requires_branch
 
     def cart_link(
-        self, entries: Sequence[CartPlanEntry], *, store_id: str | None = None
+        self, entries: Sequence[CartPlanEntry], *, branch_id: str | None = None
     ) -> str:
         """Where to send a user who does not have the extension installed."""
         if self.config.cart_url:
@@ -82,11 +82,11 @@ class ExtensionProvider(ShopProvider):
         return self.config.search_url_template.format(query=quote(query))
 
     def cart_plan(
-        self, entries: Sequence[CartPlanEntry], *, store_id: str | None = None
+        self, entries: Sequence[CartPlanEntry], *, branch_id: str | None = None
     ) -> CartPlan:
         return CartPlan(
-            shop_slug=self.slug,
+            store_slug=self.slug,
             origin=self.config.origin,
-            store_id=store_id,
+            branch_id=branch_id,
             entries=list(entries),
         )

@@ -26,6 +26,13 @@ from app.models import (
 )
 from app.services.ingredient_image import fetch_and_update_ingredient_image
 from app.services.pricing import PriceBook
+from app.services.store_providers import (
+    ExportedList,
+    ListExportRequest,
+    ListLine,
+    export_shopping_list,
+)
+from app.services.store_providers.layouts import get_layout
 
 router = APIRouter(prefix="/shopping-lists", tags=["shopping-lists"])
 
@@ -53,6 +60,41 @@ def _check_list_access(
     ):
         return shopping_list
     raise HTTPException(status_code=403, detail="Not enough permissions")
+
+
+def lines_for_list(
+    *,
+    session: Session,
+    current_user: Any,
+    shopping_list_id: uuid.UUID,
+) -> list[ListLine]:
+    """A shopping list as the store-provider layer sees it.
+
+    Lives here rather than in the provider package so that layer keeps no
+    database dependency, and so the household access rule is applied in the
+    one place that owns it.
+    """
+    shopping_list = crud.get_shopping_list(
+        session=session, shopping_list_id=shopping_list_id
+    )
+    shopping_list = _check_list_access(
+        shopping_list, current_user, shopping_list_id, session
+    )
+    # Checked-off items are already in the basket or the cupboard.
+    items = [item for item in shopping_list.items if not item.is_checked]
+    categories = crud.get_ingredient_categories_by_name(
+        session=session, names=[item.name for item in items]
+    )
+    return [
+        ListLine(
+            name=item.name,
+            quantity=item.quantity,
+            unit=item.unit,
+            category=categories.get(item.name.strip().lower()),
+            note=item.notes,
+        )
+        for item in items
+    ]
 
 
 @router.get("/", response_model=ShoppingListsPublic)
@@ -342,3 +384,32 @@ def delete_planned_recipe(
         session=session, shopping_list=sl, sl_recipe=sl_recipe
     )
     return Message(message="Planned recipe removed successfully")
+
+
+@router.post("/{id}/export", response_model=ExportedList)
+def export_shopping_list_route(
+    *,
+    session: SessionDep,
+    current_user: CurrentUser,
+    id: uuid.UUID,
+    request: ListExportRequest,
+) -> Any:
+    """Render this list to carry and shop from by hand.
+
+    The default when no store is selected, and the whole feature for somewhere
+    with nothing to integrate against — a market, a butcher, a village grocer.
+    Merges duplicate lines, scales quantities for reading, and groups by aisle.
+
+    ``layout`` only chooses the aisle order: a market is walked
+    produce-and-meat first, a supermarket is not. No store is involved at all,
+    which is the point — this is what the app does before anyone picks one.
+    """
+    lines = lines_for_list(
+        session=session, current_user=current_user, shopping_list_id=id
+    )
+    return export_shopping_list(
+        provider=get_layout(request.layout),
+        lines=lines,
+        export_format=request.format,
+        category_labels=request.category_labels,
+    )

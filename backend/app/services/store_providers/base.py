@@ -1,6 +1,6 @@
-"""The provider contract every shop implements.
+"""The provider contract every store implements.
 
-Adding a shop means one of two things:
+Adding a store means one of two things:
 
 1. It fits an existing family (``families/``) — then it is a line of config in
    ``definitions.py`` and no new code at all.
@@ -18,8 +18,8 @@ from __future__ import annotations
 from abc import ABC
 from collections.abc import Mapping, Sequence
 
-from app.services.shops.errors import CapabilityNotSupportedError
-from app.services.shops.models import (
+from app.services.store_providers.errors import CapabilityNotSupportedError
+from app.services.store_providers.models import (
     Capability,
     CartPlan,
     CartPlanEntry,
@@ -27,25 +27,25 @@ from app.services.shops.models import (
     ListExportFormat,
     ListLine,
     PriceStatus,
-    ShopProduct,
-    ShopPublic,
-    ShopStore,
+    ProviderPublic,
+    StoreLocation,
+    StoreProduct,
     Transport,
 )
 
 
-class ShopProvider(ABC):
-    """One shop, or one family of shops sharing an e-commerce platform."""
+class StoreProvider(ABC):
+    """One store, or one family of stores sharing an e-commerce platform."""
 
     #: Stable identifier used in URLs and stored on user settings.
     slug: str
     display_name: str
-    #: ISO 3166-1 alpha-2. Lets the UI show only shops in the user's country.
+    #: ISO 3166-1 alpha-2. Lets the UI show only stores in the user's country.
     country: str = "FR"
     transport: Transport = Transport.SERVER
     capabilities: frozenset[Capability] = frozenset()
     #: Prices and carts are meaningless until the user picks a store/drive.
-    requires_store: bool = False
+    requires_branch: bool = False
     website_url: str | None = None
     #: Licence or credit line the UI is obliged to display.
     attribution: str | None = None
@@ -74,29 +74,29 @@ class ShopProvider(ABC):
 
     @property
     def unpriced_reason(self) -> PriceStatus:
-        """Why a product from this shop may arrive without a price.
+        """Why a product from this store may arrive without a price.
 
         Derived rather than configured, so a provider cannot drift out of sync
         with its own capability set.
         """
-        # Most specific explanation wins. A shop that prices per store is not
+        # Most specific explanation wins. A store that prices per branch is not
         # "unable to price" — the user just has to pick one, which is
         # actionable in a way that NOT_SUPPORTED is not.
-        if self.requires_store:
-            return PriceStatus.REQUIRES_STORE
+        if self.requires_branch:
+            return PriceStatus.REQUIRES_BRANCH
         if not self.supports(Capability.PRICES):
             return PriceStatus.NOT_SUPPORTED
         return PriceStatus.UNKNOWN
 
-    def to_public(self) -> ShopPublic:
-        return ShopPublic(
+    def to_public(self) -> ProviderPublic:
+        return ProviderPublic(
             slug=self.slug,
             display_name=self.display_name,
             country=self.country,
             transport=self.transport,
             # Sorted so the OpenAPI payload is stable across restarts.
             capabilities=sorted(self.capabilities, key=lambda c: c.value),
-            requires_store=self.requires_store,
+            requires_branch=self.requires_branch,
             requires_extension=self.transport is Transport.EXTENSION,
             website_url=self.website_url,
             attribution=self.attribution,
@@ -107,8 +107,8 @@ class ShopProvider(ABC):
     # ----------------------------------------------------------------- #
 
     def search(
-        self, query: str, *, limit: int = 10, store_id: str | None = None
-    ) -> list[ShopProduct]:
+        self, query: str, *, limit: int = 10, branch_id: str | None = None
+    ) -> list[StoreProduct]:
         """Candidate products for a free-text ingredient name.
 
         Implementations return products already priced when they can; leaving
@@ -119,11 +119,11 @@ class ShopProvider(ABC):
         )
 
     def attach_prices(
-        self, products: Sequence[ShopProduct], *, store_id: str | None = None
-    ) -> list[ShopProduct]:
+        self, products: Sequence[StoreProduct], *, branch_id: str | None = None
+    ) -> list[StoreProduct]:
         """Enrich products with prices.
 
-        Separate from :meth:`search` on purpose. Some shops price during
+        Separate from :meth:`search` on purpose. Some stores price during
         search; others (a price database keyed on barcode) can price products
         they could never have found from a recipe's wording. Keeping the two
         apart is what will later allow one provider's catalogue to be priced by
@@ -142,27 +142,27 @@ class ShopProvider(ABC):
     ) -> ExportedList:
         """Render a list to shop from by hand.
 
-        The only capability that needs no retailer at all, which is why a shop
+        The only capability that needs no retailer at all, which is why a store
         can declare it and nothing else.
         """
         raise CapabilityNotSupportedError(
             f"{self.slug} does not support {Capability.LIST_EXPORT.value}"
         )
 
-    def stores(self, *, postcode: str, limit: int = 10) -> list[ShopStore]:
+    def stores(self, *, postcode: str, limit: int = 10) -> list[StoreLocation]:
         raise CapabilityNotSupportedError(
             f"{self.slug} does not support {Capability.STORE_LOCATOR.value}"
         )
 
     def cart_link(
-        self, entries: Sequence[CartPlanEntry], *, store_id: str | None = None
+        self, entries: Sequence[CartPlanEntry], *, branch_id: str | None = None
     ) -> str:
         raise CapabilityNotSupportedError(
             f"{self.slug} does not support {Capability.CART_LINK.value}"
         )
 
     def cart_plan(
-        self, entries: Sequence[CartPlanEntry], *, store_id: str | None = None
+        self, entries: Sequence[CartPlanEntry], *, branch_id: str | None = None
     ) -> CartPlan:
         raise CapabilityNotSupportedError(
             f"{self.slug} does not support {Capability.CART_PUSH.value}"

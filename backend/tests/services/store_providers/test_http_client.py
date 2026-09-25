@@ -1,4 +1,4 @@
-"""Transport failures must all arrive as ``ShopUnavailableError``.
+"""Transport failures must all arrive as ``ProviderUnavailableError``.
 
 The orchestrator's degradation depends on that single exception type: anything
 leaking through as a raw httpx error would become a 500 instead of a partial
@@ -10,8 +10,12 @@ from unittest.mock import Mock, patch
 import httpx
 import pytest
 
-from app.services.shops.errors import ShopUnavailableError
-from app.services.shops.families.http_client import USER_AGENT, get_json, get_text
+from app.services.store_providers.errors import ProviderUnavailableError
+from app.services.store_providers.families.http_client import (
+    USER_AGENT,
+    get_json,
+    get_text,
+)
 
 URL = "https://shop.test/search"
 
@@ -53,7 +57,7 @@ def test_extra_headers_are_merged() -> None:
 
 def test_non_json_body_is_unavailable() -> None:
     with patch("httpx.get", return_value=_response()):
-        with pytest.raises(ShopUnavailableError, match="did not return JSON"):
+        with pytest.raises(ProviderUnavailableError, match="did not return JSON"):
             get_json(URL)
 
 
@@ -65,11 +69,11 @@ def test_anti_bot_403_becomes_unavailable() -> None:
         side_effect=httpx.HTTPStatusError("403", request=Mock(), response=response)
     )
     with patch("httpx.get", return_value=response):
-        with pytest.raises(ShopUnavailableError, match="403"):
+        with pytest.raises(ProviderUnavailableError, match="403"):
             get_text(URL)
 
 
 def test_network_error_becomes_unavailable() -> None:
     with patch("httpx.get", side_effect=httpx.ConnectTimeout("timed out")):
-        with pytest.raises(ShopUnavailableError, match="could not be reached"):
+        with pytest.raises(ProviderUnavailableError, match="could not be reached"):
             get_text(URL)

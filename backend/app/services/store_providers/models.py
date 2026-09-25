@@ -1,12 +1,12 @@
-"""Schemas shared by every shop provider.
+"""Schemas shared by every store provider.
 
 The rule that makes this package extensible: a provider never signals a missing
 feature by failing a whole use case. It declares what it supports up front
 (``Capability``), and every aggregate result carries an explicit per-item
-status, so a shop that cannot search, cannot price, or is simply down still
+status, so a store that cannot search, cannot price, or is simply down still
 produces a usable, partial answer the UI can render honestly.
 
-Three status enums encode the three ways a shop can fall short:
+Three status enums encode the three ways a store can fall short:
 
 - ``MatchStatus``  — could we map the ingredient onto a product at all?
 - ``PriceStatus``  — could we attach a price to that product?
@@ -31,7 +31,7 @@ from app.models.ingredient import IngredientCategory, Unit
 
 
 class Capability(str, Enum):
-    """A discrete thing a shop can do. Providers declare a subset."""
+    """A discrete thing a store can do. Providers declare a subset."""
 
     SEARCH = "search"
     """Map a free-text ingredient name onto candidate products."""
@@ -42,7 +42,7 @@ class Capability(str, Enum):
     price database can price a barcode it cannot search by recipe wording."""
 
     STORE_LOCATOR = "store_locator"
-    """Resolve a postcode to concrete stores / drives."""
+    """Resolve a postcode to concrete branches / drives."""
 
     CART_LINK = "cart_link"
     """Produce a URL that lands the user on a pre-filled basket or search."""
@@ -53,7 +53,7 @@ class Capability(str, Enum):
     LIST_EXPORT = "list_export"
     """Produce a tidy, human-readable list to shop from by hand.
 
-    The capability for shops with no digital presence at all — a farmers'
+    The capability for stores with no digital presence at all — a farmers'
     market, a village grocer, a butcher. Nothing is contacted; the list itself
     is the deliverable, merged and grouped by aisle so it can be read off a
     phone at a stall."""
@@ -86,16 +86,16 @@ class MatchStatus(str, Enum):
     LOW_CONFIDENCE = "low_confidence"
     NO_CANDIDATES = "no_candidates"
     SEARCH_UNSUPPORTED = "search_unsupported"
-    SHOP_UNAVAILABLE = "shop_unavailable"
+    STORE_UNAVAILABLE = "store_unavailable"
 
 
 class PriceStatus(str, Enum):
     PRICED = "priced"
     NOT_SUPPORTED = "not_supported"
-    """The shop has no price capability at all."""
+    """The store has no price capability at all."""
 
-    REQUIRES_STORE = "requires_store"
-    """The shop prices per store and no store was selected."""
+    REQUIRES_BRANCH = "requires_branch"
+    """The store prices per branch and no branch was selected."""
 
     UNKNOWN = "unknown"
     """Priceable in principle, but this product had no price on record."""
@@ -112,7 +112,7 @@ class PackStatus(str, Enum):
     means for a basket."""
 
     UNKNOWN_PACK_SIZE = "unknown_pack_size"
-    """The shop did not tell us the net content of the pack."""
+    """The store did not tell us the net content of the pack."""
 
 
 class DegradationNote(str, Enum):
@@ -124,8 +124,8 @@ class DegradationNote(str, Enum):
 
     SEARCH_UNSUPPORTED = "search_unsupported"
     PRICES_UNSUPPORTED = "prices_unsupported"
-    PRICES_REQUIRE_STORE = "prices_require_store"
-    SHOP_UNAVAILABLE = "shop_unavailable"
+    PRICES_REQUIRE_BRANCH = "prices_require_branch"
+    STORE_UNAVAILABLE = "store_unavailable"
     SOME_ITEMS_UNMATCHED = "some_items_unmatched"
 
 
@@ -135,7 +135,7 @@ class DegradationNote(str, Enum):
 
 
 class ListLine(BaseModel):
-    """One line of a shopping list, as the shop layer sees it.
+    """One line of a shopping list, as the store layer sees it.
 
     Deliberately not ``ShoppingListItem``: the service must stay usable for a
     recipe preview or an ad-hoc list, so it never depends on a DB row.
@@ -150,8 +150,8 @@ class ListLine(BaseModel):
     note: str | None = None
 
 
-class ShopProduct(BaseModel):
-    """One purchasable product at one shop.
+class StoreProduct(BaseModel):
+    """One purchasable product at one store.
 
     ``price`` is deliberately optional: a provider with SEARCH but not PRICES
     returns fully-formed products with no price rather than nothing at all.
@@ -173,8 +173,8 @@ class ShopProduct(BaseModel):
     barcode: str | None = None
 
 
-class ShopStore(BaseModel):
-    store_id: str
+class StoreLocation(BaseModel):
+    branch_id: str
     name: str
     postcode: str | None = None
     city: str | None = None
@@ -183,18 +183,18 @@ class ShopStore(BaseModel):
 
 
 class ResolvedItem(BaseModel):
-    """One shopping-list line, resolved against one shop.
+    """One shopping-list line, resolved against one store.
 
     Every field that can be absent has a status explaining *why*, so the caller
     never has to guess whether ``price is None`` means "free", "unknown" or
-    "this shop does not do prices".
+    "this store does not do prices".
     """
 
     item_name: str
     requested_quantity: float
     requested_unit: Unit
 
-    product: ShopProduct | None = None
+    product: StoreProduct | None = None
     match_status: MatchStatus = MatchStatus.NO_CANDIDATES
     match_score: float = 0.0
 
@@ -204,15 +204,15 @@ class ResolvedItem(BaseModel):
     line_total: Decimal | None = None
     price_status: PriceStatus = PriceStatus.UNKNOWN
 
-    alternatives: list[ShopProduct] = Field(default_factory=list)
+    alternatives: list[StoreProduct] = Field(default_factory=list)
 
 
 class PricedList(BaseModel):
-    """The aggregate answer for "cost this list at this shop"."""
+    """The aggregate answer for "cost this list at this store"."""
 
-    shop_slug: str
-    shop_name: str
-    store_id: str | None = None
+    store_slug: str
+    store_name: str
+    branch_id: str | None = None
     currency: str = "EUR"
 
     items: list[ResolvedItem] = Field(default_factory=list)
@@ -240,7 +240,7 @@ class CartPlanEntry(BaseModel):
     sku: str | None = None
     query: str
     """Search term the extension uses when there is no SKU to add directly.
-    For an extension-transport shop this is the only handle we have, because
+    For an extension-transport store this is the only handle we have, because
     the backend cannot search those retailers at all."""
     name: str
     quantity: int = Field(ge=1)
@@ -256,27 +256,27 @@ class CartPlan(BaseModel):
     """A declarative, retailer-agnostic script the extension executes.
 
     The extension owns *how* (selectors, waits, retries) via its own adapter
-    keyed on ``shop_slug``; the backend owns *what*. Keeping the selectors out
+    keyed on ``store_slug``; the backend owns *what*. Keeping the selectors out
     of the backend means a retailer redesign ships as an extension update, not
     a backend deploy.
     """
 
-    shop_slug: str
+    store_slug: str
     origin: str
     """Scheme + host the extension must operate on, e.g. https://www.carrefour.fr"""
-    store_id: str | None = None
+    branch_id: str | None = None
     entries: list[CartPlanEntry] = Field(default_factory=list)
 
 
 class CartHandoff(BaseModel):
-    """How the user gets from our list into the shop's basket.
+    """How the user gets from our list into the store's basket.
 
     Exactly one of ``url`` / ``plan`` is set, selected by ``transport``. Both
     transports share this one return type so the frontend branches once, in the
     render layer, instead of everywhere.
     """
 
-    shop_slug: str
+    store_slug: str
     transport: Transport
     url: str | None = None
     plan: CartPlan | None = None
@@ -286,17 +286,17 @@ class CartHandoff(BaseModel):
 
 
 # --------------------------------------------------------------------------- #
-# API-facing shop descriptors                                                  #
+# API-facing store descriptors                                                  #
 # --------------------------------------------------------------------------- #
 
 
-class ShopPublic(BaseModel):
+class ProviderPublic(BaseModel):
     slug: str
     display_name: str
     country: str
     transport: Transport
     capabilities: list[Capability]
-    requires_store: bool = False
+    requires_branch: bool = False
     """True when prices/cart are meaningless until a store is chosen."""
     requires_extension: bool = False
     website_url: str | None = None
@@ -304,13 +304,23 @@ class ShopPublic(BaseModel):
     """Licence / credit line a provider must display, e.g. Open Prices' ODbL."""
 
 
-class ShopsPublic(BaseModel):
-    data: list[ShopPublic]
+class ProvidersPublic(BaseModel):
+    data: list[ProviderPublic]
     count: int
 
 
+class AisleLayout(str, Enum):
+    """Which walking order to print a list in.
+
+    Not a store: nobody shops at "Printable list". See ``layouts.py``.
+    """
+
+    SUPERMARKET = "supermarket"
+    MARKET = "market"
+
+
 class ListExportFormat(str, Enum):
-    """How a list-only shop renders its output."""
+    """How an exported list renders its output."""
 
     TEXT = "text"
     MARKDOWN = "markdown"
@@ -342,8 +352,8 @@ class ExportedList(BaseModel):
     just to show the same thing twice.
     """
 
-    shop_slug: str
-    shop_name: str
+    store_slug: str
+    store_name: str
     format: ListExportFormat
     groups: list[ExportedListGroup] = Field(default_factory=list)
     content: str = ""
@@ -353,8 +363,8 @@ class ExportedList(BaseModel):
 
 
 class ListExportRequest(BaseModel):
-    shopping_list_id: uuid.UUID
     format: ListExportFormat = ListExportFormat.TEXT
+    layout: AisleLayout = AisleLayout.SUPERMARKET
     category_labels: dict[str, str] | None = None
     """Optional aisle headings for the rendered ``content``, keyed by
     ``IngredientCategory`` value. The backend ships no user-facing prose, so a
@@ -362,21 +372,23 @@ class ListExportRequest(BaseModel):
     available for the client to render with its own i18n instead."""
 
 
-class ShopListRequest(BaseModel):
-    """Ask a shop to cost, or take delivery of, one of the user's lists."""
+class StoreListRequest(BaseModel):
+    """Ask a store to take delivery of one of the user's lists."""
 
     shopping_list_id: uuid.UUID
-    store_id: str | None = None
+    branch_id: str | None = None
+    """The retailer's own branch or drive, when it has several and prices or
+    stock differ between them. Not our ``Store`` id — that is the path."""
 
 
-class ShopSearchResults(BaseModel):
-    shop_slug: str
+class ProviderSearchResults(BaseModel):
+    store_slug: str
     query: str
-    products: list[ShopProduct] = Field(default_factory=list)
+    products: list[StoreProduct] = Field(default_factory=list)
     count: int = 0
 
 
-class ShopStores(BaseModel):
-    shop_slug: str
-    data: list[ShopStore] = Field(default_factory=list)
+class StoreLocations(BaseModel):
+    store_slug: str
+    data: list[StoreLocation] = Field(default_factory=list)
     count: int = 0

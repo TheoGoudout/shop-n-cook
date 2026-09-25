@@ -2,10 +2,10 @@
 
 Most retail search pages are still server-rendered with schema.org Product
 microdata. That is a real standard, so one parser plus a small config covers a
-whole class of shops rather than one. The defaults below target plain
-microdata; a shop only needs overrides where it deviates.
+whole class of stores rather than one. The defaults below target plain
+microdata; a store only needs overrides where it deviates.
 
-This family is for shops that *answer* a plain HTTP request. A shop behind
+This family is for stores that *answer* a plain HTTP request. A store behind
 Akamai or DataDome cannot be served from here at any level of cleverness — it
 belongs in the ``extension`` family instead.
 """
@@ -21,13 +21,13 @@ from urllib.parse import quote, urljoin
 from bs4 import BeautifulSoup, Tag
 
 from app.services.pricing import quantize_money
-from app.services.shops.base import ShopProvider
-from app.services.shops.families import http_client
-from app.services.shops.matching import parse_quantity
-from app.services.shops.models import (
+from app.services.store_providers.base import StoreProvider
+from app.services.store_providers.families import http_client
+from app.services.store_providers.matching import parse_quantity
+from app.services.store_providers.models import (
     Capability,
     CartPlanEntry,
-    ShopProduct,
+    StoreProduct,
     Transport,
 )
 
@@ -50,7 +50,7 @@ def _class_list(element: Tag) -> str:
 
 @dataclass(frozen=True)
 class HtmlCatalogConfig:
-    """Everything shop-specific about a server-rendered catalogue."""
+    """Everything store-specific about a server-rendered catalogue."""
 
     origin: str
     """Scheme + host, used to absolutise relative links."""
@@ -66,13 +66,13 @@ class HtmlCatalogConfig:
     price_selector: str | None = None
     out_of_stock_marker: str | None = None
     """Substring of the product element's class list marking unavailability."""
-    prices_require_store: bool = False
-    """Set when the shop serves a priceless catalogue until a store is picked.
-    Drives ``PriceStatus.REQUIRES_STORE`` rather than a misleading 'unknown'."""
+    prices_require_branch: bool = False
+    """Set when the store serves a priceless catalogue until a store is picked.
+    Drives ``PriceStatus.REQUIRES_BRANCH`` rather than a misleading 'unknown'."""
 
 
-class HtmlCatalogProvider(ShopProvider):
-    """A shop whose search results can be read straight out of its HTML."""
+class HtmlCatalogProvider(StoreProvider):
+    """A store whose search results can be read straight out of its HTML."""
 
     transport = Transport.SERVER
 
@@ -93,7 +93,7 @@ class HtmlCatalogProvider(ShopProvider):
             website_url=website_url or config.origin,
         )
         self.config = config
-        self.requires_store = config.prices_require_store
+        self.requires_branch = config.prices_require_branch
         capabilities = {Capability.SEARCH, Capability.CART_LINK}
         if supports_prices:
             capabilities.add(Capability.PRICES)
@@ -102,13 +102,13 @@ class HtmlCatalogProvider(ShopProvider):
     # ----------------------------------------------------------------- #
 
     def search(
-        self, query: str, *, limit: int = 10, store_id: str | None = None
-    ) -> list[ShopProduct]:
+        self, query: str, *, limit: int = 10, branch_id: str | None = None
+    ) -> list[StoreProduct]:
         url = self.config.search_url_template.format(query=quote(query))
         html = http_client.get_text(url)
         soup = BeautifulSoup(html, "html.parser")
 
-        products: list[ShopProduct] = []
+        products: list[StoreProduct] = []
         for element in soup.select(self.config.product_selector):
             product = self._to_product(element)
             if product is not None:
@@ -118,9 +118,9 @@ class HtmlCatalogProvider(ShopProvider):
         return products
 
     def cart_link(
-        self, entries: Sequence[CartPlanEntry], *, store_id: str | None = None
+        self, entries: Sequence[CartPlanEntry], *, branch_id: str | None = None
     ) -> str:
-        """Land the user on the shop's own search for the first unmatched line.
+        """Land the user on the store's own search for the first unmatched line.
 
         Deliberately modest: without a documented basket URL scheme, pretending
         to pre-fill a cart would be a lie. This at least saves typing.
@@ -130,7 +130,7 @@ class HtmlCatalogProvider(ShopProvider):
 
     # ----------------------------------------------------------------- #
 
-    def _to_product(self, element: Tag) -> ShopProduct | None:
+    def _to_product(self, element: Tag) -> StoreProduct | None:
         link = element.select_one(self.config.link_selector)
         href = link.get("href") if isinstance(link, Tag) else None
         href_str = href if isinstance(href, str) else None
@@ -148,7 +148,7 @@ class HtmlCatalogProvider(ShopProvider):
             in_stock = self.config.out_of_stock_marker not in _class_list(element)
 
         pack = parse_quantity(name)
-        return ShopProduct(
+        return StoreProduct(
             sku=sku,
             name=name,
             url=urljoin(self.config.origin, href_str) if href_str else None,
@@ -176,7 +176,7 @@ class HtmlCatalogProvider(ShopProvider):
             if text:
                 return text
 
-        # Shops that render the name only as an image alt (Auchan does).
+        # Stores that render the name only as an image alt (Auchan does).
         for node in element.select("img[alt], source[alt]"):
             alt = node.get("alt")
             if isinstance(alt, str) and alt.strip():

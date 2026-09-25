@@ -1,4 +1,4 @@
-"""The shared resolution layer. Every shop depends on this being right."""
+"""The shared resolution layer. Every store depends on this being right."""
 
 from decimal import Decimal
 
@@ -6,7 +6,7 @@ import pytest
 
 from app.core.units import UnitDimension, convert, dimension, is_discrete
 from app.models.ingredient import Unit
-from app.services.shops.matching import (
+from app.services.store_providers.matching import (
     MAX_PACK_COUNT,
     compute_pack_count,
     parse_quantity,
@@ -14,11 +14,11 @@ from app.services.shops.matching import (
     resolve_item,
     score_name,
 )
-from app.services.shops.models import (
+from app.services.store_providers.models import (
     MatchStatus,
     PackStatus,
     PriceStatus,
-    ShopProduct,
+    StoreProduct,
 )
 
 
@@ -141,7 +141,7 @@ class TestPackCount:
     def test_pack_maths_uses_the_shared_unit_table(self) -> None:
         """67 tbsp is 990 ml by US customary measure, so one 1 L bottle is
         enough. The old local table rounded a tablespoon to 15 ml and would
-        have sent the shopper back for a second one."""
+        have sent the storeper back for a second one."""
         count, _ = compute_pack_count(
             required_quantity=67,
             required_unit=Unit.TABLESPOON,
@@ -174,8 +174,8 @@ class TestScoring:
         assert score_name("tomates cerises", "Lessive liquide 3L") < 0.3
 
     def test_out_of_stock_loses_ties(self) -> None:
-        available = ShopProduct(sku="a", name="Lait demi-écrémé 1L", in_stock=True)
-        sold_out = ShopProduct(sku="b", name="Lait demi-écrémé 1L", in_stock=False)
+        available = StoreProduct(sku="a", name="Lait demi-écrémé 1L", in_stock=True)
+        sold_out = StoreProduct(sku="b", name="Lait demi-écrémé 1L", in_stock=False)
         ranked = rank_candidates("lait demi-écrémé", [sold_out, available])
         assert ranked[0][0].sku == "a"
 
@@ -198,7 +198,7 @@ def test_parse_quantity(text: str, expected: tuple[float, Unit] | None) -> None:
 
 class TestResolveItem:
     def test_matches_and_prices(self) -> None:
-        product = ShopProduct(
+        product = StoreProduct(
             sku="A1",
             name="Tomates cerises rouges 250g",
             price=Decimal("2.49"),
@@ -228,7 +228,7 @@ class TestResolveItem:
             item_name="zeste de yuzu",
             quantity=1,
             unit=Unit.PIECE,
-            candidates=[ShopProduct(sku="x", name="Lessive liquide 3L")],
+            candidates=[StoreProduct(sku="x", name="Lessive liquide 3L")],
         )
         assert resolved.match_status is MatchStatus.NO_CANDIDATES
         assert resolved.product is None
@@ -239,8 +239,8 @@ class TestResolveItem:
             item_name="tomates",
             quantity=1,
             unit=Unit.KILOGRAM,
-            candidates=[ShopProduct(sku="A1", name="Tomates grappe 1kg")],
-            unpriced_reason=PriceStatus.REQUIRES_STORE,
+            candidates=[StoreProduct(sku="A1", name="Tomates grappe 1kg")],
+            unpriced_reason=PriceStatus.REQUIRES_BRANCH,
         )
-        assert resolved.price_status is PriceStatus.REQUIRES_STORE
+        assert resolved.price_status is PriceStatus.REQUIRES_BRANCH
         assert resolved.line_total is None

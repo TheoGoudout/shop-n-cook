@@ -3,12 +3,12 @@
 Magento exposes the same GraphQL schema on every installation, so one
 implementation covers every Magento merchant — Biocoop and Naturalia both run
 it, and adding either is a line of config rather than a new module. That is the
-payoff of families: a credential grant from one Magento shop validates the code
+payoff of families: a credential grant from one Magento store validates the code
 path for all of them.
 
 Both of those storefronts currently answer ``/rest/V1/...`` with **401, not
 404**: the API exists at the stock path and is merely authentication-gated. So
-``definitions.py`` registers a Magento shop only when a token is configured;
+``definitions.py`` registers a Magento store only when a token is configured;
 registering one without credentials would advertise a capability to the UI that
 every call would then fail.
 """
@@ -25,14 +25,17 @@ from urllib.parse import quote, urljoin
 import httpx
 
 from app.services.pricing import quantize_money
-from app.services.shops.base import ShopProvider
-from app.services.shops.errors import ShopUnavailableError
-from app.services.shops.families.http_client import DEFAULT_TIMEOUT, USER_AGENT
-from app.services.shops.matching import parse_quantity
-from app.services.shops.models import (
+from app.services.store_providers.base import StoreProvider
+from app.services.store_providers.errors import ProviderUnavailableError
+from app.services.store_providers.families.http_client import (
+    DEFAULT_TIMEOUT,
+    USER_AGENT,
+)
+from app.services.store_providers.matching import parse_quantity
+from app.services.store_providers.models import (
     Capability,
     CartPlanEntry,
-    ShopProduct,
+    StoreProduct,
     Transport,
 )
 
@@ -63,7 +66,7 @@ class MagentoConfig:
     chains we surveyed, so this is normally required."""
 
 
-class MagentoProvider(ShopProvider):
+class MagentoProvider(StoreProvider):
     """Any Magento 2 storefront, parameterised by domain."""
 
     transport = Transport.SERVER
@@ -90,8 +93,8 @@ class MagentoProvider(ShopProvider):
     # ----------------------------------------------------------------- #
 
     def search(
-        self, query: str, *, limit: int = 10, store_id: str | None = None
-    ) -> list[ShopProduct]:
+        self, query: str, *, limit: int = 10, branch_id: str | None = None
+    ) -> list[StoreProduct]:
         payload = self._graphql({"search": query, "pageSize": max(1, min(limit, 50))})
         items = (
             payload.get("data", {}).get("products", {}).get("items", [])
@@ -102,8 +105,8 @@ class MagentoProvider(ShopProvider):
         return [product for product in products if product is not None][:limit]
 
     def attach_prices(
-        self, products: Sequence[ShopProduct], *, store_id: str | None = None
-    ) -> list[ShopProduct]:
+        self, products: Sequence[StoreProduct], *, branch_id: str | None = None
+    ) -> list[StoreProduct]:
         """Magento prices during search, so there is nothing left to fetch.
 
         Declared all the same: the capability is what the UI reads, and a
@@ -112,7 +115,7 @@ class MagentoProvider(ShopProvider):
         return list(products)
 
     def cart_link(
-        self, entries: Sequence[CartPlanEntry], *, store_id: str | None = None
+        self, entries: Sequence[CartPlanEntry], *, branch_id: str | None = None
     ) -> str:
         query = entries[0].query if entries else ""
         return self.config.search_url_template.format(
@@ -137,13 +140,13 @@ class MagentoProvider(ShopProvider):
             response.raise_for_status()
             return response.json()
         except httpx.HTTPStatusError as exc:
-            raise ShopUnavailableError(
+            raise ProviderUnavailableError(
                 f"{url} returned HTTP {exc.response.status_code}"
             ) from exc
         except (httpx.HTTPError, ValueError) as exc:
-            raise ShopUnavailableError(f"{url} could not be read: {exc}") from exc
+            raise ProviderUnavailableError(f"{url} could not be read: {exc}") from exc
 
-    def _to_product(self, raw: Any) -> ShopProduct | None:
+    def _to_product(self, raw: Any) -> StoreProduct | None:
         if not isinstance(raw, dict):
             return None
         sku = raw.get("sku")
@@ -173,7 +176,7 @@ class MagentoProvider(ShopProvider):
         image = raw.get("small_image")
         pack = parse_quantity(str(name))
         stock_status = raw.get("stock_status")
-        return ShopProduct(
+        return StoreProduct(
             sku=str(sku),
             name=str(name),
             url=url,

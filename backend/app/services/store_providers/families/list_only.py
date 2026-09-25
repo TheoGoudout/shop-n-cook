@@ -1,4 +1,4 @@
-"""Shops with no digital presence: a farmers' market, a village grocer.
+"""Stores with no digital presence: a farmers' market, a village grocer.
 
 The capability model earns its keep here. This provider declares exactly one
 thing — ``LIST_EXPORT`` — and every other part of the stack already knows what
@@ -6,7 +6,7 @@ to do with that: the picker shows it alongside Carrefour, the UI hides pricing
 and basket controls because the capabilities are absent, and no code anywhere
 special-cases "the offline one".
 
-What it does is the part of the job that was always shop-independent: merge
+What it does is the part of the job that was always store-independent: merge
 duplicate lines, scale quantities to something a person would write down, and
 group by aisle so the list can be read off a phone while walking a market.
 
@@ -23,9 +23,9 @@ from dataclasses import dataclass, field
 
 from app.core.units import prettify
 from app.models.ingredient import IngredientCategory, Unit
-from app.services.shops.base import ShopProvider
-from app.services.shops.matching import merge_lines
-from app.services.shops.models import (
+from app.services.store_providers.base import StoreProvider
+from app.services.store_providers.matching import merge_lines
+from app.services.store_providers.models import (
     Capability,
     ExportedList,
     ExportedListGroup,
@@ -88,12 +88,12 @@ def _format_quantity(quantity: float, unit: Unit) -> str:
     return f"{text} {unit.value}"
 
 
-class ListOnlyProvider(ShopProvider):
+class ListOnlyProvider(StoreProvider):
     """Produces a list to shop from by hand. Contacts nobody."""
 
     transport = Transport.OFFLINE
     capabilities = frozenset({Capability.LIST_EXPORT})
-    requires_store = False
+    requires_branch = False
 
     def __init__(
         self,
@@ -116,8 +116,8 @@ class ListOnlyProvider(ShopProvider):
         merged = merge_lines(lines)
         groups = self._group(merged)
         return ExportedList(
-            shop_slug=self.slug,
-            shop_name=self.display_name,
+            store_slug=self.slug,
+            store_name=self.display_name,
             format=export_format,
             groups=groups,
             content=self._render(groups, export_format, category_labels or {}),

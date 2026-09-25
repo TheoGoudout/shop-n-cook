@@ -13,10 +13,36 @@ from app.models.store import (
     StorePublic,
     StoreUpdate,
 )
+from app.services.store_providers import (
+    Capability,
+    ProviderNotFoundError,
+    Transport,
+    get_provider,
+)
 
 
 def store_to_public(store: Store) -> StorePublic:
-    return StorePublic.model_validate(store, from_attributes=True)
+    """Public shape of a store, with what its provider can actually do.
+
+    Capabilities are resolved from the registry at read time rather than
+    stored, so they cannot drift out of sync with the code implementing them.
+    A store with no provider — a market stall, a hand-curated shop — simply
+    reports none, and the UI hides the features that need one.
+    """
+    public = StorePublic.model_validate(store, from_attributes=True)
+    if not store.provider_slug:
+        return public
+    try:
+        provider = get_provider(store.provider_slug)
+    except ProviderNotFoundError:
+        # A slug naming a provider this build no longer registers. The store
+        # is still perfectly usable on its curated prices, so degrade quietly
+        # rather than 500 a whole store list over one stale row.
+        return public
+    public.capabilities = sorted(c.value for c in provider.capabilities)
+    public.can_refresh_prices = provider.supports(Capability.PRICES)
+    public.requires_extension = provider.transport is Transport.EXTENSION
+    return public
 
 
 def ingredient_price_to_public(price: IngredientPrice) -> IngredientPricePublic:

@@ -3,7 +3,7 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { HouseholdsReadMyHouseholdResponse, HouseholdsDeleteMyHouseholdResponse, HouseholdsUpdateMyHouseholdData, HouseholdsUpdateMyHouseholdResponse, HouseholdsCreateHouseholdData, HouseholdsCreateHouseholdResponse, HouseholdsLeaveMyHouseholdResponse, HouseholdsRemoveMemberData, HouseholdsRemoveMemberResponse, HouseholdsInviteMemberData, HouseholdsInviteMemberResponse, HouseholdsRevokeInviteData, HouseholdsRevokeInviteResponse, HouseholdsAcceptInviteData, HouseholdsAcceptInviteResponse, IngredientPricesReadIngredientPricesData, IngredientPricesReadIngredientPricesResponse, IngredientPricesUpsertIngredientPriceData, IngredientPricesUpsertIngredientPriceResponse, IngredientPricesDeleteIngredientPriceData, IngredientPricesDeleteIngredientPriceResponse, IngredientsReadIngredientsData, IngredientsReadIngredientsResponse, IngredientsCreateIngredientData, IngredientsCreateIngredientResponse, IngredientsUpdateIngredientData, IngredientsUpdateIngredientResponse, IngredientsDeduplicateIngredientsData, IngredientsDeduplicateIngredientsResponse, IngredientsEstimateIngredientPriceRouteData, IngredientsEstimateIngredientPriceRouteResponse, IngredientsEstimateIngredientPricesRouteData, IngredientsEstimateIngredientPricesRouteResponse, IngredientsFetchIngredientImageData, IngredientsFetchIngredientImageResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, MealPlansReadMealPlansData, MealPlansReadMealPlansResponse, MealPlansCreateMealPlanData, MealPlansCreateMealPlanResponse, MealPlansReadMealPlanData, MealPlansReadMealPlanResponse, MealPlansUpdateMealPlanData, MealPlansUpdateMealPlanResponse, MealPlansDeleteMealPlanData, MealPlansDeleteMealPlanResponse, MealPlansAddEntryData, MealPlansAddEntryResponse, MealPlansUpdateEntryData, MealPlansUpdateEntryResponse, MealPlansDeleteEntryData, MealPlansDeleteEntryResponse, MealPlansGenerateShoppingListData, MealPlansGenerateShoppingListResponse, MealPlansGenerateMenuRouteData, MealPlansGenerateMenuRouteResponse, MealPlansSwapEntryData, MealPlansSwapEntryResponse, PrivateCreateUserData, PrivateCreateUserResponse, RecipesReadPublicRecipesData, RecipesReadPublicRecipesResponse, RecipesReadRecipesData, RecipesReadRecipesResponse, RecipesCreateRecipeData, RecipesCreateRecipeResponse, RecipesReadRecipeData, RecipesReadRecipeResponse, RecipesUpdateRecipeData, RecipesUpdateRecipeResponse, RecipesDeleteRecipeData, RecipesDeleteRecipeResponse, RecipesReimportRecipeData, RecipesReimportRecipeResponse, RecipesImportRecipeUrlData, RecipesImportRecipeUrlResponse, RecipesImportRecipePhotosData, RecipesImportRecipePhotosResponse, ShoppingListsReadShoppingListsData, ShoppingListsReadShoppingListsResponse, ShoppingListsCreateShoppingListData, ShoppingListsCreateShoppingListResponse, ShoppingListsReadShoppingListData, ShoppingListsReadShoppingListResponse, ShoppingListsUpdateShoppingListData, ShoppingListsUpdateShoppingListResponse, ShoppingListsDeleteShoppingListData, ShoppingListsDeleteShoppingListResponse, ShoppingListsAddItemData, ShoppingListsAddItemResponse, ShoppingListsUpdateItemData, ShoppingListsUpdateItemResponse, ShoppingListsDeleteItemData, ShoppingListsDeleteItemResponse, ShoppingListsAddRecipeData, ShoppingListsAddRecipeResponse, ShoppingListsCompareStoresData, ShoppingListsCompareStoresResponse, ShoppingListsUpdatePlannedRecipeData, ShoppingListsUpdatePlannedRecipeResponse, ShoppingListsDeletePlannedRecipeData, ShoppingListsDeletePlannedRecipeResponse, StoresReadStoresData, StoresReadStoresResponse, StoresCreateStoreData, StoresCreateStoreResponse, StoresUpdateStoreData, StoresUpdateStoreResponse, StoresDeleteStoreData, StoresDeleteStoreResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UserSettingsReadUserSettingsResponse, UserSettingsUpdateUserSettingsData, UserSettingsUpdateUserSettingsResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
+import type { HouseholdsReadMyHouseholdResponse, HouseholdsDeleteMyHouseholdResponse, HouseholdsUpdateMyHouseholdData, HouseholdsUpdateMyHouseholdResponse, HouseholdsCreateHouseholdData, HouseholdsCreateHouseholdResponse, HouseholdsLeaveMyHouseholdResponse, HouseholdsRemoveMemberData, HouseholdsRemoveMemberResponse, HouseholdsInviteMemberData, HouseholdsInviteMemberResponse, HouseholdsRevokeInviteData, HouseholdsRevokeInviteResponse, HouseholdsAcceptInviteData, HouseholdsAcceptInviteResponse, IngredientPricesReadIngredientPricesData, IngredientPricesReadIngredientPricesResponse, IngredientPricesUpsertIngredientPriceData, IngredientPricesUpsertIngredientPriceResponse, IngredientPricesDeleteIngredientPriceData, IngredientPricesDeleteIngredientPriceResponse, IngredientsReadIngredientsData, IngredientsReadIngredientsResponse, IngredientsCreateIngredientData, IngredientsCreateIngredientResponse, IngredientsUpdateIngredientData, IngredientsUpdateIngredientResponse, IngredientsDeduplicateIngredientsData, IngredientsDeduplicateIngredientsResponse, IngredientsEstimateIngredientPriceRouteData, IngredientsEstimateIngredientPriceRouteResponse, IngredientsEstimateIngredientPricesRouteData, IngredientsEstimateIngredientPricesRouteResponse, IngredientsFetchIngredientImageData, IngredientsFetchIngredientImageResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, MealPlansReadMealPlansData, MealPlansReadMealPlansResponse, MealPlansCreateMealPlanData, MealPlansCreateMealPlanResponse, MealPlansReadMealPlanData, MealPlansReadMealPlanResponse, MealPlansUpdateMealPlanData, MealPlansUpdateMealPlanResponse, MealPlansDeleteMealPlanData, MealPlansDeleteMealPlanResponse, MealPlansAddEntryData, MealPlansAddEntryResponse, MealPlansUpdateEntryData, MealPlansUpdateEntryResponse, MealPlansDeleteEntryData, MealPlansDeleteEntryResponse, MealPlansGenerateShoppingListData, MealPlansGenerateShoppingListResponse, MealPlansGenerateMenuRouteData, MealPlansGenerateMenuRouteResponse, MealPlansSwapEntryData, MealPlansSwapEntryResponse, PrivateCreateUserData, PrivateCreateUserResponse, RecipesReadPublicRecipesData, RecipesReadPublicRecipesResponse, RecipesReadRecipesData, RecipesReadRecipesResponse, RecipesCreateRecipeData, RecipesCreateRecipeResponse, RecipesReadRecipeData, RecipesReadRecipeResponse, RecipesUpdateRecipeData, RecipesUpdateRecipeResponse, RecipesDeleteRecipeData, RecipesDeleteRecipeResponse, RecipesReimportRecipeData, RecipesReimportRecipeResponse, RecipesImportRecipeUrlData, RecipesImportRecipeUrlResponse, RecipesImportRecipePhotosData, RecipesImportRecipePhotosResponse, ShoppingListsReadShoppingListsData, ShoppingListsReadShoppingListsResponse, ShoppingListsCreateShoppingListData, ShoppingListsCreateShoppingListResponse, ShoppingListsReadShoppingListData, ShoppingListsReadShoppingListResponse, ShoppingListsUpdateShoppingListData, ShoppingListsUpdateShoppingListResponse, ShoppingListsDeleteShoppingListData, ShoppingListsDeleteShoppingListResponse, ShoppingListsAddItemData, ShoppingListsAddItemResponse, ShoppingListsUpdateItemData, ShoppingListsUpdateItemResponse, ShoppingListsDeleteItemData, ShoppingListsDeleteItemResponse, ShoppingListsAddRecipeData, ShoppingListsAddRecipeResponse, ShoppingListsCompareStoresData, ShoppingListsCompareStoresResponse, ShoppingListsUpdatePlannedRecipeData, ShoppingListsUpdatePlannedRecipeResponse, ShoppingListsDeletePlannedRecipeData, ShoppingListsDeletePlannedRecipeResponse, ShoppingListsExportShoppingListRouteData, ShoppingListsExportShoppingListRouteResponse, StoresReadStoresData, StoresReadStoresResponse, StoresCreateStoreData, StoresCreateStoreResponse, StoresUpdateStoreData, StoresUpdateStoreResponse, StoresDeleteStoreData, StoresDeleteStoreResponse, StoresRefreshStorePricesRouteData, StoresRefreshStorePricesRouteResponse, StoresBuildStoreCartData, StoresBuildStoreCartResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UserSettingsReadUserSettingsResponse, UserSettingsUpdateUserSettingsData, UserSettingsUpdateUserSettingsResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
 
 export class HouseholdsService {
     /**
@@ -1337,6 +1337,38 @@ export class ShoppingListsService {
             }
         });
     }
+    
+    /**
+     * Export Shopping List Route
+     * Render this list to carry and shop from by hand.
+     *
+     * The default when no store is selected, and the whole feature for somewhere
+     * with nothing to integrate against — a market, a butcher, a village grocer.
+     * Merges duplicate lines, scales quantities for reading, and groups by aisle.
+     *
+     * ``layout`` only chooses the aisle order: a market is walked
+     * produce-and-meat first, a supermarket is not. No store is involved at all,
+     * which is the point — this is what the app does before anyone picks one.
+     * @param data The data for the request.
+     * @param data.id
+     * @param data.requestBody
+     * @returns ExportedList Successful Response
+     * @throws ApiError
+     */
+    public static exportShoppingListRoute(data: ShoppingListsExportShoppingListRouteData): CancelablePromise<ShoppingListsExportShoppingListRouteResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/shopping-lists/{id}/export',
+            path: {
+                id: data.id
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
 }
 
 export class StoresService {
@@ -1424,6 +1456,67 @@ export class StoresService {
             path: {
                 id: data.id
             },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Refresh Store Prices Route
+     * Pull this store's prices off its website into the price book.
+     *
+     * Superuser only: ``IngredientPrice`` rows are shared by every user, so a
+     * refresh is an edit to common data rather than a personal preference.
+     *
+     * Always 200 for a store that has a provider. A retailer that is unreachable,
+     * or an ingredient it cannot match or price, is reported in ``skipped``
+     * rather than failing the run — and whatever price those ingredients already
+     * had is left alone.
+     * @param data The data for the request.
+     * @param data.storeId
+     * @param data.limit
+     * @returns RefreshResult Successful Response
+     * @throws ApiError
+     */
+    public static refreshStorePricesRoute(data: StoresRefreshStorePricesRouteData): CancelablePromise<StoresRefreshStorePricesRouteResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/stores/{store_id}/refresh-prices',
+            path: {
+                store_id: data.storeId
+            },
+            query: {
+                limit: data.limit
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Build Store Cart
+     * Hand a shopping list over to this store's basket.
+     *
+     * Returns either a URL or a ``CartPlan`` for the browser extension to run,
+     * depending on the provider's transport. The client branches on
+     * ``transport``.
+     * @param data The data for the request.
+     * @param data.storeId
+     * @param data.requestBody
+     * @returns CartHandoff Successful Response
+     * @throws ApiError
+     */
+    public static buildStoreCart(data: StoresBuildStoreCartData): CancelablePromise<StoresBuildStoreCartResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/stores/{store_id}/cart',
+            path: {
+                store_id: data.storeId
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
             errors: {
                 422: 'Validation Error'
             }

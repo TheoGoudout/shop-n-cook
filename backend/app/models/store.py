@@ -25,6 +25,12 @@ class StoreBase(SQLModel):
     price_index: float = Field(default=1.0, gt=0)
     logo_url: str | None = Field(default=None, max_length=2048)
     is_active: bool = Field(default=True)
+    #: Links this store to a registered provider in
+    #: ``app.services.store_providers`` — the machinery that knows how to read
+    #: this retailer's site. ``None`` means a store whose prices are only ever
+    #: curated by hand, which is every store today and stays perfectly valid:
+    #: a market stall has no website to read.
+    provider_slug: str | None = Field(default=None, max_length=64, index=True)
 
 
 class StoreCreate(StoreBase):
@@ -42,6 +48,14 @@ class StoreUpdate(SQLModel):
 
 class StorePublic(StoreBase):
     id: uuid.UUID
+    #: What the store's provider can actually do, resolved at read time from
+    #: the registry rather than stored — so a capability cannot drift out of
+    #: sync with the code that implements it. Empty for a hand-curated store.
+    capabilities: list[str] = Field(default_factory=list)
+    #: True when prices for this store can be refreshed from the retailer.
+    can_refresh_prices: bool = False
+    #: True when a basket can be handed over, and only through the extension.
+    requires_extension: bool = False
 
 
 class StoresPublic(SQLModel):

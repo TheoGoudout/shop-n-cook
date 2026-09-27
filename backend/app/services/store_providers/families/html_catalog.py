@@ -6,8 +6,14 @@ whole class of stores rather than one. The defaults below target plain
 microdata; a store only needs overrides where it deviates.
 
 This family is for stores that *answer* a plain HTTP request. A store behind
-Akamai or DataDome cannot be served from here at any level of cleverness — it
+Cloudflare or DataDome cannot be served from here at any level of cleverness — it
 belongs in the ``extension`` family instead.
+
+Answering is not the same as allowing. Every grocer surveyed disallows its
+search pages in robots.txt, Auchan's ``/recherche`` included, so each search is
+checked against robots.txt first and refused if the retailer has fenced it
+off. A store whose catalogue robots.txt *does* open to crawlers usually
+publishes it as a product sitemap — see ``sitemap_catalog`` for that route.
 """
 
 from __future__ import annotations
@@ -22,7 +28,7 @@ from bs4 import BeautifulSoup, Tag
 
 from app.services.pricing import quantize_money
 from app.services.store_providers.base import StoreProvider
-from app.services.store_providers.families import http_client
+from app.services.store_providers.families import http_client, robots
 from app.services.store_providers.matching import parse_quantity
 from app.services.store_providers.models import (
     Capability,
@@ -105,6 +111,7 @@ class HtmlCatalogProvider(StoreProvider):
         self, query: str, *, limit: int = 10, branch_id: str | None = None
     ) -> list[StoreProduct]:
         url = self.config.search_url_template.format(query=quote(query))
+        robots.ensure_allowed(url)
         html = http_client.get_text(url)
         soup = BeautifulSoup(html, "html.parser")
 

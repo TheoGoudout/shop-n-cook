@@ -95,6 +95,29 @@ function waitForTabLoad(tabId: number, timeoutMs: number): Promise<void> {
   })
 }
 
+/**
+ * Where to send the tab for one entry.
+ *
+ * A product URL is only followed when it stays on the adapter's own origin —
+ * the plan-level origin check means nothing if a single entry can still point
+ * the tab (and the add-to-cart script after it) somewhere else. Anything
+ * off-origin falls back to an on-site search for the entry's wording.
+ */
+export function entryUrl(
+  adapter: ShopCartAdapter,
+  entry: CartPlan["entries"][number],
+): string {
+  if (entry.product_url) {
+    try {
+      const url = new URL(entry.product_url, adapter.origin)
+      if (url.origin === adapter.origin) return url.toString()
+    } catch {
+      // Unparseable: fall through to search.
+    }
+  }
+  return adapter.searchUrl(entry.query)
+}
+
 async function runEntry(
   tabId: number,
   adapter: ShopCartAdapter,
@@ -108,9 +131,7 @@ async function runEntry(
   }
 
   try {
-    const url = entry.product_url
-      ? new URL(entry.product_url, adapter.origin).toString()
-      : adapter.searchUrl(entry.query)
+    const url = entryUrl(adapter, entry)
     await chrome.tabs.update(tabId, { url })
     await waitForTabLoad(tabId, adapter.resultTimeoutMs)
 
@@ -147,22 +168,22 @@ async function runEntry(
 }
 
 export async function executeCartPlan(plan: CartPlan): Promise<PlanResult> {
-  const adapter = getAdapter(plan.shop_slug)
+  const adapter = getAdapter(plan.store_slug)
   if (!adapter) {
     // The backend can offer a shop this build of the extension cannot drive.
     // Saying so is the extension-side mirror of a declared capability.
     return {
-      shop_slug: plan.shop_slug,
-      outcome: "unsupported_shop",
+      store_slug: plan.store_slug,
+      outcome: "unsupported_store",
       entries: [],
-      detail: `No adapter for ${plan.shop_slug}`,
+      detail: `No adapter for ${plan.store_slug}`,
     }
   }
 
   // Never drive an origin the adapter does not own, even if the plan asks.
   if (plan.origin !== adapter.origin) {
     return {
-      shop_slug: plan.shop_slug,
+      store_slug: plan.store_slug,
       outcome: "wrong_origin",
       entries: [],
       detail: `Plan targets ${plan.origin}, adapter owns ${adapter.origin}`,
@@ -170,7 +191,7 @@ export async function executeCartPlan(plan: CartPlan): Promise<PlanResult> {
   }
 
   if (plan.entries.length === 0) {
-    return { shop_slug: plan.shop_slug, outcome: "completed", entries: [] }
+    return { store_slug: plan.store_slug, outcome: "completed", entries: [] }
   }
 
   let tabId: number | undefined
@@ -179,7 +200,7 @@ export async function executeCartPlan(plan: CartPlan): Promise<PlanResult> {
     tabId = tab.id
     if (tabId === undefined) {
       return {
-        shop_slug: plan.shop_slug,
+        store_slug: plan.store_slug,
         outcome: "failed",
         entries: [],
         detail: "Could not open a tab",
@@ -197,13 +218,13 @@ export async function executeCartPlan(plan: CartPlan): Promise<PlanResult> {
 
     const allAdded = entries.every((e) => e.outcome === "added")
     return {
-      shop_slug: plan.shop_slug,
+      store_slug: plan.store_slug,
       outcome: allAdded ? "completed" : "partial",
       entries,
     }
   } catch (error) {
     return {
-      shop_slug: plan.shop_slug,
+      store_slug: plan.store_slug,
       outcome: "failed",
       entries: [],
       detail: error instanceof Error ? error.message : String(error),

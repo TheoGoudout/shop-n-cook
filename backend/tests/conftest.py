@@ -1,4 +1,5 @@
 from collections.abc import Generator
+from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -29,6 +30,25 @@ def disable_rate_limiting() -> Generator[None, None, None]:
     limiter._enabled = False
     yield
     limiter._enabled = True
+
+
+@pytest.fixture(autouse=True)
+def no_network() -> Generator[None, None, None]:
+    """Fail any test that would really reach the internet.
+
+    Retailers and Open Prices are real services: a test that forgets a mock
+    would hammer them from CI, and pass or fail on their uptime. A test that
+    patches ``httpx.get`` itself still wins, since its patch is the inner one.
+    """
+
+    def refuse(url: object, *_args: object, **_kwargs: object) -> None:
+        raise AssertionError(f"test tried to reach the network: {url}")
+
+    with (
+        patch("httpx.get", side_effect=refuse),
+        patch("httpx.post", side_effect=refuse),
+    ):
+        yield
 
 
 @pytest.fixture(scope="session", autouse=True)

@@ -1,5 +1,43 @@
 # Release Notes
 
+## 1.6.0
+
+### Features
+
+* Stores: Refresh every store's prices daily in the background
+* Stores: Add Biocoop and Naturalia from their product sitemaps
+* Stores: Price nine chains lawfully, and fix the extension's plan contract
+* Shops: Capability-based shop integration with extension and list-only transports
+* Show budget against spend, and correct the docs
+* Share shopping lists and meal plans with a household
+* Compose a week's menu from the recipes you can cook
+* Plan a week of meals, then generate one shopping list
+* Compare basket prices across retailers
+* Backend: Estimate missing ingredient prices with the LLM
+* Frontend: Show what recipes and shopping lists cost
+* Backend: Price ingredients, budget households, merge lists by unit
+
+### Fixes
+
+* Shops: Honour household access on the shop endpoints
+
+### Refactors
+
+* One store concept, with providers behind it
+* Shops: Adopt the shared unit table and Decimal prices from #78
+* CI: Move every step body out of the workflows into .github/scripts/
+
+### Internal
+
+* Name the exact setup-ruby version its pin points to
+* Shops: Apply ruff format and hoist test imports
+* Extension: Format manifest.json with biome
+* No bun cache in the two release jobs that install nothing
+* Name the version each action pin actually is
+* Make the new hooks pass on the existing tree
+* Add a rollback path, and check that a Cloudflare deploy served
+* Add zizmor, and fix everything it finds
+
 ## 1.5.2
 
 ### Fixes

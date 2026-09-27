@@ -68,6 +68,17 @@ def _robots_allow_everything() -> Iterator[None]:
         yield
 
 
+@pytest.fixture(autouse=True)
+def _prices_from_the_api() -> Iterator[None]:
+    """These tests exercise the ``/prices`` API path; the daily snapshot has
+    its own tests in ``test_openprices_snapshot.py``."""
+    with patch(
+        "app.services.store_providers.families.openprices_snapshot.get_snapshot",
+        side_effect=ProviderUnavailableError("snapshot not in this test"),
+    ):
+        yield
+
+
 def _auchan() -> HtmlCatalogProvider:
     return HtmlCatalogProvider(
         slug="auchan", display_name="Auchan", config=AUCHAN_CONFIG

@@ -670,6 +670,7 @@ export type StorePublic = {
     capabilities?: Array<(string)>;
     can_refresh_prices?: boolean;
     requires_extension?: boolean;
+    prices_refreshed_at?: (string | null);
 };
 
 export type StoresPublic = {

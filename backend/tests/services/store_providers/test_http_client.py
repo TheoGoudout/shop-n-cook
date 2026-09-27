@@ -16,6 +16,7 @@ from app.services.store_providers.errors import ProviderUnavailableError
 from app.services.store_providers.families.http_client import (
     USER_AGENT,
     fetch,
+    get_bytes,
     get_json,
     get_text,
     get_xml,
@@ -133,3 +134,12 @@ def test_user_agent_opens_like_a_browser_and_names_us() -> None:
     """Monoprix's WAF 403s any agent not opening with "Mozilla/5.0"."""
     assert USER_AGENT.startswith("Mozilla/5.0 (compatible; shop-n-cook/")
     assert "+https://shop-n-cook.com" in USER_AGENT
+
+
+def test_a_download_over_the_cap_is_refused() -> None:
+    response = _response()
+    response.content = b"x" * 11
+    with patch("httpx.get", return_value=response):
+        assert get_bytes(URL, max_bytes=11) == b"x" * 11
+        with pytest.raises(ProviderUnavailableError, match="limit"):
+            get_bytes(URL, max_bytes=10)

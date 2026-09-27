@@ -68,6 +68,20 @@ def get_text(
     return _get(url, params=params, headers=headers, timeout=timeout).text
 
 
+def get_bytes(url: str, *, timeout: float = DEFAULT_TIMEOUT, max_bytes: int) -> bytes:
+    """GET a binary file, refusing one larger than ``max_bytes``.
+
+    For bulk downloads such as a dataset dump: the cap bounds memory against a
+    file that has grown, or a wrong URL serving something enormous.
+    """
+    content = _get(url, params=None, headers=None, timeout=timeout).content
+    if len(content) > max_bytes:
+        raise ProviderUnavailableError(
+            f"{url} is {len(content)} bytes, over the {max_bytes} byte limit"
+        )
+    return content
+
+
 def get_xml(url: str, *, timeout: float = DEFAULT_TIMEOUT) -> str:
     """GET an XML document such as a sitemap, gunzipping a ``.xml.gz`` body.
 

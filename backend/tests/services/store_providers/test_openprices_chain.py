@@ -4,7 +4,7 @@ HTTP is mocked at ``http_client.get_json`` with a router on the endpoint, so
 each test states exactly what the API answered.
 """
 
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from decimal import Decimal
 from typing import Any
 from unittest.mock import patch
@@ -12,7 +12,10 @@ from unittest.mock import patch
 import pytest
 
 from app.services.store_providers.definitions import CARREFOUR_CHAIN, CHAINS
-from app.services.store_providers.errors import ProviderConfigurationError
+from app.services.store_providers.errors import (
+    ProviderConfigurationError,
+    ProviderUnavailableError,
+)
 from app.services.store_providers.families.extension import (
     ExtensionProvider,
     ExtensionStoreConfig,
@@ -96,6 +99,17 @@ PRODUCTS: dict[str, Any] = {
         {"code": "333", "product_name": "Beurre de cacahuète"},
     ]
 }
+
+
+@pytest.fixture(autouse=True)
+def _prices_from_the_api() -> Iterator[None]:
+    """These tests exercise the ``/prices`` API path; the daily snapshot has
+    its own tests in ``test_openprices_snapshot.py``."""
+    with patch(
+        "app.services.store_providers.families.openprices_snapshot.get_snapshot",
+        side_effect=ProviderUnavailableError("snapshot not in this test"),
+    ):
+        yield
 
 
 def _router(

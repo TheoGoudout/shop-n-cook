@@ -7,6 +7,11 @@ Endpoints used (all verified against the live API):
 - ``GET /api/v1/locations?osm_name__like=<chain>`` — the shops prices were
   recorded in, each an OpenStreetMap node carrying the chain's brand
 
+Prices come from the daily Parquet dump of the whole table
+(``openprices_snapshot``) — one download a day instead of a request per batch
+per chain — with the ``/prices`` endpoint as the fallback when the dump cannot
+be had. Catalogue searches are cached for a day and shared by every chain.
+
 Coverage is community-contributed and therefore sparse and per-location, so
 this provider is a supplement and a legal fallback, not a substitute for a
 retailer's own catalogue. Data is ODbL: ``attribution`` is not decorative, the
@@ -23,8 +28,8 @@ here, by id, and passed as ``location_id__in``.
 
 What a price here means, stated so nobody over-reads it: the most recent
 undiscounted till price a contributor recorded for that barcode, in euros, at
-one of the chain's shops, within ``MAX_PRICE_AGE_DAYS``. It is not a live
-shelf price and it is not branch-specific.
+one of the chain's shops, within ``openprices_snapshot.MAX_PRICE_AGE_DAYS``.
+It is not a live shelf price and it is not branch-specific.
 """
 
 from __future__ import annotations
@@ -33,22 +38,20 @@ import threading
 import time
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
-from datetime import date, timedelta
 from decimal import Decimal, InvalidOperation
 from typing import Any
 
 from app.models.ingredient import Unit
 from app.services.pricing import quantize_money
 from app.services.store_providers.base import StoreProvider
-from app.services.store_providers.families import http_client
+from app.services.store_providers.errors import ProviderUnavailableError
+from app.services.store_providers.families import http_client, openprices_snapshot
 from app.services.store_providers.matching import normalize
 from app.services.store_providers.models import Capability, StoreProduct, Transport
 
 BASE_URL = "https://prices.openfoodfacts.org/api/v1"
 ATTRIBUTION = "Price data © Open Food Facts contributors, ODbL"
 
-#: A price older than this is history, not a price.
-MAX_PRICE_AGE_DAYS = 365
 #: Barcodes priced per request, and result pages read per batch. Bounds one
 #: lookup on a popular product with thousands of observations.
 CODES_PER_REQUEST = 25
@@ -57,6 +60,9 @@ PAGE_SIZE = 100
 #: Products fetched from the catalogue before keeping the ones this chain has
 #: a price for. Wide on purpose: the chain filter discards most of them.
 CHAIN_SEARCH_POOL = 50
+#: How long a catalogue search is reused, and how many are remembered.
+SEARCH_CACHE_SECONDS = 24 * 60 * 60
+MAX_CACHED_SEARCHES = 5000
 #: A bound on the location list sent as ``location_id__in``: the busiest shops
 #: carry nearly every price, and the URL must stay a sane length.
 MAX_CHAIN_LOCATIONS = 300
@@ -130,17 +136,7 @@ class OpenPricesProvider(StoreProvider):
     def search(
         self, query: str, *, limit: int = 10, branch_id: str | None = None
     ) -> list[StoreProduct]:
-        pool = CHAIN_SEARCH_POOL if self.chain else limit
-        payload = http_client.get_json(
-            f"{self.base_url}/products",
-            params={
-                "product_name__like": query,
-                "size": max(1, min(pool, 50)),
-                "order_by": "-price_count",
-            },
-            parse_float=Decimal,
-        )
-        items = payload.get("items", []) if isinstance(payload, dict) else []
+        items = _catalogue_search(self.base_url, query)
         products = [
             product
             for product in (self._to_product(raw) for raw in items)
@@ -178,17 +174,36 @@ class OpenPricesProvider(StoreProvider):
     # ----------------------------------------------------------------- #
 
     def _latest_prices(self, codes: Iterable[str]) -> dict[str, Decimal]:
-        """The most recent qualifying price per barcode."""
+        """The most recent qualifying price per barcode.
+
+        Read from the daily snapshot of the whole price table; the API is the
+        fallback for a day the snapshot cannot be downloaded.
+        """
         wanted = list(dict.fromkeys(code for code in codes if code))
         if not wanted:
             return {}
+        try:
+            snapshot = openprices_snapshot.get_snapshot()
+        except ProviderUnavailableError:
+            return self._latest_prices_from_api(wanted)
 
+        location_ids: frozenset[int] | None = None
+        if self.chain is not None:
+            location_ids = frozenset(self._busiest_chain_locations())
+            if not location_ids:
+                return {}
+        return snapshot.latest(
+            wanted,
+            currency=self.currency,
+            since=openprices_snapshot.oldest_price_date(),
+            location_ids=location_ids,
+        )
+
+    def _latest_prices_from_api(self, wanted: list[str]) -> dict[str, Decimal]:
         base_params: dict[str, Any] = {
             "currency": self.currency,
             "price_is_discounted": "false",
-            "date__gte": (
-                date.today() - timedelta(days=MAX_PRICE_AGE_DAYS)
-            ).isoformat(),
+            "date__gte": openprices_snapshot.oldest_price_date().isoformat(),
             # Newest first. The date filter above also drops undated rows,
             # which a descending sort would otherwise put first.
             "order_by": "-date",
@@ -229,6 +244,11 @@ class OpenPricesProvider(StoreProvider):
         return found
 
     def _chain_location_ids(self) -> list[int]:
+        """The shops sent to the API, which needs a URL of sane length."""
+        return sorted(self._busiest_chain_locations()[:MAX_CHAIN_LOCATIONS])
+
+    def _busiest_chain_locations(self) -> list[int]:
+        """Every shop of the chain, busiest first. Cached for a day."""
         assert self.chain is not None
         now = time.monotonic()
         with self._location_lock:
@@ -242,9 +262,8 @@ class OpenPricesProvider(StoreProvider):
                     if _belongs_to(raw, self.chain):
                         by_id[int(raw["id"])] = int(raw.get("price_count") or 0)
             busiest = sorted(by_id, key=lambda i: (-by_id[i], i))
-            ids = sorted(busiest[:MAX_CHAIN_LOCATIONS])
-            self._location_ids = (now, ids)
-            return ids
+            self._location_ids = (now, busiest)
+            return busiest
 
     def _locations_named(self, query: str) -> Iterable[dict[str, Any]]:
         page = 1
@@ -301,6 +320,50 @@ class OpenPricesProvider(StoreProvider):
             pack_quantity=pack_quantity,
             pack_unit=pack_unit,
         )
+
+
+_search_lock = threading.Lock()
+_search_cache: dict[tuple[str, str], tuple[float, list[Any]]] = {}
+
+
+def _catalogue_search(base_url: str, query: str) -> list[Any]:
+    """``/products`` matches for ``query``, cached for a day.
+
+    Shared by every chain on purpose: the catalogue does not depend on the
+    chain, so six chains refreshing the same ingredient cost one request, not
+    six. Always fetches the full pool, so every caller can share the answer
+    whatever ``limit`` it wants.
+    """
+    key = (base_url, normalize(query))
+    now = time.monotonic()
+    with _search_lock:
+        cached = _search_cache.get(key)
+        if cached is not None and now - cached[0] < SEARCH_CACHE_SECONDS:
+            return cached[1]
+
+    payload = http_client.get_json(
+        f"{base_url}/products",
+        params={
+            "product_name__like": query,
+            "size": CHAIN_SEARCH_POOL,
+            "order_by": "-price_count",
+        },
+        parse_float=Decimal,
+    )
+    items = payload.get("items", []) if isinstance(payload, dict) else []
+    items = items if isinstance(items, list) else []
+    with _search_lock:
+        _search_cache[key] = (now, items)
+        if len(_search_cache) > MAX_CACHED_SEARCHES:
+            # Dicts keep insertion order, so this drops the oldest entry.
+            _search_cache.pop(next(iter(_search_cache)))
+    return items
+
+
+def clear_caches() -> None:
+    """Test helper. Not used by application code."""
+    with _search_lock:
+        _search_cache.clear()
 
 
 def _price_row(raw: Any) -> tuple[str | None, Decimal | None]:

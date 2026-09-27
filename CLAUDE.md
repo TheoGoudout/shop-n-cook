@@ -168,6 +168,11 @@ Never use `--no-verify` — fix the underlying issue.
   stores go through the browser extension, or get prices from Open Prices.
 - Tests never reach the network: `tests/conftest.py` fails any real
   `httpx.get` / `httpx.post`. Mock at `families.http_client`.
+- Users never wait on a retailer. Costing reads `IngredientPrice` rows; the
+  background job in `store_providers/scheduler.py` refreshes them daily (one
+  worker at a time, via a Postgres advisory lock). Open Prices prices come from
+  its daily Parquet dump (`families/openprices_snapshot.py`), not per-line API
+  calls. Tests run with `STORE_PRICE_REFRESH_HOURS=0`.
 
 **Recipe import package**
 - `backend/app/services/recipe_import/` is split by concern:

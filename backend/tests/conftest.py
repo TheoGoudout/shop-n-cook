@@ -16,8 +16,17 @@ from app.models import (
     ShoppingListItem,
     User,
 )
+from app.services.store_providers.families import (
+    openprices,
+    openprices_snapshot,
+    robots,
+)
 from tests.utils.user import authentication_token_from_email
 from tests.utils.utils import get_superuser_token_headers
+
+# No background price refresh: it would reach real retailers from a thread no
+# test controls. Set before any ``TestClient`` runs the app's lifespan.
+settings.STORE_PRICE_REFRESH_HOURS = 0
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -49,6 +58,15 @@ def no_network() -> Generator[None, None, None]:
         patch("httpx.post", side_effect=refuse),
     ):
         yield
+
+
+@pytest.fixture(autouse=True)
+def fresh_provider_caches() -> Generator[None, None, None]:
+    """Store providers cache across calls on purpose; tests must not share."""
+    openprices.clear_caches()
+    openprices_snapshot.clear_cache()
+    robots.clear_cache()
+    yield
 
 
 @pytest.fixture(scope="session", autouse=True)

@@ -68,7 +68,7 @@ class Transport(str, Enum):
     EXTENSION = "extension"
     """The backend emits a declarative plan; the browser extension executes it
     inside the user's own authenticated session. The only workable transport
-    for retailers behind Akamai / DataDome."""
+    for retailers behind Cloudflare / DataDome."""
 
     OFFLINE = "offline"
     """Nobody is contacted. The user is the transport: they take the list and

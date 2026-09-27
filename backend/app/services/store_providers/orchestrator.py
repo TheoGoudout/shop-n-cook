@@ -9,14 +9,18 @@ annotating exactly what is missing and why.
 The three degradations that matter, all exercised by stores we actually
 surveyed:
 
-- **no search** (Carrefour, behind Akamai) — the backend cannot look anything
-  up, so cart entries carry the list's own wording for the extension to
-  resolve on-site.
-- **no prices** (Auchan, whose catalogue is priceless until a store is picked)
-  — products resolve fine, every line reports ``REQUIRES_BRANCH``, and the
-  total is ``None`` rather than a misleading zero.
+- **no search** (a retailer behind Cloudflare or DataDome with no other data
+  source) — the backend cannot look anything up, so every line reports
+  ``SEARCH_UNSUPPORTED`` and nothing is invented.
+- **no prices** (a catalogue that is priceless until a store is picked, as
+  Auchan's is) — products resolve fine, every line reports
+  ``REQUIRES_BRANCH``, and the total is ``None`` rather than a misleading zero.
 - **store down** — the first transport failure stops further calls, and the
   remaining lines are marked rather than each waiting out its own timeout.
+
+A basket filled by the extension is always built from the list's own wording,
+whatever the store can search: the extension resolves each line on the
+retailer's site, in the user's session, where the real catalogue is.
 """
 
 from __future__ import annotations
@@ -30,7 +34,7 @@ from app.services.store_providers.errors import (
     CapabilityNotSupportedError,
     ProviderUnavailableError,
 )
-from app.services.store_providers.matching import resolve_item
+from app.services.store_providers.matching import compute_pack_count, resolve_item
 from app.services.store_providers.models import (
     Capability,
     CartHandoff,
@@ -235,16 +239,30 @@ def _attach_missing_prices(
             result.notes.append(DegradationNote.STORE_UNAVAILABLE)
         return
 
-    price_by_sku = {p.sku: p.price for p in priced if p.price is not None}
+    priced_by_sku = {p.sku: p for p in priced if p.price is not None}
     for item in items:
         if item.product is None or item.product.price is not None:
             continue
-        price = price_by_sku.get(item.product.sku)
-        if price is None:
+        enriched = priced_by_sku.get(item.product.sku)
+        if enriched is None or enriched.price is None:
             continue
-        item.product = item.product.model_copy(update={"price": price})
+        update: dict[str, object] = {"price": enriched.price}
+        # A store that prices from the product page may learn the pack size
+        # there too, and the page beats a size guessed from a search listing.
+        # The pack count then has to be worked out again, or a 1 kg bag bought
+        # "1 x unknown size" would be costed as one pack of anything.
+        if enriched.pack_quantity is not None and enriched.pack_unit is not None:
+            update["pack_quantity"] = enriched.pack_quantity
+            update["pack_unit"] = enriched.pack_unit
+            item.pack_count, item.pack_status = compute_pack_count(
+                required_quantity=item.requested_quantity,
+                required_unit=item.requested_unit,
+                pack_quantity=enriched.pack_quantity,
+                pack_unit=enriched.pack_unit,
+            )
+        item.product = item.product.model_copy(update=update)
         item.price_status = PriceStatus.PRICED
-        item.line_total = quantize_money(price * item.pack_count)
+        item.line_total = quantize_money(enriched.price * item.pack_count)
 
 
 def _finalise(
@@ -291,10 +309,16 @@ def _build_entries(
     branch_id: str | None,
 ) -> tuple[list[CartPlanEntry], list[str]]:
     """Plan entries, using the catalogue when there is one and the list's own
-    wording when there is not."""
-    if not provider.supports(Capability.SEARCH):
-        # Nothing to resolve against: hand the extension the words and let it
-        # search on-site, where it has a session and we do not.
+    wording when there is not — or when the extension will do the resolving."""
+    if (
+        not provider.supports(Capability.SEARCH)
+        or provider.transport is Transport.EXTENSION
+    ):
+        # Hand the extension the words and let it search on-site, where it has
+        # a session and the retailer's real catalogue. A store whose search is
+        # backed by a price database still lands here: that database's barcode
+        # is not the retailer's product id, and a line it cannot match must
+        # still reach the basket rather than be dropped as unresolved.
         return [
             CartPlanEntry(
                 query=line.name,

@@ -16,6 +16,7 @@ from app.services.store_providers.models import (
     DegradationNote,
     ListLine,
     MatchStatus,
+    PackStatus,
     PriceStatus,
     StoreProduct,
     Transport,
@@ -265,3 +266,86 @@ class TestLatePricing:
         result = price_shopping_list(provider=provider, lines=[LINES[2]])
         assert provider.price_calls == 0
         assert result.items[0].product is None
+
+
+class _PageSizedStore(StoreProvider):
+    """Sitemap-catalogue shape: the listing has no size, the page does."""
+
+    capabilities = frozenset({Capability.SEARCH, Capability.PRICES})
+
+    def search(
+        self, query: str, *, limit: int = 10, branch_id: str | None = None
+    ) -> list[StoreProduct]:
+        return [StoreProduct(sku="P1", name="Haricots verts extra fins")]
+
+    def attach_prices(self, products, *, branch_id=None):  # type: ignore[no-untyped-def]
+        return [
+            p.model_copy(
+                update={
+                    "price": Decimal("2.99"),
+                    "pack_quantity": 600,
+                    "pack_unit": Unit.GRAM,
+                }
+            )
+            for p in products
+        ]
+
+
+class TestPackSizeFromThePricedPage:
+    def test_pack_count_is_recomputed_from_the_page_size(self) -> None:
+        provider = _PageSizedStore(slug="page", display_name="Page")
+        result = price_shopping_list(
+            provider=provider,
+            lines=[ListLine(name="haricots verts", quantity=1, unit=Unit.KILOGRAM)],
+        )
+        item = result.items[0]
+        # 1 kg wanted, 600 g bags: two bags, not "one pack of unknown size".
+        assert item.pack_count == 2
+        assert item.pack_status is PackStatus.ROUNDED_UP
+        assert item.line_total == Decimal("5.98")
+        assert item.product is not None
+        assert item.product.pack_quantity == 600
+
+    def test_an_incompatible_page_size_is_not_guessed_across(self) -> None:
+        provider = _PageSizedStore(slug="page", display_name="Page")
+        result = price_shopping_list(
+            provider=provider,
+            lines=[ListLine(name="haricots verts", quantity=2, unit=Unit.PIECE)],
+        )
+        item = result.items[0]
+        assert item.pack_count == 1
+        assert item.pack_status is PackStatus.ASSUMED_SINGLE
+        assert item.line_total == Decimal("2.99")
+
+
+class _PricedPushStore(_PushStore):
+    """Carrefour's shape now: extension basket, prices from a price database."""
+
+    capabilities = frozenset(
+        {Capability.CART_PUSH, Capability.SEARCH, Capability.PRICES}
+    )
+
+    def __init__(self, **kwargs: object) -> None:
+        super().__init__(**kwargs)  # type: ignore[arg-type]
+        self.searches = 0
+
+    def search(
+        self, query: str, *, limit: int = 10, branch_id: str | None = None
+    ) -> list[StoreProduct]:
+        self.searches += 1
+        return []
+
+    def attach_prices(self, products, *, branch_id=None):  # type: ignore[no-untyped-def]
+        return list(products)
+
+
+class TestExtensionBasketWithAPriceSource:
+    def test_every_line_reaches_the_basket_as_its_own_wording(self) -> None:
+        provider = _PricedPushStore(slug="carrefour", display_name="Carrefour")
+        handoff = build_cart_handoff(provider=provider, lines=LINES)
+        assert handoff.plan is not None
+        assert [e.query for e in handoff.plan.entries] == [line.name for line in LINES]
+        assert all(e.sku is None for e in handoff.plan.entries)
+        assert handoff.unresolved_item_names == []
+        # The price database is never consulted to build a basket.
+        assert provider.searches == 0

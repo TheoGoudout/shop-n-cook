@@ -3546,6 +3546,18 @@ export const StorePublicSchema = {
             type: 'boolean',
             title: 'Requires Extension',
             default: false
+        },
+        prices_refreshed_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Prices Refreshed At'
         }
     },
     type: 'object',

@@ -6,9 +6,11 @@ provider-backed feature is gated on what that store's provider can actually do.
 """
 
 import uuid
+from collections.abc import Iterator
 from decimal import Decimal
 from unittest.mock import patch
 
+import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
@@ -24,7 +26,12 @@ from app.models import (
 )
 from app.models.store import StoreCreate
 from app.services.store_providers.errors import ProviderUnavailableError
+from app.services.store_providers.families.html_catalog import (
+    HtmlCatalogConfig,
+    HtmlCatalogProvider,
+)
 from app.services.store_providers.models import StoreProduct
+from app.services.store_providers.registry import _REGISTRY, register
 from tests.utils.shopping_list import create_random_shopping_list
 from tests.utils.user import authentication_token_from_email, create_random_user
 from tests.utils.utils import random_lower_string
@@ -50,6 +57,26 @@ def _list_with_items(db: Session, *, owner: User | None = None) -> ShoppingList:
     return shopping_list
 
 
+@pytest.fixture
+def priceless_provider() -> Iterator[str]:
+    """A search-only store, registered for one test.
+
+    Every store this build registers can price, so the 409 path needs one of
+    its own — and a real one would send a refresh out to the internet.
+    """
+    provider = HtmlCatalogProvider(
+        slug=f"priceless-{random_lower_string()[:8]}",
+        display_name="Priceless",
+        config=HtmlCatalogConfig(
+            origin="https://priceless.test",
+            search_url_template="https://priceless.test/s?q={query}",
+        ),
+    )
+    register(provider)
+    yield provider.slug
+    _REGISTRY.pop(provider.slug, None)
+
+
 def _store(db: Session, *, provider_slug: str | None) -> uuid.UUID:
     store = crud.create_store(
         session=db,
@@ -70,18 +97,28 @@ class TestStoreCapabilities:
         assert response.status_code == 200
         by_slug = {s["slug"]: s for s in response.json()["data"]}
 
-        # Carrefour is extension-only: no server search, basket via the browser.
+        # Carrefour's basket still goes through the browser, but its prices
+        # now come from Open Prices, restricted to Carrefour's own shops.
         carrefour = by_slug["carrefour"]
         assert carrefour["provider_slug"] == "carrefour"
         assert carrefour["requires_extension"] is True
-        assert carrefour["can_refresh_prices"] is False
+        assert carrefour["can_refresh_prices"] is True
+        assert {"cart_push", "search", "prices"} <= set(carrefour["capabilities"])
 
-        # Auchan is searchable but priceless without a branch session.
-        auchan = by_slug["auchan"]
-        assert "search" in auchan["capabilities"]
-        assert auchan["can_refresh_prices"] is False
+        # Chains that refuse server requests, priced from Open Prices.
+        for slug in ("auchan", "e-leclerc", "intermarche", "super-u", "franprix"):
+            store = by_slug[slug]
+            assert store["provider_slug"] == slug
+            assert {"search", "prices"} <= set(store["capabilities"])
+            assert store["can_refresh_prices"] is True
+            assert store["requires_extension"] is False
 
-        # A chain with no integration is still a perfectly good store.
+        # Chains read from their own product sitemap and product pages.
+        for slug in ("monoprix", "picard"):
+            assert by_slug[slug]["provider_slug"] == slug
+            assert by_slug[slug]["can_refresh_prices"] is True
+
+        # A chain with no lawful data source is still a perfectly good store.
         lidl = by_slug["lidl"]
         assert lidl["provider_slug"] is None
         assert lidl["capabilities"] == []
@@ -178,9 +215,13 @@ class TestRefreshPrices:
         assert "curated by hand" in response.json()["detail"]
 
     def test_a_provider_that_cannot_price_is_409(
-        self, client: TestClient, db: Session, superuser_token_headers: dict[str, str]
+        self,
+        client: TestClient,
+        db: Session,
+        superuser_token_headers: dict[str, str],
+        priceless_provider: str,
     ) -> None:
-        store_id = _store(db, provider_slug="auchan")
+        store_id = _store(db, provider_slug=priceless_provider)
         response = client.post(
             f"{STORES}/{store_id}/refresh-prices", headers=superuser_token_headers
         )

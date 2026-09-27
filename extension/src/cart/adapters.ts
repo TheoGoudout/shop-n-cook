@@ -12,8 +12,8 @@
  * ---------------------------------------------------------------------------
  * SELECTORS ARE UNVERIFIED.
  *
- * These retailers answer server-side requests with an anti-bot 403 (Akamai for
- * Carrefour, DataDome for Intermarché and Leclerc), which is the whole reason
+ * These retailers answer server-side requests with an anti-bot 403 (Cloudflare
+ * for Carrefour, DataDome for Intermarché and Leclerc), which is the whole reason
  * this transport exists — and it also means the selectors below could not be
  * confirmed against the live markup during development. Treat them as the
  * shape of the answer, not the answer. Each must be checked in a real browser

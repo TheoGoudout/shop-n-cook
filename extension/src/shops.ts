@@ -19,10 +19,11 @@ export interface CartPlanEntry {
 }
 
 export interface CartPlan {
-  shop_slug: string
+  store_slug: string
   /** Scheme + host the plan must be executed against. */
   origin: string
-  store_id: string | null
+  /** The retailer's own branch or drive, when the plan targets one. */
+  branch_id: string | null
   entries: CartPlanEntry[]
 }
 
@@ -44,12 +45,12 @@ export interface EntryResult {
 export type PlanOutcome =
   | "completed"
   | "partial"
-  | "unsupported_shop"
+  | "unsupported_store"
   | "wrong_origin"
   | "failed"
 
 export interface PlanResult {
-  shop_slug: string
+  store_slug: string
   outcome: PlanOutcome
   entries: EntryResult[]
   detail?: string
@@ -78,7 +79,7 @@ export function isExecuteCartPlanMessage(
   return (
     typeof plan === "object" &&
     plan !== null &&
-    typeof plan.shop_slug === "string" &&
+    typeof plan.store_slug === "string" &&
     typeof plan.origin === "string" &&
     Array.isArray(plan.entries)
   )

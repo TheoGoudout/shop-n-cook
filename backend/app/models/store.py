@@ -56,6 +56,9 @@ class StorePublic(StoreBase):
     can_refresh_prices: bool = False
     #: True when a basket can be handed over, and only through the extension.
     requires_extension: bool = False
+    #: When the background job last refreshed this store's prices from its
+    #: provider. ``None``: never — its prices are curated or index-scaled.
+    prices_refreshed_at: datetime | None = None
 
 
 class StoresPublic(SQLModel):
@@ -71,6 +74,12 @@ class StoresPublic(SQLModel):
 class Store(StoreBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     slug: str = Field(min_length=1, max_length=255, unique=True, index=True)
+    #: Set by ``store_providers.scheduler`` after a complete refresh. Not on
+    #: ``StoreBase``: it is a fact about the data, not a setting to edit.
+    prices_refreshed_at: datetime | None = Field(
+        default=None,
+        sa_type=DateTime(timezone=True),  # type: ignore[call-overload]
+    )
     prices: list["IngredientPrice"] = Relationship(
         back_populates="store", cascade_delete=True
     )

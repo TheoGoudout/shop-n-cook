@@ -318,6 +318,32 @@ Other variables with built-in defaults (no need to set in Coolify):
 | `RECIPE_PHOTO_MAX_COUNT` | Photos accepted per import (default: `3`) |
 | `RECIPE_PHOTO_MAX_BYTES` | Maximum size of a single uploaded photo (default: `8388608`, i.e. 8 MiB) |
 | `RECIPE_PHOTO_RATE_LIMIT` | Per-user limit on photo imports (default: `10/hour`) |
+| `STORE_PRICE_REFRESH_HOURS` | Hours between two background refreshes of each provider-backed store's prices (default: `24`; `0` turns it off). See below. |
+| `BIOCOOP_API_TOKEN` / `NATURALIA_API_TOKEN` | Magento API tokens. Optional: without one, the store is read from its public product sitemap instead. |
+
+#### Background price refresh
+
+Every backend worker runs a small thread that wakes hourly and refreshes the
+stores whose prices are older than `STORE_PRICE_REFRESH_HOURS`
+(`app/services/store_providers/scheduler.py`). A Postgres advisory lock lets
+only one worker in the whole deployment work at a time, and the first run
+waits five minutes after startup. `Store.prices_refreshed_at` records the last
+complete refresh per store.
+
+What to expect from a run:
+
+- **Outbound traffic**: one ~33 MB download of the Open Prices dump from
+  `huggingface.co`, `prices.openfoodfacts.org` for catalogue searches, and the
+  retailers' sitemaps and product pages (`courses.monoprix.fr`,
+  `www.picard.fr`, `www.biocoop.fr`, `www.naturalia.fr`), throttled to at most
+  four requests a second per retailer and checked against each robots.txt.
+- **Memory**: the worker running it peaks about 160 MB above its usual size
+  while reading the dump, and frees it when the run ends.
+- **Duration**: measured at about 10 seconds per ingredient across all eleven
+  stores — ~3 s for the Open Prices catalogue search (slow on their side, then
+  cached and shared by all six chains that use it) and ~1–2 s per sitemap store
+  for one product page. 300 ingredients is therefore roughly 50 minutes, once
+  a day, in the background.
 
 ---
 

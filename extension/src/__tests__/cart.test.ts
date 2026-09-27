@@ -1,15 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { getAdapter, supportedSlugs } from "../cart/adapters"
 import { executeCartPlan } from "../cart/runner"
+import type { CartPlan as ApiCartPlan } from "../client"
 import { type CartPlan, isExecuteCartPlanMessage } from "../shops"
 
 const CARREFOUR_ORIGIN = "https://www.carrefour.fr"
 
 function makePlan(overrides: Partial<CartPlan> = {}): CartPlan {
   return {
-    shop_slug: "carrefour",
+    store_slug: "carrefour",
     origin: CARREFOUR_ORIGIN,
-    store_id: null,
+    branch_id: null,
     entries: [
       {
         sku: null,
@@ -118,14 +119,26 @@ describe("executeCartPlan", () => {
     expect(navigations[0]).toBe(`${CARREFOUR_ORIGIN}/p/lait-demi-ecreme`)
   })
 
-  it("refuses a shop it has no adapter for", async () => {
+  it("searches on-site instead of following an off-origin product URL", async () => {
+    const plan = makePlan()
+    plan.entries[0].product_url = "https://evil.test/p/lait"
+    await executeCartPlan(plan)
+    const navigations = tabsUpdate.mock.calls
+      .map((c) => c[1]?.url)
+      .filter(Boolean)
+    expect(navigations[0]).toBe(
+      `${CARREFOUR_ORIGIN}/s?q=${encodeURIComponent("tomates cerises")}`,
+    )
+  })
+
+  it("refuses a store it has no adapter for", async () => {
     const result = await executeCartPlan(
       makePlan({
-        shop_slug: "intermarche",
+        store_slug: "intermarche",
         origin: "https://www.intermarche.com",
       }),
     )
-    expect(result.outcome).toBe("unsupported_shop")
+    expect(result.outcome).toBe("unsupported_store")
     expect(tabsCreate).not.toHaveBeenCalled()
   })
 
@@ -192,6 +205,33 @@ describe("executeCartPlan", () => {
 })
 
 describe("isExecuteCartPlanMessage", () => {
+  it("accepts a plan exactly as the backend serialises it", () => {
+    // Typed against the generated client, so renaming a field on either side
+    // fails type-checking here instead of silently rejecting every real plan.
+    const backendPlan: ApiCartPlan = {
+      store_slug: "carrefour",
+      origin: CARREFOUR_ORIGIN,
+      branch_id: null,
+      entries: [
+        {
+          sku: null,
+          query: "beurre",
+          name: "beurre",
+          quantity: 1,
+          product_url: null,
+          requested_quantity: 250,
+          requested_unit: "g",
+        },
+      ],
+    }
+    expect(
+      isExecuteCartPlanMessage({
+        type: "EXECUTE_CART_PLAN",
+        plan: backendPlan,
+      }),
+    ).toBe(true)
+  })
+
   it("accepts a well-formed plan message", () => {
     expect(
       isExecuteCartPlanMessage({ type: "EXECUTE_CART_PLAN", plan: makePlan() }),
@@ -204,8 +244,8 @@ describe("isExecuteCartPlanMessage", () => {
     "EXECUTE_CART_PLAN",
     { type: "SOMETHING_ELSE", plan: makePlan() },
     { type: "EXECUTE_CART_PLAN" },
-    { type: "EXECUTE_CART_PLAN", plan: { shop_slug: "x" } },
-    { type: "EXECUTE_CART_PLAN", plan: { shop_slug: "x", origin: "y" } },
+    { type: "EXECUTE_CART_PLAN", plan: { store_slug: "x" } },
+    { type: "EXECUTE_CART_PLAN", plan: { store_slug: "x", origin: "y" } },
   ])("rejects malformed input %#", (input) => {
     expect(isExecuteCartPlanMessage(input)).toBe(false)
   })

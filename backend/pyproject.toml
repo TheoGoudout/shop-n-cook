@@ -25,6 +25,7 @@ dependencies = [
     "langchain-google-genai>=2.0.0",
     "beautifulsoup4>=4.14.3",
     "slowapi>=0.1.9",
+    "pyarrow>=21",
 ]
 
 [dependency-groups]
@@ -35,6 +36,7 @@ dev = [
     "prek>=0.2.24,<1.0.0",
     "coverage<8.0.0,>=7.4.3",
     "pytest-cov>=7.1.0",
+    "pyarrow-stubs>=20.0.0.20260819",
 ]
 
 [build-system]

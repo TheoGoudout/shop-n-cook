@@ -12,7 +12,9 @@ orchestrator tying them together.
 - ``base.py``         — the provider contract
 - ``registry.py``     — registration plus the import-time consistency check
 - ``families/``       — reusable provider implementations, parameterised by
-                        config (html_catalog, magento, extension, openprices)
+                        config (sitemap_catalog, openprices, extension,
+                        magento, html_catalog), plus ``robots`` and
+                        ``http_client``, which every server-side fetch uses
 - ``definitions.py``  — the actual stores, as configuration
 - ``orchestrator.py`` — the use cases, and all the degradation logic
 

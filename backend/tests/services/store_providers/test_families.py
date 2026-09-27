@@ -4,6 +4,7 @@ HTTP is mocked at the submodule path (``...families.http_client.get_text``),
 matching the convention the recipe-import tests use.
 """
 
+from collections.abc import Iterator
 from decimal import Decimal
 from typing import Any
 from unittest.mock import Mock, patch
@@ -55,6 +56,27 @@ AUCHAN_CONFIG = HtmlCatalogConfig(
     out_of_stock_marker="outOfStock",
     prices_require_branch=True,
 )
+
+
+@pytest.fixture(autouse=True)
+def _robots_allow_everything() -> Iterator[None]:
+    """These tests are about parsing; robots.txt has its own tests."""
+    with patch(
+        "app.services.store_providers.families.robots.ensure_allowed",
+        return_value=None,
+    ):
+        yield
+
+
+@pytest.fixture(autouse=True)
+def _prices_from_the_api() -> Iterator[None]:
+    """These tests exercise the ``/prices`` API path; the daily snapshot has
+    its own tests in ``test_openprices_snapshot.py``."""
+    with patch(
+        "app.services.store_providers.families.openprices_snapshot.get_snapshot",
+        side_effect=ProviderUnavailableError("snapshot not in this test"),
+    ):
+        yield
 
 
 def _auchan() -> HtmlCatalogProvider:
@@ -117,6 +139,20 @@ class TestHtmlCatalog:
             with pytest.raises(ProviderUnavailableError):
                 _auchan().search("tomate")
 
+    def test_a_search_robots_txt_disallows_is_never_fetched(self) -> None:
+        with (
+            patch(
+                "app.services.store_providers.families.robots.ensure_allowed",
+                side_effect=ProviderUnavailableError("robots.txt disallows"),
+            ),
+            patch(
+                "app.services.store_providers.families.http_client.get_text"
+            ) as get_text,
+        ):
+            with pytest.raises(ProviderUnavailableError, match="robots"):
+                _auchan().search("tomate")
+        get_text.assert_not_called()
+
     def test_cart_link_points_at_the_store_search(self) -> None:
         link = _auchan().cart_link(
             [CartPlanEntry(query="crème fraîche", name="crème fraîche", quantity=1)]
@@ -155,7 +191,13 @@ class TestOpenPrices:
         provider = OpenPricesProvider()
         with patch(
             "app.services.store_providers.families.http_client.get_json",
-            side_effect=[self.PRODUCTS, {"items": [{"price": "1.29"}]}],
+            side_effect=[
+                self.PRODUCTS,
+                {
+                    "items": [{"product_code": "3329489901583", "price": "1.29"}],
+                    "pages": 1,
+                },
+            ],
         ):
             products = provider.search("tomate")
             priced = provider.attach_prices(products)

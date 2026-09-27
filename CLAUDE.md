@@ -155,6 +155,25 @@ Never use `--no-verify` — fix the underlying issue.
 - Always supply keyword-only arguments (`session=session`, `owner_id=…`)
   — the CRUD layer enforces this with `*`.
 
+**Store providers**
+- `backend/app/services/store_providers/` connects a `Store` to a retailer.
+  `definitions.py` is the list of chains and records, per chain, why it has the
+  capabilities it has; read it before adding or changing one.
+- A 200 is not permission. Every scraped URL goes through
+  `families/robots.py` (`robots.ensure_allowed`), which implements RFC 9309
+  wildcards — `urllib.robotparser` does not. Retailers' on-site search pages
+  are all robots-disallowed; use their product sitemap (`sitemap_catalog`) or
+  Open Prices restricted to the chain (`openprices.ChainFilter`) instead.
+- Never evade an anti-bot 403 (Cloudflare, DataDome, …) server-side. Those
+  stores go through the browser extension, or get prices from Open Prices.
+- Tests never reach the network: `tests/conftest.py` fails any real
+  `httpx.get` / `httpx.post`. Mock at `families.http_client`.
+- Users never wait on a retailer. Costing reads `IngredientPrice` rows; the
+  background job in `store_providers/scheduler.py` refreshes them daily (one
+  worker at a time, via a Postgres advisory lock). Open Prices prices come from
+  its daily Parquet dump (`families/openprices_snapshot.py`), not per-line API
+  calls. Tests run with `STORE_PRICE_REFRESH_HOURS=0`.
+
 **Recipe import package**
 - `backend/app/services/recipe_import/` is split by concern:
   `models.py`, `prompt.py`, `scraper.py`, `llm.py`, `orchestrator.py`.

@@ -1,3 +1,6 @@
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+
 import sentry_sdk
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
@@ -7,7 +10,9 @@ from starlette.middleware.cors import CORSMiddleware
 
 from app.api.main import api_router
 from app.core.config import settings
+from app.core.db import engine
 from app.core.limiter import limiter
+from app.services.store_providers.scheduler import start_price_refresh_scheduler
 
 
 def custom_generate_unique_id(route: APIRoute) -> str:
@@ -17,7 +22,19 @@ def custom_generate_unique_id(route: APIRoute) -> str:
 if settings.SENTRY_DSN and settings.ENVIRONMENT != "local":
     sentry_sdk.init(dsn=str(settings.SENTRY_DSN), enable_tracing=True)
 
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+    # Keeps provider-backed store prices fresh; see its module docstring for
+    # how several workers avoid refreshing at once.
+    scheduler = start_price_refresh_scheduler(engine)
+    yield
+    if scheduler is not None:
+        scheduler.stop()
+
+
 app = FastAPI(
+    lifespan=lifespan,
     title=settings.PROJECT_NAME,
     version=settings.APP_VERSION,
     openapi_url=f"{settings.API_V1_STR}/openapi.json",

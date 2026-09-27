@@ -66,6 +66,9 @@ services:
       - LANGCHAIN_PROJECT=${LANGCHAIN_PROJECT}
       - LANGCHAIN_ENDPOINT=${LANGCHAIN_ENDPOINT}
       - RATE_LIMIT_ENABLED=${RATE_LIMIT_ENABLED:-True}
+      - BIOCOOP_API_TOKEN=${BIOCOOP_API_TOKEN:-}
+      - NATURALIA_API_TOKEN=${NATURALIA_API_TOKEN:-}
+      - STORE_PRICE_REFRESH_HOURS=${STORE_PRICE_REFRESH_HOURS:-24}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/utils/health-check/"]
       interval: 10s

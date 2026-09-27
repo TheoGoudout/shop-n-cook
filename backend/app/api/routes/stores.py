@@ -1,20 +1,34 @@
 import uuid
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app import crud
 from app.api.deps import CurrentUser, SessionDep, get_current_active_superuser
+from app.api.routes.shopping_lists import lines_for_list
 from app.models.base import Message
 from app.models.store import (
     IngredientPriceCreate,
     IngredientPricePublic,
     IngredientPricesPublic,
+    Store,
     StoreCreate,
     StorePublic,
     StoresPublic,
     StoreUpdate,
 )
+from app.services.store_providers import (
+    Capability,
+    CapabilityNotSupportedError,
+    CartHandoff,
+    ProviderNotFoundError,
+    ProviderUnavailableError,
+    StoreListRequest,
+    StoreProvider,
+    build_cart_handoff,
+    get_provider,
+)
+from app.services.store_providers.refresh import RefreshResult, refresh_store_prices
 
 router = APIRouter(prefix="/stores", tags=["stores"])
 
@@ -142,3 +156,93 @@ def delete_ingredient_price(
         raise HTTPException(status_code=404, detail="Price not found")
     crud.delete_ingredient_price(session=session, price=price)
     return Message(message="Price deleted successfully")
+
+
+# --------------------------------------------------------------------------- #
+# Provider-backed operations                                                   #
+# --------------------------------------------------------------------------- #
+
+
+def _provider_for(store: Store) -> StoreProvider:
+    """The provider behind a store, or a 409 explaining that there isn't one."""
+    if not store.provider_slug:
+        raise HTTPException(
+            status_code=409,
+            detail=f"{store.name} has no provider; its prices are curated by hand",
+        )
+    try:
+        return get_provider(store.provider_slug)
+    except ProviderNotFoundError:
+        raise HTTPException(
+            status_code=409,
+            detail=f"{store.name} names a provider this build does not register",
+        ) from None
+
+
+def _store_or_404(*, session: SessionDep, store_id: uuid.UUID) -> Store:
+    store = crud.get_store(session=session, store_id=store_id)
+    if store is None:
+        raise HTTPException(status_code=404, detail="Store not found")
+    return store
+
+
+@router.post("/{store_id}/refresh-prices", response_model=RefreshResult)
+def refresh_store_prices_route(
+    *,
+    session: SessionDep,
+    _current_user: Annotated[Any, Depends(get_current_active_superuser)],
+    store_id: uuid.UUID,
+    limit: int = Query(default=200, ge=1, le=2000),
+) -> Any:
+    """Pull this store's prices off its website into the price book.
+
+    Superuser only: ``IngredientPrice`` rows are shared by every user, so a
+    refresh is an edit to common data rather than a personal preference.
+
+    Always 200 for a store that has a provider. A retailer that is unreachable,
+    or an ingredient it cannot match or price, is reported in ``skipped``
+    rather than failing the run — and whatever price those ingredients already
+    had is left alone.
+    """
+    store = _store_or_404(session=session, store_id=store_id)
+    provider = _provider_for(store)
+    if not provider.supports(Capability.PRICES):
+        raise HTTPException(
+            status_code=409,
+            detail=f"{store.name} cannot publish prices to us",
+        )
+    ingredients, _ = crud.get_ingredients(session=session, limit=limit)
+    return refresh_store_prices(
+        session=session, store=store, provider=provider, ingredients=ingredients
+    )
+
+
+@router.post("/{store_id}/cart", response_model=CartHandoff)
+def build_store_cart(
+    *,
+    session: SessionDep,
+    current_user: CurrentUser,
+    store_id: uuid.UUID,
+    request: StoreListRequest,
+) -> Any:
+    """Hand a shopping list over to this store's basket.
+
+    Returns either a URL or a ``CartPlan`` for the browser extension to run,
+    depending on the provider's transport. The client branches on
+    ``transport``.
+    """
+    store = _store_or_404(session=session, store_id=store_id)
+    provider = _provider_for(store)
+    lines = lines_for_list(
+        session=session,
+        current_user=current_user,
+        shopping_list_id=request.shopping_list_id,
+    )
+    try:
+        return build_cart_handoff(
+            provider=provider, lines=lines, branch_id=request.branch_id
+        )
+    except CapabilityNotSupportedError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except ProviderUnavailableError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc

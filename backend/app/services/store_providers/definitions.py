@@ -33,12 +33,19 @@ What that leaves, per chain:
 - **Not registered**, because nothing lawful carries enough data: Lidl (search
   robots-blocked; its site lists only the week's offers; ~370 Open Prices
   prices a year), Aldi (product pages have no prices; ~70), Netto (DataDome;
-  ~60), Grand Frais (no online catalogue; ~7), Casino (CDNetworks; ~200).
+  ~60), Grand Frais (a product sitemap, but its ~400 pages carry no prices;
+  ~7), Casino (CDNetworks; ~200).
   They stay perfectly good stores with hand-curated prices.
 - **Biocoop / Naturalia** both run stock Magento 2 and answer ``/rest/V1/...``
-  with 401 rather than 404 — the API is there, behind auth. They register only
-  when a token is configured, so the UI is never offered a capability that
-  would fail on every call.
+  with 401 rather than 404 — the API is there, behind auth. With a token the
+  Magento provider is used. Without one they fall back to their product
+  sitemaps, which robots.txt allows: Naturalia's pages carry schema.org JSON-LD
+  with price and EAN (~6,000 products); Biocoop's carry the national
+  reference price in the analytics ``dataLayer`` (~15,000 national products;
+  its co-op stores set their own shelf prices, so this is the web price).
+- **Blocked, checked 2026-09-27**: Chronodrive (Cloudflare 403 on every path
+  including robots.txt; 4 Open Prices prices a year), Bio c' Bon (its site is
+  a store locator with no catalogue; ~210 Open Prices prices a year).
 
 Printing a list to carry is deliberately *not* a store here — see
 ``layouts.py``. Nobody picks "Printable list" as the supermarket they shop at.
@@ -59,6 +66,7 @@ from app.services.store_providers.families.openprices import (
 from app.services.store_providers.families.sitemap_catalog import (
     SitemapCatalogConfig,
     SitemapCatalogProvider,
+    datalayer_product,
     gtm_product,
     json_ld_product,
 )
@@ -198,23 +206,65 @@ def register_default_providers() -> None:
 
 
 def _register_magento_stores() -> None:
-    """Register Magento storefronts for which we hold credentials."""
-    magento_stores = (
-        ("biocoop", "Biocoop", "https://www.biocoop.fr", settings.BIOCOOP_API_TOKEN),
-        (
-            "naturalia",
-            "Naturalia",
-            "https://www.naturalia.fr",
-            settings.NATURALIA_API_TOKEN,
-        ),
-    )
-    for slug, display_name, origin, token in magento_stores:
-        if not token:
-            continue
+    """Biocoop and Naturalia: the Magento API when we hold a token for it,
+    otherwise their product sitemaps.
+
+    A granted API is the retailer's explicit permission and a live answer, so
+    it wins; the sitemap route is what is lawful to read without one.
+    """
+    if settings.BIOCOOP_API_TOKEN:
         register(
             MagentoProvider(
-                slug=slug,
-                display_name=display_name,
-                config=MagentoConfig(origin=origin, access_token=token),
+                slug="biocoop",
+                display_name="Biocoop",
+                config=MagentoConfig(
+                    origin="https://www.biocoop.fr",
+                    access_token=settings.BIOCOOP_API_TOKEN,
+                ),
+            )
+        )
+    else:
+        register(
+            SitemapCatalogProvider(
+                slug="biocoop",
+                display_name="Biocoop",
+                config=SitemapCatalogConfig(
+                    origin="https://www.biocoop.fr",
+                    sitemap_url="https://www.biocoop.fr/sitemap.xml",
+                    # National references only ("bv5000-000", optionally
+                    # followed by an origin or calibre). Store-local lines
+                    # ("kim-loc-000081-000") have no national price.
+                    product_url_pattern=(
+                        r"^https://www\.biocoop\.fr/(?P<slug>[a-z0-9-]+?)"
+                        r"-(?P<sku>[a-z]{2,3}\d{4}-\d{3})(?:-[a-z0-9-]+)?\.html$"
+                    ),
+                    extractor=datalayer_product,
+                ),
+            )
+        )
+
+    if settings.NATURALIA_API_TOKEN:
+        register(
+            MagentoProvider(
+                slug="naturalia",
+                display_name="Naturalia",
+                config=MagentoConfig(
+                    origin="https://www.naturalia.fr",
+                    access_token=settings.NATURALIA_API_TOKEN,
+                ),
+            )
+        )
+    else:
+        register(
+            SitemapCatalogProvider(
+                slug="naturalia",
+                display_name="Naturalia",
+                config=SitemapCatalogConfig(
+                    origin="https://www.naturalia.fr",
+                    sitemap_url="https://www.naturalia.fr/media/sitemap_product.xml",
+                    # The URL carries no id; the slug is the product's key.
+                    product_url_pattern=r"/produit/(?P<sku>(?P<slug>[a-z0-9-]+))$",
+                    extractor=json_ld_product,
+                ),
             )
         )

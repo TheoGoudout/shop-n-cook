@@ -216,6 +216,60 @@ def gtm_product(page_html: str, sku: str) -> PageProduct | None:
     return None
 
 
+_DATALAYER_PUSH_RE = re.compile(r"dataLayer\.push\(\s*")
+_NON_ALNUM_RE = re.compile(r"[^A-Za-z0-9]+")
+
+
+def _same_id(a: str, b: str) -> bool:
+    """``bv5000-000`` in a URL is ``BV5000_000`` in the data layer."""
+    return _NON_ALNUM_RE.sub("", a).upper() == _NON_ALNUM_RE.sub("", b).upper()
+
+
+def datalayer_product(page_html: str, sku: str) -> PageProduct | None:
+    """A Universal Analytics ``productView`` pushed to ``dataLayer``, as
+    Magento storefronts render it (Biocoop).
+
+    Takes the product whose id is ``sku``, or the only product the view
+    describes — a product page has exactly one, and its id can carry a suffix
+    (an origin, a calibre) that the URL spells differently.
+    """
+    decoder = json.JSONDecoder(parse_float=Decimal)
+    for match in _DATALAYER_PUSH_RE.finditer(page_html):
+        try:
+            data, _ = decoder.raw_decode(page_html, match.end())
+        except ValueError:
+            continue
+        if not isinstance(data, dict) or data.get("event") != "productView":
+            continue
+        ecommerce = data.get("ecommerce")
+        detail = ecommerce.get("detail") if isinstance(ecommerce, dict) else None
+        products = detail.get("products") if isinstance(detail, dict) else None
+        if not isinstance(products, list):
+            continue
+        candidates = [p for p in products if isinstance(p, dict)]
+        product = next(
+            (p for p in candidates if _same_id(str(p.get("id", "")), sku)),
+            candidates[0] if len(candidates) == 1 else None,
+        )
+        if product is None:
+            continue
+
+        name = _first_str(product.get("name"))
+        pack = parse_quantity(name) if name else None
+        currency = (
+            ecommerce.get("currencyCode") if isinstance(ecommerce, dict) else None
+        )
+        return PageProduct(
+            price=_to_price(product.get("price")),
+            currency=currency if isinstance(currency, str) and currency else None,
+            name=name,
+            pack_quantity=pack[0] if pack else None,
+            pack_unit=pack[1] if pack else None,
+            brand=_first_str(product.get("brand")),
+        )
+    return None
+
+
 # --------------------------------------------------------------------------- #
 # Sitemap index                                                                #
 # --------------------------------------------------------------------------- #

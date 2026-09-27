@@ -16,6 +16,7 @@ from app.services.store_providers import iter_providers
 DEFAULT_STORES: tuple[tuple[str, str, float], ...] = (
     ("aldi", "Aldi", 0.85),
     ("auchan", "Auchan", 1.00),
+    ("biocoop", "Biocoop", 1.30),
     ("carrefour", "Carrefour", 1.05),
     ("e-leclerc", "E.Leclerc", 0.95),
     ("franprix", "Franprix", 1.20),
@@ -23,6 +24,7 @@ DEFAULT_STORES: tuple[tuple[str, str, float], ...] = (
     ("intermarche", "Intermarché", 1.00),
     ("lidl", "Lidl", 0.85),
     ("monoprix", "Monoprix", 1.25),
+    ("naturalia", "Naturalia", 1.30),
     ("netto", "Netto", 0.85),
     ("picard", "Picard", 1.15),
     ("super-u", "Super U", 1.00),

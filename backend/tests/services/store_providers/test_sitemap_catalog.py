@@ -19,6 +19,7 @@ from app.services.store_providers.families.sitemap_catalog import (
     SitemapCatalogProvider,
     SitemapEntry,
     SitemapIndex,
+    datalayer_product,
     gtm_product,
     json_ld_product,
     slug_to_name,
@@ -359,3 +360,107 @@ class TestGtm:
 
     def test_an_unknown_id_is_none(self) -> None:
         assert gtm_product(PICARD_PAGE, "000000000000000000") is None
+
+
+BIOCOOP_PAGE = """<script>
+dataLayer.push({"event":"trackView","magasinClient":"Biocoop national"});
+</script><script>
+dataLayer.push({"event":"productView","ecommerce":{"currencyCode":"EUR",
+ "detail":{"actionField":{"list":"Product_list"},"products":[{
+ "name":"Beurre doux 250g","id":"AD7044_000","price":3.25,
+ "brand":"G\\u00e9rentes","dimension1":"ref_national"}]}}});
+</script>"""
+
+
+class TestDataLayer:
+    def test_reads_the_product_view(self) -> None:
+        page = datalayer_product(BIOCOOP_PAGE, "ad7044-000")
+        assert page is not None
+        assert page.price == Decimal("3.25")
+        assert str(page.price) == "3.25", "never through a float"
+        assert page.currency == "EUR"
+        assert page.name == "Beurre doux 250g"
+        assert page.brand == "Gérentes"
+        assert (page.pack_quantity, page.pack_unit) == (250, Unit.GRAM)
+
+    def test_a_single_product_is_taken_even_if_its_id_carries_a_suffix(self) -> None:
+        """The URL says fel4089-000, the page says FEL4089_000_355."""
+        page = datalayer_product(
+            BIOCOOP_PAGE.replace("AD7044_000", "AD7044_000_355"), "ad7044-000"
+        )
+        assert page is not None
+        assert page.price == Decimal("3.25")
+
+    def test_a_zero_price_is_no_price(self) -> None:
+        """Biocoop publishes 0 for products it does not price on the web."""
+        page = datalayer_product(
+            BIOCOOP_PAGE.replace('"price":3.25', '"price":0'), "ad7044-000"
+        )
+        assert page is not None
+        assert page.price is None
+
+    def test_no_product_view_is_none(self) -> None:
+        assert datalayer_product("<script>dataLayer.push({})</script>", "x") is None
+        assert datalayer_product("<script>dataLayer.push(broken</script>", "x") is None
+
+    def test_several_products_and_none_ours_is_none(self) -> None:
+        two = BIOCOOP_PAGE.replace(
+            '"dimension1":"ref_national"}]',
+            '"dimension1":"ref_national"},{"id":"ZZ0000_000","price":1}]',
+        ).replace("AD7044_000", "YY1111_000")
+        assert datalayer_product(two, "ad7044-000") is None
+
+
+class TestRegisteredSitemapStores:
+    @pytest.mark.parametrize(
+        ("slug", "url", "sku"),
+        [
+            (
+                "monoprix",
+                "https://courses.monoprix.fr/products/monoprix-beurre-doux-125g/MPX_1120136",
+                "MPX_1120136",
+            ),
+            (
+                "picard",
+                "https://www.picard.fr/produits/haricots-beurre-extra-fins-000000000000001915.html",
+                "000000000000001915",
+            ),
+            (
+                "biocoop",
+                "https://www.biocoop.fr/radis-botte-rose-fel4089-000-355.html",
+                "fel4089-000",
+            ),
+            (
+                "naturalia",
+                "https://www.naturalia.fr/produit/ptit-beurre-cereales-150g",
+                "ptit-beurre-cereales-150g",
+            ),
+        ],
+    )
+    def test_real_product_urls_are_recognised(
+        self, slug: str, url: str, sku: str
+    ) -> None:
+        from app.services.store_providers import get_provider
+
+        provider = get_provider(slug)
+        assert isinstance(provider, SitemapCatalogProvider)
+        entry = provider._entry(url)
+        assert entry is not None
+        assert entry.sku == sku
+
+    @pytest.mark.parametrize(
+        ("slug", "url"),
+        [
+            # A store-local Biocoop line has no national price.
+            ("biocoop", "https://www.biocoop.fr/creme-glacee-kim-loc-002508-000.html"),
+            ("biocoop", "https://www.biocoop.fr/cremerie/oeufs-beurres-cremes.html"),
+            # robots.txt disallows /catalog/.
+            ("naturalia", "https://www.naturalia.fr/catalog/product/view/id/45355"),
+        ],
+    )
+    def test_other_urls_are_not_products(self, slug: str, url: str) -> None:
+        from app.services.store_providers import get_provider
+
+        provider = get_provider(slug)
+        assert isinstance(provider, SitemapCatalogProvider)
+        assert provider._entry(url) is None

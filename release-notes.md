@@ -1,5 +1,12 @@
 # Release Notes
 
+## 1.6.1
+
+### Fixes
+
+* Extension: Give Firefox a background script it can run
+* Release: Keep Google Play release notes under its 500-character limit
+
 ## 1.6.0
 
 ### Features

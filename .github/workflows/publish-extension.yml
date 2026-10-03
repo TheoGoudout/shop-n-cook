@@ -123,6 +123,10 @@ jobs:
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version-file: .bun-version
+          # No cache: this job publishes to a store with the store's
+          # credentials, and a cache entry written by a less-privileged run has
+          # no business being restored into it. (zizmor: cache-poisoning)
+          no-cache: true
 
       - name: Install dependencies
         run: bun ci
@@ -228,6 +232,10 @@ jobs:
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version-file: .bun-version
+          # No cache: this job publishes to a store with the store's
+          # credentials, and a cache entry written by a less-privileged run has
+          # no business being restored into it. (zizmor: cache-poisoning)
+          no-cache: true
 
       - name: Install web-ext
         run: .github/scripts/publish-extension/install-web-ext.sh
@@ -341,6 +349,10 @@ jobs:
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version-file: .bun-version
+          # No cache: this job publishes to a store with the store's
+          # credentials, and a cache entry written by a less-privileged run has
+          # no business being restored into it. (zizmor: cache-poisoning)
+          no-cache: true
 
       - name: Install ext-opera-upload
         run: .github/scripts/publish-extension/install-ext-opera-upload.sh

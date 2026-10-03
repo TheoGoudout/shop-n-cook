@@ -226,7 +226,9 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: gradle
+          # No gradle cache: this job signs and uploads to Google Play, and a
+          # cache entry written by a less-privileged run has no business being
+          # restored into it. (zizmor: cache-poisoning)
 
       - name: Decode keystore
         env:

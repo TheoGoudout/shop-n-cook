@@ -81,6 +81,79 @@ def test_generating_a_menu_creates_a_plan_with_entries(
     assert body["end_date"] == date(2026, 4, 10).isoformat()
 
 
+def test_generation_follows_a_weekly_schedule(
+    client: TestClient, normal_user_token_headers: dict[str, str], db: Session
+) -> None:
+    me = _me(db)
+    for _ in range(10):
+        _recipe(db, me.id)  # type: ignore[attr-defined]
+
+    # START is a Monday.
+    schedule = [
+        ["lunch", "dinner"],
+        ["dinner"],
+        ["lunch"],
+        [],
+        [],
+        ["dinner"],
+        [],
+    ]
+    response = client.post(
+        f"{settings.API_V1_STR}/meal-plans/generate",
+        headers=normal_user_token_headers,
+        json={
+            "start_date": START.isoformat(),
+            "days": 7,
+            "include_public": False,
+            "meals_by_weekday": schedule,
+        },
+    )
+    assert response.status_code == 200
+    slots = sorted(
+        (date.fromisoformat(e["entry_date"]).weekday(), e["meal_type"])
+        for e in response.json()["entries"]
+    )
+    assert slots == [
+        (0, "dinner"),
+        (0, "lunch"),
+        (1, "dinner"),
+        (2, "lunch"),
+        (5, "dinner"),
+    ]
+
+
+def test_generation_rejects_a_schedule_with_no_meals(
+    client: TestClient, normal_user_token_headers: dict[str, str], db: Session
+) -> None:
+    me = _me(db)
+    _recipe(db, me.id)  # type: ignore[attr-defined]
+
+    response = client.post(
+        f"{settings.API_V1_STR}/meal-plans/generate",
+        headers=normal_user_token_headers,
+        json={
+            "start_date": START.isoformat(),
+            "days": 3,
+            "include_public": False,
+            # Only Sunday has a meal, and a three-day plan from Monday misses it.
+            "meals_by_weekday": [[], [], [], [], [], [], ["dinner"]],
+        },
+    )
+    assert response.status_code == 422
+    assert response.json()["detail"] == "No meals selected for these days"
+
+
+def test_generation_rejects_a_schedule_without_seven_days(
+    client: TestClient, normal_user_token_headers: dict[str, str]
+) -> None:
+    response = client.post(
+        f"{settings.API_V1_STR}/meal-plans/generate",
+        headers=normal_user_token_headers,
+        json={"start_date": START.isoformat(), "meals_by_weekday": [["dinner"]]},
+    )
+    assert response.status_code == 422
+
+
 def test_generation_honours_a_dietary_constraint(
     client: TestClient, normal_user_token_headers: dict[str, str], db: Session
 ) -> None:

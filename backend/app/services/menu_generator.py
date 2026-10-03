@@ -13,7 +13,9 @@ The algorithm is a greedy fill with a variety penalty:
 3. fill slots in order, re-ranking after each pick so that a cuisine already
    used this week is penalised — this is what stops seven pasta nights;
 4. stop adding a recipe once it would take the plan over budget, unless nothing
-   affordable is left to pick.
+   affordable is left to pick;
+5. when batch cooking, a pick also fills the next free slots on later days as
+   leftovers, and is priced for every meal it covers.
 
 Ties break on recipe id, and the shuffle is seeded, so the same request against
 the same library always produces the same menu. That matters: a user who does
@@ -34,7 +36,9 @@ from app.services.pricing import PriceBook
 __all__ = [
     "GenerationRequest",
     "PlannedMeal",
+    "cost_of",
     "generate_menu",
+    "is_eligible",
     "pick_replacement",
     "season_for_date",
 ]
@@ -91,14 +95,33 @@ class GenerationRequest:
     match_season: bool = True
     exclude_recipe_ids: frozenset[uuid.UUID] = field(default_factory=frozenset)
     seed: int = 0
+    #: Which meals to plan on each weekday, Monday first (``date.weekday()``
+    #: order). ``None`` means every day gets ``meal_types``; an empty entry
+    #: means that day is skipped — eating out, at the in-laws', …
+    meals_by_weekday: tuple[tuple[MealType, ...], ...] | None = None
+    #: Batch cooking: how many meals one cooking covers. Above one, each recipe
+    #: is cooked in a larger quantity and eaten again on the following days.
+    batch_portions: int = 1
+
+    def __post_init__(self) -> None:
+        if self.meals_by_weekday is not None and len(self.meals_by_weekday) != 7:
+            raise ValueError("meals_by_weekday needs one entry per weekday")
+        if self.batch_portions < 1:
+            raise ValueError("batch_portions must be at least 1")
 
     @property
     def dates(self) -> list[date]:
         return [self.start_date + timedelta(days=i) for i in range(self.days)]
 
+    def meal_types_for(self, day: date) -> tuple[MealType, ...]:
+        """The meals to plan on ``day``."""
+        if self.meals_by_weekday is None:
+            return self.meal_types
+        return self.meals_by_weekday[day.weekday()]
+
     @property
     def slot_count(self) -> int:
-        return self.days * len(self.meal_types)
+        return sum(len(self.meal_types_for(day)) for day in self.dates)
 
 
 @dataclass(frozen=True)
@@ -108,8 +131,17 @@ class PlannedMeal:
     recipe: Recipe
     entry_date: date
     meal_type: MealType
+    #: Servings eaten at each meal, the cooked one and every leftover alike.
     servings: int
+    #: Cost of the whole batch: ``servings`` for every meal it covers.
     estimated_cost: Decimal | None
+    #: Later slots eaten from this same cooking, when batch cooking.
+    leftovers: tuple[tuple[date, MealType], ...] = ()
+
+    @property
+    def portions(self) -> int:
+        """How many meals this one cooking covers."""
+        return 1 + len(self.leftovers)
 
 
 def _total_time(recipe: Recipe) -> int:
@@ -192,7 +224,8 @@ def score(
     return points
 
 
-def _cost_of(recipe: Recipe, prices: PriceBook | None, servings: int) -> Decimal | None:
+def cost_of(recipe: Recipe, prices: PriceBook | None, servings: int) -> Decimal | None:
+    """What cooking ``recipe`` for ``servings`` costs, or ``None`` if unpriced."""
     if prices is None:
         return None
     scale = servings / (recipe.servings or 1)
@@ -251,6 +284,32 @@ def _rank(
     )
 
 
+Slot = tuple[date, MealType]
+
+
+def _leftover_slots(
+    slots: list[Slot], start: int, filled: set[Slot], portions: int
+) -> list[Slot]:
+    """Where the rest of a batch cooked for ``slots[start]`` is eaten.
+
+    Leftovers go to the next free slots on *later* days — nobody wants the same
+    dish for lunch and dinner — one per day, so a batch of three is spread over
+    three days rather than eaten twice tomorrow.
+    """
+    cook_day = slots[start][0]
+    days_used = {cook_day}
+    leftovers: list[Slot] = []
+    for slot in slots[start + 1 :]:
+        if len(leftovers) == portions - 1:
+            break
+        day = slot[0]
+        if slot in filled or day in days_used:
+            continue
+        leftovers.append(slot)
+        days_used.add(day)
+    return leftovers
+
+
 def generate_menu(
     recipes: list[Recipe],
     request: GenerationRequest,
@@ -258,12 +317,25 @@ def generate_menu(
 ) -> list[PlannedMeal]:
     """Choose a recipe for each slot in the request.
 
+    With ``batch_portions`` above one, each recipe chosen is cooked once for
+    several meals and also fills the next free slots as leftovers, so the menu
+    has fewer recipes than slots.
+
     Returns fewer meals than slots when the constraints cannot be met — an
     honest short menu beats one that quietly ignores the diet it was given.
     """
-    costs: dict[uuid.UUID, Decimal | None] = {
-        r.id: _cost_of(r, prices, request.servings) for r in recipes
-    }
+    # Batch costs, by how many meals the batch covers. Scoring only cares
+    # whether a recipe is priced, so it always reads the single-meal costs.
+    costs_by_portions: dict[int, dict[uuid.UUID, Decimal | None]] = {}
+
+    def costs_for(portions: int) -> dict[uuid.UUID, Decimal | None]:
+        if portions not in costs_by_portions:
+            costs_by_portions[portions] = {
+                r.id: cost_of(r, prices, request.servings * portions) for r in recipes
+            }
+        return costs_by_portions[portions]
+
+    costs = costs_for(1)
 
     pool = list(recipes)
     tiebreak = _tiebreaker(request.seed)
@@ -273,46 +345,61 @@ def generate_menu(
     spent = Decimal(0)
     chosen: list[PlannedMeal] = []
 
-    for day in request.dates:
-        for meal_type in request.meal_types:
-            eligible = [r for r in pool if is_eligible(r, request, meal_type)]
-            if not eligible:
-                continue
+    slots: list[Slot] = [
+        (day, meal_type)
+        for day in request.dates
+        for meal_type in request.meal_types_for(day)
+    ]
+    filled: set[Slot] = set()
 
-            ranked = _rank(
-                eligible,
-                request,
-                day,
-                meal_type,
-                used_cuisines,
-                used_recipe_ids,
-                costs,
-                tiebreak,
+    for index, (day, meal_type) in enumerate(slots):
+        if (day, meal_type) in filled:
+            continue
+        eligible = [r for r in pool if is_eligible(r, request, meal_type)]
+        if not eligible:
+            continue
+
+        leftovers = _leftover_slots(slots, index, filled, request.batch_portions)
+        portions = 1 + len(leftovers)
+        batch_costs = costs_for(portions)
+
+        ranked = _rank(
+            eligible,
+            request,
+            day,
+            meal_type,
+            used_cuisines,
+            used_recipe_ids,
+            costs,
+            tiebreak,
+        )
+
+        pick = _first_affordable(ranked, batch_costs, spent, request.budget)
+        if pick is None:
+            # Nothing left that fits the budget; the menu ends here rather
+            # than silently going over.
+            return chosen
+
+        cost = batch_costs.get(pick.id)
+        if cost is not None:
+            spent += cost
+        if pick.cuisine_type:
+            key = pick.cuisine_type.lower()
+            used_cuisines[key] = used_cuisines.get(key, 0) + 1
+        used_recipe_ids.add(pick.id)
+        filled.add((day, meal_type))
+        filled.update(leftovers)
+
+        chosen.append(
+            PlannedMeal(
+                recipe=pick,
+                entry_date=day,
+                meal_type=meal_type,
+                servings=request.servings,
+                estimated_cost=cost,
+                leftovers=tuple(leftovers),
             )
-
-            pick = _first_affordable(ranked, costs, spent, request.budget)
-            if pick is None:
-                # Nothing left that fits the budget; the menu ends here rather
-                # than silently going over.
-                return chosen
-
-            cost = costs.get(pick.id)
-            if cost is not None:
-                spent += cost
-            if pick.cuisine_type:
-                key = pick.cuisine_type.lower()
-                used_cuisines[key] = used_cuisines.get(key, 0) + 1
-            used_recipe_ids.add(pick.id)
-
-            chosen.append(
-                PlannedMeal(
-                    recipe=pick,
-                    entry_date=day,
-                    meal_type=meal_type,
-                    servings=request.servings,
-                    estimated_cost=cost,
-                )
-            )
+        )
 
     return chosen
 
@@ -354,7 +441,7 @@ def pick_replacement(
     replacement still respects the variety rules.
     """
     costs: dict[uuid.UUID, Decimal | None] = {
-        r.id: _cost_of(r, prices, request.servings) for r in recipes
+        r.id: cost_of(r, prices, request.servings) for r in recipes
     }
     used_cuisines: dict[str, int] = {}
     for recipe in recipes:

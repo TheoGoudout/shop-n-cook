@@ -50,6 +50,7 @@ def meal_plan_entry_to_public(
         servings=entry.servings,
         estimated_cost=cost.total if cost else None,
         estimated_cost_per_serving=cost.per_unit(entry.servings) if cost else None,
+        batch_of_id=entry.batch_of_id,
     )
 
 
@@ -159,19 +160,54 @@ def get_meal_plan_entry(
 
 
 def add_entry(
-    *, session: Session, plan: MealPlan, entry_in: MealPlanEntryCreate
+    *,
+    session: Session,
+    plan: MealPlan,
+    entry_in: MealPlanEntryCreate,
+    batch_of: MealPlanEntry | None = None,
 ) -> MealPlanEntry:
-    entry = MealPlanEntry(**entry_in.model_dump(), meal_plan_id=plan.id)
+    """Add one meal; ``batch_of`` makes it leftovers of that cooked entry."""
+    entry = MealPlanEntry(
+        **entry_in.model_dump(),
+        meal_plan_id=plan.id,
+        batch_of_id=batch_of.id if batch_of is not None else None,
+    )
     session.add(entry)
     session.commit()
     session.refresh(entry)
     return entry
 
 
+def get_batch_leftovers(
+    *, session: Session, entry: MealPlanEntry
+) -> list[MealPlanEntry]:
+    """The meals eaten from the batch cooked at ``entry``."""
+    return list(
+        session.exec(
+            select(MealPlanEntry).where(MealPlanEntry.batch_of_id == entry.id)
+        ).all()
+    )
+
+
 def update_entry(
     *, session: Session, entry: MealPlanEntry, update_in: MealPlanEntryUpdate
 ) -> MealPlanEntry:
-    entry.sqlmodel_update(update_in.model_dump(exclude_unset=True))
+    """Change one meal, keeping batch cooking consistent.
+
+    Changing the recipe of a cooked batch changes its leftovers with it — they
+    are the same dish. Changing the recipe of a leftover means it is no longer
+    leftovers, so it leaves the batch.
+    """
+    changes = update_in.model_dump(exclude_unset=True)
+    new_recipe = changes.get("recipe_id")
+    if new_recipe is not None and new_recipe != entry.recipe_id:
+        if entry.batch_of_id is not None:
+            entry.batch_of_id = None
+        else:
+            for leftover in get_batch_leftovers(session=session, entry=entry):
+                leftover.recipe_id = new_recipe
+                session.add(leftover)
+    entry.sqlmodel_update(changes)
     session.add(entry)
     session.commit()
     session.refresh(entry)

@@ -107,5 +107,9 @@
     "unpriced_count_other": "{{count}} articles sans prix",
     "partial_total": "Ne couvre que les articles avec un prix",
     "no_price": "—"
-  }
+  },
+  "servings_count": "{{count}} portion",
+  "servings_count_other": "{{count}} portions",
+  "servings_decrease": "Moins de portions",
+  "servings_increase": "Plus de portions"
 }

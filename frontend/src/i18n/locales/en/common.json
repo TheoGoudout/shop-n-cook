@@ -107,5 +107,9 @@
     "unpriced_count_other": "{{count}} items not priced",
     "partial_total": "Covers priced items only",
     "no_price": "—"
-  }
+  },
+  "servings_count": "{{count}} portion",
+  "servings_count_other": "{{count}} portions",
+  "servings_decrease": "Fewer portions",
+  "servings_increase": "More portions"
 }

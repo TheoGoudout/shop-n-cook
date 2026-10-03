@@ -56,7 +56,7 @@ export function AddMealPlan() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>
+        <Button variant="outline">
           <Plus />
           {t("add.trigger")}
         </Button>

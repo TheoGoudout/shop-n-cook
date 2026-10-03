@@ -18,6 +18,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useCrudMutation } from "@/hooks/useCrudMutation"
 import { useUnitSystem } from "@/hooks/useUnitSystem"
+import { itemsToBuy } from "@/lib/pantry"
 
 import { AddItemDialog } from "./AddItemDialog"
 import { AddRecipeDialog } from "./AddRecipeDialog"
@@ -68,7 +69,7 @@ export function ShoppingListCard({ list }: Props) {
     invalidateKeys: listsKey,
   })
 
-  const items = list.items ?? []
+  const items = itemsToBuy(list.items)
   const checkedCount = items.filter((i) => i.is_checked).length
   const progress = items.length > 0 ? (checkedCount / items.length) * 100 : 0
 
@@ -143,7 +144,7 @@ export function ShoppingListCard({ list }: Props) {
         {/* Preview items (up to 4) */}
         <div className="space-y-1">
           {items.slice(0, 4).map((item) => {
-            const converted = convert(item.quantity, item.unit)
+            const converted = convert(item.quantity_to_buy, item.unit)
             return (
               <div key={item.id} className="flex items-center gap-2 group">
                 <Checkbox

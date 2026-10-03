@@ -32,8 +32,9 @@ point at the Coolify host and are managed there.
 
 | Trigger | Environment |
 |---|---|
-| Push to `master` | staging |
+| Called by [`deploy-staging.yml`](.github/workflows/deploy-staging.yml) on a push to `master`, after the staging backend | staging |
 | Called by [`release.yml`](.github/workflows/release.yml) when a release is published | production |
+| Called by [`rollback.yml`](.github/workflows/rollback.yml) | whichever you pick |
 | `workflow_dispatch` | whichever you pick |
 
 Production deploys alongside the extension and app stores, driven by the
@@ -194,14 +195,20 @@ different things on purpose:
 
 | | Tracks | Moved by |
 |---|---|---|
-| staging | `master` | The Coolify GitHub App, automatically, on every push |
+| staging | `master` | [`deploy-coolify.yml`](.github/workflows/deploy-coolify.yml), called by [`deploy-staging.yml`](.github/workflows/deploy-staging.yml) on every push that touches the backend |
 | production | the released tag, e.g. `v1.5.0` | [`deploy-coolify.yml`](.github/workflows/deploy-coolify.yml), called by `release.yml` |
 
-Staging needs no GitHub Actions workflow or webhook configuration — the GitHub
-App integration redeploys it on every push to `master`.
+**Both applications have Coolify's Automatic Deployment turned off.** Staging
+used to redeploy itself through the Coolify GitHub App, while
+`deploy-cloudflare.yml` deployed the staging frontend from the same push. The
+Cloudflare upload takes seconds and the Coolify build minutes, so every API
+change put a staging frontend in front of a backend that did not serve it yet.
+`deploy-staging.yml` now runs the two in order — backend, then frontend — the
+way `release.yml` does for production. If the staging application's webhook is
+left on, it races that run with a deploy of its own.
 
-Production has that auto-deploy webhook **off**, so master pushes cannot reach
-it. Instead, publishing a release runs `deploy-coolify.yml`, which:
+Production has that webhook off too, so master pushes cannot reach it.
+Publishing a release runs `deploy-coolify.yml`, which:
 
 1. resolves the tag to a commit and reads the expected version out of
    `backend/pyproject.toml` at that commit,
@@ -221,8 +228,9 @@ of its clients. Pre-releases do not reach production.
 
 ### Required GitHub secrets
 
-Set these on the `production` GitHub Environment (and on `staging` too if you
-want the manual dispatch to work there):
+Set these on both the `staging` and `production` GitHub Environments, each
+pointing at its own application — `deploy-staging.yml` needs the staging set on
+every push to `master`:
 
 | Secret | Description |
 |---|---|
@@ -240,10 +248,13 @@ either a Cloudflare Access service token or a self-hosted runner.
 
 ### Rolling back
 
-Dispatch [`deploy-coolify.yml`](.github/workflows/deploy-coolify.yml) with
-`environment: production` and `ref` set to the previous tag. It re-pins and
-redeploys, and the version assertion confirms the rollback actually took. Coolify
-also keeps previous deploys around for a redeploy from its dashboard.
+Dispatch [`rollback.yml`](.github/workflows/rollback.yml) with the environment
+and the tag to return to. It rolls the frontend back first and the backend
+second — the reverse of a release — through the same reusable workflows, so the
+version assertion confirms the rollback actually took. To move the backend on
+its own, dispatch [`deploy-coolify.yml`](.github/workflows/deploy-coolify.yml)
+instead. Coolify also keeps previous deploys around for a redeploy from its
+dashboard.
 
 Use `force: true` when re-running against a ref the application is already
 pinned to — otherwise Coolify may decide there is nothing to rebuild.

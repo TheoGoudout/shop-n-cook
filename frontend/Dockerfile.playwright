@@ -2,7 +2,11 @@ FROM mcr.microsoft.com/playwright:v1.58.2-noble
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y unzip \
+# The bun installer below is piped into bash: without pipefail a failed download
+# would hand bash an empty script and the build would carry on without bun.
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+RUN apt-get update && apt-get install -y --no-install-recommends unzip \
     && rm -rf /var/lib/apt/lists/*
 
 RUN curl -fsSL https://bun.sh/install | bash

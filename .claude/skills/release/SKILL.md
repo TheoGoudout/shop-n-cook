@@ -105,8 +105,9 @@ build, and asserts that `api.shop-n-cook.com` reports the released version. It
 runs before the Cloudflare deploy so the API is upgraded ahead of the frontend
 that calls it.
 
-Staging is separate and unchanged: it still redeploys continuously from `master`
-via the Coolify GitHub App. See `deployment.md`.
+Staging is separate: `deploy-staging.yml` redeploys it from `master` on every
+push, backend first and then the frontend, through the same two reusable
+workflows. See `deployment.md`.
 
 ## Required secrets
 

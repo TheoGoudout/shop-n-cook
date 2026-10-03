@@ -49,13 +49,16 @@ rules:
         # the right bar — a pre-commit hook runs arbitrary code on a
         # contributor's machine and in the pre-commit job.
         - pre-commit/*
+        - AleksaC/hadolint-py
         - compilerla/conventional-pre-commit
+        - gitleaks/gitleaks
+        - Mateusz-Grzelinski/actionlint-py
+        - python-jsonschema/check-jsonschema
         - shellcheck-py/shellcheck-py
         # Vetted individually — single-purpose actions, no org-wide trust.
         - agilepathway/pull-request-label-checker
         - dorny/paths-filter
         - mxschmitt/action-tmate
-        - nick-fields/retry
         - pre-commit-ci/lite-action
         - r0adkll/upload-google-play
         - re-actors/alls-green

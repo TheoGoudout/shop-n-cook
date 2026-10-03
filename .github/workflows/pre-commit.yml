@@ -5,16 +5,20 @@ on:
     types:
       - opened
       - synchronize
+      - reopened
+
+permissions: {}
+
+# One run per pull request, cancelled on a new push: the autofix commit this
+# pushes is derived from the head it checked out, so a superseded run has
+# nothing left to contribute.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 env:
   # Forks and Dependabot don't have access to secrets
   HAS_SECRETS: ${{ secrets.PRE_COMMIT != '' }}
-
-permissions: {}
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   pre-commit:
@@ -22,22 +26,18 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
-      contents: write
+      contents: read # The autofix push uses the PRE_COMMIT token, not this one.
     steps:
-      - name: Dump GitHub context
-        env:
-          GITHUB_CONTEXT: ${{ toJson(github) }}
-        run: echo "$GITHUB_CONTEXT"
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         name: Checkout PR for own repo
         if: env.HAS_SECRETS == 'true'
         with:
-          # To be able to commit it needs to fetch the head of the branch, not the
-          # merge commit
+          # To be able to commit it needs the head of the branch, not the
+          # merge commit, and the full history to compute diffs
           ref: ${{ github.head_ref }}
-          # And it needs the full history to be able to compute diffs
           fetch-depth: 0
-          # A token other than the default GITHUB_TOKEN is needed to be able to trigger CI
+          # A token other than the default GITHUB_TOKEN is needed for the
+          # autofix commit to trigger CI
           token: ${{ secrets.PRE_COMMIT }} # zizmor: ignore[secrets-outside-env]
           # Load-bearing: commit-and-push-changes.sh pushes the autofix commit
           # through the credential helper this checkout installs. The token is
@@ -46,26 +46,28 @@ jobs:
           # packed into.
           persist-credentials: true # zizmor: ignore[artipacked] -- required for `git push`; see above
       # pre-commit lite ci needs the default checkout configs to work
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         name: Checkout PR for fork
         if: env.HAS_SECRETS == 'false'
         with:
-          persist-credentials: false
-        # To be able to commit it needs the head branch of the PR, the remote one
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
-      - name: Create .env from example
+          persist-credentials: false
+      # The client-generation hook imports the backend, which needs settings
+      - name: Create .env from the example
         run: cp .env.example .env
-      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: .bun-version
       - name: Set up Python
-        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
-          python-version: "3.11"
+          python-version-file: .python-version
       - name: Setup uv
-        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
+        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
         with:
+          enable-cache: true
           cache-dependency-glob: |
-            requirements**.txt
             pyproject.toml
             uv.lock
       - name: Install backend dependencies
@@ -74,7 +76,11 @@ jobs:
         run: bun ci
       - name: Run prek - pre-commit
         id: precommit
-        run: uvx prek run --from-ref origin/${GITHUB_BASE_REF} --to-ref HEAD --show-diff-on-failure
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          # The zizmor hook runs offline; this is only for its rate limit.
+          GH_TOKEN: ${{ github.token }}
+        run: uvx prek run --from-ref "origin/${BASE_REF}" --to-ref HEAD --show-diff-on-failure
         # Hooks that reformat files exit non-zero. The job must survive that so the
         # steps below can push the fixes; the final "Error out" step re-raises the
         # failure once the auto-format commit is in.
@@ -82,7 +88,7 @@ jobs:
       - name: Commit and push changes
         if: env.HAS_SECRETS == 'true'
         run: .github/scripts/pre-commit/commit-and-push-changes.sh
-      - uses: pre-commit-ci/lite-action@5d6cc0eb514c891a40562a58a8e71576c5c7fb43 # v1.1.0
+      - uses: pre-commit-ci/lite-action@062bca0919bc9d6e66755cc05074b70c77e111fc # v1.2.0
         if: env.HAS_SECRETS == 'false'
         with:
           msg: 🎨 Auto format and update with pre-commit
@@ -91,20 +97,16 @@ jobs:
         run: exit 1
 
   # https://github.com/marketplace/actions/alls-green#why
-  pre-commit-alls-green:  # This job does nothing and is only used for the branch protection
+  pre-commit-alls-green: # The one check branch protection requires.
     name: All checks passed
     if: always()
     needs:
       - pre-commit
     runs-on: ubuntu-latest
     permissions: {} # Reads `needs`; touches nothing.
-    timeout-minutes: 10
+    timeout-minutes: 5
     steps:
-      - name: Dump GitHub context
-        env:
-          GITHUB_CONTEXT: ${{ toJson(github) }}
-        run: echo "$GITHUB_CONTEXT"
       - name: Decide whether the needed jobs succeeded or failed
-        uses: re-actors/alls-green@05ac9388f0aebcb5727afa17fcccfecd6f8ec5fe # v1.2.2
+        uses: re-actors/alls-green@b5b5b37504aa4183270bd3d855c52a67f212be35 # v1.3.0
         with:
           jobs: ${{ toJSON(needs) }}

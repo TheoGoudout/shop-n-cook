@@ -1,5 +1,26 @@
 # Release Notes
 
+## 1.7.0
+
+### Features
+
+* Backend: Crawl top-rated recipes from recipe sites
+* Meal-plans: A dedicated menu generation page with portions per meal
+* Meal-plans: Batch cooking and a review step before saving a menu
+* Meal-plans: Choose which meals to generate on each weekday
+* Shopping: Check what is already at home before shopping
+
+### Fixes
+
+* Backend: Set the crawler migration's new revision and parent
+* Backend: Give the recipe crawler migration its own revision ID
+* Pricing: Compare stores on the same items, not on what each one prices
+
+### Internal
+
+* Extension: Format manifest.json as biome expects
+* Extension: Format manifest.json the way biome expects
+
 ## 1.6.1
 
 ### Fixes

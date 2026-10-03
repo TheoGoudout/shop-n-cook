@@ -10,7 +10,9 @@ from app.core.db import engine, init_db
 from app.core.limiter import limiter
 from app.main import app
 from app.models import (
+    CrawledRecipe,
     Recipe,
+    RecipeCrawlRun,
     RecipeIngredient,
     ShoppingList,
     ShoppingListItem,
@@ -74,6 +76,8 @@ def db() -> Generator[Session, None, None]:
     with Session(engine) as session:
         init_db(session)
         yield session
+        session.execute(delete(CrawledRecipe))
+        session.execute(delete(RecipeCrawlRun))
         session.execute(delete(ShoppingListItem))
         session.execute(delete(ShoppingList))
         session.execute(delete(RecipeIngredient))

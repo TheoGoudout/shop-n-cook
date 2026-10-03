@@ -158,6 +158,21 @@ class Settings(BaseSettings):
     # provider. 0 turns the background refresh off (tests do this).
     STORE_PRICE_REFRESH_HOURS: int = Field(default=24, ge=0)
 
+    # Recipe crawler: imports top-rated recipes from a fixed list of recipe
+    # sites (``app/services/recipe_crawler/sites.py``) as public recipes. Off
+    # by default, since every import is an LLM call and publishes third-party
+    # content: set the interval to turn it on.
+    RECIPE_CRAWL_HOURS: int = Field(default=0, ge=0)
+    #: Recipes imported per run, across all sites (each one is an LLM call).
+    RECIPE_CRAWL_MAX_IMPORTS: int = Field(default=10, ge=0)
+    #: Recipe pages read per site and per run, to judge their rating.
+    RECIPE_CRAWL_MAX_PAGES_PER_SITE: int = Field(default=20, ge=1)
+    #: Pause between two requests to the same site.
+    RECIPE_CRAWL_DELAY_SECONDS: float = Field(default=5.0, ge=0)
+    #: The account that owns crawled recipes. Created on first run, inactive,
+    #: so it can never log in.
+    RECIPE_CRAWL_OWNER_EMAIL: EmailStr = "recipes@shop-n-cook.com"
+
     # LangSmith tracing (optional)
     LANGCHAIN_TRACING_V2: bool = False
     LANGCHAIN_API_KEY: str | None = None

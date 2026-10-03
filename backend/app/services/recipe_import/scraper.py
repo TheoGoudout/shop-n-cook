@@ -10,6 +10,8 @@ from urllib.parse import urlparse
 import httpx
 from bs4 import BeautifulSoup
 
+from app.services.recipe_import import jsonld
+
 
 def _validate_url_is_public(url: str) -> None:
     """Raise ValueError if the URL resolves to a private/internal address (SSRF guard)."""
@@ -48,7 +50,16 @@ def fetch_page(url: str) -> tuple[str, str | None]:
         headers={"User-Agent": "Mozilla/5.0 (compatible; recipe-importer/1.0)"},
     )
     response.raise_for_status()
-    soup = BeautifulSoup(response.text, "html.parser")
+    return extract_page(response.text)
+
+
+def extract_page(html: str) -> tuple[str, str | None]:
+    """Reduce a recipe page's HTML to (focused recipe text, og:image URL or None).
+
+    Split from ``fetch_page`` so a caller that already holds the page — the
+    recipe crawler reads it first to judge its rating — need not fetch it twice.
+    """
+    soup = BeautifulSoup(html, "html.parser")
 
     # --- Extract image ---
     image_url: str | None = None
@@ -61,28 +72,16 @@ def fetch_page(url: str) -> tuple[str, str | None]:
                 break
 
     # --- 1. Try JSON-LD (best quality, lowest tokens) ---
-    for script in soup.find_all("script", type="application/ld+json"):
-        try:
-            data = json.loads(script.string or "")
-        except Exception:
-            continue
-
-        # Handle list or single object
-        items = data if isinstance(data, list) else [data]
-
-        for item in items:
-            if not isinstance(item, dict):
-                continue
-
-            if item.get("@type") in ("Recipe", ["Recipe"]):
-                # Extract only relevant fields
-                extracted = {
-                    "title": item.get("name"),
-                    "description": item.get("description"),
-                    "ingredients": item.get("recipeIngredient"),
-                    "instructions": item.get("recipeInstructions"),
-                }
-                return json.dumps(extracted), image_url
+    recipe = jsonld.find_recipe(soup)
+    if recipe is not None:
+        # Extract only relevant fields
+        extracted = {
+            "title": recipe.get("name"),
+            "description": recipe.get("description"),
+            "ingredients": recipe.get("recipeIngredient"),
+            "instructions": recipe.get("recipeInstructions"),
+        }
+        return json.dumps(extracted), image_url
 
     # --- 2. Targeted HTML extraction ---
     def find_section(keywords: list[str]) -> str:

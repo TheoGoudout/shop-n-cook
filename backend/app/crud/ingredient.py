@@ -11,7 +11,7 @@ from app.models.ingredient import (
     IngredientCreate,
     IngredientUpdate,
 )
-from app.models.recipe import RecipeIngredient
+from app.models.recipe import RecipeIngredient, RecipeIngredientCreate
 from app.models.shopping_list import ShoppingListItem
 
 
@@ -48,6 +48,40 @@ def get_or_create_ingredient(session: Session, name: str) -> tuple[Ingredient, b
     session.commit()
     session.refresh(ingredient)
     return ingredient, True
+
+
+def sync_ingredient_catalog(
+    *, session: Session, ingredients: Sequence[RecipeIngredientCreate]
+) -> list[uuid.UUID]:
+    """Make sure every ingredient a recipe uses is in the catalogue.
+
+    Fills in a catalogue entry's category and English name when the recipe
+    knows them and the catalogue does not. Returns the ids of the entries that
+    still have no image, for the caller to fetch one in the background.
+    """
+    ids_missing_image: list[uuid.UUID] = []
+    needs_commit = False
+    for ing in ingredients:
+        ingredient, _ = get_or_create_ingredient(session, ing.ingredient_name)
+        changed = False
+        if (
+            ing.category is not None
+            and ing.category != IngredientCategory.OTHER
+            and ingredient.category == IngredientCategory.OTHER
+        ):
+            ingredient.category = ing.category
+            changed = True
+        if ing.name_en and not ingredient.name_en:
+            ingredient.name_en = ing.name_en
+            changed = True
+        if changed:
+            session.add(ingredient)
+            needs_commit = True
+        if not ingredient.image_url:
+            ids_missing_image.append(ingredient.id)
+    if needs_commit:
+        session.commit()
+    return ids_missing_image
 
 
 def get_ingredients(

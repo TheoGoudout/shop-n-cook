@@ -11,9 +11,13 @@ This package is structured around sibling modules:
 - scraper.py: fetch_page (HTTP + JSON-LD + HTML fallback)
 - photos.py: PhotoInput + validate_photos (count / size / magic-byte checks)
 - llm.py: configure_langsmith + get_llm (Anthropic / OpenAI / Google)
-- orchestrator.py: import_recipe_from_url / import_recipe_from_photos tie them together
+- jsonld.py: find_recipe (the schema.org Recipe a page publishes, however nested)
+- orchestrator.py: import_recipe_from_url / import_recipe_from_html /
+  import_recipe_from_photos tie them together
+- mapping.py: parsed_to_create / parsed_to_update turn a ParsedRecipe into a
+  RecipeCreate / RecipeUpdate
 
-The public surface (re-exported below) is the two import functions plus the
+The public surface (re-exported below) is the import functions plus the
 ParsedRecipe schemas. The orchestrator imports its dependencies via module
 references (llm_module.get_llm, scraper_module.fetch_page) so tests can
 patch them at app.services.recipe_import.llm.get_llm /
@@ -34,6 +38,7 @@ from app.services.recipe_import.models import (
     ParsedStep,
 )
 from app.services.recipe_import.orchestrator import (
+    import_recipe_from_html,
     import_recipe_from_photos,
     import_recipe_from_url,
 )
@@ -47,6 +52,7 @@ __all__ = [
     "ParsedStep",
     "PhotoInput",
     "RecipeImportError",
+    "import_recipe_from_html",
     "import_recipe_from_photos",
     "import_recipe_from_url",
     "validate_photos",

@@ -159,16 +159,34 @@ class IngredientPrice(IngredientPriceBase, table=True):
 
 
 class StoreComparisonEntry(SQLModel):
-    """What one shopping list would cost at one store."""
+    """What one shopping list would cost at one store.
+
+    ``estimated_total`` only sums what this store prices, so on its own it is
+    not comparable across stores. ``projected_total`` is: it fills the store's
+    gaps with estimates (``projected_item_count`` of them) so every store is
+    costed over the same items. ``comparable_total`` sums only the items every
+    store prices — exact, but partial.
+    """
 
     store_id: uuid.UUID
     store_name: str
     store_slug: str
     currency: str
     estimated_total: Decimal | None = None
+    priced_item_count: int = 0
     unpriced_item_count: int = 0
+    comparable_total: Decimal | None = None
+    projected_total: Decimal | None = None
+    projected_item_count: int = 0
 
 
 class StoreComparison(SQLModel):
+    """Stores ranked by ``projected_total``; unrankable ones last."""
+
     data: list[StoreComparisonEntry]
     cheapest_store_id: uuid.UUID | None = None
+    item_count: int = 0
+    #: Items every compared store prices — the basis of ``comparable_total``.
+    comparable_item_count: int = 0
+    #: Items no store prices: missing from every total alike.
+    unpriceable_item_count: int = 0

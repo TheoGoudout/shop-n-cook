@@ -200,12 +200,66 @@ def test_store_comparison_ranks_cheapest_first(
     assert response.status_code == 200
     body = response.json()
     totals = [
-        Decimal(str(e["estimated_total"]))
+        Decimal(str(e["projected_total"]))
         for e in body["data"]
-        if e["estimated_total"] is not None
+        if e["projected_total"] is not None
     ]
     assert totals == sorted(totals)
     assert body["cheapest_store_id"] == body["data"][0]["store_id"]
+
+
+def test_store_comparison_fills_a_missing_price_with_a_labelled_estimate(
+    client: TestClient, normal_user_token_headers: dict[str, str], db: Session
+) -> None:
+    """Only one store prices the oil: the others must not win by omitting it."""
+    flour = _priced_ingredient(db, "2.00")
+    oil = crud.create_ingredient(
+        session=db,
+        ingredient_in=IngredientCreate(name=f"oil-{random_lower_string()}"),
+    )
+    curated = _store(db, index=1.0)
+    crud.upsert_ingredient_price(
+        session=db,
+        ingredient=oil,
+        price_in=IngredientPriceCreate(
+            store_id=curated.id,  # type: ignore[attr-defined]
+            price_amount=Decimal("8.00"),
+            price_quantity=1.0,
+            price_unit=Unit.KILOGRAM,
+        ),
+    )
+    list_id = client.post(
+        f"{settings.API_V1_STR}/shopping-lists/",
+        headers=normal_user_token_headers,
+        json={"name": random_lower_string()},
+    ).json()["id"]
+    for name in (flour.name, oil.name):  # type: ignore[attr-defined]
+        client.post(
+            f"{settings.API_V1_STR}/shopping-lists/{list_id}/items",
+            headers=normal_user_token_headers,
+            json={"name": name, "quantity": 1, "unit": "kg"},
+        )
+
+    body = client.get(
+        f"{settings.API_V1_STR}/shopping-lists/{list_id}/store-comparison",
+        headers=normal_user_token_headers,
+    ).json()
+
+    assert body["item_count"] == 2
+    assert body["comparable_item_count"] == 1
+    assert body["unpriceable_item_count"] == 0
+    for entry in body["data"]:
+        if entry["store_id"] == str(curated.id):  # type: ignore[attr-defined]
+            assert entry["unpriced_item_count"] == 0
+            assert entry["projected_item_count"] == 0
+            assert Decimal(str(entry["projected_total"])) == Decimal("10.00")
+        else:
+            # Raw total is flour alone; the projection adds an estimated oil.
+            assert entry["unpriced_item_count"] == 1
+            assert entry["projected_item_count"] == 1
+            assert Decimal(str(entry["projected_total"])) > Decimal(
+                str(entry["estimated_total"])
+            )
 
 
 def test_store_comparison_refuses_someone_elses_list(

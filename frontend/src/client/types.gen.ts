@@ -640,13 +640,25 @@ export type ShoppingListUpdate = {
  */
 export type SkipReason = 'no_match' | 'no_price' | 'no_pack_size' | 'store_unavailable';
 
+/**
+ * Stores ranked by ``projected_total``; unrankable ones last.
+ */
 export type StoreComparison = {
     data: Array<StoreComparisonEntry>;
     cheapest_store_id?: (string | null);
+    item_count?: number;
+    comparable_item_count?: number;
+    unpriceable_item_count?: number;
 };
 
 /**
  * What one shopping list would cost at one store.
+ *
+ * ``estimated_total`` only sums what this store prices, so on its own it is
+ * not comparable across stores. ``projected_total`` is: it fills the store's
+ * gaps with estimates (``projected_item_count`` of them) so every store is
+ * costed over the same items. ``comparable_total`` sums only the items every
+ * store prices — exact, but partial.
  */
 export type StoreComparisonEntry = {
     store_id: string;
@@ -654,7 +666,11 @@ export type StoreComparisonEntry = {
     store_slug: string;
     currency: string;
     estimated_total?: (string | null);
+    priced_item_count?: number;
     unpriced_item_count?: number;
+    comparable_total?: (string | null);
+    projected_total?: (string | null);
+    projected_item_count?: number;
 };
 
 export type StoreCreate = {

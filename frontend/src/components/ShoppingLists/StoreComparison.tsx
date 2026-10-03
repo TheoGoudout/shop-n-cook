@@ -1,18 +1,20 @@
 import { useQuery } from "@tanstack/react-query"
+import { Info } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
 import { ShoppingListsService } from "@/client"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { formatMoney, isPriced, toAmount } from "@/lib/money"
+import { formatMoney, isPriced, type Money, toAmount } from "@/lib/money"
 
 /**
  * What this basket costs at each retailer.
  *
- * The backend costs every store from the same list, so the spread is
- * comparable even where a store falls back to the catalog baseline. Stores
- * that could not be priced at all sort last and show no figure rather than a
- * zero.
+ * Stores rarely price the same items, so each store's raw total is not
+ * comparable: a store missing a price would look cheaper for it. Stores are
+ * ranked on `projected_total` instead, which fills a store's gaps with
+ * estimates so every store covers the same items — and every estimate is
+ * called out here, as is any item no store prices at all.
  */
 export function StoreComparison({ listId }: { listId: string }) {
   const { t } = useTranslation("shopping")
@@ -24,11 +26,13 @@ export function StoreComparison({ listId }: { listId: string }) {
   })
 
   const entries = data?.data ?? []
-  const priced = entries.filter((e) => isPriced(e.estimated_total))
+  const anyPriced = entries.some((e) => isPriced(e.estimated_total))
+  // The backend sorts rankable stores first, cheapest first.
+  const ranked = entries.filter((e) => isPriced(e.projected_total))
 
   if (isLoading) return null
 
-  if (priced.length === 0) {
+  if (!anyPriced) {
     return (
       <Card>
         <CardHeader className="py-3 px-4">
@@ -45,13 +49,24 @@ export function StoreComparison({ listId }: { listId: string }) {
     )
   }
 
-  const cheapest = toAmount(priced[0].estimated_total)
-  const dearest = toAmount(priced[priced.length - 1].estimated_total)
+  const money = (value: Money, c: string) =>
+    formatMoney(value, c, i18n.language)
+
+  const hasEstimates = ranked.some((e) => (e.projected_item_count ?? 0) > 0)
+  const canRank = ranked.length >= 2 && !!data?.cheapest_store_id
+  const cheapest = canRank ? toAmount(ranked[0].projected_total) : 0
+  const dearest = canRank
+    ? toAmount(ranked[ranked.length - 1].projected_total)
+    : 0
   const spread = dearest - cheapest
   // A bar relative to the most expensive store makes the spread readable at a
   // glance without needing a chart library here.
   const widthOf = (total: number) =>
     dearest > 0 ? Math.max(8, (total / dearest) * 100) : 100
+
+  const itemCount = data?.item_count ?? 0
+  const comparableCount = data?.comparable_item_count ?? 0
+  const unpriceableCount = data?.unpriceable_item_count ?? 0
 
   return (
     <Card>
@@ -65,12 +80,13 @@ export function StoreComparison({ listId }: { listId: string }) {
       </CardHeader>
       <CardContent className="px-4 pb-4 space-y-2">
         {entries.map((entry) => {
-          const total = formatMoney(
-            entry.estimated_total,
-            entry.currency,
-            i18n.language,
-          )
-          const isCheapest = entry.store_id === data?.cheapest_store_id
+          const rankable = isPriced(entry.projected_total)
+          const estimated = entry.projected_item_count ?? 0
+          const total = rankable
+            ? money(entry.projected_total, entry.currency)
+            : money(entry.estimated_total, entry.currency)
+          const isCheapest =
+            canRank && entry.store_id === data?.cheapest_store_id
           return (
             <div key={entry.store_id} className="space-y-1">
               <div className="flex items-center gap-2 text-sm">
@@ -80,29 +96,91 @@ export function StoreComparison({ listId }: { listId: string }) {
                     {t("store_comparison.cheapest")}
                   </Badge>
                 )}
-                <span className="tabular-nums font-medium">{total ?? "—"}</span>
+                <span
+                  className={
+                    rankable
+                      ? "tabular-nums font-medium"
+                      : "tabular-nums text-muted-foreground"
+                  }
+                >
+                  {total
+                    ? estimated > 0
+                      ? t("store_comparison.approx", { amount: total })
+                      : total
+                    : "—"}
+                </span>
               </div>
-              {total && (
+              {rankable && canRank && (
                 <div className="h-1.5 rounded-full bg-muted overflow-hidden">
                   <div
                     className={
                       isCheapest ? "h-full bg-primary" : "h-full bg-primary/40"
                     }
                     style={{
-                      width: `${widthOf(toAmount(entry.estimated_total))}%`,
+                      width: `${widthOf(toAmount(entry.projected_total))}%`,
                     }}
                   />
                 </div>
               )}
+              {estimated > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  {t("store_comparison.estimated_items", {
+                    count: estimated,
+                    actual: money(entry.estimated_total, entry.currency),
+                  })}
+                </p>
+              )}
+              {!rankable && isPriced(entry.estimated_total) && (
+                <p className="text-xs text-muted-foreground">
+                  {t("store_comparison.not_comparable", {
+                    count: entry.unpriced_item_count ?? 0,
+                  })}
+                </p>
+              )}
+              {!isPriced(entry.estimated_total) && (
+                <p className="text-xs text-muted-foreground">
+                  {t("store_comparison.no_prices")}
+                </p>
+              )}
             </div>
           )
         })}
-        {spread > 0 && (
+        {canRank && spread > 0 && (
           <p className="text-xs text-muted-foreground pt-1">
-            {t("store_comparison.savings", {
-              amount: formatMoney(spread, priced[0].currency, i18n.language),
-            })}
+            {t(
+              hasEstimates
+                ? "store_comparison.savings_estimated"
+                : "store_comparison.savings",
+              { amount: money(spread, ranked[0].currency) },
+            )}
           </p>
+        )}
+        {!canRank && (
+          <p className="text-xs text-muted-foreground pt-1">
+            {t("store_comparison.cannot_rank")}
+          </p>
+        )}
+        {(hasEstimates || unpriceableCount > 0) && (
+          <div className="flex gap-2 rounded-md bg-muted/50 p-2 text-xs text-muted-foreground">
+            <Info className="size-3.5 shrink-0 mt-0.5" aria-hidden />
+            <div className="space-y-1">
+              {hasEstimates && (
+                <p>
+                  {t("store_comparison.estimate_explained", {
+                    count: itemCount,
+                    comparable: comparableCount,
+                  })}
+                </p>
+              )}
+              {unpriceableCount > 0 && (
+                <p>
+                  {t("store_comparison.unpriceable", {
+                    count: unpriceableCount,
+                  })}
+                </p>
+              )}
+            </div>
+          </div>
         )}
       </CardContent>
     </Card>

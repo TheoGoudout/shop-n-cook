@@ -3318,11 +3318,27 @@ export const StoreComparisonSchema = {
                 }
             ],
             title: 'Cheapest Store Id'
+        },
+        item_count: {
+            type: 'integer',
+            title: 'Item Count',
+            default: 0
+        },
+        comparable_item_count: {
+            type: 'integer',
+            title: 'Comparable Item Count',
+            default: 0
+        },
+        unpriceable_item_count: {
+            type: 'integer',
+            title: 'Unpriceable Item Count',
+            default: 0
         }
     },
     type: 'object',
     required: ['data'],
-    title: 'StoreComparison'
+    title: 'StoreComparison',
+    description: 'Stores ranked by ``projected_total``; unrankable ones last.'
 } as const;
 
 export const StoreComparisonEntrySchema = {
@@ -3356,16 +3372,56 @@ export const StoreComparisonEntrySchema = {
             ],
             title: 'Estimated Total'
         },
+        priced_item_count: {
+            type: 'integer',
+            title: 'Priced Item Count',
+            default: 0
+        },
         unpriced_item_count: {
             type: 'integer',
             title: 'Unpriced Item Count',
+            default: 0
+        },
+        comparable_total: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Comparable Total'
+        },
+        projected_total: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Projected Total'
+        },
+        projected_item_count: {
+            type: 'integer',
+            title: 'Projected Item Count',
             default: 0
         }
     },
     type: 'object',
     required: ['store_id', 'store_name', 'store_slug', 'currency'],
     title: 'StoreComparisonEntry',
-    description: 'What one shopping list would cost at one store.'
+    description: `What one shopping list would cost at one store.
+
+\`\`estimated_total\`\` only sums what this store prices, so on its own it is
+not comparable across stores. \`\`projected_total\`\` is: it fills the store's
+gaps with estimates (\`\`projected_item_count\`\` of them) so every store is
+costed over the same items. \`\`comparable_total\`\` sums only the items every
+store prices — exact, but partial.`
 } as const;
 
 export const StoreCreateSchema = {

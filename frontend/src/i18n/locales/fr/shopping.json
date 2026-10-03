@@ -77,9 +77,21 @@
   "servings_badge": "{{count}} portions",
   "store_comparison": {
     "title": "Comparer les magasins",
-    "description": "Ce que cette liste coûterait dans chaque enseigne.",
+    "description": "Ce que cette liste coûterait dans chaque enseigne, comparée sur les mêmes articles.",
     "cheapest": "Le moins cher",
     "savings": "Économisez {{amount}} par rapport au plus cher",
-    "empty": "Ajoutez des articles pour comparer les prix entre magasins."
+    "empty": "Ajoutez des articles pour comparer les prix entre magasins.",
+    "approx": "≈ {{amount}}",
+    "estimated_items_one": "Inclut {{count}} prix estimé que ce magasin n'affiche pas ({{actual}} avec ses propres prix)",
+    "estimated_items_other": "Inclut {{count}} prix estimés que ce magasin n'affiche pas ({{actual}} avec ses propres prix)",
+    "not_comparable_one": "{{count}} article sans prix — ce total n'est pas comparable",
+    "not_comparable_other": "{{count}} articles sans prix — ce total n'est pas comparable",
+    "no_prices": "Aucun prix pour ces articles",
+    "savings_estimated": "Économisez environ {{amount}} par rapport au plus cher",
+    "cannot_rank": "Pas assez de prix en commun pour classer ces magasins.",
+    "estimate_explained_one": "Seul {{comparable}} de vos {{count}} article a un prix dans tous les magasins. Les prix manquants sont estimés à partir des autres magasins, ajustés au niveau de prix de chacun, pour que chaque total couvre les mêmes articles.",
+    "estimate_explained_other": "Seuls {{comparable}} de vos {{count}} articles ont un prix dans tous les magasins. Les prix manquants sont estimés à partir des autres magasins, ajustés au niveau de prix de chacun, pour que chaque total couvre les mêmes articles.",
+    "unpriceable_one": "{{count}} article n'a de prix dans aucun magasin et n'est compté dans aucun total.",
+    "unpriceable_other": "{{count}} articles n'ont de prix dans aucun magasin et ne sont comptés dans aucun total."
   }
 }

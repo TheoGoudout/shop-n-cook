@@ -188,27 +188,43 @@ self-hosting the stack — see [Local Development](#local-development).
 
 ## Coolify (backend + database)
 
-Coolify builds from source, so **whichever git ref a Coolify application tracks
-is the version running in that environment**. The two environments track
-different things on purpose:
+**Nothing is built on the Coolify host.** [`images.yml`](.github/workflows/images.yml)
+builds `backend/Dockerfile` on a GitHub runner and publishes it to GHCR as
+`ghcr.io/theogoudout/shop-n-cook-backend`, tagged `sha-<short commit>` (plus the
+release tag for a release, and `latest` on `master`). `compose.yml` names that
+image and carries no `build:` section, so Coolify only pulls. Its `TAG`
+variable picks the image; CI owns it, so do not set it by hand.
+
+Every deploy pins the immutable `sha-<short>` tag rather than `latest`: a tag
+that never moves is one Docker cannot mistake for an image it already has.
 
 | | Tracks | Moved by |
 |---|---|---|
-| staging | `master` | The Coolify GitHub App, automatically, on every push |
-| production | the released tag, e.g. `v1.5.0` | [`deploy-coolify.yml`](.github/workflows/deploy-coolify.yml), called by `release.yml` |
+| staging | `master` | [`images.yml`](.github/workflows/images.yml), after it has published that push's image |
+| production | the released tag, e.g. `v1.5.0` | [`deploy-coolify.yml`](.github/workflows/deploy-coolify.yml), called by `release.yml` after the image build |
 
-Staging needs no GitHub Actions workflow or webhook configuration — the GitHub
-App integration redeploys it on every push to `master`.
+**Turn Coolify's auto-deploy off on both applications** (*Advanced → Auto
+Deploy*). On staging, the GitHub App would otherwise redeploy the moment a push
+lands, minutes before that push's image exists; `images.yml` deploys staging
+itself once it does.
 
-Production has that auto-deploy webhook **off**, so master pushes cannot reach
-it. Instead, publishing a release runs `deploy-coolify.yml`, which:
+Each deploy runs `deploy-coolify.yml`, which:
 
-1. resolves the tag to a commit and reads the expected version out of
+1. resolves the ref to a commit and reads the expected version out of
    `backend/pyproject.toml` at that commit,
-2. `PATCH`es the Coolify application's git ref (`git_branch`) to the tag,
-3. triggers a deployment and polls it to completion,
-4. waits for `https://api.shop-n-cook.com/api/v1/utils/health-check/`, then
+2. checks, anonymously, that the commit's image is on GHCR — the same view the
+   host has when it pulls,
+3. `PATCH`es the Coolify application's git ref (`git_branch`) to the ref — it is
+   where Coolify reads `compose.yml` from — and sets its `TAG` variable to the
+   image tag,
+4. triggers a deployment and polls it to completion,
+5. waits for `https://api.shop-n-cook.com/api/v1/utils/health-check/`, then
    asserts that `/api/v1/openapi.json` reports the released version.
+
+**The GHCR package must be public**, because the host pulls without
+credentials. The repository is public, but check it once after the first build:
+GitHub → your profile → *Packages* → `shop-n-cook-backend` → *Package settings*
+→ *Change visibility*. Step 2 above fails with that hint if it is not.
 
 The backend therefore deploys *before* the Cloudflare frontend in the same
 release run — `release.yml` sequences them that way so the API is upgraded ahead
@@ -246,7 +262,11 @@ redeploys, and the version assertion confirms the rollback actually took. Coolif
 also keeps previous deploys around for a redeploy from its dashboard.
 
 Use `force: true` when re-running against a ref the application is already
-pinned to — otherwise Coolify may decide there is nothing to rebuild.
+pinned to — otherwise Coolify may decide there is nothing to redeploy.
+
+A ref deploys only once its image exists. Releases from before images were
+published to GHCR have none: dispatch the **Backend image** workflow
+(`images.yml`) with that tag first, then roll back to it.
 
 ### The stack
 
@@ -255,6 +275,10 @@ pinned to — otherwise Coolify may decide there is nothing to rebuild.
 - `db` — PostgreSQL 18
 - `prestart` — Runs database migrations (`alembic upgrade head`) on startup
 - `backend` — FastAPI application
+
+`prestart` and `backend` both run the GHCR image. `compose.override.yml`, which
+Coolify never reads, adds their `build:` sections back for local development
+and CI.
 
 No reverse proxy is included — Coolify handles routing and HTTPS termination.
 

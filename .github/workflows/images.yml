@@ -1,0 +1,111 @@
+name: Backend image
+
+# Builds backend/Dockerfile here and publishes it to GHCR, so the Coolify host
+# only ever pulls. Building on the host meant a `uv sync` competing for memory
+# and CPU with the very stack it was about to replace — on a small VPS shared
+# with other projects, that is the step most likely to get something OOM-killed.
+#
+#   push to master   -> sha-<short> + latest, then deploys staging
+#   called by release.yml / workflow_dispatch -> sha-<short> (+ the tag, for a
+#                       release), deploying nothing
+#
+# Every deploy pins the immutable `sha-<short>` (deploy-coolify.yml sets Coolify's
+# TAG variable to it). `latest` is a convenience for running the image by hand,
+# never what an environment runs: a tag that moves gives Docker no reason to
+# pull again, so a host that already has it would keep serving the old one.
+#
+# amd64 only: the Coolify hosts are x86. An arm64 host needs a second platform
+# here, built on a native runner as greensecops's images.yml does.
+#
+# No build cache. This workflow runs inside release.yml, which holds every store
+# credential, and a cache entry written by a less-privileged run has no business
+# being restored there. (zizmor: cache-poisoning)
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - "backend/**"
+      - "pyproject.toml"
+      - "uv.lock"
+      - "compose.yml"
+      - ".github/workflows/images.yml"
+      - ".github/workflows/deploy-coolify.yml"
+      - ".github/scripts/images/**"
+      - ".github/scripts/deploy-coolify/**"
+  workflow_call:
+    inputs:
+      ref:
+        description: "Git ref to build, e.g. v1.8.0"
+        required: true
+        type: string
+    outputs:
+      tag:
+        description: "The immutable image tag that was published (sha-<short>)"
+        value: ${{ jobs.build.outputs.tag }}
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Git ref to build, e.g. v1.8.0 — also how an older release is made deployable"
+        required: true
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: images-${{ inputs.ref || github.ref }}
+  # Never cancelled: on master this run ends in a staging rollout, and rapid
+  # pushes should queue behind it rather than interrupt it.
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build and publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write # To push the image to GHCR with the workflow's own token.
+    outputs:
+      tag: ${{ steps.tags.outputs.tag }}
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+          persist-credentials: false
+
+      - name: Resolve the image tags
+        id: tags
+        env:
+          REF: ${{ inputs.ref }}
+          EVENT: ${{ github.event_name }}
+        run: .github/scripts/images/resolve-the-image-tags.sh
+
+      # The runner's own docker CLI rather than docker/* actions: one build and
+      # one push need nothing those add, and it keeps .github/zizmor.yml's
+      # allowlist of trusted action publishers where it is.
+      - name: Build and push
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAGS: ${{ steps.tags.outputs.tags }}
+          SHA: ${{ steps.tags.outputs.sha }}
+        run: .github/scripts/images/build-and-push.sh
+
+  deploy-staging:
+    name: Deploy staging
+    needs: build
+    # A master push only. Promoting a release is release.yml's job.
+    if: github.event_name == 'push'
+    permissions:
+      contents: read
+    # `./`, not GitHub's newer `$/`: moving the release pipeline to a
+    # different reference syntax is a deliberate change, not a lint fix.
+    uses: ./.github/workflows/deploy-coolify.yml # zizmor: ignore[self-repository]
+    with:
+      environment: staging
+      ref: master
+      image_tag: ${{ needs.build.outputs.tag }}
+    secrets:
+      COOLIFY_URL: ${{ secrets.COOLIFY_URL }}
+      COOLIFY_API_TOKEN: ${{ secrets.COOLIFY_API_TOKEN }}
+      COOLIFY_APP_UUID: ${{ secrets.COOLIFY_APP_UUID }}

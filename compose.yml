@@ -23,7 +23,11 @@ services:
       - POSTGRES_DB=${POSTGRES_DB:-app}
 
   backend:
-    image: shop-n-cook/backend:${TAG:-latest}
+    # Built by .github/workflows/images.yml and pulled from GHCR — never built
+    # on the Coolify host. TAG is set by deploy-coolify.yml to the immutable
+    # sha-<short> of the ref being deployed. compose.override.yml adds the
+    # `build:` section back for local development.
+    image: ${IMAGE_REGISTRY:-ghcr.io/theogoudout}/shop-n-cook-backend:${TAG:-latest}
     restart: always
     # One uvicorn worker per WEB_CONCURRENCY, each a full copy of the app; the
     # background price refresh peaks ~160 MB above that in one of them. Lower
@@ -89,18 +93,12 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    build:
-      context: .
-      dockerfile: backend/Dockerfile
 
   prestart:
-    image: shop-n-cook/backend:${TAG:-latest}
+    image: ${IMAGE_REGISTRY:-ghcr.io/theogoudout}/shop-n-cook-backend:${TAG:-latest}
     restart: "no"
     # Runs migrations and exits, so it never overlaps steady state.
     mem_limit: 512m
-    build:
-      context: .
-      dockerfile: backend/Dockerfile
     depends_on:
       db:
         condition: service_healthy

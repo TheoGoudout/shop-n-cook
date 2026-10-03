@@ -217,6 +217,9 @@ Each push runs:
 - `playwright.yml` — frontend E2E (4-shard parallel, retries on CI)
 - `test-extension.yml` — vitest + type-check + build
 - `test-docker-compose.yml` — bring up the full stack as a smoke test
+- `images.yml` — on `master` (backend changes), build the backend image, push
+  it to GHCR and deploy it to staging. Coolify never builds: `compose.yml`
+  names the GHCR image and only `compose.override.yml` has `build:` sections
 - `deploy-cloudflare.yml` — on `master`, deploy `frontend/` + `landing/` to staging
 
 Releasing is two workflows (see `.claude/skills/release/SKILL.md`):
@@ -247,11 +250,13 @@ Deployment is split in two (see `deployment.md`):
   build-time settings in the committed `.env.staging` / `.env.production`
   files of each project. `compose.yml` no longer builds them; their Docker
   services live in `compose.override.yml` for local development only.
-- `backend/` and the database are deployed by Coolify from `compose.yml`.
-  Staging tracks `master` and redeploys on every push via the Coolify GitHub
-  App. Production tracks the released tag: its auto-deploy webhook is off, and
-  `deploy-coolify.yml` re-pins it to the tag and redeploys as part of the
-  release run, ahead of the Cloudflare deploy so the API leads its clients.
+- `backend/` and the database are deployed by Coolify from `compose.yml`,
+  pulling the backend image `images.yml` published to GHCR (Coolify's `TAG`
+  variable, set by CI to `sha-<short>`). Auto-deploy is off on both
+  applications. Staging is deployed by `images.yml` after each `master` build.
+  Production tracks the released tag: `release.yml` builds the image, then
+  `deploy-coolify.yml` re-pins the application to the tag and redeploys, ahead
+  of the Cloudflare deploy so the API leads its clients.
 
 Domains: `shop-n-cook.com` (landing), `app.shop-n-cook.com` (frontend),
 `api.shop-n-cook.com` (backend); staging mirrors this under

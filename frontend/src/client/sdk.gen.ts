@@ -1346,9 +1346,11 @@ export class ShoppingListsService {
      * Compare Stores
      * What this list would cost at each active retailer.
      *
-     * This is the "shop where you like" view: every store is costed from the same
-     * basket, so the spread is comparable even where a store has few curated
-     * prices of its own and falls back to the catalog baseline.
+     * Stores rarely price the same items, so a raw sum of each store's priced
+     * lines would favour whichever store is missing the most. Stores are ranked
+     * instead on a projected total that covers the same items everywhere, with
+     * the number of estimated lines reported per store; see
+     * ``app.services.store_comparison``.
      * @param data The data for the request.
      * @param data.id
      * @returns StoreComparison Successful Response

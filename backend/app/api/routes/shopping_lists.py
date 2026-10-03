@@ -27,6 +27,7 @@ from app.models import (
 )
 from app.services.ingredient_image import fetch_and_update_ingredient_image
 from app.services.pricing import PriceBook
+from app.services.store_comparison import compare_stores as compare_basket_across_stores
 from app.services.store_providers import (
     ExportedList,
     ListExportRequest,
@@ -329,36 +330,46 @@ def compare_stores(
 ) -> Any:
     """What this list would cost at each active retailer.
 
-    This is the "shop where you like" view: every store is costed from the same
-    basket, so the spread is comparable even where a store has few curated
-    prices of its own and falls back to the catalog baseline.
+    Stores rarely price the same items, so a raw sum of each store's priced
+    lines would favour whichever store is missing the most. Stores are ranked
+    instead on a projected total that covers the same items everywhere, with
+    the number of estimated lines reported per store; see
+    ``app.services.store_comparison``.
     """
     sl = crud.get_shopping_list(session=session, shopping_list_id=id)
     sl = _check_list_access(sl, current_user, id, session)
 
     items = [(i.name, qty, i.unit) for i, qty in crud.items_to_buy(sl)]
     stores, _ = crud.get_stores(session=session, active_only=True, limit=100)
+    by_id = {store.id: store for store in stores}
 
-    entries: list[StoreComparisonEntry] = []
-    for store in stores:
-        book = PriceBook.for_catalog(session=session, store=store)
-        summary = book.summarize(items)
-        entries.append(
-            StoreComparisonEntry(
-                store_id=store.id,
-                store_name=store.name,
-                store_slug=store.slug,
-                currency=store.currency,
-                estimated_total=summary.total,
-                unpriced_item_count=summary.unpriced_count,
-            )
-        )
-
-    entries.sort(key=lambda e: (e.estimated_total is None, e.estimated_total or 0))
-    cheapest = next((e for e in entries if e.estimated_total is not None), None)
+    result = compare_basket_across_stores(
+        [
+            (store.id, PriceBook.for_catalog(session=session, store=store))
+            for store in stores
+        ],
+        items,
+    )
     return StoreComparison(
-        data=entries,
-        cheapest_store_id=cheapest.store_id if cheapest else None,
+        data=[
+            StoreComparisonEntry(
+                store_id=c.store_id,
+                store_name=by_id[c.store_id].name,
+                store_slug=by_id[c.store_id].slug,
+                currency=by_id[c.store_id].currency,
+                estimated_total=c.estimated_total,
+                priced_item_count=c.priced_count,
+                unpriced_item_count=c.unpriced_count,
+                comparable_total=c.comparable_total,
+                projected_total=c.projected_total,
+                projected_item_count=c.projected_count,
+            )
+            for c in result.stores
+        ],
+        cheapest_store_id=result.cheapest_store_id,
+        item_count=result.item_count,
+        comparable_item_count=result.comparable_count,
+        unpriceable_item_count=result.unpriceable_count,
     )
 
 

@@ -77,10 +77,22 @@
   "servings_badge": "{{count}} servings",
   "store_comparison": {
     "title": "Compare stores",
-    "description": "What this list would cost at each retailer.",
+    "description": "What this list would cost at each retailer, compared on the same items.",
     "cheapest": "Cheapest",
     "savings": "Save {{amount}} vs the most expensive",
-    "empty": "Add items to compare prices across stores."
+    "empty": "Add items to compare prices across stores.",
+    "approx": "≈ {{amount}}",
+    "estimated_items_one": "Includes {{count}} estimated price this store doesn't list ({{actual}} from its own prices)",
+    "estimated_items_other": "Includes {{count}} estimated prices this store doesn't list ({{actual}} from its own prices)",
+    "not_comparable_one": "{{count}} item not priced — this total can't be compared",
+    "not_comparable_other": "{{count}} items not priced — this total can't be compared",
+    "no_prices": "No prices for these items",
+    "savings_estimated": "Save about {{amount}} vs the most expensive",
+    "cannot_rank": "Not enough shared prices to rank these stores.",
+    "estimate_explained_one": "Only {{comparable}} of your {{count}} item is priced at every store. Missing prices are estimated from the other stores, adjusted to each store's price level, so every total covers the same items.",
+    "estimate_explained_other": "Only {{comparable}} of your {{count}} items are priced at every store. Missing prices are estimated from the other stores, adjusted to each store's price level, so every total covers the same items.",
+    "unpriceable_one": "{{count}} item has no price at any store and is left out of every total.",
+    "unpriceable_other": "{{count}} items have no price at any store and are left out of every total."
   },
   "pantry": {
     "prompt_title": "Before you shop: check what's at home",

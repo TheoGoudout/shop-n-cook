@@ -30,9 +30,10 @@ services:
     image: ${IMAGE_REGISTRY:-ghcr.io/theogoudout}/shop-n-cook-backend:${TAG:-latest}
     restart: always
     # One uvicorn worker per WEB_CONCURRENCY, each a full copy of the app; the
-    # background price refresh peaks ~160 MB above that in one of them. Lower
-    # WEB_CONCURRENCY (and this cap with it) on a small shared host.
-    command: ["fastapi", "run", "--workers", "${WEB_CONCURRENCY:-4}", "app/main.py"]
+    # background price refresh peaks ~160 MB above that in one of them. One
+    # worker by default, sized for the small VPS this shares with two other
+    # stacks; raise WEB_CONCURRENCY (and this cap with it) on a bigger host.
+    command: ["fastapi", "run", "--workers", "${WEB_CONCURRENCY:-1}", "app/main.py"]
     mem_limit: 1536m
     mem_reservation: 256m
     depends_on:

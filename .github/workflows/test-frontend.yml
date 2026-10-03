@@ -1,0 +1,106 @@
+name: Test Frontend
+
+# What deploy-cloudflare.yml does, short of uploading: build each Worker for
+# each environment, check the build points at that environment's URL, then have
+# wrangler validate the project's wrangler.jsonc and bundle the Worker. A broken
+# deploy config fails here, on the pull request, instead of on the push to
+# master that deploys staging or in the middle of a release.
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read # paths-filter lists a PR's files through the API.
+    outputs:
+      changed: ${{ steps.filter.outputs.changed }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        id: filter
+        with:
+          filters: |
+            changed:
+              - frontend/**
+              - landing/**
+              - scripts/build-landing.mjs
+              - package.json
+              - bun.lock
+              - .bun-version
+              - .github/workflows/test-frontend.yml
+              - .github/scripts/shared/check-the-build-targets-its-environment.sh
+
+  build:
+    name: Build and dry-run ${{ matrix.project }} (${{ matrix.environment }})
+    needs: changes
+    if: needs.changes.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [frontend, landing]
+        environment: [staging, production]
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: .bun-version
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Build
+        env:
+          PROJECT: ${{ matrix.project }}
+          ENVIRONMENT: ${{ matrix.environment }}
+        run: bun run --filter "${PROJECT}" "build:${ENVIRONMENT}"
+      - name: Check the build targets its environment
+        env:
+          PROJECT: ${{ matrix.project }}
+          ENVIRONMENT: ${{ matrix.environment }}
+        run: .github/scripts/shared/check-the-build-targets-its-environment.sh
+      - name: Dry-run the Cloudflare deploy
+        env:
+          ENVIRONMENT: ${{ matrix.environment }}
+        working-directory: ${{ matrix.project }}
+        run: bunx wrangler deploy --dry-run --env "${ENVIRONMENT}"
+
+  # https://github.com/marketplace/actions/alls-green#why
+  alls-green-frontend: # The one check branch protection should require.
+    name: All frontend checks passed
+    if: always()
+    needs:
+      - changes
+      - build
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {} # Reads `needs`; touches nothing.
+    steps:
+      - name: Decide whether the needed jobs succeeded or failed
+        uses: re-actors/alls-green@b5b5b37504aa4183270bd3d855c52a67f212be35 # v1.3.0
+        with:
+          jobs: ${{ toJSON(needs) }}
+          allowed-skips: build

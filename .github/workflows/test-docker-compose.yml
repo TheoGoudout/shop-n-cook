@@ -1,5 +1,14 @@
 name: Test Docker Compose
 
+# Two different stacks come out of the Compose files, and both are tested:
+#
+#   coolify  `compose.yml` alone — exactly what Coolify deploys to staging and
+#            production, fed the SERVICE_* variables Coolify would generate and
+#            the few deployment.md says to set by hand. Nothing else exercises
+#            this file before a release reaches it.
+#   dev      `compose.yml` + `compose.override.yml` — the local stack, with the
+#            frontend and the landing page.
+
 on:
   push:
     branches:
@@ -8,15 +17,59 @@ on:
     types:
       - opened
       - synchronize
+      - reopened
 
 permissions: {}
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  coolify:
+    name: Production stack (Coolify)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    env:
+      # Stand-ins for the magic variables Coolify generates. Throwaway values
+      # for throwaway containers.
+      SERVICE_USER_DB: shopncook
+      SERVICE_PASSWORD_DB: ci-only-db-password
+      SERVICE_PASSWORD_SECRET: ci-only-secret-key
+      SERVICE_PASSWORD_SUPERUSER: ci-only-superuser-password
+      # The "Required (set manually in Coolify)" variables of deployment.md
+      # that have no default in compose.yml. Nothing else: every other variable
+      # must work from its compose.yml default, as on a first Coolify deploy.
+      FIRST_SUPERUSER: admin@example.com
+      AI_PROVIDER: anthropic
+      # The locally built image below, rather than the published one.
+      IMAGE_REGISTRY: ci.local
+      TAG: ci
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      # No .env and no override file: Coolify has neither. compose.yml names the
+      # GHCR image and has no `build:` section, because Coolify only pulls; so
+      # the image is built here from this commit and compose.yml is pointed at
+      # it through the same IMAGE_REGISTRY/TAG variables a deploy sets.
+      - name: Build
+        run: docker build -f backend/Dockerfile -t "${IMAGE_REGISTRY}/shop-n-cook-backend:${TAG}" .
+      - name: Start the stack
+        run: docker compose -f compose.yml up -d --wait --wait-timeout 300
+      - name: Check the API and prestart
+        run: .github/scripts/test-docker-compose/check-the-production-stack.sh
+      - name: Show the logs
+        if: failure()
+        run: docker compose -f compose.yml logs
+      - name: Stop the stack
+        if: always()
+        run: docker compose -f compose.yml down -v --remove-orphans
 
+  # The job id is unchanged so the check keeps the name branch protection knows.
   test-docker-compose:
     name: Test Docker Compose
     runs-on: ubuntu-latest
@@ -25,24 +78,26 @@ jobs:
       contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           persist-credentials: false
-      - name: Create .env from example
+      - name: Create .env from the example
         run: cp .env.example .env
-      - run: docker compose build
-      - run: docker compose down -v --remove-orphans
-      - run: docker compose up -d --wait backend frontend
+      - name: Build
+        run: docker compose build
+      - name: Start the stack
+        run: docker compose up -d --wait --wait-timeout 300 backend frontend landing
+      # curl's own retries rather than a retry action: one fewer third-party
+      # publisher with access to the runner, for the same behaviour.
       - name: Test backend is up
-        uses: nick-fields/retry@ce71cc2ab81d554ebbe88c79ab5975992d79ba08 # v3
-        with:
-          timeout_seconds: 10
-          max_attempts: 3
-          command: curl http://localhost:8000/api/v1/utils/health-check
+        run: curl -fsS --retry 5 --retry-all-errors --retry-delay 3 http://localhost:8000/api/v1/utils/health-check/
       - name: Test frontend is up
-        uses: nick-fields/retry@ce71cc2ab81d554ebbe88c79ab5975992d79ba08 # v3
-        with:
-          timeout_seconds: 10
-          max_attempts: 3
-          command: curl http://localhost:5173
-      - run: docker compose down -v --remove-orphans
+        run: curl -fsS --retry 5 --retry-all-errors --retry-delay 3 -o /dev/null http://localhost:5173
+      - name: Test landing is up
+        run: curl -fsS --retry 5 --retry-all-errors --retry-delay 3 -o /dev/null http://localhost:8080
+      - name: Show the logs
+        if: failure()
+        run: docker compose logs
+      - name: Stop the stack
+        if: always()
+        run: docker compose down -v --remove-orphans

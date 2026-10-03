@@ -1,7 +1,7 @@
 """Menu composition: the constraints it must never break, and the ones it trades."""
 
 import uuid
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 
 import pytest
@@ -16,6 +16,7 @@ from app.models.recipe import (
 )
 from app.services.menu_generator import (
     GenerationRequest,
+    PlannedMeal,
     generate_menu,
     is_eligible,
     pick_replacement,
@@ -238,6 +239,82 @@ def test_a_weekly_schedule_follows_the_weekday_not_the_offset() -> None:
 def test_a_weekly_schedule_needs_seven_days() -> None:
     with pytest.raises(ValueError):
         request(meals_by_weekday=((MealType.DINNER,),))
+
+
+# --------------------------------------------------------------------------- #
+# Batch cooking                                                                #
+# --------------------------------------------------------------------------- #
+
+
+def _covered(meals: list[PlannedMeal]) -> list[tuple[date, MealType]]:
+    return sorted(
+        slot for m in meals for slot in [(m.entry_date, m.meal_type), *m.leftovers]
+    )
+
+
+def test_batch_cooking_covers_every_slot_with_fewer_recipes() -> None:
+    recipes = [make_recipe(f"r{i}") for i in range(10)]
+    meals = generate_menu(recipes, request(days=7, batch_portions=2))
+
+    # Seven dinners: three cooked for two meals, the last one cooked alone.
+    assert [m.portions for m in meals] == [2, 2, 2, 1]
+    assert len(_covered(meals)) == 7
+    assert len(set(_covered(meals))) == 7
+
+
+def test_leftovers_are_eaten_on_the_following_days() -> None:
+    meals = generate_menu(
+        [make_recipe(f"r{i}") for i in range(10)],
+        request(days=6, batch_portions=3),
+    )
+    first = meals[0]
+    assert first.entry_date == MONDAY
+    assert [day for day, _ in first.leftovers] == [
+        MONDAY + timedelta(days=1),
+        MONDAY + timedelta(days=2),
+    ]
+
+
+def test_leftovers_are_never_on_the_day_they_are_cooked() -> None:
+    meals = generate_menu(
+        [make_recipe(f"r{i}") for i in range(20)],
+        request(days=4, batch_portions=3, meal_types=(MealType.LUNCH, MealType.DINNER)),
+    )
+    for meal in meals:
+        days = [meal.entry_date, *(day for day, _ in meal.leftovers)]
+        assert len(days) == len(set(days))
+    assert len(set(_covered(meals))) == 8
+
+
+def test_a_batch_is_priced_for_every_meal_it_covers() -> None:
+    recipe = make_recipe("stew", ingredient=("beef", 1, Unit.KILOGRAM), servings=2)
+    prices = _price_book("beef", "4.00")
+    meals = generate_menu(
+        [recipe], request(days=3, servings=2, batch_portions=3), prices
+    )
+    assert len(meals) == 1
+    assert meals[0].portions == 3
+    assert meals[0].estimated_cost == Decimal("12.00")
+
+
+def test_a_batch_counts_in_full_against_the_budget() -> None:
+    recipes = [
+        make_recipe(f"r{i}", ingredient=("beef", 1, Unit.KILOGRAM), servings=2)
+        for i in range(4)
+    ]
+    prices = _price_book("beef", "4.00")  # 4.00 a meal, 8.00 a batch of two
+    meals = generate_menu(
+        recipes,
+        request(days=4, servings=2, batch_portions=2, budget=Decimal("10.00")),
+        prices,
+    )
+    assert len(meals) == 1
+    assert sum(m.estimated_cost or Decimal(0) for m in meals) <= Decimal("10.00")
+
+
+def test_batch_portions_must_be_positive() -> None:
+    with pytest.raises(ValueError):
+        request(batch_portions=0)
 
 
 def test_servings_are_carried_onto_every_meal() -> None:

@@ -56,10 +56,13 @@ function daysBetween(start: string, end: string): string[] {
 
 function EntryRow({
   entry,
+  entries,
   planId,
   currency,
 }: {
   entry: MealPlanEntryPublic
+  /** The whole plan, to find the batch an entry is cooked in or eaten from. */
+  entries: MealPlanEntryPublic[]
   planId: string
   currency: string | undefined
 }) {
@@ -77,13 +80,28 @@ function EntryRow({
       MealPlansService.swapEntry({
         id: planId,
         entryId: entry.id,
-        requestBody: { start_date: entry.entry_date },
+        // No body: the preferences the plan was generated with apply.
       }),
     successMessage: t("generate.swapped"),
     invalidateKeys: [["meal-plan", planId], ["meal-plans"]],
   })
 
   const cost = formatMoney(entry.estimated_cost, currency, i18n.language)
+
+  // Batch cooking: a cooked entry names how many meals it makes, a leftover
+  // names the day it was cooked.
+  const cookedOn = entries.find((e) => e.id === entry.batch_of_id)?.entry_date
+  const portions = 1 + entries.filter((e) => e.batch_of_id === entry.id).length
+  const batch = cookedOn
+    ? t("detail.leftovers", {
+        day: new Date(`${cookedOn}T00:00:00`).toLocaleDateString(
+          i18n.language,
+          { weekday: "long" },
+        ),
+      })
+    : portions > 1
+      ? t("detail.batch", { count: portions })
+      : null
 
   return (
     <div className="group flex items-start gap-2">
@@ -103,6 +121,7 @@ function EntryRow({
           {t("detail.servings", { count: entry.servings })}
           {cost ? ` · ${cost}` : ""}
         </p>
+        {batch && <p className="text-xs text-primary">{batch}</p>}
       </div>
       <div className="flex shrink-0 opacity-0 group-hover:opacity-100">
         <Button
@@ -169,6 +188,7 @@ function WeekGrid({ plan }: { plan: MealPlanPublic }) {
                     <EntryRow
                       key={entry.id}
                       entry={entry}
+                      entries={entries}
                       planId={plan.id}
                       currency={plan.currency}
                     />

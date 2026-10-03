@@ -24,7 +24,9 @@ from app.models.meal_plan import (
 from app.models.recipe import MealType
 from app.services.menu_generator import (
     GenerationRequest,
+    cost_of,
     generate_menu,
+    is_eligible,
     pick_replacement,
 )
 
@@ -263,6 +265,8 @@ class GenerateMenuRequest(BaseModel):
     meals_by_weekday: list[list[MealType]] | None = Field(
         default=None, min_length=7, max_length=7
     )
+    #: Batch cooking: how many meals one cooking covers (1 means none).
+    batch_portions: int = Field(default=1, ge=1, le=3)
     servings: int | None = Field(default=None, ge=1)
     budget: Decimal | None = Field(default=None, ge=0)
     require_vegan: bool = False
@@ -273,6 +277,90 @@ class GenerateMenuRequest(BaseModel):
     match_season: bool = True
     include_public: bool = True
     seed: int = 0
+
+
+#: The parts of a generation request that describe *preferences*, saved on the
+#: plan so that swapping one of its meals later still honours them.
+_SAVED_SETTINGS = {
+    "meal_types",
+    "meals_by_weekday",
+    "batch_portions",
+    "servings",
+    "budget",
+    "require_vegan",
+    "require_vegetarian",
+    "require_gluten_free",
+    "require_dairy_free",
+    "max_prep_minutes",
+    "match_season",
+    "include_public",
+}
+
+
+class MenuSlot(BaseModel):
+    entry_date: date
+    meal_type: MealType
+
+
+class ProposedMealIn(BaseModel):
+    """One cooking in a menu: the slot it is cooked in, then its leftovers."""
+
+    recipe_id: uuid.UUID
+    slots: list[MenuSlot] = Field(min_length=1)
+
+
+class ProposedMeal(ProposedMealIn):
+    recipe_title: str
+    recipe_image_url: str | None = None
+    prep_time_minutes: int | None = None
+    cook_time_minutes: int | None = None
+    #: Servings eaten at each meal; the batch cooks this times ``len(slots)``.
+    servings: int
+    #: Cost of the whole batch, or ``None`` when unpriced.
+    estimated_cost: Decimal | None = None
+
+
+class MenuPreview(BaseModel):
+    """A composed menu that has not been saved yet."""
+
+    meals: list[ProposedMeal]
+    servings: int
+    budget: Decimal | None = None
+    estimated_total: Decimal | None = None
+    unpriced_meal_count: int = 0
+    currency: str = "EUR"
+
+
+class MenuPreviewRequest(GenerateMenuRequest):
+    """Compose a menu, or rework one already proposed.
+
+    Without ``meals`` a fresh menu is composed. With them, the meals are kept
+    as given — which is how a recipe chosen by hand is priced — except those
+    whose indices are in ``replace``, which get a new recipe picked under the
+    same preferences.
+    """
+
+    meals: list[ProposedMealIn] | None = None
+    replace: list[int] = Field(default_factory=list)
+
+
+class SaveMenuRequest(GenerateMenuRequest):
+    """Save a menu as a new plan: the reviewed ``meals``, or a fresh one."""
+
+    meals: list[ProposedMealIn] | None = None
+
+
+class MenuRecipeOptionsRequest(GenerateMenuRequest):
+    """Which recipes may be chosen by hand for one slot of a menu."""
+
+    meal_type: MealType = MealType.DINNER
+    search: str | None = None
+
+
+class MenuRecipeOption(BaseModel):
+    id: uuid.UUID
+    title: str
+    image_url: str | None = None
 
 
 def _candidate_recipes(
@@ -310,18 +398,14 @@ def _generation_request(
             if body.meals_by_weekday is not None
             else None
         ),
+        batch_portions=body.batch_portions,
     )
 
 
-@router.post("/generate", response_model=MealPlanPublic)
-def generate_menu_route(
-    *,
-    session: SessionDep,
-    current_user: CurrentUser,
-    prices: PriceBookDep,
-    body: GenerateMenuRequest,
-) -> Any:
-    """Compose a menu and save it as a new plan.
+def _user_request(
+    body: GenerateMenuRequest, *, session: SessionDep, current_user: User
+) -> GenerationRequest:
+    """The request with servings and budget filled in from the user's settings.
 
     Household size and budget fall back to the user's settings when the request
     does not override them, so the common case is a single button with no form.
@@ -331,24 +415,242 @@ def generate_menu_route(
     )
     servings = body.servings or user_settings.household_size
     budget = body.budget if body.budget is not None else user_settings.budget_amount
+    request = _generation_request(body, servings=servings)
+    return replace(request, budget=budget)
 
-    candidates = _candidate_recipes(
-        session=session, current_user=current_user, include_public=body.include_public
-    )
+
+def _compose(
+    request: GenerationRequest,
+    candidates: list[Recipe],
+    prices: PriceBookDep,
+) -> list[tuple[Recipe, list[MenuSlot]]]:
+    """A fresh menu, as recipes and the slots each one covers."""
+    if request.slot_count == 0:
+        raise HTTPException(status_code=422, detail="No meals selected for these days")
     if not candidates:
         raise HTTPException(
             status_code=422, detail="No recipes available to build a menu from"
         )
-
-    request = _generation_request(body, servings=servings)
-    request = replace(request, budget=budget)
-    if request.slot_count == 0:
-        raise HTTPException(status_code=422, detail="No meals selected for these days")
     meals = generate_menu(candidates, request, prices)
     if not meals:
         raise HTTPException(
             status_code=422,
             detail="No recipes match those constraints",
+        )
+    return [
+        (
+            meal.recipe,
+            [
+                MenuSlot(entry_date=day, meal_type=meal_type)
+                for day, meal_type in [
+                    (meal.entry_date, meal.meal_type),
+                    *meal.leftovers,
+                ]
+            ],
+        )
+        for meal in meals
+    ]
+
+
+def _load_meals(
+    meals_in: list[ProposedMealIn],
+    body: GenerateMenuRequest,
+    *,
+    session: SessionDep,
+    current_user: User,
+    candidates: list[Recipe],
+) -> list[tuple[Recipe, list[MenuSlot]]]:
+    """Resolve a menu sent back by the client, checking every part of it.
+
+    The client is trusted with nothing: each recipe must be one the user may
+    read, and each slot must fall inside the plan and be used once per recipe.
+    """
+    by_id = {r.id: r for r in candidates}
+    last_day = body.start_date + timedelta(days=body.days - 1)
+    seen: set[tuple[date, MealType, uuid.UUID]] = set()
+    loaded: list[tuple[Recipe, list[MenuSlot]]] = []
+    for meal in meals_in:
+        recipe = by_id.get(meal.recipe_id)
+        if recipe is None:
+            _check_recipe_usable(
+                session=session, recipe_id=meal.recipe_id, current_user=current_user
+            )
+            recipe = crud.get_recipe(session=session, recipe_id=meal.recipe_id)
+            assert recipe is not None
+        for slot in meal.slots:
+            if not body.start_date <= slot.entry_date <= last_day:
+                raise HTTPException(
+                    status_code=422, detail="A meal falls outside the plan's dates"
+                )
+            key = (slot.entry_date, slot.meal_type, recipe.id)
+            if key in seen:
+                raise HTTPException(
+                    status_code=422, detail="A recipe is planned twice in one slot"
+                )
+            seen.add(key)
+        loaded.append((recipe, list(meal.slots)))
+    return loaded
+
+
+def _replace_meals(
+    meals: list[tuple[Recipe, list[MenuSlot]]],
+    indices: list[int],
+    request: GenerationRequest,
+    candidates: list[Recipe],
+    prices: PriceBookDep,
+) -> list[tuple[Recipe, list[MenuSlot]]]:
+    """Give the meals at ``indices`` a new recipe, leftovers included.
+
+    Each replacement sees the rest of the menu — including replacements made
+    just before it — so swapping several meals at once does not hand back the
+    same recipe for all of them.
+    """
+    if any(not 0 <= i < len(meals) for i in indices):
+        raise HTTPException(status_code=422, detail="No such meal in the menu")
+    result = list(meals)
+    changed = False
+    for index in dict.fromkeys(indices):
+        recipe, slots = result[index]
+        others = frozenset(r.id for j, (r, _) in enumerate(result) if j != index)
+        replacement = pick_replacement(
+            candidates,
+            request,
+            slots[0].entry_date,
+            slots[0].meal_type,
+            current_recipe_id=recipe.id,
+            other_recipe_ids=others,
+            prices=prices,
+        )
+        if replacement is not None:
+            result[index] = (replacement, slots)
+            changed = True
+    if indices and not changed:
+        raise HTTPException(
+            status_code=422, detail="No alternative recipe matches those constraints"
+        )
+    return result
+
+
+def _to_preview(
+    meals: list[tuple[Recipe, list[MenuSlot]]],
+    request: GenerationRequest,
+    prices: PriceBookDep,
+) -> MenuPreview:
+    proposed = [
+        ProposedMeal(
+            recipe_id=recipe.id,
+            slots=slots,
+            recipe_title=recipe.title,
+            recipe_image_url=recipe.image_url,
+            prep_time_minutes=recipe.prep_time_minutes,
+            cook_time_minutes=recipe.cook_time_minutes,
+            servings=request.servings,
+            estimated_cost=cost_of(recipe, prices, request.servings * len(slots)),
+        )
+        for recipe, slots in meals
+    ]
+    priced = [m.estimated_cost for m in proposed if m.estimated_cost is not None]
+    return MenuPreview(
+        meals=proposed,
+        servings=request.servings,
+        budget=request.budget,
+        estimated_total=sum(priced, Decimal(0)) if priced else None,
+        unpriced_meal_count=sum(1 for m in proposed if m.estimated_cost is None),
+        currency=prices.currency,
+    )
+
+
+@router.post("/generate/preview", response_model=MenuPreview)
+def preview_menu(
+    *,
+    session: SessionDep,
+    current_user: CurrentUser,
+    prices: PriceBookDep,
+    body: MenuPreviewRequest,
+) -> Any:
+    """Compose a menu to review, without saving anything.
+
+    Send the proposed ``meals`` back with ``replace`` to swap some of them, or
+    with a recipe changed by hand to have it priced; save the result with
+    ``POST /generate``.
+    """
+    request = _user_request(body, session=session, current_user=current_user)
+    candidates = _candidate_recipes(
+        session=session, current_user=current_user, include_public=body.include_public
+    )
+    if body.meals is None:
+        meals = _compose(request, candidates, prices)
+    else:
+        meals = _load_meals(
+            body.meals,
+            body,
+            session=session,
+            current_user=current_user,
+            candidates=candidates,
+        )
+        meals = _replace_meals(meals, body.replace, request, candidates, prices)
+    return _to_preview(meals, request, prices)
+
+
+@router.post("/generate/options", response_model=list[MenuRecipeOption])
+def menu_recipe_options(
+    *,
+    session: SessionDep,
+    current_user: CurrentUser,
+    body: MenuRecipeOptionsRequest,
+) -> Any:
+    """Recipes that may be picked by hand for one slot of a menu.
+
+    Only recipes matching the menu's preferences are offered, so a hand-picked
+    meal cannot break the diet the menu was generated for.
+    """
+    request = _generation_request(body, servings=body.servings or 1)
+    candidates = _candidate_recipes(
+        session=session, current_user=current_user, include_public=body.include_public
+    )
+    needle = (body.search or "").strip().lower()
+    options = [
+        r
+        for r in candidates
+        if is_eligible(r, request, body.meal_type)
+        and (not needle or needle in r.title.lower())
+    ]
+    options.sort(key=lambda r: r.title.lower())
+    return [
+        MenuRecipeOption(id=r.id, title=r.title, image_url=r.image_url)
+        for r in options[:50]
+    ]
+
+
+@router.post("/generate", response_model=MealPlanPublic)
+def generate_menu_route(
+    *,
+    session: SessionDep,
+    current_user: CurrentUser,
+    prices: PriceBookDep,
+    body: SaveMenuRequest,
+) -> Any:
+    """Save a menu as a new plan: the reviewed ``meals``, or a freshly composed one.
+
+    With batch cooking, each meal's first slot is where it is cooked and the
+    rest are saved as its leftovers. The preferences are saved on the plan so
+    that later swaps keep honouring them.
+    """
+    request = _user_request(body, session=session, current_user=current_user)
+    candidates = _candidate_recipes(
+        session=session, current_user=current_user, include_public=body.include_public
+    )
+    if body.meals is None:
+        meals = _compose(request, candidates, prices)
+    else:
+        if not body.meals:
+            raise HTTPException(status_code=422, detail="The menu has no meals")
+        meals = _load_meals(
+            body.meals,
+            body,
+            session=session,
+            current_user=current_user,
+            candidates=candidates,
         )
 
     plan = crud.create_meal_plan(
@@ -360,17 +662,25 @@ def generate_menu_route(
         ),
         owner_id=current_user.id,
     )
-    for meal in meals:
-        crud.add_entry(
-            session=session,
-            plan=plan,
-            entry_in=MealPlanEntryCreate(
-                recipe_id=meal.recipe.id,
-                entry_date=meal.entry_date,
-                meal_type=meal.meal_type,
-                servings=meal.servings,
-            ),
-        )
+    plan.generation_settings = body.model_dump(mode="json", include=_SAVED_SETTINGS)
+    session.add(plan)
+    session.commit()
+
+    for recipe, slots in meals:
+        cooked = None
+        for slot in slots:
+            entry = crud.add_entry(
+                session=session,
+                plan=plan,
+                entry_in=MealPlanEntryCreate(
+                    recipe_id=recipe.id,
+                    entry_date=slot.entry_date,
+                    meal_type=slot.meal_type,
+                    servings=request.servings,
+                ),
+                batch_of=cooked,
+            )
+            cooked = cooked or entry
     session.refresh(plan)
     return crud.meal_plan_to_public(plan, prices)
 
@@ -388,7 +698,9 @@ def swap_entry(
     """Replace one meal without disturbing the rest of the plan.
 
     The replacement still respects the week's variety rules, so swapping out of
-    a pasta night does not hand back another one.
+    a pasta night does not hand back another one. Without a body, the
+    preferences the plan was generated with apply. A batch-cooked meal is
+    swapped together with its leftovers, whichever of them was asked for.
     """
     plan = crud.get_meal_plan(session=session, plan_id=id)
     plan = _check_plan_access(plan, current_user, session)
@@ -396,19 +708,32 @@ def swap_entry(
     if not entry or entry.meal_plan_id != id:
         raise HTTPException(status_code=404, detail="Entry not found")
 
-    body = body or GenerateMenuRequest(start_date=entry.entry_date)
+    cooked = entry
+    if entry.batch_of_id is not None:
+        cooked = (
+            crud.get_meal_plan_entry(session=session, entry_id=entry.batch_of_id)
+            or entry
+        )
+    batch = {cooked.id} | {
+        e.id for e in crud.get_batch_leftovers(session=session, entry=cooked)
+    }
+
+    if body is None:
+        body = GenerateMenuRequest.model_validate(
+            {**(plan.generation_settings or {}), "start_date": cooked.entry_date}
+        )
     candidates = _candidate_recipes(
         session=session, current_user=current_user, include_public=body.include_public
     )
-    request = _generation_request(body, servings=entry.servings)
-    others = frozenset(e.recipe_id for e in plan.entries if e.id != entry.id)
+    request = _generation_request(body, servings=cooked.servings)
+    others = frozenset(e.recipe_id for e in plan.entries if e.id not in batch)
 
     replacement = pick_replacement(
         candidates,
         request,
-        entry.entry_date,
-        entry.meal_type,
-        current_recipe_id=entry.recipe_id,
+        cooked.entry_date,
+        cooked.meal_type,
+        current_recipe_id=cooked.recipe_id,
         other_recipe_ids=others,
         prices=prices,
     )
@@ -417,9 +742,10 @@ def swap_entry(
             status_code=422, detail="No alternative recipe matches those constraints"
         )
 
-    entry = crud.update_entry(
+    crud.update_entry(
         session=session,
-        entry=entry,
+        entry=cooked,
         update_in=MealPlanEntryUpdate(recipe_id=replacement.id),
     )
+    session.refresh(entry)
     return crud.meal_plan_entry_to_public(entry, prices)

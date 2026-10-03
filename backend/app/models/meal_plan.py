@@ -1,9 +1,9 @@
 import uuid
 from datetime import date, datetime
 from decimal import Decimal
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import DateTime, UniqueConstraint
+from sqlalchemy import JSON, Column, DateTime, UniqueConstraint
 from sqlmodel import Field, Relationship, SQLModel
 
 from app.models.base import get_datetime_utc
@@ -47,6 +47,8 @@ class MealPlanEntryPublic(MealPlanEntryBase):
     #: Cost of this entry at ``servings``, or ``None`` when unpriced.
     estimated_cost: Decimal | None = None
     estimated_cost_per_serving: Decimal | None = None
+    #: Set on leftovers from batch cooking: the entry where the dish is cooked.
+    batch_of_id: uuid.UUID | None = None
 
 
 # --------------------------------------------------------------------------- #
@@ -73,6 +75,13 @@ class MealPlanEntry(MealPlanEntryBase, table=True):
     )
     recipe_id: uuid.UUID = Field(
         foreign_key="recipe.id", nullable=False, ondelete="CASCADE"
+    )
+    #: Batch cooking: this meal is leftovers of the entry it points to, cooked
+    #: earlier in the week. Both entries are bought for at their own servings,
+    #: so the shopping list needs no special case. Removing the cooked entry
+    #: turns its leftovers back into ordinary meals.
+    batch_of_id: uuid.UUID | None = Field(
+        default=None, foreign_key="mealplanentry.id", ondelete="SET NULL"
     )
     meal_plan: "MealPlan" = Relationship(back_populates="entries")
     recipe: Recipe = Relationship(sa_relationship_kwargs={"lazy": "selectin"})
@@ -133,6 +142,12 @@ class MealPlan(MealPlanBase, table=True):
     )
     shopping_list_id: uuid.UUID | None = Field(
         default=None, foreign_key="shoppinglist.id", ondelete="SET NULL"
+    )
+    #: The generation form a generated plan was composed with (diet, time
+    #: limit, …), so a later swap keeps honouring it. ``None`` for plans built
+    #: by hand.
+    generation_settings: dict[str, Any] | None = Field(
+        default=None, sa_column=Column(JSON, nullable=True)
     )
     owner: "User" = Relationship(back_populates="meal_plans")
     entries: list[MealPlanEntry] = Relationship(

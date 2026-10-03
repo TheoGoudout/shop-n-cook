@@ -31,7 +31,10 @@
     "week_total": "Total de la semaine",
     "delete_title": "Supprimer ce menu ?",
     "delete_description": "Le menu et ses repas sont supprimés. Toute liste de courses générée est conservée.",
-    "deleted": "Menu supprimé"
+    "deleted": "Menu supprimé",
+    "batch": "Pour {{count}} repas",
+    "batch_other": "Pour {{count}} repas",
+    "leftovers": "Restes du {{day}}"
   },
   "meal_types": {
     "breakfast": "Petit-déjeuner",
@@ -68,6 +71,31 @@
     "schedule_dinner": "Dîner",
     "schedule_lunch": "Déjeuner",
     "schedule_both": "Les deux",
-    "schedule_none": "Aucun"
+    "schedule_none": "Aucun",
+    "batch_label": "Batch cooking",
+    "batch_1": "Désactivé — cuisiner chaque repas",
+    "batch_2": "Cuisiner une fois, manger deux fois",
+    "batch_3": "Cuisiner une fois, manger trois fois",
+    "batch_help": "Le plat est préparé en plus grande quantité et mangé en restes les jours suivants."
+  },
+  "review": {
+    "title": "Vérifiez votre menu",
+    "description": "Remplacez les repas qui ne vous tentent pas, ou choisissez vous-même une recette. Vos préférences s'appliquent toujours.",
+    "summary": "{{count}} recette à cuisiner",
+    "summary_other": "{{count}} recettes à cuisiner",
+    "total": "environ {{total}}",
+    "unpriced": "{{count}} sans prix",
+    "unpriced_other": "{{count}} sans prix",
+    "swap_selected": "Remplacer la sélection ({{count}})",
+    "select": "Sélectionner {{title}}",
+    "choose": "Choisir une recette",
+    "close_picker": "Fermer",
+    "search_placeholder": "Rechercher parmi les recettes compatibles",
+    "no_options": "Aucune recette ne correspond à vos préférences",
+    "batch": "Pour {{count}} repas ({{servings}} portions)",
+    "batch_other": "Pour {{count}} repas ({{servings}} portions)",
+    "leftovers": "Restes du {{day}}",
+    "regenerate": "En générer un autre",
+    "create": "Créer le menu"
   }
 }

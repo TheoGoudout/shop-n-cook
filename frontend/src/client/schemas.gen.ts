@@ -470,6 +470,13 @@ export const GenerateMenuRequestSchema = {
             ],
             title: 'Meals By Weekday'
         },
+        batch_portions: {
+            type: 'integer',
+            maximum: 3,
+            minimum: 1,
+            title: 'Batch Portions',
+            default: 1
+        },
         servings: {
             anyOf: [
                 {
@@ -1428,6 +1435,18 @@ export const MealPlanEntryPublicSchema = {
                 }
             ],
             title: 'Estimated Cost Per Serving'
+        },
+        batch_of_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Batch Of Id'
         }
     },
     type: 'object',
@@ -1643,6 +1662,425 @@ export const MealTypeSchema = {
     type: 'string',
     enum: ['breakfast', 'lunch', 'dinner', 'snack', 'dessert', 'drink', 'other'],
     title: 'MealType'
+} as const;
+
+export const MenuPreviewSchema = {
+    properties: {
+        meals: {
+            items: {
+                '$ref': '#/components/schemas/ProposedMeal'
+            },
+            type: 'array',
+            title: 'Meals'
+        },
+        servings: {
+            type: 'integer',
+            title: 'Servings'
+        },
+        budget: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Budget'
+        },
+        estimated_total: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Estimated Total'
+        },
+        unpriced_meal_count: {
+            type: 'integer',
+            title: 'Unpriced Meal Count',
+            default: 0
+        },
+        currency: {
+            type: 'string',
+            title: 'Currency',
+            default: 'EUR'
+        }
+    },
+    type: 'object',
+    required: ['meals', 'servings'],
+    title: 'MenuPreview',
+    description: 'A composed menu that has not been saved yet.'
+} as const;
+
+export const MenuPreviewRequestSchema = {
+    properties: {
+        name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name'
+        },
+        start_date: {
+            type: 'string',
+            format: 'date',
+            title: 'Start Date'
+        },
+        days: {
+            type: 'integer',
+            maximum: 31,
+            minimum: 1,
+            title: 'Days',
+            default: 7
+        },
+        meal_types: {
+            items: {
+                '$ref': '#/components/schemas/MealType'
+            },
+            type: 'array',
+            title: 'Meal Types'
+        },
+        meals_by_weekday: {
+            anyOf: [
+                {
+                    items: {
+                        items: {
+                            '$ref': '#/components/schemas/MealType'
+                        },
+                        type: 'array'
+                    },
+                    type: 'array',
+                    maxItems: 7,
+                    minItems: 7
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Meals By Weekday'
+        },
+        batch_portions: {
+            type: 'integer',
+            maximum: 3,
+            minimum: 1,
+            title: 'Batch Portions',
+            default: 1
+        },
+        servings: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    minimum: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Servings'
+        },
+        budget: {
+            anyOf: [
+                {
+                    type: 'number',
+                    minimum: 0
+                },
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Budget'
+        },
+        require_vegan: {
+            type: 'boolean',
+            title: 'Require Vegan',
+            default: false
+        },
+        require_vegetarian: {
+            type: 'boolean',
+            title: 'Require Vegetarian',
+            default: false
+        },
+        require_gluten_free: {
+            type: 'boolean',
+            title: 'Require Gluten Free',
+            default: false
+        },
+        require_dairy_free: {
+            type: 'boolean',
+            title: 'Require Dairy Free',
+            default: false
+        },
+        max_prep_minutes: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    minimum: 0
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Max Prep Minutes'
+        },
+        match_season: {
+            type: 'boolean',
+            title: 'Match Season',
+            default: true
+        },
+        include_public: {
+            type: 'boolean',
+            title: 'Include Public',
+            default: true
+        },
+        seed: {
+            type: 'integer',
+            title: 'Seed',
+            default: 0
+        },
+        meals: {
+            anyOf: [
+                {
+                    items: {
+                        '$ref': '#/components/schemas/ProposedMealIn'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Meals'
+        },
+        replace: {
+            items: {
+                type: 'integer'
+            },
+            type: 'array',
+            title: 'Replace'
+        }
+    },
+    type: 'object',
+    required: ['start_date'],
+    title: 'MenuPreviewRequest',
+    description: `Compose a menu, or rework one already proposed.
+
+Without \`\`meals\`\` a fresh menu is composed. With them, the meals are kept
+as given — which is how a recipe chosen by hand is priced — except those
+whose indices are in \`\`replace\`\`, which get a new recipe picked under the
+same preferences.`
+} as const;
+
+export const MenuRecipeOptionSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        title: {
+            type: 'string',
+            title: 'Title'
+        },
+        image_url: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Image Url'
+        }
+    },
+    type: 'object',
+    required: ['id', 'title'],
+    title: 'MenuRecipeOption'
+} as const;
+
+export const MenuRecipeOptionsRequestSchema = {
+    properties: {
+        name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name'
+        },
+        start_date: {
+            type: 'string',
+            format: 'date',
+            title: 'Start Date'
+        },
+        days: {
+            type: 'integer',
+            maximum: 31,
+            minimum: 1,
+            title: 'Days',
+            default: 7
+        },
+        meal_types: {
+            items: {
+                '$ref': '#/components/schemas/MealType'
+            },
+            type: 'array',
+            title: 'Meal Types'
+        },
+        meals_by_weekday: {
+            anyOf: [
+                {
+                    items: {
+                        items: {
+                            '$ref': '#/components/schemas/MealType'
+                        },
+                        type: 'array'
+                    },
+                    type: 'array',
+                    maxItems: 7,
+                    minItems: 7
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Meals By Weekday'
+        },
+        batch_portions: {
+            type: 'integer',
+            maximum: 3,
+            minimum: 1,
+            title: 'Batch Portions',
+            default: 1
+        },
+        servings: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    minimum: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Servings'
+        },
+        budget: {
+            anyOf: [
+                {
+                    type: 'number',
+                    minimum: 0
+                },
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Budget'
+        },
+        require_vegan: {
+            type: 'boolean',
+            title: 'Require Vegan',
+            default: false
+        },
+        require_vegetarian: {
+            type: 'boolean',
+            title: 'Require Vegetarian',
+            default: false
+        },
+        require_gluten_free: {
+            type: 'boolean',
+            title: 'Require Gluten Free',
+            default: false
+        },
+        require_dairy_free: {
+            type: 'boolean',
+            title: 'Require Dairy Free',
+            default: false
+        },
+        max_prep_minutes: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    minimum: 0
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Max Prep Minutes'
+        },
+        match_season: {
+            type: 'boolean',
+            title: 'Match Season',
+            default: true
+        },
+        include_public: {
+            type: 'boolean',
+            title: 'Include Public',
+            default: true
+        },
+        seed: {
+            type: 'integer',
+            title: 'Seed',
+            default: 0
+        },
+        meal_type: {
+            '$ref': '#/components/schemas/MealType',
+            default: 'dinner'
+        },
+        search: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Search'
+        }
+    },
+    type: 'object',
+    required: ['start_date'],
+    title: 'MenuRecipeOptionsRequest',
+    description: 'Which recipes may be chosen by hand for one slot of a menu.'
+} as const;
+
+export const MenuSlotSchema = {
+    properties: {
+        entry_date: {
+            type: 'string',
+            format: 'date',
+            title: 'Entry Date'
+        },
+        meal_type: {
+            '$ref': '#/components/schemas/MealType'
+        }
+    },
+    type: 'object',
+    required: ['entry_date', 'meal_type'],
+    title: 'MenuSlot'
 } as const;
 
 export const MessageSchema = {
@@ -1974,6 +2412,102 @@ export const PrivateUserCreateSchema = {
     type: 'object',
     required: ['email', 'password', 'full_name'],
     title: 'PrivateUserCreate'
+} as const;
+
+export const ProposedMealSchema = {
+    properties: {
+        recipe_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Recipe Id'
+        },
+        slots: {
+            items: {
+                '$ref': '#/components/schemas/MenuSlot'
+            },
+            type: 'array',
+            minItems: 1,
+            title: 'Slots'
+        },
+        recipe_title: {
+            type: 'string',
+            title: 'Recipe Title'
+        },
+        recipe_image_url: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Recipe Image Url'
+        },
+        prep_time_minutes: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Prep Time Minutes'
+        },
+        cook_time_minutes: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Cook Time Minutes'
+        },
+        servings: {
+            type: 'integer',
+            title: 'Servings'
+        },
+        estimated_cost: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Estimated Cost'
+        }
+    },
+    type: 'object',
+    required: ['recipe_id', 'slots', 'recipe_title', 'servings'],
+    title: 'ProposedMeal'
+} as const;
+
+export const ProposedMealInSchema = {
+    properties: {
+        recipe_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Recipe Id'
+        },
+        slots: {
+            items: {
+                '$ref': '#/components/schemas/MenuSlot'
+            },
+            type: 'array',
+            minItems: 1,
+            title: 'Slots'
+        }
+    },
+    type: 'object',
+    required: ['recipe_id', 'slots'],
+    title: 'ProposedMealIn',
+    description: 'One cooking in a menu: the slot it is cooked in, then its leftovers.'
 } as const;
 
 export const RecipeCreateSchema = {
@@ -2900,6 +3434,160 @@ export const ReimportRequestSchema = {
     },
     type: 'object',
     title: 'ReimportRequest'
+} as const;
+
+export const SaveMenuRequestSchema = {
+    properties: {
+        name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name'
+        },
+        start_date: {
+            type: 'string',
+            format: 'date',
+            title: 'Start Date'
+        },
+        days: {
+            type: 'integer',
+            maximum: 31,
+            minimum: 1,
+            title: 'Days',
+            default: 7
+        },
+        meal_types: {
+            items: {
+                '$ref': '#/components/schemas/MealType'
+            },
+            type: 'array',
+            title: 'Meal Types'
+        },
+        meals_by_weekday: {
+            anyOf: [
+                {
+                    items: {
+                        items: {
+                            '$ref': '#/components/schemas/MealType'
+                        },
+                        type: 'array'
+                    },
+                    type: 'array',
+                    maxItems: 7,
+                    minItems: 7
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Meals By Weekday'
+        },
+        batch_portions: {
+            type: 'integer',
+            maximum: 3,
+            minimum: 1,
+            title: 'Batch Portions',
+            default: 1
+        },
+        servings: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    minimum: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Servings'
+        },
+        budget: {
+            anyOf: [
+                {
+                    type: 'number',
+                    minimum: 0
+                },
+                {
+                    type: 'string',
+                    pattern: '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Budget'
+        },
+        require_vegan: {
+            type: 'boolean',
+            title: 'Require Vegan',
+            default: false
+        },
+        require_vegetarian: {
+            type: 'boolean',
+            title: 'Require Vegetarian',
+            default: false
+        },
+        require_gluten_free: {
+            type: 'boolean',
+            title: 'Require Gluten Free',
+            default: false
+        },
+        require_dairy_free: {
+            type: 'boolean',
+            title: 'Require Dairy Free',
+            default: false
+        },
+        max_prep_minutes: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    minimum: 0
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Max Prep Minutes'
+        },
+        match_season: {
+            type: 'boolean',
+            title: 'Match Season',
+            default: true
+        },
+        include_public: {
+            type: 'boolean',
+            title: 'Include Public',
+            default: true
+        },
+        seed: {
+            type: 'integer',
+            title: 'Seed',
+            default: 0
+        },
+        meals: {
+            anyOf: [
+                {
+                    items: {
+                        '$ref': '#/components/schemas/ProposedMealIn'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Meals'
+        }
+    },
+    type: 'object',
+    required: ['start_date'],
+    title: 'SaveMenuRequest',
+    description: 'Save a menu as a new plan: the reviewed ``meals``, or a fresh one.'
 } as const;
 
 export const SeasonSchema = {

@@ -31,7 +31,10 @@
     "week_total": "Week total",
     "delete_title": "Delete this meal plan?",
     "delete_description": "The plan and its entries are removed. Any shopping list you generated from it is kept.",
-    "deleted": "Meal plan deleted"
+    "deleted": "Meal plan deleted",
+    "batch": "Cook for {{count}} meals",
+    "batch_other": "Cook for {{count}} meals",
+    "leftovers": "Leftovers from {{day}}"
   },
   "meal_types": {
     "breakfast": "Breakfast",
@@ -68,6 +71,31 @@
     "schedule_dinner": "Dinner",
     "schedule_lunch": "Lunch",
     "schedule_both": "Both",
-    "schedule_none": "None"
+    "schedule_none": "None",
+    "batch_label": "Batch cooking",
+    "batch_1": "Off — cook every meal",
+    "batch_2": "Cook once, eat twice",
+    "batch_3": "Cook once, eat three times",
+    "batch_help": "A batch is cooked in a larger quantity and eaten again as leftovers on the following days."
+  },
+  "review": {
+    "title": "Review your menu",
+    "description": "Swap the meals you don't fancy, or pick a recipe yourself. Your preferences still apply.",
+    "summary": "{{count}} recipe to cook",
+    "summary_other": "{{count}} recipes to cook",
+    "total": "estimated {{total}}",
+    "unpriced": "{{count}} not priced",
+    "unpriced_other": "{{count}} not priced",
+    "swap_selected": "Swap selected ({{count}})",
+    "select": "Select {{title}}",
+    "choose": "Choose a recipe",
+    "close_picker": "Close",
+    "search_placeholder": "Search matching recipes",
+    "no_options": "No recipe matches your preferences",
+    "batch": "Cook for {{count}} meals ({{servings}} servings)",
+    "batch_other": "Cook for {{count}} meals ({{servings}} servings)",
+    "leftovers": "Leftovers from {{day}}",
+    "regenerate": "Generate another",
+    "create": "Create menu"
   }
 }

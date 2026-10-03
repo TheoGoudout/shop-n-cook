@@ -136,6 +136,7 @@ export type GenerateMenuRequest = {
     Array<MealType>,
     Array<MealType>
 ] | null);
+    batch_portions?: number;
     servings?: (number | null);
     budget?: (number | string | null);
     require_vegan?: boolean;
@@ -315,6 +316,7 @@ export type MealPlanEntryPublic = {
     cook_time_minutes?: (number | null);
     estimated_cost?: (string | null);
     estimated_cost_per_serving?: (string | null);
+    batch_of_id?: (string | null);
 };
 
 export type MealPlanEntryUpdate = {
@@ -350,6 +352,98 @@ export type MealPlanUpdate = {
 };
 
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'dessert' | 'drink' | 'other';
+
+/**
+ * A composed menu that has not been saved yet.
+ */
+export type MenuPreview = {
+    meals: Array<ProposedMeal>;
+    servings: number;
+    budget?: (string | null);
+    estimated_total?: (string | null);
+    unpriced_meal_count?: number;
+    currency?: string;
+};
+
+/**
+ * Compose a menu, or rework one already proposed.
+ *
+ * Without ``meals`` a fresh menu is composed. With them, the meals are kept
+ * as given — which is how a recipe chosen by hand is priced — except those
+ * whose indices are in ``replace``, which get a new recipe picked under the
+ * same preferences.
+ */
+export type MenuPreviewRequest = {
+    name?: (string | null);
+    start_date: string;
+    days?: number;
+    meal_types?: Array<MealType>;
+    meals_by_weekday?: ([
+    Array<MealType>,
+    Array<MealType>,
+    Array<MealType>,
+    Array<MealType>,
+    Array<MealType>,
+    Array<MealType>,
+    Array<MealType>
+] | null);
+    batch_portions?: number;
+    servings?: (number | null);
+    budget?: (number | string | null);
+    require_vegan?: boolean;
+    require_vegetarian?: boolean;
+    require_gluten_free?: boolean;
+    require_dairy_free?: boolean;
+    max_prep_minutes?: (number | null);
+    match_season?: boolean;
+    include_public?: boolean;
+    seed?: number;
+    meals?: (Array<ProposedMealIn> | null);
+    replace?: Array<(number)>;
+};
+
+export type MenuRecipeOption = {
+    id: string;
+    title: string;
+    image_url?: (string | null);
+};
+
+/**
+ * Which recipes may be chosen by hand for one slot of a menu.
+ */
+export type MenuRecipeOptionsRequest = {
+    name?: (string | null);
+    start_date: string;
+    days?: number;
+    meal_types?: Array<MealType>;
+    meals_by_weekday?: ([
+    Array<MealType>,
+    Array<MealType>,
+    Array<MealType>,
+    Array<MealType>,
+    Array<MealType>,
+    Array<MealType>,
+    Array<MealType>
+] | null);
+    batch_portions?: number;
+    servings?: (number | null);
+    budget?: (number | string | null);
+    require_vegan?: boolean;
+    require_vegetarian?: boolean;
+    require_gluten_free?: boolean;
+    require_dairy_free?: boolean;
+    max_prep_minutes?: (number | null);
+    match_season?: boolean;
+    include_public?: boolean;
+    seed?: number;
+    meal_type?: MealType;
+    search?: (string | null);
+};
+
+export type MenuSlot = {
+    entry_date: string;
+    meal_type: MealType;
+};
 
 export type Message = {
     message: string;
@@ -423,6 +517,25 @@ export type PrivateUserCreate = {
     password: string;
     full_name: string;
     is_verified?: boolean;
+};
+
+export type ProposedMeal = {
+    recipe_id: string;
+    slots: Array<MenuSlot>;
+    recipe_title: string;
+    recipe_image_url?: (string | null);
+    prep_time_minutes?: (number | null);
+    cook_time_minutes?: (number | null);
+    servings: number;
+    estimated_cost?: (string | null);
+};
+
+/**
+ * One cooking in a menu: the slot it is cooked in, then its leftovers.
+ */
+export type ProposedMealIn = {
+    recipe_id: string;
+    slots: Array<MenuSlot>;
 };
 
 export type RecipeCreate = {
@@ -561,6 +674,37 @@ export type RefreshSkip = {
 
 export type ReimportRequest = {
     language?: (string | null);
+};
+
+/**
+ * Save a menu as a new plan: the reviewed ``meals``, or a fresh one.
+ */
+export type SaveMenuRequest = {
+    name?: (string | null);
+    start_date: string;
+    days?: number;
+    meal_types?: Array<MealType>;
+    meals_by_weekday?: ([
+    Array<MealType>,
+    Array<MealType>,
+    Array<MealType>,
+    Array<MealType>,
+    Array<MealType>,
+    Array<MealType>,
+    Array<MealType>
+] | null);
+    batch_portions?: number;
+    servings?: (number | null);
+    budget?: (number | string | null);
+    require_vegan?: boolean;
+    require_vegetarian?: boolean;
+    require_gluten_free?: boolean;
+    require_dairy_free?: boolean;
+    max_prep_minutes?: (number | null);
+    match_season?: boolean;
+    include_public?: boolean;
+    seed?: number;
+    meals?: (Array<ProposedMealIn> | null);
 };
 
 export type Season = 'spring' | 'summer' | 'autumn' | 'winter';
@@ -995,8 +1139,20 @@ export type MealPlansGenerateShoppingListData = {
 
 export type MealPlansGenerateShoppingListResponse = (ShoppingListPublic);
 
+export type MealPlansPreviewMenuData = {
+    requestBody: MenuPreviewRequest;
+};
+
+export type MealPlansPreviewMenuResponse = (MenuPreview);
+
+export type MealPlansMenuRecipeOptionsData = {
+    requestBody: MenuRecipeOptionsRequest;
+};
+
+export type MealPlansMenuRecipeOptionsResponse = (Array<MenuRecipeOption>);
+
 export type MealPlansGenerateMenuRouteData = {
-    requestBody: GenerateMenuRequest;
+    requestBody: SaveMenuRequest;
 };
 
 export type MealPlansGenerateMenuRouteResponse = (MealPlanPublic);

@@ -351,6 +351,20 @@ export type NewPassword = {
     new_password: string;
 };
 
+/**
+ * The "what do I already have?" step, saved for several items at once.
+ *
+ * Items not mentioned keep their current at-home quantity.
+ */
+export type PantryCheck = {
+    items?: Array<PantryCheckEntry>;
+};
+
+export type PantryCheckEntry = {
+    item_id: string;
+    quantity_at_home: number;
+};
+
 export type ParsedIngredient = {
     name: string;
     name_en?: (string | null);
@@ -556,6 +570,7 @@ export type ShoppingListItemCreate = {
     unit: Unit;
     is_checked?: boolean;
     notes?: (string | null);
+    quantity_at_home?: number;
 };
 
 export type ShoppingListItemPublic = {
@@ -565,6 +580,8 @@ export type ShoppingListItemPublic = {
     unit: Unit;
     is_checked: boolean;
     notes?: (string | null);
+    quantity_at_home?: number;
+    quantity_to_buy: number;
     estimated_cost?: (string | null);
 };
 
@@ -573,6 +590,7 @@ export type ShoppingListItemUpdate = {
     unit?: (Unit | null);
     is_checked?: (boolean | null);
     notes?: (string | null);
+    quantity_at_home?: (number | null);
 };
 
 export type ShoppingListPublic = {
@@ -582,6 +600,7 @@ export type ShoppingListPublic = {
     id: string;
     owner_id: string;
     created_at?: (string | null);
+    pantry_checked_at?: (string | null);
     items?: Array<ShoppingListItemPublic>;
     planned_recipes?: Array<ShoppingListRecipePublic>;
     estimated_total?: (string | null);
@@ -1141,6 +1160,13 @@ export type ShoppingListsAddRecipeData = {
 };
 
 export type ShoppingListsAddRecipeResponse = (ShoppingListPublic);
+
+export type ShoppingListsPantryCheckData = {
+    id: string;
+    requestBody: PantryCheck;
+};
+
+export type ShoppingListsPantryCheckResponse = (ShoppingListPublic);
 
 export type ShoppingListsCompareStoresData = {
     id: string;

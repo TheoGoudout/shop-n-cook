@@ -93,5 +93,22 @@
     "estimate_explained_other": "Seuls {{comparable}} de vos {{count}} articles ont un prix dans tous les magasins. Les prix manquants sont estimés à partir des autres magasins, ajustés au niveau de prix de chacun, pour que chaque total couvre les mêmes articles.",
     "unpriceable_one": "{{count}} article n'a de prix dans aucun magasin et n'est compté dans aucun total.",
     "unpriceable_other": "{{count}} articles n'ont de prix dans aucun magasin et ne sont comptés dans aucun total."
+  },
+  "pantry": {
+    "prompt_title": "Avant les courses : vérifiez ce que vous avez déjà",
+    "prompt_body": "Indiquez ce que vous avez déjà chez vous pour que la liste ne vous demande d'acheter que le reste.",
+    "prompt_action": "Vérifier maintenant",
+    "open": "Vérifier ce que j'ai à la maison",
+    "title": "Qu'avez-vous déjà ?",
+    "description": "Pour chaque article, indiquez la quantité que vous avez déjà à la maison. Vous n'aurez à acheter que le reste.",
+    "needed": "Besoin : {{quantity}} {{unit}}",
+    "to_buy": "à acheter : {{quantity}} {{unit}}",
+    "covered": "rien à acheter",
+    "at_home_label": "Quantité de {{name}} à la maison",
+    "have_all": "J'ai tout",
+    "submit": "Mettre à jour la liste",
+    "success": "Liste mise à jour avec ce que vous avez à la maison",
+    "at_home_note": "{{quantity}} {{unit}} déjà à la maison",
+    "covered_section": "Déjà à la maison ({{count}})"
   }
 }

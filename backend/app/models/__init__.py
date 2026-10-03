@@ -55,6 +55,8 @@ from app.models.recipe import (
     RecipeUpdate,
 )
 from app.models.shopping_list import (
+    PantryCheck,
+    PantryCheckEntry,
     ShoppingList,
     ShoppingListBase,
     ShoppingListCreate,
@@ -153,6 +155,8 @@ __all__ = [
     "RecipePublic",
     "RecipesPublic",
     # shopping list
+    "PantryCheck",
+    "PantryCheckEntry",
     "ShoppingListItemCreate",
     "ShoppingListItemUpdate",
     "ShoppingListItemPublic",

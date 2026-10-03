@@ -93,5 +93,22 @@
     "estimate_explained_other": "Only {{comparable}} of your {{count}} items are priced at every store. Missing prices are estimated from the other stores, adjusted to each store's price level, so every total covers the same items.",
     "unpriceable_one": "{{count}} item has no price at any store and is left out of every total.",
     "unpriceable_other": "{{count}} items have no price at any store and are left out of every total."
+  },
+  "pantry": {
+    "prompt_title": "Before you shop: check what's at home",
+    "prompt_body": "Tell us what you already have so the list only asks you to buy the rest.",
+    "prompt_action": "Check now",
+    "open": "Check what's at home",
+    "title": "What do you already have?",
+    "description": "For each item, enter how much is already at home. You'll only be asked to buy the rest.",
+    "needed": "Need {{quantity}} {{unit}}",
+    "to_buy": "buy {{quantity}} {{unit}}",
+    "covered": "nothing to buy",
+    "at_home_label": "Quantity of {{name}} at home",
+    "have_all": "Have it all",
+    "submit": "Update list",
+    "success": "Shopping list updated with what's at home",
+    "at_home_note": "{{quantity}} {{unit}} already at home",
+    "covered_section": "Already at home ({{count}})"
   }
 }

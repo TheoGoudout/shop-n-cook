@@ -10,13 +10,14 @@ import {
   CheckCircle2,
   ChefHat,
   Circle,
+  House,
   Minus,
   Plus,
   ShoppingCart,
   Trash2,
   Users,
 } from "lucide-react"
-import { Suspense } from "react"
+import { Suspense, useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import {
@@ -25,6 +26,7 @@ import {
   type ShoppingListRecipePublic,
   ShoppingListsService,
 } from "@/client"
+import { PantryCheckDialog } from "@/components/ShoppingLists/PantryCheckDialog"
 import { StoreComparison } from "@/components/ShoppingLists/StoreComparison"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -36,6 +38,7 @@ import { useIngredientCatalog } from "@/hooks/useIngredientCatalog"
 import { useUnitSystem } from "@/hooks/useUnitSystem"
 import { APP_NAME } from "@/lib/config"
 import { formatMoney } from "@/lib/money"
+import { itemsToBuy } from "@/lib/pantry"
 import { handleError } from "@/utils"
 
 function getListQueryOptions(id: string) {
@@ -117,7 +120,10 @@ function ShoppingTab({ list }: { list: ShoppingListPublic }) {
   const catalog = useIngredientCatalog()
   const id = list.id
   const planned = list.planned_recipes ?? []
-  const items = list.items ?? []
+  const allItems = list.items ?? []
+  const items = itemsToBuy(allItems)
+  const atHomeItems = allItems.filter((i) => i.quantity_to_buy <= 0)
+  const [pantryOpen, setPantryOpen] = useState(false)
 
   const invalidate = () =>
     queryClient.invalidateQueries({ queryKey: ["shopping-list", id] })
@@ -140,7 +146,7 @@ function ShoppingTab({ list }: { list: ShoppingListPublic }) {
     onSettled: invalidate,
   })
 
-  if (items.length === 0) {
+  if (allItems.length === 0) {
     return (
       <p className="text-sm text-muted-foreground italic py-4">
         {t("detail.shopping_empty")}
@@ -160,7 +166,9 @@ function ShoppingTab({ list }: { list: ShoppingListPublic }) {
 
   const renderItem = (item: ShoppingListItemPublic) => {
     const breakdown = recipeBreakdown(item, planned)
-    const converted = convert(item.quantity, item.unit)
+    const converted = convert(item.quantity_to_buy, item.unit)
+    const atHomeQty = item.quantity_at_home ?? 0
+    const atHome = atHomeQty > 0 ? convert(atHomeQty, item.unit) : null
     const catalogEntry = catalog.get(item.name.toLowerCase())
     return (
       <div key={item.id} className="group">
@@ -205,6 +213,17 @@ function ShoppingTab({ list }: { list: ShoppingListPublic }) {
             <Trash2 className="h-3 w-3" />
           </Button>
         </div>
+        {atHome && (
+          <p className="ml-6 mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+            <House className="h-3 w-3" />
+            {t("pantry.at_home_note", {
+              quantity: atHome.quantity,
+              unit: tCommon(`unit_labels.${atHome.unit}`, {
+                defaultValue: atHome.unit,
+              }),
+            })}
+          </p>
+        )}
         {breakdown.length >= 1 && (
           <div className="ml-6 mt-0.5 flex flex-col gap-y-0.5">
             {breakdown.map((b) => {
@@ -238,6 +257,39 @@ function ShoppingTab({ list }: { list: ShoppingListPublic }) {
 
   return (
     <div className="space-y-4">
+      <PantryCheckDialog
+        listId={id}
+        items={allItems}
+        open={pantryOpen}
+        onOpenChange={setPantryOpen}
+      />
+      {list.pantry_checked_at ? (
+        <div className="flex justify-end">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPantryOpen(true)}
+          >
+            <House className="mr-2 h-4 w-4" />
+            {t("pantry.open")}
+          </Button>
+        </div>
+      ) : (
+        <Card className="border-primary/40 bg-primary/5">
+          <CardContent className="flex flex-wrap items-center gap-3 p-4">
+            <House className="h-5 w-5 shrink-0 text-primary" />
+            <div className="flex-1 min-w-[12rem]">
+              <p className="text-sm font-medium">{t("pantry.prompt_title")}</p>
+              <p className="text-xs text-muted-foreground">
+                {t("pantry.prompt_body")}
+              </p>
+            </div>
+            <Button size="sm" onClick={() => setPantryOpen(true)}>
+              {t("pantry.prompt_action")}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <p className="text-sm text-muted-foreground">
           {t("detail.items_progress", {
@@ -275,6 +327,35 @@ function ShoppingTab({ list }: { list: ShoppingListPublic }) {
             </CardContent>
           </Card>
         ))}
+        {atHomeItems.length > 0 && (
+          <Card className="bg-muted/40">
+            <CardHeader className="py-3 px-4">
+              <CardTitle className="flex items-center gap-2 text-sm text-muted-foreground font-medium tracking-wide">
+                <House className="h-4 w-4" />
+                {t("pantry.covered_section", { count: atHomeItems.length })}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-3 space-y-1">
+              {atHomeItems.map((item) => {
+                const c = convert(item.quantity, item.unit)
+                return (
+                  <div
+                    key={item.id}
+                    className="flex items-center gap-2 text-sm text-muted-foreground"
+                  >
+                    <span className="flex-1">{item.name}</span>
+                    <span>
+                      {c.quantity}{" "}
+                      {tCommon(`unit_labels.${c.unit}`, {
+                        defaultValue: c.unit,
+                      })}
+                    </span>
+                  </div>
+                )
+              })}
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   )
@@ -459,7 +540,7 @@ function ShoppingListDetailContent() {
   const { t } = useTranslation("shopping")
   const { id } = Route.useParams()
   const { data: list } = useSuspenseQuery(getListQueryOptions(id))
-  const items = list.items ?? []
+  const items = itemsToBuy(list.items)
   const planned = list.planned_recipes ?? []
   const checkedCount = items.filter((i) => i.is_checked).length
   const preparedCount = planned.filter((r) => r.is_prepared).length

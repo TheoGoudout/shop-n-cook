@@ -9,6 +9,7 @@ from app.api.deps import CurrentUser, PriceBookDep, SessionDep
 from app.crud.shopping_list import _item_to_public, _sl_recipe_to_public
 from app.models import (
     Message,
+    PantryCheck,
     ShoppingList,
     ShoppingListCreate,
     ShoppingListItem,
@@ -81,20 +82,25 @@ def lines_for_list(
     shopping_list = _check_list_access(
         shopping_list, current_user, shopping_list_id, session
     )
-    # Checked-off items are already in the basket or the cupboard.
-    items = [item for item in shopping_list.items if not item.is_checked]
+    # Checked-off items are already in the basket, and what is at home is not
+    # bought again: only the remainder goes to a store or onto paper.
+    items = [
+        (item, qty)
+        for item, qty in crud.items_to_buy(shopping_list)
+        if not item.is_checked
+    ]
     categories = crud.get_ingredient_categories_by_name(
-        session=session, names=[item.name for item in items]
+        session=session, names=[item.name for item, _ in items]
     )
     return [
         ListLine(
             name=item.name,
-            quantity=item.quantity,
+            quantity=qty,
             unit=item.unit,
             category=categories.get(item.name.strip().lower()),
             note=item.notes,
         )
-        for item in items
+        for item, qty in items
     ]
 
 
@@ -292,6 +298,30 @@ def add_recipe(
     return crud.shopping_list_to_public(sl, prices)
 
 
+@router.put("/{id}/pantry-check", response_model=ShoppingListPublic)
+def pantry_check(
+    *,
+    session: SessionDep,
+    current_user: CurrentUser,
+    prices: PriceBookDep,
+    id: uuid.UUID,
+    check_in: PantryCheck,
+) -> Any:
+    """Record what is already at home before going shopping.
+
+    Each entry says how much of an item, in that item's unit, is already in
+    the cupboard; the list then asks to buy only the rest. Saving also marks
+    the list as checked, even with no entries ("nothing at home").
+    """
+    sl = crud.get_shopping_list(session=session, shopping_list_id=id)
+    sl = _check_list_access(sl, current_user, id, session)
+    item_ids = {item.id for item in sl.items}
+    if any(entry.item_id not in item_ids for entry in check_in.items):
+        raise HTTPException(status_code=404, detail="Item not found")
+    sl = crud.apply_pantry_check(session=session, shopping_list=sl, check=check_in)
+    return crud.shopping_list_to_public(sl, prices)
+
+
 @router.get("/{id}/store-comparison", response_model=StoreComparison)
 def compare_stores(
     session: SessionDep,
@@ -309,7 +339,7 @@ def compare_stores(
     sl = crud.get_shopping_list(session=session, shopping_list_id=id)
     sl = _check_list_access(sl, current_user, id, session)
 
-    items = [(i.name, i.quantity, i.unit) for i in sl.items]
+    items = [(i.name, qty, i.unit) for i, qty in crud.items_to_buy(sl)]
     stores, _ = crud.get_stores(session=session, active_only=True, limit=100)
     by_id = {store.id: store for store in stores}
 

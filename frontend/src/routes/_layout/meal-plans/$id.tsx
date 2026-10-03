@@ -9,6 +9,7 @@ import {
   type MealPlanPublic,
   MealPlansService,
 } from "@/client"
+import { ServingsStepper } from "@/components/Common/ServingsStepper"
 import { AddEntryDialog } from "@/components/MealPlans/AddEntryDialog"
 import PendingItems from "@/components/Pending/PendingItems"
 import { Button } from "@/components/ui/button"
@@ -86,6 +87,16 @@ function EntryRow({
     invalidateKeys: [["meal-plan", planId], ["meal-plans"]],
   })
 
+  const setServings = useCrudMutation({
+    mutationFn: (servings: number) =>
+      MealPlansService.updateEntry({
+        id: planId,
+        entryId: entry.id,
+        requestBody: { servings },
+      }),
+    invalidateKeys: [["meal-plan", planId], ["meal-plans"]],
+  })
+
   const cost = formatMoney(entry.estimated_cost, currency, i18n.language)
 
   // Batch cooking: a cooked entry names how many meals it makes, a leftover
@@ -117,13 +128,27 @@ function EntryRow({
           {t(`meal_types.${entry.meal_type}`, {
             defaultValue: entry.meal_type ?? "",
           })}
-          {" · "}
-          {t("detail.servings", { count: entry.servings })}
           {cost ? ` · ${cost}` : ""}
         </p>
         {batch && <p className="text-xs text-primary">{batch}</p>}
+        <ServingsStepper
+          className="mt-1"
+          value={
+            (setServings.isPending && setServings.variables) ||
+            // Server-defaulted, hence optional in the generated client.
+            (entry.servings ?? 2)
+          }
+          disabled={setServings.isPending}
+          onChange={(servings) => setServings.mutate(servings)}
+          label={t("review.servings_for", {
+            meal: t(`meal_types.${entry.meal_type}`, {
+              defaultValue: entry.meal_type ?? "",
+            }),
+            title: entry.recipe_title,
+          })}
+        />
       </div>
-      <div className="flex shrink-0 opacity-0 group-hover:opacity-100">
+      <div className="flex shrink-0 sm:opacity-0 sm:group-focus-within:opacity-100 sm:group-hover:opacity-100">
         <Button
           variant="ghost"
           size="icon"
@@ -160,7 +185,7 @@ function WeekGrid({ plan }: { plan: MealPlanPublic }) {
   }
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
       {days.map((day) => {
         const forDay = entries
           .filter((e) => e.entry_date === day)

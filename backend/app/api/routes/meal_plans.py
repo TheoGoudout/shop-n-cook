@@ -300,6 +300,10 @@ _SAVED_SETTINGS = {
 class MenuSlot(BaseModel):
     entry_date: date
     meal_type: MealType
+    #: Portions eaten at this meal; ``None`` means the menu's servings. A
+    #: batch is cooked for the sum of its slots, so a leftover meal for one
+    #: shrinks the batch rather than wasting food.
+    servings: int | None = Field(default=None, ge=1, le=50)
 
 
 class ProposedMealIn(BaseModel):
@@ -314,8 +318,10 @@ class ProposedMeal(ProposedMealIn):
     recipe_image_url: str | None = None
     prep_time_minutes: int | None = None
     cook_time_minutes: int | None = None
-    #: Servings eaten at each meal; the batch cooks this times ``len(slots)``.
+    #: The menu's default servings per meal; each slot may override it.
     servings: int
+    #: Portions the batch is cooked for: every slot's servings, added up.
+    total_servings: int
     #: Cost of the whole batch, or ``None`` when unpriced.
     estimated_cost: Decimal | None = None
 
@@ -441,7 +447,7 @@ def _compose(
         (
             meal.recipe,
             [
-                MenuSlot(entry_date=day, meal_type=meal_type)
+                MenuSlot(entry_date=day, meal_type=meal_type, servings=request.servings)
                 for day, meal_type in [
                     (meal.entry_date, meal.meal_type),
                     *meal.leftovers,
@@ -531,24 +537,35 @@ def _replace_meals(
     return result
 
 
+def _slot_servings(slot: MenuSlot, request: GenerationRequest) -> int:
+    return slot.servings or request.servings
+
+
 def _to_preview(
     meals: list[tuple[Recipe, list[MenuSlot]]],
     request: GenerationRequest,
     prices: PriceBookDep,
 ) -> MenuPreview:
-    proposed = [
-        ProposedMeal(
-            recipe_id=recipe.id,
-            slots=slots,
-            recipe_title=recipe.title,
-            recipe_image_url=recipe.image_url,
-            prep_time_minutes=recipe.prep_time_minutes,
-            cook_time_minutes=recipe.cook_time_minutes,
-            servings=request.servings,
-            estimated_cost=cost_of(recipe, prices, request.servings * len(slots)),
+    proposed = []
+    for recipe, slots in meals:
+        filled = [
+            slot.model_copy(update={"servings": _slot_servings(slot, request)})
+            for slot in slots
+        ]
+        total = sum(slot.servings or 0 for slot in filled)
+        proposed.append(
+            ProposedMeal(
+                recipe_id=recipe.id,
+                slots=filled,
+                recipe_title=recipe.title,
+                recipe_image_url=recipe.image_url,
+                prep_time_minutes=recipe.prep_time_minutes,
+                cook_time_minutes=recipe.cook_time_minutes,
+                servings=request.servings,
+                total_servings=total,
+                estimated_cost=cost_of(recipe, prices, total),
+            )
         )
-        for recipe, slots in meals
-    ]
     priced = [m.estimated_cost for m in proposed if m.estimated_cost is not None]
     return MenuPreview(
         meals=proposed,
@@ -676,7 +693,7 @@ def generate_menu_route(
                     recipe_id=recipe.id,
                     entry_date=slot.entry_date,
                     meal_type=slot.meal_type,
-                    servings=request.servings,
+                    servings=_slot_servings(slot, request),
                 ),
                 batch_of=cooked,
             )

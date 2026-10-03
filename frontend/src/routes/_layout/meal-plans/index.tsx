@@ -1,13 +1,13 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
-import { CalendarDays } from "lucide-react"
+import { CalendarDays, Sparkles } from "lucide-react"
 import { Suspense } from "react"
 import { useTranslation } from "react-i18next"
 
 import { MealPlansService } from "@/client"
 import { AddMealPlan } from "@/components/MealPlans/AddMealPlan"
-import { GenerateMenuDialog } from "@/components/MealPlans/GenerateMenuDialog"
 import PendingItems from "@/components/Pending/PendingItems"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { APP_NAME } from "@/lib/config"
 import { formatMoney } from "@/lib/money"
@@ -39,6 +39,12 @@ function MealPlansContent() {
         </div>
         <h3 className="text-lg font-semibold">{t("page.empty_title")}</h3>
         <p className="text-muted-foreground">{t("page.empty_subtitle")}</p>
+        <Button className="mt-4" asChild>
+          <Link to="/meal-plans/generate">
+            <Sparkles />
+            {t("generate.trigger")}
+          </Link>
+        </Button>
       </div>
     )
   }
@@ -99,8 +105,13 @@ function MealPlans() {
           <p className="text-muted-foreground">{t("page.subtitle")}</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <GenerateMenuDialog />
           <AddMealPlan />
+          <Button asChild>
+            <Link to="/meal-plans/generate">
+              <Sparkles />
+              {t("generate.trigger")}
+            </Link>
+          </Button>
         </div>
       </div>
       <Suspense fallback={<PendingItems />}>

@@ -443,6 +443,7 @@ export type MenuRecipeOptionsRequest = {
 export type MenuSlot = {
     entry_date: string;
     meal_type: MealType;
+    servings?: (number | null);
 };
 
 export type Message = {
@@ -527,6 +528,7 @@ export type ProposedMeal = {
     prep_time_minutes?: (number | null);
     cook_time_minutes?: (number | null);
     servings: number;
+    total_servings: number;
     estimated_cost?: (string | null);
 };
 

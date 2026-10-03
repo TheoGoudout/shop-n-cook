@@ -2076,6 +2076,19 @@ export const MenuSlotSchema = {
         },
         meal_type: {
             '$ref': '#/components/schemas/MealType'
+        },
+        servings: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    maximum: 50,
+                    minimum: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Servings'
         }
     },
     type: 'object',
@@ -2470,6 +2483,10 @@ export const ProposedMealSchema = {
             type: 'integer',
             title: 'Servings'
         },
+        total_servings: {
+            type: 'integer',
+            title: 'Total Servings'
+        },
         estimated_cost: {
             anyOf: [
                 {
@@ -2484,7 +2501,7 @@ export const ProposedMealSchema = {
         }
     },
     type: 'object',
-    required: ['recipe_id', 'slots', 'recipe_title', 'servings'],
+    required: ['recipe_id', 'slots', 'recipe_title', 'servings', 'total_servings'],
     title: 'ProposedMeal'
 } as const;
 

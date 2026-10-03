@@ -26,6 +26,7 @@ import { Route as LayoutShoppingListsIdRouteImport } from './routes/_layout/shop
 import { Route as LayoutRecipesPublicRouteImport } from './routes/_layout/recipes/public'
 import { Route as LayoutRecipesIdRouteImport } from './routes/_layout/recipes/$id'
 import { Route as LayoutProfileUserIdRouteImport } from './routes/_layout/profile/$userId'
+import { Route as LayoutMealPlansGenerateRouteImport } from './routes/_layout/meal-plans/generate'
 import { Route as LayoutMealPlansIdRouteImport } from './routes/_layout/meal-plans/$id'
 import { Route as LayoutAdminUsersRouteImport } from './routes/_layout/admin/users'
 import { Route as LayoutAdminIngredientsRouteImport } from './routes/_layout/admin/ingredients'
@@ -115,6 +116,11 @@ const LayoutProfileUserIdRoute = LayoutProfileUserIdRouteImport.update({
   path: '/profile/$userId',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutMealPlansGenerateRoute = LayoutMealPlansGenerateRouteImport.update({
+  id: '/meal-plans/generate',
+  path: '/meal-plans/generate',
+  getParentRoute: () => LayoutRoute,
+} as any)
 const LayoutMealPlansIdRoute = LayoutMealPlansIdRouteImport.update({
   id: '/meal-plans/$id',
   path: '/meal-plans/$id',
@@ -143,6 +149,7 @@ export interface FileRoutesByFullPath {
   '/admin/ingredients': typeof LayoutAdminIngredientsRoute
   '/admin/users': typeof LayoutAdminUsersRoute
   '/meal-plans/$id': typeof LayoutMealPlansIdRoute
+  '/meal-plans/generate': typeof LayoutMealPlansGenerateRoute
   '/profile/$userId': typeof LayoutProfileUserIdRoute
   '/recipes/$id': typeof LayoutRecipesIdRoute
   '/recipes/public': typeof LayoutRecipesPublicRoute
@@ -163,6 +170,7 @@ export interface FileRoutesByTo {
   '/admin/ingredients': typeof LayoutAdminIngredientsRoute
   '/admin/users': typeof LayoutAdminUsersRoute
   '/meal-plans/$id': typeof LayoutMealPlansIdRoute
+  '/meal-plans/generate': typeof LayoutMealPlansGenerateRoute
   '/profile/$userId': typeof LayoutProfileUserIdRoute
   '/recipes/$id': typeof LayoutRecipesIdRoute
   '/recipes/public': typeof LayoutRecipesPublicRoute
@@ -186,6 +194,7 @@ export interface FileRoutesById {
   '/_layout/admin/ingredients': typeof LayoutAdminIngredientsRoute
   '/_layout/admin/users': typeof LayoutAdminUsersRoute
   '/_layout/meal-plans/$id': typeof LayoutMealPlansIdRoute
+  '/_layout/meal-plans/generate': typeof LayoutMealPlansGenerateRoute
   '/_layout/profile/$userId': typeof LayoutProfileUserIdRoute
   '/_layout/recipes/$id': typeof LayoutRecipesIdRoute
   '/_layout/recipes/public': typeof LayoutRecipesPublicRoute
@@ -209,6 +218,7 @@ export interface FileRouteTypes {
     | '/admin/ingredients'
     | '/admin/users'
     | '/meal-plans/$id'
+    | '/meal-plans/generate'
     | '/profile/$userId'
     | '/recipes/$id'
     | '/recipes/public'
@@ -229,6 +239,7 @@ export interface FileRouteTypes {
     | '/admin/ingredients'
     | '/admin/users'
     | '/meal-plans/$id'
+    | '/meal-plans/generate'
     | '/profile/$userId'
     | '/recipes/$id'
     | '/recipes/public'
@@ -251,6 +262,7 @@ export interface FileRouteTypes {
     | '/_layout/admin/ingredients'
     | '/_layout/admin/users'
     | '/_layout/meal-plans/$id'
+    | '/_layout/meal-plans/generate'
     | '/_layout/profile/$userId'
     | '/_layout/recipes/$id'
     | '/_layout/recipes/public'
@@ -390,6 +402,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutProfileUserIdRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/meal-plans/generate': {
+      id: '/_layout/meal-plans/generate'
+      path: '/meal-plans/generate'
+      fullPath: '/meal-plans/generate'
+      preLoaderRoute: typeof LayoutMealPlansGenerateRouteImport
+      parentRoute: typeof LayoutRoute
+    }
     '/_layout/meal-plans/$id': {
       id: '/_layout/meal-plans/$id'
       path: '/meal-plans/$id'
@@ -436,6 +455,7 @@ interface LayoutRouteChildren {
   LayoutShareTargetRoute: typeof LayoutShareTargetRoute
   LayoutIndexRoute: typeof LayoutIndexRoute
   LayoutMealPlansIdRoute: typeof LayoutMealPlansIdRoute
+  LayoutMealPlansGenerateRoute: typeof LayoutMealPlansGenerateRoute
   LayoutProfileUserIdRoute: typeof LayoutProfileUserIdRoute
   LayoutRecipesIdRoute: typeof LayoutRecipesIdRoute
   LayoutRecipesPublicRoute: typeof LayoutRecipesPublicRoute
@@ -451,6 +471,7 @@ const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutShareTargetRoute: LayoutShareTargetRoute,
   LayoutIndexRoute: LayoutIndexRoute,
   LayoutMealPlansIdRoute: LayoutMealPlansIdRoute,
+  LayoutMealPlansGenerateRoute: LayoutMealPlansGenerateRoute,
   LayoutProfileUserIdRoute: LayoutProfileUserIdRoute,
   LayoutRecipesIdRoute: LayoutRecipesIdRoute,
   LayoutRecipesPublicRoute: LayoutRecipesPublicRoute,

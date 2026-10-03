@@ -2,13 +2,20 @@
 
 import uuid
 from datetime import date, timedelta
+from decimal import Decimal
 
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
 from app import crud
 from app.core.config import settings
-from app.models import RecipeCreate, User
+from app.models import (
+    IngredientCreate,
+    RecipeCreate,
+    RecipeIngredientCreate,
+    Unit,
+    User,
+)
 from tests.utils.user import authentication_token_from_email, create_random_user
 from tests.utils.utils import random_lower_string
 
@@ -57,11 +64,16 @@ def _base(**extra: object) -> dict[str, object]:
     }
 
 
-def _slot(offset: int, meal_type: str = "dinner") -> dict[str, str]:
-    return {
+def _slot(
+    offset: int, meal_type: str = "dinner", servings: int | None = None
+) -> dict[str, object]:
+    slot: dict[str, object] = {
         "entry_date": (START + timedelta(days=offset)).isoformat(),
         "meal_type": meal_type,
     }
+    if servings is not None:
+        slot["servings"] = servings
+    return slot
 
 
 # --------------------------------------------------------------------------- #
@@ -98,7 +110,8 @@ def test_a_preview_with_batch_cooking_groups_leftovers(
         f"{API}/generate/preview", headers=headers, json=_base(batch_portions=2)
     ).json()
     assert [len(m["slots"]) for m in body["meals"]] == [2, 2]
-    assert body["meals"][0]["slots"] == [_slot(0), _slot(1)]
+    assert body["meals"][0]["slots"] == [_slot(0, servings=2), _slot(1, servings=2)]
+    assert body["meals"][0]["total_servings"] == 4
 
 
 def test_replacing_meals_changes_only_those_meals(
@@ -195,7 +208,8 @@ def test_a_recipe_chosen_by_hand_is_kept_and_described(
     assert response.status_code == 200
     meal = response.json()["meals"][0]
     assert meal["recipe_title"] == "Grandma's stew"
-    assert meal["slots"] == [_slot(0), _slot(1)]
+    # Slots sent without servings are filled in with the menu's.
+    assert meal["slots"] == [_slot(0, servings=2), _slot(1, servings=2)]
 
 
 def test_someone_elses_private_recipe_cannot_be_chosen(
@@ -235,6 +249,96 @@ def test_a_recipe_twice_in_one_slot_is_refused(client: TestClient, db: Session) 
                 {"recipe_id": recipe, "slots": [_slot(0)]},
             ]
         ),
+    )
+    assert response.status_code == 422
+
+
+# --------------------------------------------------------------------------- #
+# Portions per meal                                                            #
+# --------------------------------------------------------------------------- #
+
+
+def _priced_recipe(db: Session, owner_id: uuid.UUID) -> uuid.UUID:
+    """A 2-serving recipe needing 1 kg of an ingredient priced 4.00 / kg."""
+    name = f"beef-{random_lower_string()}"
+    ingredient = crud.create_ingredient(
+        session=db, ingredient_in=IngredientCreate(name=name)
+    )
+    ingredient.price_amount = Decimal("4.00")
+    ingredient.price_quantity = 1.0
+    ingredient.price_unit = Unit.KILOGRAM
+    db.add(ingredient)
+    db.commit()
+    recipe = crud.create_recipe(
+        session=db,
+        recipe_in=RecipeCreate(
+            title=random_lower_string(),
+            servings=2,
+            ingredients=[
+                RecipeIngredientCreate(
+                    ingredient_name=name, quantity=1, unit=Unit.KILOGRAM
+                )
+            ],
+        ),
+        owner_id=owner_id,
+    )
+    return recipe.id
+
+
+def test_a_batch_is_cooked_and_priced_for_each_meals_portions(
+    client: TestClient, db: Session
+) -> None:
+    headers, user = _account(client, db)
+    stew = str(_priced_recipe(db, user.id))
+    response = client.post(
+        f"{API}/generate/preview",
+        headers=headers,
+        json=_base(
+            meals=[
+                {
+                    "recipe_id": stew,
+                    "slots": [_slot(0, servings=4), _slot(1, servings=1)],
+                }
+            ]
+        ),
+    )
+    assert response.status_code == 200
+    meal = response.json()["meals"][0]
+    assert meal["total_servings"] == 5
+    # 5 servings of a 2-serving, 4.00 recipe.
+    assert Decimal(str(meal["estimated_cost"])) == Decimal("10.00")
+
+
+def test_portions_per_meal_are_saved_on_each_entry(
+    client: TestClient, db: Session
+) -> None:
+    headers, user = _account(client, db)
+    stew, salad = str(_recipe(db, user.id)), str(_recipe(db, user.id))
+    plan = client.post(
+        f"{API}/generate",
+        headers=headers,
+        json=_base(
+            meals=[
+                {"recipe_id": stew, "slots": [_slot(0, servings=6), _slot(1)]},
+                {"recipe_id": salad, "slots": [_slot(2, servings=1)]},
+            ]
+        ),
+    ).json()
+    servings = {e["entry_date"]: e["servings"] for e in plan["entries"]}
+    assert servings == {
+        _slot(0)["entry_date"]: 6,
+        _slot(1)["entry_date"]: 2,
+        _slot(2)["entry_date"]: 1,
+    }
+
+
+def test_a_meal_for_nobody_is_refused(client: TestClient, db: Session) -> None:
+    headers, user = _account(client, db)
+    recipe = str(_recipe(db, user.id))
+    response = client.post(
+        f"{API}/generate/preview",
+        headers=headers,
+        json=_base(meals=[{"recipe_id": recipe, "slots": [_slot(0, servings=0)]}]),
     )
     assert response.status_code == 422
 

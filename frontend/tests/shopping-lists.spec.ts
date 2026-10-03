@@ -154,3 +154,58 @@ test.describe("Shopping list detail page — direct URL navigation", () => {
     await deleteListFromCard(page, name)
   })
 })
+
+test.describe("Shopping list detail page — checking what is at home", () => {
+  test("subtracts what is already at home from what to buy", async ({
+    page,
+  }) => {
+    const name = uniqueName()
+    await page.goto("/shopping-lists")
+    const id = await createList(page, name)
+
+    // Seed the list through the API: the add-item dialog is not under test.
+    const apiUrl = process.env.VITE_API_URL ?? "http://localhost:8000"
+    const token = await page.evaluate(() =>
+      localStorage.getItem("access_token"),
+    )
+    const response = await page.request.post(
+      `${apiUrl}/api/v1/shopping-lists/${id}/items`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+        data: { name: "Playwright tomato", quantity: 8, unit: "piece" },
+      },
+    )
+    expect(response.ok()).toBeTruthy()
+
+    await page.goto(`/shopping-lists/${id}`)
+    await expect(
+      page.getByText("Before you shop: check what's at home"),
+    ).toBeVisible()
+    await page.getByRole("button", { name: "Check now" }).click()
+
+    const dialog = page.getByRole("dialog", {
+      name: "What do you already have?",
+    })
+    await expect(dialog).toBeVisible()
+    await dialog.getByLabel("Quantity of Playwright tomato at home").fill("3")
+    await expect(dialog.getByText(/buy 5/)).toBeVisible()
+    await dialog.getByRole("button", { name: "Update list" }).click()
+    await expect(dialog).not.toBeVisible()
+
+    // The prompt gives way to a button to redo the check, and the item now
+    // asks for the remainder only.
+    await expect(
+      page.getByRole("button", { name: "Check what's at home" }),
+    ).toBeVisible()
+    await expect(page.getByText(/3 \S+ already at home/)).toBeVisible()
+
+    // Having everything moves the item out of the shop.
+    await page.getByRole("button", { name: "Check what's at home" }).click()
+    await dialog.getByRole("button", { name: "Have it all" }).click()
+    await dialog.getByRole("button", { name: "Update list" }).click()
+    await expect(page.getByText("Already at home (1)")).toBeVisible()
+
+    await page.goto("/shopping-lists")
+    await deleteListFromCard(page, name)
+  })
+})

@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
+import { itemsToBuy } from "@/lib/pantry"
 
 interface Props {
   data: ShoppingListsPublic | undefined
@@ -26,7 +27,7 @@ export function ActiveShoppingList({ data }: Props) {
   if (data !== undefined && data.count === 0) return null
 
   const list = data?.data[data.data.length - 1]
-  const items = list?.items ?? []
+  const items = itemsToBuy(list?.items)
   const checkedCount = items.filter((i) => i.is_checked).length
   const progress = items.length > 0 ? (checkedCount / items.length) * 100 : 0
   const plannedCount = list?.planned_recipes?.length ?? 0

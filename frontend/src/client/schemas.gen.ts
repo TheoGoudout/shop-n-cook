@@ -1656,6 +1656,42 @@ export const NewPasswordSchema = {
     title: 'NewPassword'
 } as const;
 
+export const PantryCheckSchema = {
+    properties: {
+        items: {
+            items: {
+                '$ref': '#/components/schemas/PantryCheckEntry'
+            },
+            type: 'array',
+            title: 'Items',
+            default: []
+        }
+    },
+    type: 'object',
+    title: 'PantryCheck',
+    description: `The "what do I already have?" step, saved for several items at once.
+
+Items not mentioned keep their current at-home quantity.`
+} as const;
+
+export const PantryCheckEntrySchema = {
+    properties: {
+        item_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Item Id'
+        },
+        quantity_at_home: {
+            type: 'number',
+            minimum: 0,
+            title: 'Quantity At Home'
+        }
+    },
+    type: 'object',
+    required: ['item_id', 'quantity_at_home'],
+    title: 'PantryCheckEntry'
+} as const;
+
 export const ParsedIngredientSchema = {
     properties: {
         name: {
@@ -2929,6 +2965,12 @@ export const ShoppingListItemCreateSchema = {
                 }
             ],
             title: 'Notes'
+        },
+        quantity_at_home: {
+            type: 'number',
+            minimum: 0,
+            title: 'Quantity At Home',
+            default: 0
         }
     },
     type: 'object',
@@ -2969,6 +3011,15 @@ export const ShoppingListItemPublicSchema = {
             ],
             title: 'Notes'
         },
+        quantity_at_home: {
+            type: 'number',
+            title: 'Quantity At Home',
+            default: 0
+        },
+        quantity_to_buy: {
+            type: 'number',
+            title: 'Quantity To Buy'
+        },
         estimated_cost: {
             anyOf: [
                 {
@@ -2983,7 +3034,7 @@ export const ShoppingListItemPublicSchema = {
         }
     },
     type: 'object',
-    required: ['id', 'name', 'quantity', 'unit', 'is_checked'],
+    required: ['id', 'name', 'quantity', 'unit', 'is_checked', 'quantity_to_buy'],
     title: 'ShoppingListItemPublic'
 } as const;
 
@@ -3033,6 +3084,18 @@ export const ShoppingListItemUpdateSchema = {
                 }
             ],
             title: 'Notes'
+        },
+        quantity_at_home: {
+            anyOf: [
+                {
+                    type: 'number',
+                    minimum: 0
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Quantity At Home'
         }
     },
     type: 'object',
@@ -3092,6 +3155,18 @@ export const ShoppingListPublicSchema = {
                 }
             ],
             title: 'Created At'
+        },
+        pantry_checked_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Pantry Checked At'
         },
         items: {
             items: {

@@ -1,4 +1,5 @@
 import uuid
+from decimal import Decimal
 
 from sqlmodel import Session, col, func, select
 
@@ -6,6 +7,7 @@ from app.core.naming import normalize_ingredient_name
 from app.core.units import convert, merge_key
 from app.crud.recipe import recipe_ingredient_to_public
 from app.models import (
+    PantryCheck,
     Recipe,
     ShoppingList,
     ShoppingListCreate,
@@ -20,7 +22,33 @@ from app.models import (
     ShoppingListUpdate,
     Unit,
 )
+from app.models.base import get_datetime_utc
 from app.services.pricing import PriceBook, quantize_money
+
+#: Quantities are rounded here so that repeatedly adding and removing a recipe
+#: cannot accumulate binary-float dust into a visible "0.30000000000000004 kg".
+_QUANTITY_PRECISION = 6
+
+#: Below this a quantity is treated as gone rather than as a sliver of a gram.
+_QUANTITY_EPSILON = 1e-9
+
+
+def quantity_to_buy(item: ShoppingListItem) -> float:
+    """What is still to be bought once what is at home is taken off."""
+    return max(round(item.quantity - item.quantity_at_home, _QUANTITY_PRECISION), 0.0)
+
+
+def items_to_buy(shopping_list: ShoppingList) -> list[tuple[ShoppingListItem, float]]:
+    """Every item that still needs buying, with how much.
+
+    An item fully covered by what is at home is left out entirely rather than
+    carried as a zero line, so it neither costs nothing nor counts as unpriced.
+    """
+    return [
+        (item, qty)
+        for item in shopping_list.items
+        if (qty := quantity_to_buy(item)) > _QUANTITY_EPSILON
+    ]
 
 
 def _recipe_scale(slr: ShoppingListRecipe) -> float:
@@ -60,9 +88,10 @@ def _sl_recipe_to_public(
 def _item_to_public(
     item: ShoppingListItem, prices: PriceBook | None = None
 ) -> ShoppingListItemPublic:
-    cost = (
-        prices.cost(item.name, item.quantity, item.unit) if prices is not None else None
-    )
+    to_buy = quantity_to_buy(item)
+    cost = None
+    if prices is not None:
+        cost = prices.cost(item.name, to_buy, item.unit) if to_buy > 0 else Decimal(0)
     return ShoppingListItemPublic(
         id=item.id,
         name=item.name,
@@ -70,6 +99,8 @@ def _item_to_public(
         unit=item.unit,
         is_checked=item.is_checked,
         notes=item.notes,
+        quantity_at_home=item.quantity_at_home,
+        quantity_to_buy=to_buy,
         estimated_cost=quantize_money(cost) if cost is not None else None,
     )
 
@@ -78,7 +109,9 @@ def shopping_list_to_public(
     shopping_list: ShoppingList, prices: PriceBook | None = None
 ) -> ShoppingListPublic:
     cost = (
-        prices.summarize([(i.name, i.quantity, i.unit) for i in shopping_list.items])
+        prices.summarize(
+            [(i.name, qty, i.unit) for i, qty in items_to_buy(shopping_list)]
+        )
         if prices is not None
         else None
     )
@@ -89,6 +122,7 @@ def shopping_list_to_public(
         end_date=shopping_list.end_date,
         owner_id=shopping_list.owner_id,
         created_at=shopping_list.created_at,
+        pantry_checked_at=shopping_list.pantry_checked_at,
         items=[_item_to_public(i, prices) for i in shopping_list.items],
         planned_recipes=[
             _sl_recipe_to_public(r, prices) for r in shopping_list.planned_recipes
@@ -211,11 +245,43 @@ def update_shopping_list_item(
     item_in: ShoppingListItemUpdate,
 ) -> ShoppingListItem:
     update_data = item_in.model_dump(exclude_unset=True)
+    new_unit = update_data.get("unit")
+    if (
+        new_unit is not None
+        and new_unit != item.unit
+        and "quantity_at_home" not in update_data
+    ):
+        # What is at home is recorded in the item's unit, so it follows a unit
+        # change. Where no conversion exists it is forgotten, not guessed.
+        converted = convert(item.quantity_at_home, item.unit, new_unit)
+        update_data["quantity_at_home"] = (
+            round(converted, _QUANTITY_PRECISION) if converted is not None else 0.0
+        )
     item.sqlmodel_update(update_data)
     session.add(item)
     session.commit()
     session.refresh(item)
     return item
+
+
+def apply_pantry_check(
+    *, session: Session, shopping_list: ShoppingList, check: PantryCheck
+) -> ShoppingList:
+    """Record what is already at home, and that the list has been checked.
+
+    Every ``check.items`` id must belong to ``shopping_list``; the route checks
+    that before calling, so a stale id leaves the list untouched.
+    """
+    by_id = {item.id: item for item in shopping_list.items}
+    for entry in check.items:
+        item = by_id[entry.item_id]
+        item.quantity_at_home = round(entry.quantity_at_home, _QUANTITY_PRECISION)
+        session.add(item)
+    shopping_list.pantry_checked_at = get_datetime_utc()
+    session.add(shopping_list)
+    session.commit()
+    session.refresh(shopping_list)
+    return shopping_list
 
 
 def get_shopping_list_item(
@@ -233,14 +299,6 @@ def get_shopping_list_recipe(
     *, session: Session, sl_recipe_id: uuid.UUID
 ) -> ShoppingListRecipe | None:
     return session.get(ShoppingListRecipe, sl_recipe_id)
-
-
-#: Quantities are rounded here so that repeatedly adding and removing a recipe
-#: cannot accumulate binary-float dust into a visible "0.30000000000000004 kg".
-_QUANTITY_PRECISION = 6
-
-#: Below this a quantity is treated as gone rather than as a sliver of a gram.
-_QUANTITY_EPSILON = 1e-9
 
 
 def _item_key(name: str, unit: Unit) -> tuple[str, str]:

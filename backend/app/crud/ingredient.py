@@ -162,6 +162,7 @@ def _merge_duplicate_shopping_list_items(session: Session, canonical_name: str) 
             continue
         keeper = group_items[0]
         keeper.quantity = sum(i.quantity for i in group_items)
+        keeper.quantity_at_home = sum(i.quantity_at_home for i in group_items)
         session.add(keeper)
         for dup in group_items[1:]:
             session.delete(dup)

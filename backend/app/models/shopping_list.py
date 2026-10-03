@@ -69,6 +69,10 @@ class ShoppingListItemBase(SQLModel):
     unit: Unit
     is_checked: bool = False
     notes: str | None = Field(default=None, max_length=255)
+    #: How much of ``quantity`` is already at home, in the item's own ``unit``.
+    #: Kept apart from ``quantity`` rather than subtracted from it, so adding,
+    #: rescaling or removing a recipe still moves the need by the right amount.
+    quantity_at_home: float = Field(default=0, ge=0)
 
 
 class ShoppingListItemCreate(ShoppingListItemBase):
@@ -80,16 +84,36 @@ class ShoppingListItemUpdate(SQLModel):
     unit: Unit | None = None
     is_checked: bool | None = None
     notes: str | None = Field(default=None, max_length=255)
+    quantity_at_home: float | None = Field(default=None, ge=0)
 
 
 class ShoppingListItemPublic(SQLModel):
     id: uuid.UUID
     name: str
+    #: What the planned recipes and manual additions call for.
     quantity: float
     unit: Unit
     is_checked: bool
     notes: str | None = None
+    quantity_at_home: float = 0
+    #: ``quantity`` less what is at home, never below zero.
+    quantity_to_buy: float
+    #: Cost of ``quantity_to_buy`` only: what is at home costs nothing more.
     estimated_cost: Decimal | None = None
+
+
+class PantryCheckEntry(SQLModel):
+    item_id: uuid.UUID
+    quantity_at_home: float = Field(ge=0)
+
+
+class PantryCheck(SQLModel):
+    """The "what do I already have?" step, saved for several items at once.
+
+    Items not mentioned keep their current at-home quantity.
+    """
+
+    items: list[PantryCheckEntry] = []
 
 
 # --------------------------------------------------------------------------- #
@@ -140,6 +164,12 @@ class ShoppingList(ShoppingListBase, table=True):
         default_factory=get_datetime_utc,
         sa_type=DateTime(timezone=True),  # type: ignore
     )
+    #: When someone last went through the list checking what is at home;
+    #: ``None`` until they have, which is what prompts the UI to suggest it.
+    pantry_checked_at: datetime | None = Field(
+        default=None,
+        sa_type=DateTime(timezone=True),  # type: ignore
+    )
     owner: "User" = Relationship(back_populates="shopping_lists")
     items: list[ShoppingListItem] = Relationship(
         back_populates="shopping_list",
@@ -162,6 +192,7 @@ class ShoppingListPublic(ShoppingListBase):
     id: uuid.UUID
     owner_id: uuid.UUID
     created_at: datetime | None = None
+    pantry_checked_at: datetime | None = None
     items: list[ShoppingListItemPublic] = []
     planned_recipes: list[ShoppingListRecipePublic] = []
     #: Sum over the priced items only; ``unpriced_item_count`` says how much of

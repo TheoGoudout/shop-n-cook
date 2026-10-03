@@ -127,6 +127,16 @@ repos:
         pass_filenames: false
         files: (^|/)(pyproject\.toml|uv\.lock)$
 
+      # Every file scripts/set-version.mjs writes must carry the same version,
+      # or release-prepare.yml refuses to run. Caught here instead, on the
+      # commit that introduces the drift.
+      - id: version-drift
+        name: Version files agree
+        entry: bun scripts/set-version.mjs --check
+        language: system
+        pass_filenames: false
+        files: ^(package\.json|frontend/package\.json|extension/package\.json|landing/package\.json|backend/pyproject\.toml|uv\.lock|extension/public/manifest\.json|mobile/android/app/build\.gradle|mobile/android/twa-manifest\.json|scripts/set-version\.mjs)$
+
       # GitHub Actions static analysis. Offline only: the online audits need a
       # GitHub token and network round-trips per action, which belongs in CI
       # rather than in front of every commit. .github/workflows/zizmor.yml runs

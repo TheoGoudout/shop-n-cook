@@ -198,6 +198,48 @@ def test_multiple_meal_types_fill_every_slot() -> None:
     assert {m.meal_type for m in meals} == {MealType.LUNCH, MealType.DINNER}
 
 
+def test_a_weekly_schedule_sets_the_meals_of_each_day() -> None:
+    recipes = [make_recipe(f"r{i}") for i in range(20)]
+    lunch, dinner = MealType.LUNCH, MealType.DINNER
+    schedule = (
+        (dinner,),  # Monday
+        (lunch,),
+        (lunch, dinner),
+        (),  # Thursday: nothing planned
+        (dinner,),
+        (lunch, dinner),
+        (),
+    )
+    req = request(days=7, meals_by_weekday=schedule)
+    meals = generate_menu(recipes, req)
+
+    assert req.slot_count == 7
+    planned = {
+        weekday: [m.meal_type for m in meals if m.entry_date.weekday() == weekday]
+        for weekday in range(7)
+    }
+    assert planned == {i: list(day) for i, day in enumerate(schedule)}
+
+
+def test_a_weekly_schedule_follows_the_weekday_not_the_offset() -> None:
+    # Starting on a Wednesday: the first day planned uses Wednesday's meals.
+    schedule = ((), (), (MealType.LUNCH,), (), (), (), ())
+    meals = generate_menu(
+        [make_recipe(f"r{i}") for i in range(5)],
+        GenerationRequest(
+            start_date=date(2026, 3, 4), days=7, meals_by_weekday=schedule
+        ),
+    )
+    assert [(m.entry_date, m.meal_type) for m in meals] == [
+        (date(2026, 3, 4), MealType.LUNCH)
+    ]
+
+
+def test_a_weekly_schedule_needs_seven_days() -> None:
+    with pytest.raises(ValueError):
+        request(meals_by_weekday=((MealType.DINNER,),))
+
+
 def test_servings_are_carried_onto_every_meal() -> None:
     meals = generate_menu([make_recipe("r")], request(days=2, servings=5))
     assert all(m.servings == 5 for m in meals)

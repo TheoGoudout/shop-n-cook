@@ -63,6 +63,11 @@
     "success": "Menu généré",
     "swap": "Remplacer ce repas",
     "swapped": "Repas remplacé",
-    "servings_placeholder": "Selon la taille du foyer"
+    "servings_placeholder": "Selon la taille du foyer",
+    "schedule_label": "Repas à prévoir chaque jour",
+    "schedule_dinner": "Dîner",
+    "schedule_lunch": "Déjeuner",
+    "schedule_both": "Les deux",
+    "schedule_none": "Aucun"
   }
 }

@@ -91,14 +91,28 @@ class GenerationRequest:
     match_season: bool = True
     exclude_recipe_ids: frozenset[uuid.UUID] = field(default_factory=frozenset)
     seed: int = 0
+    #: Which meals to plan on each weekday, Monday first (``date.weekday()``
+    #: order). ``None`` means every day gets ``meal_types``; an empty entry
+    #: means that day is skipped — eating out, at the in-laws', …
+    meals_by_weekday: tuple[tuple[MealType, ...], ...] | None = None
+
+    def __post_init__(self) -> None:
+        if self.meals_by_weekday is not None and len(self.meals_by_weekday) != 7:
+            raise ValueError("meals_by_weekday needs one entry per weekday")
 
     @property
     def dates(self) -> list[date]:
         return [self.start_date + timedelta(days=i) for i in range(self.days)]
 
+    def meal_types_for(self, day: date) -> tuple[MealType, ...]:
+        """The meals to plan on ``day``."""
+        if self.meals_by_weekday is None:
+            return self.meal_types
+        return self.meals_by_weekday[day.weekday()]
+
     @property
     def slot_count(self) -> int:
-        return self.days * len(self.meal_types)
+        return sum(len(self.meal_types_for(day)) for day in self.dates)
 
 
 @dataclass(frozen=True)
@@ -274,7 +288,7 @@ def generate_menu(
     chosen: list[PlannedMeal] = []
 
     for day in request.dates:
-        for meal_type in request.meal_types:
+        for meal_type in request.meal_types_for(day):
             eligible = [r for r in pool if is_eligible(r, request, meal_type)]
             if not eligible:
                 continue

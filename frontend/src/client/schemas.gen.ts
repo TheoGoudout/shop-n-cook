@@ -451,6 +451,25 @@ export const GenerateMenuRequestSchema = {
             type: 'array',
             title: 'Meal Types'
         },
+        meals_by_weekday: {
+            anyOf: [
+                {
+                    items: {
+                        items: {
+                            '$ref': '#/components/schemas/MealType'
+                        },
+                        type: 'array'
+                    },
+                    type: 'array',
+                    maxItems: 7,
+                    minItems: 7
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Meals By Weekday'
+        },
         servings: {
             anyOf: [
                 {

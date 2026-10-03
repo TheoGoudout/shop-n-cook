@@ -127,6 +127,15 @@ export type GenerateMenuRequest = {
     start_date: string;
     days?: number;
     meal_types?: Array<MealType>;
+    meals_by_weekday?: ([
+    Array<MealType>,
+    Array<MealType>,
+    Array<MealType>,
+    Array<MealType>,
+    Array<MealType>,
+    Array<MealType>,
+    Array<MealType>
+] | null);
     servings?: (number | null);
     budget?: (number | string | null);
     require_vegan?: boolean;

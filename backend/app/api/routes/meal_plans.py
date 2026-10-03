@@ -258,6 +258,11 @@ class GenerateMenuRequest(BaseModel):
     start_date: date
     days: int = Field(default=7, ge=1, le=31)
     meal_types: list[MealType] = Field(default_factory=lambda: [MealType.DINNER])
+    #: Per-weekday override of ``meal_types``, Monday first: seven lists, an
+    #: empty one meaning no meal is planned that day.
+    meals_by_weekday: list[list[MealType]] | None = Field(
+        default=None, min_length=7, max_length=7
+    )
     servings: int | None = Field(default=None, ge=1)
     budget: Decimal | None = Field(default=None, ge=0)
     require_vegan: bool = False
@@ -300,6 +305,11 @@ def _generation_request(
         max_prep_minutes=body.max_prep_minutes,
         match_season=body.match_season,
         seed=body.seed,
+        meals_by_weekday=(
+            tuple(tuple(day) for day in body.meals_by_weekday)
+            if body.meals_by_weekday is not None
+            else None
+        ),
     )
 
 
@@ -332,6 +342,8 @@ def generate_menu_route(
 
     request = _generation_request(body, servings=servings)
     request = replace(request, budget=budget)
+    if request.slot_count == 0:
+        raise HTTPException(status_code=422, detail="No meals selected for these days")
     meals = generate_menu(candidates, request, prices)
     if not meals:
         raise HTTPException(

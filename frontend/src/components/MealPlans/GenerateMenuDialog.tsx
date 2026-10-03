@@ -19,6 +19,11 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { LoadingButton } from "@/components/ui/loading-button"
 import { useCrudMutation } from "@/hooks/useCrudMutation"
+import {
+  DEFAULT_SCHEDULE,
+  scheduleToMealsByWeekday,
+  WeeklyMealSchedule,
+} from "./WeeklyMealSchedule"
 
 function today(): string {
   return new Date().toISOString().slice(0, 10)
@@ -54,6 +59,7 @@ export function GenerateMenuDialog() {
   const [maxPrep, setMaxPrep] = useState("")
   const [matchSeason, setMatchSeason] = useState(true)
   const [includePublic, setIncludePublic] = useState(true)
+  const [schedule, setSchedule] = useState(DEFAULT_SCHEDULE)
   const [diets, setDiets] = useState<Record<DietKey, boolean>>({
     require_vegan: false,
     require_vegetarian: false,
@@ -75,6 +81,7 @@ export function GenerateMenuDialog() {
           max_prep_minutes: optionalNumber(maxPrep),
           match_season: matchSeason,
           include_public: includePublic,
+          meals_by_weekday: scheduleToMealsByWeekday(schedule),
           // A fresh seed each time, so pressing Generate again after a menu
           // you did not like actually gives you a different one.
           seed: Math.floor(Math.random() * 1_000_000),
@@ -97,7 +104,7 @@ export function GenerateMenuDialog() {
           {t("generate.trigger")}
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{t("generate.title")}</DialogTitle>
           <DialogDescription>{t("generate.description")}</DialogDescription>
@@ -165,6 +172,8 @@ export function GenerateMenuDialog() {
             />
           </div>
 
+          <WeeklyMealSchedule value={schedule} onChange={setSchedule} />
+
           <div className="space-y-2">
             <p className="text-sm font-medium">{t("generate.diet_label")}</p>
             <div className="grid grid-cols-2 gap-2">
@@ -215,6 +224,7 @@ export function GenerateMenuDialog() {
           </Button>
           <LoadingButton
             loading={generate.isPending}
+            disabled={schedule.every((choice) => choice === "none")}
             onClick={() => generate.mutate()}
           >
             {t("generate.submit")}

@@ -63,6 +63,11 @@
     "success": "Menu generated",
     "swap": "Swap this meal",
     "swapped": "Meal swapped",
-    "servings_placeholder": "From your household size"
+    "servings_placeholder": "From your household size",
+    "schedule_label": "Meals to plan each day",
+    "schedule_dinner": "Dinner",
+    "schedule_lunch": "Lunch",
+    "schedule_both": "Both",
+    "schedule_none": "None"
   }
 }

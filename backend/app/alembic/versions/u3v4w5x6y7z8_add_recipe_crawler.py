@@ -8,8 +8,8 @@ when the next is due.
 ``status`` holds the ``CrawlStatus`` member *name* (``IMPORTED``), as every
 enum column here does.
 
-Revision ID: t2u3v4w5x6y7
-Revises: s1t2u3v4w5x6
+Revision ID: u3v4w5x6y7z8
+Revises: t2u3v4w5x6y7
 Create Date: 2026-10-03 11:00:00.000000
 
 """
@@ -19,8 +19,8 @@ import sqlmodel.sql.sqltypes
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "t2u3v4w5x6y7"
-down_revision = "s1t2u3v4w5x6"
+revision = "u3v4w5x6y7z8"
+down_revision = "t2u3v4w5x6y7"
 branch_labels = None
 depends_on = None
 

@@ -320,6 +320,11 @@ Other variables with built-in defaults (no need to set in Coolify):
 | `RECIPE_PHOTO_RATE_LIMIT` | Per-user limit on photo imports (default: `10/hour`) |
 | `STORE_PRICE_REFRESH_HOURS` | Hours between two background refreshes of each provider-backed store's prices (default: `24`; `0` turns it off). See below. |
 | `BIOCOOP_API_TOKEN` / `NATURALIA_API_TOKEN` | Magento API tokens. Optional: without one, the store is read from its public product sitemap instead. |
+| `RECIPE_CRAWL_HOURS` | Hours between two runs of the recipe crawler (default: `0`, off). See below. |
+| `RECIPE_CRAWL_MAX_IMPORTS` | Recipes imported per run, across all sites — one LLM call each (default: `10`) |
+| `RECIPE_CRAWL_MAX_PAGES_PER_SITE` | Recipe pages read per site and per run to judge their rating (default: `20`) |
+| `RECIPE_CRAWL_DELAY_SECONDS` | Pause between two requests to the same recipe site (default: `5`) |
+| `RECIPE_CRAWL_OWNER_EMAIL` | Account that owns crawled recipes, created inactive on first run (default: `recipes@shop-n-cook.com`) |
 
 #### Background price refresh
 
@@ -344,6 +349,35 @@ What to expect from a run:
   cached and shared by all six chains that use it) and ~1–2 s per sitemap store
   for one product page. 300 ingredients is therefore roughly 50 minutes, once
   a day, in the background.
+
+#### Recipe crawler
+
+Off unless `RECIPE_CRAWL_HOURS` is set. Each run (one worker at a time, via its
+own Postgres advisory lock; the first waits 15 minutes after startup):
+
+1. reads the popularity pages of the sites in
+   `app/services/recipe_crawler/sites.py` (Marmiton, Journal des Femmes Cuisine,
+   750g), checked against each robots.txt and spaced by
+   `RECIPE_CRAWL_DELAY_SECONDS`;
+2. judges up to `RECIPE_CRAWL_MAX_PAGES_PER_SITE` recipes per site it has not
+   judged before, on their readers' rating (e.g. Marmiton: at least 4.5/5 from
+   200+ votes);
+3. imports up to `RECIPE_CRAWL_MAX_IMPORTS` of the best qualified recipes as
+   public recipes, through the configured `AI_PROVIDER`.
+
+Every verdict is stored in `crawledrecipe`, keyed by canonical URL, so a recipe
+is never imported twice and a page is never judged twice (rejections are
+re-judged after 90 days, since ratings move). `recipecrawlrun` logs each run.
+No AI key means no run. To try it or top up the catalogue by hand:
+
+```bash
+docker compose exec backend python -m app.services.recipe_crawler --dry-run
+docker compose exec backend python -m app.services.recipe_crawler
+```
+
+Imported recipes credit their page (`source_url`) and link to its image, but
+the text is still the site's: confirm you may publish a site's recipes before
+turning the crawler on.
 
 ---
 

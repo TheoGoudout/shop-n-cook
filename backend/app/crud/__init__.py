@@ -27,6 +27,7 @@ from app.crud.ingredient import (
     get_ingredients,
     get_or_create_ingredient,
     rename_ingredient_references,
+    sync_ingredient_catalog,
     update_ingredient,
 )
 from app.crud.meal_plan import (
@@ -153,6 +154,7 @@ __all__ = [
     "update_ingredient",
     "delete_ingredient",
     "rename_ingredient_references",
+    "sync_ingredient_catalog",
     "get_duplicate_groups",
     # user
     "create_user",

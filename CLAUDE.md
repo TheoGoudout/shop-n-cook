@@ -176,13 +176,32 @@ Never use `--no-verify` — fix the underlying issue.
 
 **Recipe import package**
 - `backend/app/services/recipe_import/` is split by concern:
-  `models.py`, `prompt.py`, `scraper.py`, `llm.py`, `orchestrator.py`.
+  `models.py`, `prompt.py`, `scraper.py`, `jsonld.py`, `llm.py`,
+  `orchestrator.py`, `mapping.py` (`ParsedRecipe` → `RecipeCreate`/`RecipeUpdate`).
 - The orchestrator imports its dependencies via `llm as llm_module` and
   `scraper as scraper_module`. Tests mock at the submodule paths
   (`app.services.recipe_import.scraper.fetch_page`,
    `app.services.recipe_import.llm.get_llm`).
 - LangSmith tracing is opt-in via `LANGCHAIN_TRACING_V2` +
   `LANGCHAIN_API_KEY` env vars.
+
+**Recipe crawler**
+- `backend/app/services/recipe_crawler/` imports top-rated recipes from a fixed
+  list of sites as public recipes owned by an inactive crawler account.
+  `sites.py` records, per site, why it is on the list — and which sites were
+  left out and why. Read it before adding one; the bar is robots.txt *and* no
+  published refusal (terms, reuse policy) *and* free to read *and* a JSON-LD
+  `aggregateRating`.
+- Quality is the site readers' rating (`quality.py`: minimum average and vote
+  count per site, ranked by Bayesian average). Never import a recipe the gate
+  has not judged.
+- `CrawledRecipe` (unique canonical URL) is what prevents re-imports: an
+  `IMPORTED` page is never fetched again, even if its recipe is deleted.
+  `QUALIFIED` rows are the import backlog.
+- Off by default (`RECIPE_CRAWL_HOURS=0`); tests keep it off. Run one pass by
+  hand with `uv run python -m app.services.recipe_crawler [--dry-run]`.
+- It reuses `store_providers/families/robots.py` and `http_client.py`, so tests
+  mock at `families.http_client.fetch` like the store providers' do.
 
 **Visual identity**
 - See `VISUAL_IDENTITY.md`. Colors are OKLCH semantic tokens — never

@@ -32,7 +32,6 @@ from app.models import (
     RecipeIngredientCreate,
     RecipePublic,
     RecipesPublic,
-    RecipeStepCreate,
     RecipeUpdate,
 )
 from app.models.ingredient import Ingredient, IngredientCategory
@@ -49,6 +48,7 @@ from app.services.recipe_import import (
     import_recipe_from_url,
     validate_photos,
 )
+from app.services.recipe_import.mapping import parsed_to_update
 
 router = APIRouter(prefix="/recipes", tags=["recipes"])
 
@@ -118,53 +118,6 @@ def _recipe_to_parsed(recipe: Recipe, session: Session) -> ParsedRecipe:
         difficulty=recipe.difficulty,
         meal_type=recipe.meal_type,
         cuisine_type=recipe.cuisine_type,
-    )
-
-
-def _parsed_to_update(parsed: ParsedRecipe) -> RecipeUpdate:
-    name_to_idx = {ing.name.lower(): i for i, ing in enumerate(parsed.ingredients)}
-    ingredients = [
-        RecipeIngredientCreate(
-            ingredient_name=ing.name,
-            name_en=ing.name_en,
-            quantity=ing.quantity,
-            unit=ing.unit,
-            notes=ing.notes,
-            category=ing.category,
-        )
-        for ing in parsed.ingredients
-    ]
-    steps = [
-        RecipeStepCreate(
-            step_number=i + 1,
-            instruction=step.instruction,
-            ingredient_indices=[
-                name_to_idx[n.lower()]
-                for n in step.ingredient_names
-                if n.lower() in name_to_idx
-            ],
-        )
-        for i, step in enumerate(parsed.steps)
-    ]
-    return RecipeUpdate(
-        title=parsed.title,
-        description=parsed.description,
-        servings=parsed.servings,
-        prep_time_minutes=parsed.prep_time_minutes,
-        cook_time_minutes=parsed.cook_time_minutes,
-        source_url=parsed.source_url,
-        image_url=parsed.image_url,
-        ingredients=ingredients,
-        steps=steps,
-        seasons=parsed.seasons,
-        is_vegan=parsed.is_vegan,
-        is_vegetarian=parsed.is_vegetarian,
-        is_gluten_free=parsed.is_gluten_free,
-        is_dairy_free=parsed.is_dairy_free,
-        kcal_per_serving=parsed.kcal_per_serving,
-        difficulty=parsed.difficulty,
-        meal_type=parsed.meal_type,
-        cuisine_type=parsed.cuisine_type,
     )
 
 
@@ -271,30 +224,9 @@ def _sync_ingredient_catalog(
     background_tasks: BackgroundTasks,
     ingredients: list[RecipeIngredientCreate],
 ) -> None:
-    ids_to_update = []
-    needs_commit = False
-    for ing in ingredients:
-        ingredient, _ = crud.get_or_create_ingredient(
-            session=session, name=ing.ingredient_name
-        )
-        changed = False
-        if (
-            ing.category is not None
-            and ing.category != IngredientCategory.OTHER
-            and ingredient.category == IngredientCategory.OTHER
-        ):
-            ingredient.category = ing.category
-            changed = True
-        if ing.name_en and not ingredient.name_en:
-            ingredient.name_en = ing.name_en
-            changed = True
-        if changed:
-            session.add(ingredient)
-            needs_commit = True
-        if not ingredient.image_url:
-            ids_to_update.append(ingredient.id)
-    if needs_commit:
-        session.commit()
+    ids_to_update = crud.sync_ingredient_catalog(
+        session=session, ingredients=ingredients
+    )
     if ids_to_update:
         background_tasks.add_task(fetch_and_update_ingredients_batch, ids_to_update)
 
@@ -371,7 +303,7 @@ def reimport_recipe(
         raise HTTPException(
             status_code=422, detail=f"Failed to parse recipe: {exc}"
         ) from exc
-    recipe_in = _parsed_to_update(parsed)
+    recipe_in = parsed_to_update(parsed)
     recipe = crud.update_recipe(session=session, db_recipe=recipe, recipe_in=recipe_in)
     _sync_ingredient_catalog(session, background_tasks, recipe_in.ingredients or [])
     return crud.recipe_to_public(recipe, prices=prices)

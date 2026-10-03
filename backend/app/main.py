@@ -12,6 +12,7 @@ from app.api.main import api_router
 from app.core.config import settings
 from app.core.db import engine
 from app.core.limiter import limiter
+from app.services.recipe_crawler.scheduler import start_recipe_crawl_scheduler
 from app.services.store_providers.scheduler import start_price_refresh_scheduler
 
 
@@ -28,9 +29,13 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     # Keeps provider-backed store prices fresh; see its module docstring for
     # how several workers avoid refreshing at once.
     scheduler = start_price_refresh_scheduler(engine)
+    # Imports top-rated recipes from recipe sites; off unless RECIPE_CRAWL_HOURS.
+    crawl_scheduler = start_recipe_crawl_scheduler(engine)
     yield
     if scheduler is not None:
         scheduler.stop()
+    if crawl_scheduler is not None:
+        crawl_scheduler.stop()
 
 
 app = FastAPI(

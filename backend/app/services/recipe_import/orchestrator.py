@@ -59,6 +59,24 @@ def import_recipe_from_url(url: str, language: str | None = None) -> ParsedRecip
     """Fetch the given URL and use an LLM to extract recipe data."""
     llm_module.configure_langsmith()
     page_text, image_url = scraper_module.fetch_page(url)
+    return _parse_page_text(page_text, url=url, image_url=image_url, language=language)
+
+
+def import_recipe_from_html(
+    url: str, html: str, language: str | None = None
+) -> ParsedRecipe:
+    """Use an LLM to extract recipe data from a page the caller already fetched.
+
+    ``url`` is only recorded as the recipe's source; nothing is fetched.
+    """
+    llm_module.configure_langsmith()
+    page_text, image_url = scraper_module.extract_page(html)
+    return _parse_page_text(page_text, url=url, image_url=image_url, language=language)
+
+
+def _parse_page_text(
+    page_text: str, *, url: str, image_url: str | None, language: str | None
+) -> ParsedRecipe:
     llm = llm_module.get_llm()
 
     messages = [

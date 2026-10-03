@@ -44,14 +44,20 @@ jobs:
       # must work from its compose.yml default, as on a first Coolify deploy.
       FIRST_SUPERUSER: admin@example.com
       AI_PROVIDER: anthropic
+      # The locally built image below, rather than the published one.
+      IMAGE_REGISTRY: ci.local
+      TAG: ci
     steps:
       - name: Checkout
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           persist-credentials: false
-      # No .env and no override file: Coolify has neither.
+      # No .env and no override file: Coolify has neither. compose.yml names the
+      # GHCR image and has no `build:` section, because Coolify only pulls; so
+      # the image is built here from this commit and compose.yml is pointed at
+      # it through the same IMAGE_REGISTRY/TAG variables a deploy sets.
       - name: Build
-        run: docker compose -f compose.yml build
+        run: docker build -f backend/Dockerfile -t "${IMAGE_REGISTRY}/shop-n-cook-backend:${TAG}" .
       - name: Start the stack
         run: docker compose -f compose.yml up -d --wait --wait-timeout 300
       - name: Check the API and prestart

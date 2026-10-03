@@ -221,8 +221,10 @@ Each push runs:
 - `test-frontend.yml` — build `frontend/` + `landing/` for both environments and
   dry-run their Cloudflare deploys
 - `zizmor.yml` — security audit of the workflows themselves
-- `deploy-staging.yml` — on `master`, deploy the backend to staging Coolify,
-  then `frontend/` + `landing/` to staging Cloudflare
+- `deploy-staging.yml` — on `master`: build the backend image and push it to
+  GHCR (`images.yml`), deploy it to staging Coolify, then `frontend/` +
+  `landing/` to staging Cloudflare. Coolify never builds: `compose.yml` names
+  the GHCR image and only `compose.override.yml` has `build:` sections
 
 Releasing is two workflows (see `.claude/skills/release/SKILL.md`):
 
@@ -252,12 +254,14 @@ Deployment is split in two (see `deployment.md`):
   build-time settings in the committed `.env.staging` / `.env.production`
   files of each project. `compose.yml` no longer builds them; their Docker
   services live in `compose.override.yml` for local development only.
-- `backend/` and the database are deployed by Coolify from `compose.yml`.
-  Both environments have Coolify's auto-deploy webhook off, and
-  `deploy-coolify.yml` drives them: staging tracks `master` and is redeployed
-  by `deploy-staging.yml`, production tracks the released tag and is re-pinned
-  by `release.yml`. Either way it runs ahead of the Cloudflare deploy so the API
-  leads its clients.
+- `backend/` and the database are deployed by Coolify from `compose.yml`,
+  pulling the backend image `images.yml` published to GHCR (Coolify's `TAG`
+  variable, set by CI to `sha-<short>`). Auto-deploy is off on both
+  applications, and `deploy-coolify.yml` drives them: staging tracks `master`
+  and is redeployed by `deploy-staging.yml` after each `master` build;
+  production tracks the released tag — `release.yml` builds the image, then
+  `deploy-coolify.yml` re-pins the application to the tag and redeploys. Either
+  way it runs ahead of the Cloudflare deploy so the API leads its clients.
 
 Domains: `shop-n-cook.com` (landing), `app.shop-n-cook.com` (frontend),
 `api.shop-n-cook.com` (backend); staging mirrors this under

@@ -159,9 +159,27 @@ jobs:
       WINDOWS_CERTIFICATE_BASE64: ${{ secrets.WINDOWS_CERTIFICATE_BASE64 }}
       WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
 
+  images:
+    name: Backend image
+    needs: resolve
+    # Built only when it is about to be deployed: same condition as coolify.
+    if: >-
+      needs.resolve.outputs.run_coolify == 'true' &&
+      needs.resolve.outputs.prerelease != 'true'
+    permissions:
+      contents: read
+      packages: write # images.yml pushes the backend image to GHCR.
+    # `./`, not GitHub's newer `$/`: moving the release pipeline to a
+    # different reference syntax is a deliberate change, not a lint fix.
+    uses: ./.github/workflows/images.yml # zizmor: ignore[self-repository]
+    with:
+      ref: ${{ needs.resolve.outputs.tag }}
+
   coolify:
     name: Coolify production (backend)
-    needs: resolve
+    # Behind the image build: the Coolify host pulls the image rather than
+    # building it, so it has to exist first.
+    needs: [resolve, images]
     # Same pre-release exclusion as Cloudflare below — an RC must not reach the
     # production API any more than it may reach the production domains.
     if: >-
@@ -186,17 +204,20 @@ jobs:
     # that calls it. Coolify used to deploy continuously from master, which kept
     # the backend permanently ahead of the frontend; pinning it to the released
     # tag inverts that, so the ordering now has to be explicit.
-    needs: [resolve, coolify]
+    needs: [resolve, images, coolify]
     # Pre-releases must not reach the production domains; they exist to be
     # exercised on the store beta tracks first.
     #
     # `always()` is what lets a *skipped* coolify job through — `targets: cloudflare`
     # skips it, and a plain `needs:` would then skip this job too. A coolify job
-    # that actually failed still blocks the frontend deploy.
+    # that actually failed still blocks the frontend deploy — and so does a
+    # failed image build, which skips coolify rather than failing it.
     if: >-
       always() &&
       needs.resolve.outputs.run_cloudflare == 'true' &&
       needs.resolve.outputs.prerelease != 'true' &&
+      needs.images.result != 'failure' &&
+      needs.images.result != 'cancelled' &&
       needs.coolify.result != 'failure' &&
       needs.coolify.result != 'cancelled'
     permissions:
@@ -213,7 +234,7 @@ jobs:
 
   release-complete:
     name: Release complete
-    needs: [resolve, extension, stores, cloudflare, coolify]
+    needs: [resolve, extension, stores, cloudflare, coolify, images]
     # Runs even when a target failed or was skipped, so the run's conclusion is
     # the release's conclusion rather than just the last job's.
     if: always()
@@ -233,6 +254,7 @@ jobs:
           TAG: ${{ needs.resolve.outputs.tag }}
           EXTENSION_RESULT: ${{ needs.extension.result }}
           STORES_RESULT: ${{ needs.stores.result }}
+          IMAGES_RESULT: ${{ needs.images.result }}
           COOLIFY_RESULT: ${{ needs.coolify.result }}
           CLOUDFLARE_RESULT: ${{ needs.cloudflare.result }}
         run: .github/scripts/release/report.sh
@@ -241,6 +263,7 @@ jobs:
         env:
           EXTENSION_RESULT: ${{ needs.extension.result }}
           STORES_RESULT: ${{ needs.stores.result }}
+          IMAGES_RESULT: ${{ needs.images.result }}
           COOLIFY_RESULT: ${{ needs.coolify.result }}
           CLOUDFLARE_RESULT: ${{ needs.cloudflare.result }}
         run: .github/scripts/release/fail-if-any-target-failed.sh

@@ -58,6 +58,10 @@ services:
 
   prestart:
     environment: *backend-required-env
+    # compose.yml only names the published image; build it locally instead.
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
     develop:
       watch:
         - path: ./backend/app/alembic

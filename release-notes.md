@@ -1,5 +1,24 @@
 # Release Notes
 
+## 1.7.1
+
+### Features
+
+* Deploy: Default the API to one worker process
+* Deploy: Build the backend image in CI and pull it from GHCR
+* Deploy: Make API worker count configurable and cap container memory
+
+### Fixes
+
+* Deploy: Default POSTGRES_DB in the db healthcheck
+* Dev: Give mailcatcher a healthcheck its image can run
+
+### Internal
+
+* Restore no cache into the publishing and deploy jobs
+* Check version drift in pre-commit
+* Harden the pipelines and sequence the staging deploy
+
 ## 1.7.0
 
 ### Features

@@ -332,7 +332,7 @@ Other variables with built-in defaults (no need to set in Coolify):
 | Variable | Default |
 |---|---|
 | `PROJECT_NAME` | `Shop n Cook` |
-| `WEB_CONCURRENCY` | `4` API (uvicorn) worker processes, each a full copy of the app. `1` is enough on a small host shared with other stacks. |
+| `WEB_CONCURRENCY` | `1` API (uvicorn) worker process, each a full copy of the app — sized for a small host shared with other stacks. Raise it on a bigger one. |
 | `POSTGRES_DB` | `app` |
 
 #### Optional

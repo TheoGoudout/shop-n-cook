@@ -42,7 +42,8 @@ rollout as one workflow run:
 | --- | --- |
 | Browser extensions | Chrome Web Store, Firefox (AMO), Edge, Opera, Safari (TestFlight) |
 | App stores | Google Play (draft), Apple App Store, Windows Store (MSIX) |
-| Coolify production (backend) | Re-pins `api.shop-n-cook.com` to the tag and redeploys |
+| Backend image | Builds the backend image for the tag and pushes it to GHCR |
+| Coolify production (backend) | Re-pins `api.shop-n-cook.com` to the tag and its image, and redeploys |
 | Cloudflare production | `shop-n-cook.com` + `app.shop-n-cook.com` — waits for the backend first |
 
 Because it is a single run, **Re-run failed jobs** retries only the target that
@@ -99,14 +100,15 @@ the file and the stores cannot drift apart.
 
 ## Backend and database
 
-A release target like any other. `deploy-coolify.yml` re-pins the production
-Coolify application's git ref to the released tag, redeploys it, waits for the
-build, and asserts that `api.shop-n-cook.com` reports the released version. It
-runs before the Cloudflare deploy so the API is upgraded ahead of the frontend
-that calls it.
+A release target like any other. `images.yml` builds the backend image from the
+tag and pushes it to GHCR; then `deploy-coolify.yml` re-pins the production
+Coolify application's git ref to the released tag, sets its `TAG` variable to
+that image, redeploys it (the host pulls, it never builds), and asserts that
+`api.shop-n-cook.com` reports the released version. It runs before the
+Cloudflare deploy so the API is upgraded ahead of the frontend that calls it.
 
-Staging is separate and unchanged: it still redeploys continuously from `master`
-via the Coolify GitHub App. See `deployment.md`.
+Staging is separate: `images.yml` builds and deploys it on every `master` push
+that touches the backend. See `deployment.md`.
 
 ## Required secrets
 
@@ -131,7 +133,8 @@ authoritative list.
 For the backend, dispatch
 [`deploy-coolify.yml`](../../../.github/workflows/deploy-coolify.yml) with
 `environment: production` and `ref` set to the previous tag — it re-pins and
-redeploys, and the version assertion confirms the rollback landed. Coolify also
+redeploys that tag's image (a tag released before GHCR images existed needs
+`images.yml` dispatched with it first), and the version assertion confirms the rollback landed. Coolify also
 keeps previous backend deploys around for a redeploy from its dashboard.
 
 Everything else rolls forward: bump again to a new patch version with the fix

@@ -3,6 +3,11 @@ services:
   db:
     image: postgres:18
     restart: always
+    # Every service carries a memory cap, so that on a host shared with other
+    # stacks the kernel's OOM killer takes the container that misbehaved
+    # instead of Postgres mid-write. The caps are ceilings, not allocations.
+    mem_limit: 1g
+    mem_reservation: 128m
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${SERVICE_USER_DB} -d ${POSTGRES_DB}"]
       interval: 10s
@@ -18,8 +23,18 @@ services:
       - POSTGRES_DB=${POSTGRES_DB:-app}
 
   backend:
-    image: shop-n-cook/backend:${TAG:-latest}
+    # Built by .github/workflows/images.yml and pulled from GHCR — never built
+    # on the Coolify host. TAG is set by deploy-coolify.yml to the immutable
+    # sha-<short> of the ref being deployed. compose.override.yml adds the
+    # `build:` section back for local development.
+    image: ${IMAGE_REGISTRY:-ghcr.io/theogoudout}/shop-n-cook-backend:${TAG:-latest}
     restart: always
+    # One uvicorn worker per WEB_CONCURRENCY, each a full copy of the app; the
+    # background price refresh peaks ~160 MB above that in one of them. Lower
+    # WEB_CONCURRENCY (and this cap with it) on a small shared host.
+    command: ["fastapi", "run", "--workers", "${WEB_CONCURRENCY:-4}", "app/main.py"]
+    mem_limit: 1536m
+    mem_reservation: 256m
     depends_on:
       db:
         condition: service_healthy
@@ -78,16 +93,12 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    build:
-      context: .
-      dockerfile: backend/Dockerfile
 
   prestart:
-    image: shop-n-cook/backend:${TAG:-latest}
+    image: ${IMAGE_REGISTRY:-ghcr.io/theogoudout}/shop-n-cook-backend:${TAG:-latest}
     restart: "no"
-    build:
-      context: .
-      dockerfile: backend/Dockerfile
+    # Runs migrations and exits, so it never overlaps steady state.
+    mem_limit: 512m
     depends_on:
       db:
         condition: service_healthy

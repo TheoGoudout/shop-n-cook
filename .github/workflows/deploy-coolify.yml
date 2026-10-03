@@ -1,17 +1,22 @@
 name: Deploy backend to Coolify
 
 # Deploys `backend/` + the database — the stack described by the root
-# `compose.yml` — by pointing a Coolify application at a git ref and asking it to
-# redeploy. Coolify builds from source, so the ref it tracks *is* the version
-# running in that environment.
+# `compose.yml` — by pointing a Coolify application at a git ref, setting its
+# TAG variable to that ref's backend image, and asking it to redeploy.
+#
+# Nothing is built on the Coolify host: images.yml publishes the backend image
+# to GHCR, and compose.yml only names it. The ref still matters — it is where
+# Coolify reads compose.yml from — but TAG decides which image runs. Both move
+# together here, so the version running is the ref the application tracks.
 #
 #   called by release.yml -> production, pinned to the released tag
+#   called by images.yml  -> staging, after a master push built its image
 #   workflow_dispatch     -> either environment, any ref (also the rollback path)
 #
-# Staging is NOT driven from here on a schedule or on push: it keeps
-# auto-deploying from `master` through the Coolify GitHub App. Production has
-# that webhook turned off precisely so master pushes cannot reach it, which is
-# what this workflow exists to replace — see deployment.md.
+# The ref must have an image: every commit images.yml has built does. An older
+# release that predates the images can be made deployable by dispatching
+# images.yml with its tag first. Turn Coolify's own auto-deploy off on both
+# applications — see deployment.md.
 
 on:
   workflow_call:
@@ -25,10 +30,15 @@ on:
         required: true
         type: string
       force:
-        description: "Rebuild even if the ref already matches (skips the build cache)"
+        description: "Redeploy even if Coolify thinks nothing changed"
         required: false
         default: false
         type: boolean
+      image_tag:
+        description: "Image tag to run; defaults to sha-<short> of the ref"
+        required: false
+        default: ""
+        type: string
     secrets:
       # Named rather than inherited. All three are required — the deploy job's
       # first step fails the run when any is missing, because a backend that
@@ -53,7 +63,7 @@ on:
         required: true
         type: string
       force:
-        description: "Rebuild even if the ref already matches (skips the build cache)"
+        description: "Redeploy even if Coolify thinks nothing changed"
         required: false
         default: false
         type: boolean
@@ -72,9 +82,9 @@ jobs:
   deploy:
     name: Deploy backend (${{ inputs.environment }})
     runs-on: ubuntu-latest
-    # Generous, because the job waits on a container build happening on the
-    # Coolify host rather than on this runner.
-    timeout-minutes: 45
+    # The host only pulls an image now; the long tail is the health and version
+    # checks waiting for the container to come up behind the proxy.
+    timeout-minutes: 30
     environment: ${{ inputs.environment }}
     permissions:
       contents: read # To check out .github/scripts/ below.
@@ -104,6 +114,15 @@ jobs:
           ENVIRONMENT: ${{ inputs.environment }}
         run: .github/scripts/deploy-coolify/resolve-ref-commit-and-version.sh
 
+      - name: Confirm the image exists
+        id: image
+        env:
+          SHA: ${{ steps.target.outputs.sha }}
+          IMAGE_TAG: ${{ inputs.image_tag }}
+          OWNER: ${{ github.repository_owner }}
+          REF: ${{ inputs.ref }}
+        run: .github/scripts/deploy-coolify/confirm-the-image-exists.sh
+
       - name: Point the application at the ref
         env:
           COOLIFY_URL: ${{ secrets.COOLIFY_URL }}
@@ -111,6 +130,14 @@ jobs:
           COOLIFY_APP_UUID: ${{ secrets.COOLIFY_APP_UUID }}
           REF: ${{ inputs.ref }}
         run: .github/scripts/deploy-coolify/point-the-application-at-the-ref.sh
+
+      - name: Point the application at the image
+        env:
+          COOLIFY_URL: ${{ secrets.COOLIFY_URL }}
+          COOLIFY_API_TOKEN: ${{ secrets.COOLIFY_API_TOKEN }}
+          COOLIFY_APP_UUID: ${{ secrets.COOLIFY_APP_UUID }}
+          TAG: ${{ steps.image.outputs.tag }}
+        run: .github/scripts/deploy-coolify/point-the-application-at-the-image.sh
 
       - name: Trigger the deployment
         id: trigger
@@ -121,13 +148,13 @@ jobs:
           FORCE: ${{ inputs.force }}
         run: .github/scripts/deploy-coolify/trigger-the-deployment.sh
 
-      - name: Wait for the build to finish
+      - name: Wait for the deployment to finish
         if: steps.trigger.outputs.uuid != ''
         env:
           COOLIFY_URL: ${{ secrets.COOLIFY_URL }}
           COOLIFY_API_TOKEN: ${{ secrets.COOLIFY_API_TOKEN }}
           DEPLOYMENT_UUID: ${{ steps.trigger.outputs.uuid }}
-        run: .github/scripts/deploy-coolify/wait-for-the-build-to-finish.sh
+        run: .github/scripts/deploy-coolify/wait-for-the-deployment-to-finish.sh
 
       - name: Verify the deployed backend
         id: verify
@@ -142,6 +169,7 @@ jobs:
           ENVIRONMENT: ${{ inputs.environment }}
           REF: ${{ inputs.ref }}
           SHA: ${{ steps.target.outputs.sha }}
+          IMAGE: ${{ steps.image.outputs.image }}
           EXPECTED: ${{ steps.target.outputs.version }}
           LIVE: ${{ steps.verify.outputs.live }}
           DEPLOYMENT: ${{ steps.trigger.outputs.uuid }}

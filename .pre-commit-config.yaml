@@ -32,6 +32,35 @@ repos:
       - id: trailing-whitespace
         exclude: ^(frontend|extension)/src/client/.*
 
+  # Secrets in the diff: API keys, tokens, OAuth client secrets. Stronger than
+  # detect-private-key above, which only knows PEM headers. Runs on what is
+  # staged, so a key caught here never reaches history.
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1
+    hooks:
+      - id: gitleaks
+
+  # Dockerfiles
+  - repo: https://github.com/AleksaC/hadolint-py
+    rev: v2.15.1
+    hooks:
+      - id: hadolint
+        args: [--failure-threshold, warning]
+
+  # Workflow semantics zizmor does not look at: expression types, unknown
+  # inputs, `needs` that name no job, shell inside `run:` lines.
+  - repo: https://github.com/Mateusz-Grzelinski/actionlint-py
+    rev: v1.7.12.25
+    hooks:
+      - id: actionlint
+
+  # Schemas: GitHub workflows and Dependabot.
+  - repo: https://github.com/python-jsonschema/check-jsonschema
+    rev: 0.38.2
+    hooks:
+      - id: check-github-workflows
+      - id: check-dependabot
+
   # Shell linting. Every multi-line step body in .github/workflows/ is a file
   # under .github/scripts/ (see its README), which is what makes this possible
   # at all — shell inside a YAML string is invisible to every linter there is.
@@ -90,6 +119,23 @@ repos:
         require_serial: true
         language: unsupported
         pass_filenames: false
+
+      - id: local-uv-lock
+        name: uv.lock is up to date
+        entry: uv lock --check
+        language: unsupported
+        pass_filenames: false
+        files: (^|/)(pyproject\.toml|uv\.lock)$
+
+      # Every file scripts/set-version.mjs writes must carry the same version,
+      # or release-prepare.yml refuses to run. Caught here instead, on the
+      # commit that introduces the drift.
+      - id: version-drift
+        name: Version files agree
+        entry: bun scripts/set-version.mjs --check
+        language: system
+        pass_filenames: false
+        files: ^(package\.json|frontend/package\.json|extension/package\.json|landing/package\.json|backend/pyproject\.toml|uv\.lock|extension/public/manifest\.json|mobile/android/app/build\.gradle|mobile/android/twa-manifest\.json|scripts/set-version\.mjs)$
 
       # GitHub Actions static analysis. Offline only: the online audits need a
       # GitHub token and network round-trips per action, which belongs in CI

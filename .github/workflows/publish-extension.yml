@@ -105,7 +105,7 @@ jobs:
       opera: ${{ steps.check.outputs.opera }}
       safari: ${{ steps.check.outputs.safari }}
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           ref: ${{ inputs.tag }}
           persist-credentials: false
@@ -120,9 +120,13 @@ jobs:
           VERSION: ${{ inputs.version }}
         run: echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
-      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version-file: .bun-version
+          # No cache: this job publishes to a store with the store's
+          # credentials, and a cache entry written by a less-privileged run has
+          # no business being restored into it. (zizmor: cache-poisoning)
+          no-cache: true
 
       - name: Install dependencies
         run: bun ci
@@ -148,14 +152,14 @@ jobs:
         run: .github/scripts/shared/check-secret-availability.sh chrome=CHROME_EXTENSION_ID firefox=FIREFOX_API_KEY edge=EDGE_PRODUCT_ID opera=OPERA_EMAIL safari=APPLE_CERTIFICATE
 
       - name: Upload artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: extension-zip
           path: extension.zip
           retention-days: 7
 
       - name: Attach zip to release
-        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
         with:
           # Explicit, because on workflow_dispatch GITHUB_REF is a branch and
           # the action would otherwise not find the release to attach to.
@@ -175,12 +179,12 @@ jobs:
     # Also covers Vivaldi and Brave — both Chromium-based, both using the
     # Chrome Web Store directly.
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           ref: ${{ inputs.tag }}
           persist-credentials: false
 
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: extension-zip
 
@@ -213,21 +217,25 @@ jobs:
     # directly in Firefox Dev Edition.
     if: ${{ !inputs.prerelease && needs.build.outputs.firefox == 'true' }}
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           ref: ${{ inputs.tag }}
           persist-credentials: false
 
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: extension-zip
 
       - name: Unzip extension
         run: .github/scripts/publish-extension/unzip-extension.sh
 
-      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version-file: .bun-version
+          # No cache: this job publishes to a store with the store's
+          # credentials, and a cache entry written by a less-privileged run has
+          # no business being restored into it. (zizmor: cache-poisoning)
+          no-cache: true
 
       - name: Install web-ext
         run: .github/scripts/publish-extension/install-web-ext.sh
@@ -245,7 +253,7 @@ jobs:
         run: .github/scripts/publish-extension/attach-xpi-to-release.sh
 
       - name: Upload XPI artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: firefox-xpi
           path: shop-n-cook-${{ needs.build.outputs.version }}.xpi
@@ -253,7 +261,7 @@ jobs:
           retention-days: 7
 
       - name: Attach XPI to GitHub release
-        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
         with:
           tag_name: ${{ inputs.tag }}
           fail_on_unmatched_files: false
@@ -288,12 +296,12 @@ jobs:
       contents: read # To check out .github/scripts/ below.
     if: ${{ !inputs.prerelease && needs.build.outputs.edge == 'true' }}
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           ref: ${{ inputs.tag }}
           persist-credentials: false
 
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: extension-zip
 
@@ -329,18 +337,22 @@ jobs:
     # Opera has no official REST API; the uploader drives the partner site with
     # Puppeteer, and reCAPTCHA Enterprise sometimes blocks it.
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           ref: ${{ inputs.tag }}
           persist-credentials: false
 
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: extension-zip
 
-      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version-file: .bun-version
+          # No cache: this job publishes to a store with the store's
+          # credentials, and a cache entry written by a less-privileged run has
+          # no business being restored into it. (zizmor: cache-poisoning)
+          no-cache: true
 
       - name: Install ext-opera-upload
         run: .github/scripts/publish-extension/install-ext-opera-upload.sh
@@ -375,12 +387,12 @@ jobs:
     # lands in TestFlight first; App Store review has to be submitted by hand
     # from App Store Connect, as there is no API to trigger it.
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           ref: ${{ inputs.tag }}
           persist-credentials: false
 
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: extension-zip
 

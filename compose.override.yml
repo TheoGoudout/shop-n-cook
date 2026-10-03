@@ -77,7 +77,12 @@ services:
   mailcatcher:
     image: schickling/mailcatcher
     healthcheck:
-      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/1080'"]
+      # The image is Alpine: no bash, so the old `bash -c 'echo >
+      # /dev/tcp/...'` check could never pass and the container sat at
+      # "unhealthy" — unnoticed until `compose up --wait` waited on it.
+      # Busybox wget ships with Alpine; 127.0.0.1 because mailcatcher binds
+      # IPv4 only.
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:1080/"]
       interval: 10s
       retries: 5
       start_period: 30s

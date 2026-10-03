@@ -107,8 +107,9 @@ that image, redeploys it (the host pulls, it never builds), and asserts that
 `api.shop-n-cook.com` reports the released version. It runs before the
 Cloudflare deploy so the API is upgraded ahead of the frontend that calls it.
 
-Staging is separate: `images.yml` builds and deploys it on every `master` push
-that touches the backend. See `deployment.md`.
+Staging is separate: `deploy-staging.yml` builds the backend image, deploys it
+on every `master` push that touches the backend, and then deploys the frontend,
+through the same reusable workflows. See `deployment.md`.
 
 ## Required secrets
 

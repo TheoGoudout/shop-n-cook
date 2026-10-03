@@ -7,9 +7,12 @@ version: 2
 #
 # Every entry carries three things the repository used to do without:
 #
-#   groups     — one pull request per ecosystem per week instead of one per
-#                dependency. Nineteen actions across twelve workflows meant
-#                nineteen pull requests, each needing its own CI run.
+#   groups     — one pull request per ecosystem per week for the minor and
+#                patch updates, instead of one per dependency. Nineteen actions
+#                across twelve workflows meant nineteen pull requests, each
+#                needing its own CI run. Major updates stay out of the group and
+#                get a pull request each: they are the ones that need code
+#                changes, and one breaking bump should not hold back the rest.
 #   cooldown   — seven days before a release is proposed, so a version yanked
 #                within its first week never reaches a branch here.
 #   weekly     — github-actions was on `daily`, which on a twelve-workflow
@@ -29,8 +32,7 @@ updates:
     labels: [internal]
     groups:
       github-actions:
-        patterns:
-          - "*"
+        update-types: [minor, patch]
 
   # Python — packages only. The interpreter version lives in the Dockerfiles and
   # is handled by the `docker` entry below.
@@ -45,8 +47,7 @@ updates:
     labels: [internal]
     groups:
       python-packages:
-        patterns:
-          - "*"
+        update-types: [minor, patch]
 
   # bun — one entry serves the whole workspace (frontend, extension, landing):
   # they share bun.lock at the repository root, and Dependabot allows only one
@@ -64,8 +65,7 @@ updates:
       - dependency-name: "@hey-api/openapi-ts"
     groups:
       npm-packages:
-        patterns:
-          - "*"
+        update-types: [minor, patch]
 
   # Docker. `landing` was missing: its image is built and served like the other
   # two, so it was the one Dockerfile nothing was watching.
@@ -81,10 +81,14 @@ updates:
     commit-message:
       prefix: ⬆
     labels: [internal]
+    ignore:
+      # The Python version is upgraded deliberately, together with
+      # .python-version and requires-python in backend/pyproject.toml.
+      - dependency-name: python
+        update-types: [version-update:semver-major, version-update:semver-minor]
     groups:
       docker:
-        patterns:
-          - "*"
+        update-types: [minor, patch]
 
   - package-ecosystem: docker-compose
     directory: /
@@ -97,8 +101,7 @@ updates:
     labels: [internal]
     groups:
       docker-compose:
-        patterns:
-          - "*"
+        update-types: [minor, patch]
 
   # pre-commit. The hooks run on every commit and in the pre-commit job, and
   # nothing was updating them at all — shellcheck-py, the pre-commit-hooks set
@@ -115,5 +118,4 @@ updates:
     labels: [internal]
     groups:
       pre-commit:
-        patterns:
-          - "*"
+        update-types: [minor, patch]

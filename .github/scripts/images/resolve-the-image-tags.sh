@@ -3,12 +3,13 @@
 #
 #   sha-<short>  always — the tag deploys pin, because it never moves
 #   <ref>        when the ref is a release tag (v1.8.0), for humans
-#   latest       on a push to master only
+#   latest       on a push to master only (deploy-staging.yml; a called
+#                workflow sees its caller's event)
 #
 # A registry reference must be lowercase, and github.repository_owner keeps the
 # account's casing ("TheoGoudout"), so the owner is lowercased here.
 #
-# REF and EVENT come from the calling step's env; REF is empty on a push.
+# REF and EVENT come from the calling step's env.
 set -euo pipefail
 
 IMAGE="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/shop-n-cook-backend"

@@ -216,11 +216,15 @@ Each push runs:
 - `test-backend.yml` — pytest with 90% coverage gate
 - `playwright.yml` — frontend E2E (4-shard parallel, retries on CI)
 - `test-extension.yml` — vitest + type-check + build
-- `test-docker-compose.yml` — bring up the full stack as a smoke test
-- `images.yml` — on `master` (backend changes), build the backend image, push
-  it to GHCR and deploy it to staging. Coolify never builds: `compose.yml`
-  names the GHCR image and only `compose.override.yml` has `build:` sections
-- `deploy-cloudflare.yml` — on `master`, deploy `frontend/` + `landing/` to staging
+- `test-docker-compose.yml` — bring up the production (Coolify) stack and the
+  local stack as smoke tests
+- `test-frontend.yml` — build `frontend/` + `landing/` for both environments and
+  dry-run their Cloudflare deploys
+- `zizmor.yml` — security audit of the workflows themselves
+- `deploy-staging.yml` — on `master`: build the backend image and push it to
+  GHCR (`images.yml`), deploy it to staging Coolify, then `frontend/` +
+  `landing/` to staging Cloudflare. Coolify never builds: `compose.yml` names
+  the GHCR image and only `compose.override.yml` has `build:` sections
 
 Releasing is two workflows (see `.claude/skills/release/SKILL.md`):
 
@@ -244,8 +248,8 @@ fails on drift.
 Deployment is split in two (see `deployment.md`):
 
 - `frontend/` and `landing/` are static sites on Cloudflare Workers, deployed
-  by `deploy-cloudflare.yml` — `master` → staging, published release →
-  production.
+  by `deploy-cloudflare.yml` — called by `deploy-staging.yml` on `master`,
+  and by `release.yml` for a published release.
   Config lives in `frontend/wrangler.jsonc` / `landing/wrangler.jsonc`, and
   build-time settings in the committed `.env.staging` / `.env.production`
   files of each project. `compose.yml` no longer builds them; their Docker
@@ -253,10 +257,11 @@ Deployment is split in two (see `deployment.md`):
 - `backend/` and the database are deployed by Coolify from `compose.yml`,
   pulling the backend image `images.yml` published to GHCR (Coolify's `TAG`
   variable, set by CI to `sha-<short>`). Auto-deploy is off on both
-  applications. Staging is deployed by `images.yml` after each `master` build.
-  Production tracks the released tag: `release.yml` builds the image, then
-  `deploy-coolify.yml` re-pins the application to the tag and redeploys, ahead
-  of the Cloudflare deploy so the API leads its clients.
+  applications, and `deploy-coolify.yml` drives them: staging tracks `master`
+  and is redeployed by `deploy-staging.yml` after each `master` build;
+  production tracks the released tag — `release.yml` builds the image, then
+  `deploy-coolify.yml` re-pins the application to the tag and redeploys. Either
+  way it runs ahead of the Cloudflare deploy so the API leads its clients.
 
 Domains: `shop-n-cook.com` (landing), `app.shop-n-cook.com` (frontend),
 `api.shop-n-cook.com` (backend); staging mirrors this under

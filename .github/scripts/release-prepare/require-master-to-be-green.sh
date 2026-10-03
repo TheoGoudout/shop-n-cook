@@ -8,9 +8,9 @@ SHA=$(git rev-parse HEAD)
 
 # Keyed on workflow file paths rather than check-run names, which are job names
 # and drift (test-extension.yml's job is "Test & Build Extension").
-# deploy-cloudflare is deliberately absent: a staging deploy hiccup should not
+# deploy-staging is deliberately absent: a staging deploy hiccup should not
 # block cutting a release.
-REQUIRED="test-backend.yml playwright.yml test-extension.yml test-docker-compose.yml"
+REQUIRED="test-backend.yml playwright.yml test-extension.yml test-frontend.yml test-docker-compose.yml zizmor.yml"
 
 FAILED=0
 AT_HEAD=0
@@ -25,9 +25,10 @@ for workflow in $REQUIRED; do
     AT_HEAD=$((AT_HEAD + 1))
     SCOPE="on $SHA"
   else
-    # test-extension.yml is path-filtered to extension/**, so it legitimately
-    # does not run for commits that touch nothing there. Its last completed run
-    # on master is still the current truth about that subsystem, so fall back to
+    # A workflow added after this commit, or one that used to be filtered out
+    # by `on: paths:` (test-extension.yml was, before it moved to a job-level
+    # paths-filter), legitimately has no run here. Its last completed run on
+    # master is still the current truth about that subsystem, so fall back to
     # it rather than treating "did not run" as "not green".
     LINE=$(echo "$RUNS" | awk -F'\t' '$2 == "completed" {print; exit}')
     SCOPE="on master (not triggered by $SHA)"

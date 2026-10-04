@@ -35,7 +35,7 @@
   "isChromeOSOnly": false,
   "isMetaQuest": false,
   "fullScopeUrl": "https://app.shop-n-cook.com/",
-  "minSdkVersion": 21,
+  "minSdkVersion": 24,
   "shareTarget": {
     "action": "https://app.shop-n-cook.com/share-target",
     "method": "GET",

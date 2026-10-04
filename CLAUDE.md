@@ -204,10 +204,16 @@ Never use `--no-verify` — fix the underlying issue.
   mock at `families.http_client.fetch` like the store providers' do.
 
 **Visual identity**
-- See `VISUAL_IDENTITY.md`. Colors are OKLCH semantic tokens — never
-  hardcode hex. Use Tailwind utility classes that map to the design
-  tokens (`bg-primary`, `text-destructive`, etc.). Light/dark mode is
+- See `VISUAL_IDENTITY.md` (and the `brand` skill). Colors are OKLCH semantic
+  tokens — never hardcode hex. Use Tailwind utility classes that map to the
+  design tokens (`bg-primary`, `text-destructive`, etc.). Light/dark mode is
   driven by `ThemeProvider` (`frontend/src/components/theme-provider.tsx`).
+- `saffron`, `basil` and `plum` (with `tomato`, the primary) are identity
+  accents, never status or chart colours.
+- Fonts (Fraunces, Plus Jakarta Sans) are bundled from `@fontsource-variable`;
+  never add a Google Fonts or other font-CDN link.
+- The app has a top navigation (`components/Navigation/`), not a sidebar.
+  Recipe images go through `RecipeCover`.
 
 ## CI pipelines (`.github/workflows/`)
 

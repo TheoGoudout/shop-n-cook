@@ -1,73 +1,81 @@
 ---
 name: brand
-description: Apply Shop'n'Cook's visual identity (OKLCH semantic tokens, typography, light/dark mode). Use when styling new UI, choosing colors, or reviewing visual changes.
+description: Apply Shop'n'Cook's visual identity (tomato and pantry OKLCH tokens, Fraunces + Plus Jakarta Sans, top-nav layout, light/dark mode). Use when styling new UI, choosing colors, or reviewing visual changes.
 ---
 
 # Visual identity
 
-Authoritative source: `VISUAL_IDENTITY.md` at the repo root. This skill
-summarizes the rules most relevant to day-to-day frontend work.
+Authoritative source: `VISUAL_IDENTITY.md` at the repo root. This skill is
+the short version for day-to-day frontend work.
 
-## Color: never hardcode hex
+## The feel
 
-Colors are defined as OKLCH semantic tokens in
-`frontend/src/index.css` (or wherever the Tailwind v4 theme block lives)
-and exposed as Tailwind utility classes. **Always use the semantic
-class**, not a raw hex or `text-[#abc]`-style arbitrary value.
+Warm, generous, appetising, organised: a sunny market stall, not a
+productivity tool. Food photos are the heroes; the chrome is cream paper and
+tomato red. One bold moment per screen, the rest calm.
 
-Core semantic tokens:
+## Colour: tokens only
+
+Tokens live in `frontend/src/index.css` (`:root` light, `.dark` dark) and map
+to Tailwind classes. Never hardcode hex, `text-[#…]`, or palette classes like
+`bg-green-500`.
 
 | Token | Use |
 |-------|-----|
-| `primary` / `primary-foreground` | Saffron amber — call-to-action buttons, active links |
-| `secondary` / `secondary-foreground` | Muted neutral — secondary buttons, badges |
-| `accent` / `accent-foreground` | Herb green — highlights, success states |
-| `destructive` / `destructive-foreground` | Warm red — destructive actions, errors |
-| `muted` / `muted-foreground` | Background tints, placeholder text |
-| `background` / `foreground` | Page background and primary text |
-| `card` / `card-foreground` | Card surfaces |
-| `border` | Outlines, dividers |
-| `ring` | Focus ring (paired with `focus-visible:ring-ring`) |
-| `input` | Input borders |
+| `primary` (= `tomato`) | Primary buttons, active nav pill, links, focus |
+| `saffron`, `basil`, `plum` | Pantry accents: icon chips, placeholder tiles, illustration. Identity only — never status, never chart series |
+| `secondary` | Badges, secondary buttons, hover fills |
+| `accent` | Sage: menu hover, "vegetarian" |
+| `success` / `warning` / `destructive` | Status — always with an icon or a word |
+| `muted` / `muted-foreground` | Quiet fills, secondary text |
+| `background` / `card` / `foreground` | Linen page, paper cards, espresso text |
+| `chart-1`…`chart-5` | Data series, in order |
 
-Use them with Tailwind: `bg-primary`, `text-primary-foreground`,
-`hover:bg-primary/90`, `border-destructive/50`, etc.
+Tint with `color-mix(in oklch, var(--saffron) 20%, var(--card))` rather than
+adding a token. Text on tomato is 4.5:1 — keep it 14px medium or larger.
 
-## Light and dark mode
+## Light and dark
 
-The `ThemeProvider` (`frontend/src/components/theme-provider.tsx`) wraps
-the app with `next-themes`. Tokens swap automatically — never write
-`dark:bg-[#222]` style overrides. If a component needs darker-than-card
-in dark mode, use the existing semantic tokens (`muted`, `secondary`),
-or extend the theme block centrally.
+`ThemeProvider` (`components/theme-provider.tsx`) toggles `.dark`. Dark mode
+is warm cocoa, re-stepped per token; never write `dark:bg-…` colour overrides
+when a token covers it.
 
 ## Typography
 
-System font stack. Headings use `font-semibold` or `font-bold`; body
-text default weight. Don't introduce new font files without an ADR-style
-discussion — adding webfonts has performance implications.
+- `font-display` — **Fraunces** (SOFT 100, WONK on) for `h1`–`h3`, recipe
+  titles, the wordmark. Applied to `h1`–`h3` automatically.
+- `font-sans` — **Plus Jakarta Sans** for everything else (the default).
+- Page titles `text-3xl md:text-4xl font-bold tracking-tight`.
+- Fonts are bundled from `@fontsource-variable/*`. Never add a Google Fonts
+  or other font-CDN link.
+
+## Layout and components
+
+- Top nav (`components/Navigation/TopNav.tsx`) with a bottom tab bar on
+  phones; content `max-w-6xl`. There is no sidebar.
+- Recipe imagery goes through `RecipeCover` (photo, or a pantry tile when
+  missing/broken). Recipe lists are photo-card grids (`RecipeGrid`).
+- Decoration: `PantryPattern` (food icons, `aria-hidden`) and the
+  `bg-kitchen-glow` utility.
+- Radius: cards `rounded-2xl`, heroes `rounded-3xl`, nav items `rounded-full`.
+- Hover: cards lift `-translate-y-0.5`; photos `scale-105`.
 
 ## Icons
 
-Lucide React. Use existing icons rather than introducing a second icon
-library. Standard sizes: `h-3 w-3`, `h-4 w-4`, `h-5 w-5`.
+Lucide React only. `size-4` inline, `size-5` in navigation.
 
 ## Component primitives
 
-`frontend/src/components/ui/` contains shadcn primitives. Do not
-modify them directly — they are regenerated. Instead, compose them in
-feature components or extend via Tailwind classNames on the call site.
+`frontend/src/components/ui/` is shadcn-generated. Do not edit it — compose
+in feature components or pass classNames at the call site.
 
 ## Brand voice
 
-Warm, home-centric, lightly playful. The English copy treats the user
-as a household cook, not a "user" or "customer". Avoid corporate
-jargon ("leverage", "utilize") and avoid emoji in UI strings unless
-specifically requested.
+Warm, home-centric, lightly playful. Talk to a household cook, not a "user".
+Avoid corporate jargon and emoji in UI strings.
 
 ## Loading & empty states
 
-- Buttons that trigger async work use `<LoadingButton loading={…} />`.
-- Empty states use italicized muted text:
-  `<p className="text-sm text-muted-foreground italic">…</p>`.
-- Skeletons via shadcn's `<Skeleton />` for content-aware placeholders.
+- Async buttons use `<LoadingButton loading={…} />`.
+- Empty states: `<p className="text-sm text-muted-foreground italic">…</p>`.
+- Skeletons via shadcn's `<Skeleton />`.

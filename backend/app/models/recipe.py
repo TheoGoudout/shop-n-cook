@@ -10,7 +10,7 @@ from sqlalchemy import Column, DateTime
 from sqlalchemy.dialects.postgresql import ARRAY as PG_ARRAY
 from sqlmodel import Field, Relationship, SQLModel
 
-from app.models.base import get_datetime_utc
+from app.models.base import get_datetime_utc, stored_enum
 from app.models.ingredient import IngredientCategory, Unit
 
 if TYPE_CHECKING:
@@ -60,7 +60,7 @@ class MealType(str, Enum):
 class RecipeIngredientBase(SQLModel):
     ingredient_name: str = Field(min_length=1, max_length=255)
     quantity: float = Field(gt=0)
-    unit: Unit
+    unit: Unit = Field(sa_type=stored_enum(Unit, 50))
     notes: str | None = Field(default=None, max_length=255)
 
 
@@ -141,7 +141,7 @@ class RecipeStep(SQLModel, table=True):
         foreign_key="recipe.id", nullable=False, ondelete="CASCADE"
     )
     step_number: int
-    instruction: str
+    instruction: str = Field(sa_type=sa.Text)
     recipe: "Recipe" = Relationship(back_populates="steps")
     step_ingredients: list[RecipeStepIngredient] = Relationship(
         back_populates="step",
@@ -161,8 +161,8 @@ class RecipeBase(SQLModel):
     servings: int | None = Field(default=None, ge=1)
     prep_time_minutes: int | None = Field(default=None, ge=0)
     cook_time_minutes: int | None = Field(default=None, ge=0)
-    source_url: str | None = None
-    image_url: str | None = None
+    source_url: str | None = Field(default=None, sa_type=sa.Text)
+    image_url: str | None = Field(default=None, sa_type=sa.Text)
     is_public: bool = Field(default=False)
     # Metadata
     seasons: list[Season] = Field(
@@ -174,8 +174,10 @@ class RecipeBase(SQLModel):
     is_gluten_free: bool = Field(default=False)
     is_dairy_free: bool = Field(default=False)
     kcal_per_serving: int | None = Field(default=None, ge=0)
-    difficulty: Difficulty | None = Field(default=None)
-    meal_type: MealType | None = Field(default=None)
+    difficulty: Difficulty | None = Field(
+        default=None, sa_type=stored_enum(Difficulty, 10)
+    )
+    meal_type: MealType | None = Field(default=None, sa_type=stored_enum(MealType, 20))
     cuisine_type: str | None = Field(default=None, max_length=100)
 
 
@@ -236,7 +238,9 @@ class Recipe(RecipeBase, table=True):
         default=None,
         sa_type=DateTime(timezone=True),  # type: ignore
     )
-    import_source: ImportSource | None = Field(default=None)
+    import_source: ImportSource | None = Field(
+        default=None, sa_type=stored_enum(ImportSource, 10)
+    )
     owner: "User" = Relationship(back_populates="recipes")
     recipe_ingredients: list[RecipeIngredient] = Relationship(
         back_populates="recipe",

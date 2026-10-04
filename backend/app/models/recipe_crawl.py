@@ -14,7 +14,7 @@ from enum import Enum
 from sqlalchemy import DateTime
 from sqlmodel import Field, SQLModel
 
-from app.models.base import get_datetime_utc
+from app.models.base import get_datetime_utc, stored_enum
 
 
 class CrawlStatus(str, Enum):
@@ -40,7 +40,7 @@ class CrawledRecipe(SQLModel, table=True):
     #: same site, without query string or fragment. Unique, so two workers or
     #: two listing pages can never import the same recipe twice.
     url: str = Field(max_length=2048, unique=True, index=True)
-    status: CrawlStatus
+    status: CrawlStatus = Field(sa_type=stored_enum(CrawlStatus, 20))
     #: Why it was rejected or failed, for whoever reads the table.
     reason: str | None = Field(default=None, max_length=500)
     title: str | None = Field(default=None, max_length=255)

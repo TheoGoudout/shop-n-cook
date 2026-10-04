@@ -5,7 +5,7 @@ from decimal import Decimal
 from sqlalchemy import DateTime, UniqueConstraint
 from sqlmodel import Field, Relationship, SQLModel
 
-from app.models.base import get_datetime_utc
+from app.models.base import get_datetime_utc, stored_enum
 from app.models.ingredient import Unit
 
 # --------------------------------------------------------------------------- #
@@ -99,7 +99,7 @@ class IngredientPriceBase(SQLModel):
 
     price_amount: Decimal = Field(max_digits=10, decimal_places=4, ge=0)
     price_quantity: float = Field(gt=0)
-    price_unit: Unit
+    price_unit: Unit = Field(sa_type=stored_enum(Unit, 50))
 
 
 class IngredientPriceCreate(IngredientPriceBase):

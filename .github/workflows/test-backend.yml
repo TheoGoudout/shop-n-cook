@@ -51,6 +51,9 @@ jobs:
       - name: Migrate DB
         run: uv run bash scripts/prestart.sh
         working-directory: backend
+      - name: Check the migrations match the models
+        run: uv run alembic check
+        working-directory: backend
       - name: Run tests
         env:
           SHA: ${{ github.sha }}

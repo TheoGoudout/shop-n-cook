@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING
 
 from sqlmodel import Field, Relationship, SQLModel
 
+from app.models.base import stored_enum
+
 if TYPE_CHECKING:
     from app.models.user import User
 
@@ -22,7 +24,9 @@ class ShoppingFrequency(str, Enum):
 
 class UserSettingsBase(SQLModel):
     household_size: int = Field(default=2, ge=1)
-    shopping_frequency: ShoppingFrequency = Field(default=ShoppingFrequency.WEEKLY)
+    shopping_frequency: ShoppingFrequency = Field(
+        default=ShoppingFrequency.WEEKLY, sa_type=stored_enum(ShoppingFrequency, 50)
+    )
     #: Spending cap for one ``shopping_frequency`` period. ``None`` means the
     #: user has not set a budget and nothing should be reported as over it.
     budget_amount: Decimal | None = Field(

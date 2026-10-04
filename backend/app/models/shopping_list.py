@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from sqlalchemy import DateTime
 from sqlmodel import Field, Relationship, SQLModel
 
-from app.models.base import get_datetime_utc
+from app.models.base import get_datetime_utc, stored_enum
 from app.models.ingredient import Unit
 from app.models.recipe import Recipe, RecipeIngredientPublic
 
@@ -66,7 +66,7 @@ class ShoppingListRecipe(ShoppingListRecipeBase, table=True):
 class ShoppingListItemBase(SQLModel):
     name: str = Field(min_length=1, max_length=255)
     quantity: float = Field(gt=0)
-    unit: Unit
+    unit: Unit = Field(sa_type=stored_enum(Unit, 50))
     is_checked: bool = False
     notes: str | None = Field(default=None, max_length=255)
     #: How much of ``quantity`` is already at home, in the item's own ``unit``.

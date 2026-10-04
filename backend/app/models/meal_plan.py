@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any
 from sqlalchemy import JSON, Column, DateTime, UniqueConstraint
 from sqlmodel import Field, Relationship, SQLModel
 
-from app.models.base import get_datetime_utc
+from app.models.base import get_datetime_utc, stored_enum
 from app.models.recipe import MealType, Recipe
 
 if TYPE_CHECKING:
@@ -20,7 +20,9 @@ if TYPE_CHECKING:
 
 class MealPlanEntryBase(SQLModel):
     entry_date: date
-    meal_type: MealType = Field(default=MealType.DINNER)
+    meal_type: MealType = Field(
+        default=MealType.DINNER, sa_type=stored_enum(MealType, 20)
+    )
     servings: int = Field(default=2, ge=1)
 
 

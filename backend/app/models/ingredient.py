@@ -6,7 +6,7 @@ from enum import Enum
 from sqlalchemy import DateTime
 from sqlmodel import Field, SQLModel
 
-from app.models.base import get_datetime_utc
+from app.models.base import get_datetime_utc, stored_enum
 
 
 class Unit(str, Enum):
@@ -71,7 +71,7 @@ class IngredientPricingBase(SQLModel):
         default=None, max_digits=10, decimal_places=4, ge=0
     )
     price_quantity: float | None = Field(default=None, gt=0)
-    price_unit: Unit | None = Field(default=None)
+    price_unit: Unit | None = Field(default=None, sa_type=stored_enum(Unit, 50))
     density_g_per_ml: float | None = Field(default=None, gt=0)
     piece_weight_g: float | None = Field(default=None, gt=0)
 
@@ -80,9 +80,13 @@ class Ingredient(IngredientPricingBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     name: str = Field(max_length=255, unique=True, index=True)
     name_en: str | None = Field(default=None, max_length=255)
-    category: IngredientCategory = Field(default=IngredientCategory.OTHER)
+    category: IngredientCategory = Field(
+        default=IngredientCategory.OTHER, sa_type=stored_enum(IngredientCategory)
+    )
     image_url: str | None = Field(default=None, max_length=2048)
-    price_source: PriceSource | None = Field(default=None)
+    price_source: PriceSource | None = Field(
+        default=None, sa_type=stored_enum(PriceSource, 20)
+    )
     price_updated_at: datetime | None = Field(
         default=None,
         sa_type=DateTime(timezone=True),  # type: ignore[call-overload]

@@ -1,5 +1,25 @@
 # Release Notes
 
+## 1.7.2 (2026-10-04)
+
+### Features
+
+* feat(frontend): warmer visual identity, top-nav layout and self-hosted fonts. PR [#95](https://github.com/TheoGoudout/shop-n-cook/pull/95) by [@TheoGoudout](https://github.com/TheoGoudout).
+* Dev, staging and production environments. PR [#93](https://github.com/TheoGoudout/shop-n-cook/pull/93) by [@TheoGoudout](https://github.com/TheoGoudout).
+* feat(deploy): default the API to one worker process. PR [#88](https://github.com/TheoGoudout/shop-n-cook/pull/88) by [@TheoGoudout](https://github.com/TheoGoudout).
+* feat(deploy): build the backend image in CI, pull it from GHCR, and fit a small shared host. PR [#87](https://github.com/TheoGoudout/shop-n-cook/pull/87) by [@TheoGoudout](https://github.com/TheoGoudout).
+
+### Fixes
+
+* fix(pricing): estimate missing store prices with medians, not means. PR [#92](https://github.com/TheoGoudout/shop-n-cook/pull/92) by [@TheoGoudout](https://github.com/TheoGoudout).
+* fix(db): make the models describe the schema the migrations built. PR [#91](https://github.com/TheoGoudout/shop-n-cook/pull/91) by [@TheoGoudout](https://github.com/TheoGoudout).
+
+### Internal
+
+* Make the staging environment opt-in. PR [#94](https://github.com/TheoGoudout/shop-n-cook/pull/94) by [@TheoGoudout](https://github.com/TheoGoudout).
+* ci: share release notes and workflow files with greensecops and prism. PR [#90](https://github.com/TheoGoudout/shop-n-cook/pull/90) by [@TheoGoudout](https://github.com/TheoGoudout).
+* ci: harden the pipelines and sequence the staging deploy. PR [#89](https://github.com/TheoGoudout/shop-n-cook/pull/89) by [@TheoGoudout](https://github.com/TheoGoudout).
+
 ## 1.7.1
 
 ### Features

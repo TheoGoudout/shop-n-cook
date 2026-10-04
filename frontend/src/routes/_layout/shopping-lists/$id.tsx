@@ -447,7 +447,7 @@ function MealsTab({ list }: { list: ShoppingListPublic }) {
                 className="mt-0.5 shrink-0 text-primary"
               >
                 {pr.is_prepared ? (
-                  <CheckCircle2 className="h-5 w-5 text-green-500" />
+                  <CheckCircle2 className="h-5 w-5 text-success" />
                 ) : (
                   <Circle className="h-5 w-5 text-muted-foreground" />
                 )}
@@ -501,7 +501,7 @@ function MealsTab({ list }: { list: ShoppingListPublic }) {
                     </button>
                   </div>
                   {pr.is_prepared && (
-                    <Badge variant="outline" className="text-xs text-green-600">
+                    <Badge variant="outline" className="text-xs text-success">
                       {t("detail.done")}
                     </Badge>
                   )}

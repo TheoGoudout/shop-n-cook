@@ -166,12 +166,12 @@ function RecipeDetailContent() {
             </Badge>
           ))}
           {recipe.is_vegan && (
-            <Badge className="text-xs bg-green-600 hover:bg-green-600">
+            <Badge className="text-xs bg-success text-success-foreground hover:bg-success">
               {t("form.is_vegan_label")}
             </Badge>
           )}
           {!recipe.is_vegan && recipe.is_vegetarian && (
-            <Badge className="text-xs bg-green-500 hover:bg-green-500">
+            <Badge className="text-xs bg-accent text-accent-foreground hover:bg-accent">
               {t("form.is_vegetarian_label")}
             </Badge>
           )}

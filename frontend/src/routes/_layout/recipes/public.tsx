@@ -59,12 +59,12 @@ function RecipeCard({
           />
           <div className="absolute top-2 left-2 flex flex-wrap gap-1">
             {recipe.is_vegan && (
-              <Badge className="text-xs px-1.5 py-0.5 bg-green-600 hover:bg-green-600">
+              <Badge className="text-xs px-1.5 py-0.5 bg-success text-success-foreground hover:bg-success">
                 {t("form.is_vegan_label")}
               </Badge>
             )}
             {!recipe.is_vegan && recipe.is_vegetarian && (
-              <Badge className="text-xs px-1.5 py-0.5 bg-green-500 hover:bg-green-500">
+              <Badge className="text-xs px-1.5 py-0.5 bg-accent text-accent-foreground hover:bg-accent">
                 {t("form.is_vegetarian_label")}
               </Badge>
             )}

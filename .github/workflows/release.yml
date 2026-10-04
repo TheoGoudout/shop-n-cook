@@ -10,8 +10,12 @@ name: Release
 #
 # Which environments it deploys follows from the release itself:
 #
-#   pre-release -> staging                   (stores: beta / test tracks)
-#   release     -> staging and production    (stores: production tracks)
+#   pre-release -> staging, if enabled       (stores: beta / test tracks)
+#   release     -> production, and staging   (stores: production tracks)
+#                  if enabled
+#
+# Staging is opt-in: set the STAGING_ENABLED repository variable to `true`.
+# Without it a pre-release deploys nothing and a release production alone.
 #
 # deploy-environment.yml does each environment's rollout, so staging and
 # production are the same jobs with a different GitHub Environment. Dev is not
@@ -103,6 +107,7 @@ jobs:
         id: environments
         env:
           PRERELEASE: ${{ steps.release.outputs.prerelease }}
+          STAGING_ENABLED: ${{ vars.STAGING_ENABLED }}
         run: .github/scripts/release/resolve-environments.sh
 
   extension:
@@ -180,7 +185,7 @@ jobs:
     needs: resolve
     # Built only when it is about to be deployed: same condition as the
     # backend half of the deploy job.
-    if: needs.resolve.outputs.run_coolify == 'true'
+    if: needs.resolve.outputs.run_coolify == 'true' && needs.resolve.outputs.environments != '[]'
     permissions:
       contents: read
       packages: write # images.yml pushes the backend image to GHCR.
@@ -201,13 +206,15 @@ jobs:
       needs.resolve.result == 'success' &&
       needs.images.result != 'failure' &&
       needs.images.result != 'cancelled' &&
+      needs.resolve.outputs.environments != '[]' &&
       (needs.resolve.outputs.run_coolify == 'true' || needs.resolve.outputs.run_cloudflare == 'true')
     strategy:
       # Staging and production roll out side by side; one failing does not
       # cancel the other.
       fail-fast: false
       matrix:
-        # staging for a pre-release; staging and production for a release.
+        # production for a release; with STAGING_ENABLED, staging as well, and
+        # for a pre-release staging alone (resolve-environments.sh).
         environment: ${{ fromJSON(needs.resolve.outputs.environments) }}
     permissions:
       contents: read

@@ -119,3 +119,40 @@ def test_complete_stores_rank_on_their_real_totals() -> None:
     for c in result.stores:
         assert c.projected_total == c.estimated_total == c.comparable_total
         assert c.projected_count == 0
+
+
+def test_one_mismatched_price_does_not_inflate_other_stores_estimates() -> None:
+    # D cannot price the vanilla. C's 40.00 is a bad match (a whole pack
+    # priced as one pod): averaging it in would add ~15.00 to D's basket.
+    ids, result = _compare(
+        {
+            "a": {"flour": "2.00", "vanilla": "2.00"},
+            "b": {"flour": "2.00", "vanilla": "2.20"},
+            "c": {"flour": "2.00", "vanilla": "40.00"},
+            "d": {"flour": "2.00", "vanilla": None},
+        },
+        _items("flour", "vanilla"),
+    )
+    d = next(c for c in result.stores if c.store_id == ids["d"])
+    assert d.projected_count == 1
+    assert d.projected_total == Decimal("4.20")
+
+
+def test_one_expensive_item_does_not_set_a_stores_price_level() -> None:
+    # B is cheaper on four everyday items out of five and dearer only on the
+    # saffron. A ratio of sums would call B the dearer store overall and
+    # scale its estimated salt up accordingly.
+    common = ["flour", "sugar", "milk", "eggs"]
+    a: dict[str, str | None] = dict.fromkeys(common, "2.00") | {
+        "saffron": "20.00",
+        "salt": "1.00",
+    }
+    b: dict[str, str | None] = dict.fromkeys(common, "1.80") | {
+        "saffron": "30.00",
+        "salt": None,
+    }
+    ids, result = _compare({"a": a, "b": b}, _items(*common, "saffron", "salt"))
+    by_id = {c.store_id: c for c in result.stores}
+    # Typical prices sit between the two: A is ~5% above, B ~5% below, so B's
+    # salt is estimated a little under A's, not inflated by the saffron.
+    assert by_id[ids["b"]].projected_total == Decimal("38.10")

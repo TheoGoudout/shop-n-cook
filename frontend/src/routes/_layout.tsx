@@ -1,12 +1,7 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router"
 
 import { Footer } from "@/components/Common/Footer"
-import AppSidebar from "@/components/Sidebar/AppSidebar"
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar"
+import { TopNav } from "@/components/Navigation/TopNav"
 import { isLoggedIn } from "@/hooks/useAuth"
 
 export const Route = createFileRoute("/_layout")({
@@ -23,20 +18,16 @@ export const Route = createFileRoute("/_layout")({
 
 function Layout() {
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset className="bg-kitchen-glow">
-        <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-2 border-b bg-background/70 px-4 backdrop-blur">
-          <SidebarTrigger className="-ml-1 text-muted-foreground" />
-        </header>
-        <main className="flex-1 p-6 md:p-8">
-          <div className="mx-auto max-w-7xl">
-            <Outlet />
-          </div>
-        </main>
+    <div className="bg-kitchen-glow flex min-h-svh flex-col">
+      <TopNav />
+      {/* pb-24 keeps the last row clear of the mobile tab bar */}
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 pt-8 pb-24 md:px-6 md:pb-12">
+        <Outlet />
+      </main>
+      <div className="hidden md:block">
         <Footer />
-      </SidebarInset>
-    </SidebarProvider>
+      </div>
+    </div>
   )
 }
 

@@ -18,8 +18,9 @@ async function createRecipe(page: Page, title: string): Promise<string> {
 }
 
 async function deleteRecipeFromDetail(page: Page): Promise<void> {
-  // Target the recipe actions DropdownMenu — exclude sidebar triggers (data-sidebar attr)
-  await page.locator('button[aria-haspopup="menu"]:not([data-sidebar])').click()
+  // The recipe actions menu lives in the page; the header holds the theme and
+  // account menus
+  await page.getByRole("main").locator('button[aria-haspopup="menu"]').click()
   await page.getByRole("menuitem", { name: /Delete/i }).click()
   await page
     .getByRole("button", { name: /Delete/i })
@@ -66,7 +67,9 @@ test.describe("Recipe detail page — client-side navigation", () => {
 
     await page.getByRole("link", { name: title }).click()
     await page.waitForURL(`/recipes/${id}`)
-    await expect(page.getByRole("heading", { name: title })).toBeVisible()
+    await expect(
+      page.getByRole("heading", { name: title, level: 1 }),
+    ).toBeVisible()
 
     await deleteRecipeFromDetail(page)
   })
@@ -103,7 +106,9 @@ test.describe("Recipe detail page — direct URL navigation", () => {
     // Navigate away then back via direct URL (simulates opening in a new tab)
     await page.goto("/")
     await page.goto(`/recipes/${id}`)
-    await expect(page.getByRole("heading", { name: title })).toBeVisible()
+    await expect(
+      page.getByRole("heading", { name: title, level: 1 }),
+    ).toBeVisible()
 
     await deleteRecipeFromDetail(page)
   })

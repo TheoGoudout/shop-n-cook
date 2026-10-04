@@ -3,6 +3,7 @@ import { ChefHat } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
 import type { RecipesPublic } from "@/client"
+import { RecipeCover } from "@/components/Recipes/RecipeCover"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -36,7 +37,7 @@ export function RecentRecipes({ data }: Props) {
         {data === undefined ? (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-20 rounded-lg" />
+              <Skeleton key={i} className="h-24 rounded-xl" />
             ))}
           </div>
         ) : (
@@ -53,37 +54,46 @@ export function RecentRecipes({ data }: Props) {
                   key={recipe.id}
                   to="/recipes/$id"
                   params={{ id: recipe.id }}
-                  className="rounded-lg border bg-card p-3 transition-colors hover:bg-accent/30"
+                  className="group flex gap-3 rounded-xl border bg-card p-2.5 transition-colors hover:bg-accent/30"
                 >
-                  <p className="line-clamp-1 text-sm font-semibold">
-                    {recipe.title}
-                  </p>
-                  <div className="mt-1.5 flex flex-wrap gap-1">
-                    {recipe.servings != null && (
-                      <Badge variant="secondary" className="text-xs">
-                        {t("recent_recipes.servings", {
-                          count: recipe.servings,
-                        })}
-                      </Badge>
-                    )}
-                    {recipe.prep_time_minutes != null && totalTime == null && (
-                      <Badge variant="secondary" className="text-xs">
-                        {t("recent_recipes.prep_min", {
-                          count: recipe.prep_time_minutes,
-                        })}
-                      </Badge>
-                    )}
-                    {totalTime != null && (
-                      <Badge variant="secondary" className="text-xs">
-                        {t("recent_recipes.total_min", { count: totalTime })}
-                      </Badge>
-                    )}
+                  <div className="size-20 shrink-0 overflow-hidden rounded-lg">
+                    <RecipeCover
+                      recipe={recipe}
+                      className="transition-transform duration-300 group-hover:scale-105 [&_svg]:size-7"
+                    />
                   </div>
-                  <p className="mt-1.5 text-xs text-muted-foreground">
-                    {t("recent_recipes.ingredient_count", {
-                      count: recipe.ingredients?.length ?? 0,
-                    })}
-                  </p>
+                  <div className="min-w-0 py-0.5">
+                    <p className="line-clamp-1 font-display text-base font-semibold">
+                      {recipe.title}
+                    </p>
+                    <div className="mt-1.5 flex flex-wrap gap-1">
+                      {recipe.servings != null && (
+                        <Badge variant="secondary" className="text-xs">
+                          {t("recent_recipes.servings", {
+                            count: recipe.servings,
+                          })}
+                        </Badge>
+                      )}
+                      {recipe.prep_time_minutes != null &&
+                        totalTime == null && (
+                          <Badge variant="secondary" className="text-xs">
+                            {t("recent_recipes.prep_min", {
+                              count: recipe.prep_time_minutes,
+                            })}
+                          </Badge>
+                        )}
+                      {totalTime != null && (
+                        <Badge variant="secondary" className="text-xs">
+                          {t("recent_recipes.total_min", { count: totalTime })}
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="mt-1.5 text-xs text-muted-foreground">
+                      {t("recent_recipes.ingredient_count", {
+                        count: recipe.ingredients?.length ?? 0,
+                      })}
+                    </p>
+                  </div>
                 </Link>
               )
             })}

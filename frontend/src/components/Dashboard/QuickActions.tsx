@@ -44,7 +44,7 @@ export function QuickActions() {
           <Button
             key={label}
             variant="outline"
-            className="h-auto flex-col gap-2.5 bg-card py-5 shadow-sm transition-transform hover:-translate-y-0.5 hover:shadow-md"
+            className="h-auto flex-col gap-2.5 rounded-2xl bg-card py-5 shadow-sm dark:bg-card dark:hover:bg-accent transition-transform hover:-translate-y-0.5 hover:shadow-md"
             asChild
           >
             <Link to={to}>

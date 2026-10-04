@@ -210,8 +210,9 @@ Never use `--no-verify` — fix the underlying issue.
   driven by `ThemeProvider` (`frontend/src/components/theme-provider.tsx`).
 - `saffron`, `basil` and `plum` (with `tomato`, the primary) are identity
   accents, never status or chart colours.
-- Fonts (Fraunces, Plus Jakarta Sans) are bundled from `@fontsource-variable`;
-  never add a Google Fonts or other font-CDN link.
+- Fonts (Fraunces, Plus Jakarta Sans) are bundled from `@fontsource-variable`
+  in the app and self-hosted in `landing/fonts/` for the landing page; never
+  add a Google Fonts or other font-CDN link.
 - The app has a top navigation (`components/Navigation/`), not a sidebar.
   Recipe images go through `RecipeCover`.
 

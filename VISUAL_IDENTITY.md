@@ -158,9 +158,10 @@ privacy policy.
 - Mark and wordmark sit `gap-2.5` apart. Don't recolour the wordmark with a
   pantry colour or put it on a photo.
 
-## Not yet aligned
+## Landing page
 
-`landing/` (the marketing site) predates this chart: it still loads Playfair
-Display and Plus Jakarta Sans from Google Fonts and uses the old saffron-amber
-palette. Bring it onto these tokens and self-hosted fonts when it is next
-touched.
+`landing/` uses Fraunces and Plus Jakarta Sans, self-hosted in
+`landing/fonts/` (Latin and Latin Extended subsets, with their OFL licences)
+and copied into the build by `scripts/build-landing.mjs` and the Dockerfile.
+Its colours still use the old saffron-amber palette; bring them onto the
+tomato tokens when it is next touched.

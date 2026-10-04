@@ -12,7 +12,7 @@
  * Usage: node scripts/build-landing.mjs <staging|production>
  */
 
-import { copyFile, mkdir, readFile, rm, writeFile } from "node:fs/promises"
+import { copyFile, cp, mkdir, readFile, rm, writeFile } from "node:fs/promises"
 import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
 
@@ -72,5 +72,7 @@ await rm(distDir, { recursive: true, force: true })
 await mkdir(distDir, { recursive: true })
 await writeFile(join(distDir, "index.html"), html)
 await copyFile(join(landingDir, "privacy.html"), join(distDir, "privacy.html"))
+// Self-hosted fonts: no request leaves the site for a typeface.
+await cp(join(landingDir, "fonts"), join(distDir, "fonts"), { recursive: true })
 
 console.log(`build-landing: built ${mode} with FRONTEND_URL=${frontendUrl}`)

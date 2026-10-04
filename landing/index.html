@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Shop n Cook — Your kitchen, organized.</title>
   <meta name="description" content="Manage recipes, build shopping lists, and import recipes with AI — all in one place.">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="preload" href="./fonts/plus-jakarta-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="./fonts/fraunces-latin-full-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="./fonts/fonts.css">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -45,7 +45,8 @@
     .logo-icon { color: var(--primary); filter: drop-shadow(0 1px 2px rgba(0,0,0,.10)); }
 
     .logo-text {
-      font-family: "Playfair Display", Georgia, serif;
+      font-family: "Fraunces", Georgia, serif;
+      font-variation-settings: "SOFT" 100, "WONK" 1;
       font-weight: 600;
       font-size: 1.0625rem;
       letter-spacing: -0.02em;
@@ -67,7 +68,8 @@
     .hero { max-width: 38rem; margin-bottom: 4rem; }
 
     h1 {
-      font-family: "Playfair Display", Georgia, serif;
+      font-family: "Fraunces", Georgia, serif;
+      font-variation-settings: "SOFT" 100, "WONK" 1;
       font-size: clamp(2.25rem, 6vw, 3.75rem);
       font-weight: 700;
       line-height: 1.1;

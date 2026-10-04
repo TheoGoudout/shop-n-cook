@@ -27,7 +27,8 @@ trap 'rm -f "$overlay" "$generated"' EXIT
 
 # Every service that runs the backend image. A local tag, and
 # `pull_policy: build`, so Coolify builds it on every deploy instead of
-# looking for it in a registry.
+# looking for it in a registry. ENVIRONMENT defaults to dev here, where
+# compose.yml defaults it to production.
 cat > "$overlay" <<'EOF'
 services:
   backend:
@@ -36,12 +37,16 @@ services:
     build:
       context: .
       dockerfile: backend/Dockerfile
+    environment:
+      - ENVIRONMENT=${ENVIRONMENT:-dev}
   prestart:
     image: shop-n-cook-backend:dev
     pull_policy: build
     build:
       context: .
       dockerfile: backend/Dockerfile
+    environment:
+      - ENVIRONMENT=${ENVIRONMENT:-dev}
 EOF
 
 # The merged stack, as this machine's Compose renders it.

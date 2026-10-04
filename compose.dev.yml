@@ -22,7 +22,7 @@ services:
     environment:
       - PROJECT_NAME=${PROJECT_NAME:-Shop n Cook}
       - FRONTEND_HOST=${FRONTEND_HOST:-https://app.shop-n-cook.com}
-      - ENVIRONMENT=${ENVIRONMENT:-production}
+      - ENVIRONMENT=${ENVIRONMENT:-dev}
       - BACKEND_CORS_ORIGINS=${BACKEND_CORS_ORIGINS:-}
       - SECRET_KEY=${SERVICE_PASSWORD_SECRET:-}
       - FIRST_SUPERUSER=${FIRST_SUPERUSER?Variable not set}
@@ -113,7 +113,7 @@ services:
     environment:
       - PROJECT_NAME=${PROJECT_NAME:-Shop n Cook}
       - FRONTEND_HOST=${FRONTEND_HOST:-https://app.shop-n-cook.com}
-      - ENVIRONMENT=${ENVIRONMENT:-production}
+      - ENVIRONMENT=${ENVIRONMENT:-dev}
       - BACKEND_CORS_ORIGINS=${BACKEND_CORS_ORIGINS:-}
       - SECRET_KEY=${SERVICE_PASSWORD_SECRET:-}
       - FIRST_SUPERUSER=${FIRST_SUPERUSER?Variable not set}

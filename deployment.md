@@ -483,9 +483,9 @@ A third Coolify application, set up like the other two except:
 3. Do not set `TAG`: nothing pulls by tag here.
 4. Domain `https://api.dev.shop-n-cook.com:8000` on the `backend` service.
 5. Environment variables as for staging, with
-   `FRONTEND_HOST=https://app.dev.shop-n-cook.com`. `ENVIRONMENT` stays
-   `staging`: the backend knows only `local`, `staging` and `production`, and
-   dev should behave like a deployed non-production environment.
+   `FRONTEND_HOST=https://app.dev.shop-n-cook.com`. `ENVIRONMENT` needs no
+   setting: `compose.dev.yml` defaults it to `dev`, which the backend treats
+   like staging and production (real secrets required, no local-only routes).
 
 ### Frontend and landing (Cloudflare Workers Builds)
 

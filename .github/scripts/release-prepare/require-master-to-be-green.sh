@@ -8,8 +8,8 @@ SHA=$(git rev-parse HEAD)
 
 # Keyed on workflow file paths rather than check-run names, which are job names
 # and drift (test-extension.yml's job is "Test & Build Extension").
-# deploy-staging is deliberately absent: a staging deploy hiccup should not
-# block cutting a release.
+# No deploy workflow is listed: dev deploys outside Actions, and staging and
+# production are what the release itself deploys.
 REQUIRED="test-backend.yml playwright.yml test-extension.yml test-frontend.yml test-docker-compose.yml zizmor.yml"
 
 FAILED=0

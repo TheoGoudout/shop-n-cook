@@ -13,6 +13,12 @@
   // deployment.md for the bindings themselves.
   "workers_dev": false,
   "env": {
+    "dev": {
+      "name": "shop-n-cook-landing-dev",
+      "assets": {
+        "directory": "./dist"
+      }
+    },
     "staging": {
       "name": "shop-n-cook-landing-staging",
       // Repeated rather than inherited so `deploy --dry-run --env staging`

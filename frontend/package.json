@@ -6,8 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -p tsconfig.build.json && vite build",
+    "build:dev": "tsc -p tsconfig.build.json && vite build --mode dev",
     "build:staging": "tsc -p tsconfig.build.json && vite build --mode staging",
     "build:production": "tsc -p tsconfig.build.json && vite build --mode production",
+    "deploy:dev": "wrangler deploy --env dev",
     "deploy:staging": "wrangler deploy --env staging",
     "deploy:production": "wrangler deploy --env production",
     "lint": "biome check --write --unsafe --no-errors-on-unmatched --files-ignore-unknown=true ./",

@@ -5,10 +5,13 @@ name: Deploy to Cloudflare Workers
 # `deploy-coolify.yml`; both callers below run that first so the API is upgraded
 # before the frontend that calls it (see deployment.md).
 #
-#   called by deploy-staging.yml -> staging    (staging.shop-n-cook.com, app.staging.shop-n-cook.com)
-#   called by release.yml        -> production (shop-n-cook.com, app.shop-n-cook.com)
-#   called by rollback.yml       -> either, at an older tag
-#   workflow_dispatch            -> either, on demand
+#   called by deploy-environment.yml -> staging    (staging.shop-n-cook.com, app.staging.shop-n-cook.com)
+#                                    -> production (shop-n-cook.com, app.shop-n-cook.com)
+#   called by rollback.yml           -> either, at an older tag
+#   workflow_dispatch                -> either, on demand
+#
+# Dev (dev.shop-n-cook.com, app.dev.shop-n-cook.com) is deployed by Cloudflare
+# Workers Builds from master, with the `dev` environment in each wrangler.jsonc.
 
 on:
   workflow_call:

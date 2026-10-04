@@ -5,8 +5,10 @@
   "type": "module",
   "scripts": {
     "build": "bun ../scripts/build-landing.mjs production",
+    "build:dev": "bun ../scripts/build-landing.mjs dev",
     "build:staging": "bun ../scripts/build-landing.mjs staging",
     "build:production": "bun ../scripts/build-landing.mjs production",
+    "deploy:dev": "wrangler deploy --env dev",
     "deploy:staging": "wrangler deploy --env staging",
     "deploy:production": "wrangler deploy --env production"
   },

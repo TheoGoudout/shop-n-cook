@@ -5,13 +5,11 @@ name: Deploy staging
 # (images.yml), the staging backend is pointed at it, and only then are the two
 # static Workers deployed.
 #
-# Staging used to get there by independent routes — the backend from its own
-# workflow, and deploy-cloudflare.yml the frontend from the same push. The
-# Cloudflare upload takes seconds and the image build and Coolify rollout take
-# minutes, so every API change put a staging frontend in front of a backend
-# that did not serve it yet: a generated client calling a contract the server
-# had not shipped. release.yml sequences production to avoid exactly that; this
-# does the same for staging.
+# The order matters for the same reason it does in release.yml: the Cloudflare
+# upload takes seconds and the image build and Coolify rollout take minutes, so
+# deployed independently, every API change would put a staging frontend in
+# front of a backend that does not serve it yet — a generated client calling a
+# contract the server has not shipped.
 #
 # **Turn Automatic Deployment off on the staging application in Coolify**, or its
 # webhook keeps racing this run with a deploy of its own, and put the three

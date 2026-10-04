@@ -2,9 +2,7 @@
 # Work out the version this release will carry, and publish it as step outputs.
 #
 # The arithmetic itself lives in scripts/set-version.mjs, beside the parser that
-# writes the nine version files — it was a `bun -e '...'` program here, with a
-# second copy of the semver regex and its own reading of what "patch" means on
-# a release candidate.
+# writes the version files, so there is one definition of the version format.
 #
 # BUMP and EXPLICIT come from the calling step's env.
 set -euo pipefail

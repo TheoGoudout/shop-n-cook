@@ -6,9 +6,8 @@
 # Environment, and environment secrets only resolve inside a job that declares
 # `environment:`.
 #
-# This fails the run instead of skipping the target the way publish-extension.yml
-# does: an unpublished browser extension is a missing nice-to-have, a backend
-# that silently did not deploy is a frontend talking to the wrong API.
+# A failure rather than a skip: a backend that silently did not deploy is a
+# frontend talking to the wrong API.
 #
 # COOLIFY_URL, COOLIFY_API_TOKEN, COOLIFY_APP_UUID and ENVIRONMENT come from the
 # calling step's env.

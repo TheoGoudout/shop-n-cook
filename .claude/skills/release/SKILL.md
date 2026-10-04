@@ -19,8 +19,10 @@ It refuses to run unless master is releasable: the ref is `master`, every versio
 file agrees, the new version parses and sorts above every existing tag, no tag or
 release already claims it, and the required test suites are green on HEAD.
 
-Then it generates release notes from the commits since the last **stable** tag,
-prepends them to `release-notes.md`, bumps every version file, commits
+Then it writes release notes from the pull requests merged since the last
+**stable** tag — one line per pull request, under the heading its label picks
+(`scripts/release_notes.py`) — prepends them to `release-notes.md`, bumps every
+version file, commits
 `chore(release): <version>` to master, and creates a **draft GitHub Release**.
 
 **No tag is created at this point.** The draft carries a tag name that does not
@@ -32,7 +34,9 @@ tagged but never published under the old process.
 
 Review the generated notes in the draft release, edit if you want, and press
 **Publish release**. The body you publish is what the stores show as "what's
-new", so it is worth reading.
+new" (without the pull request links, which `fetch-release-notes.sh` strips), so
+it is worth reading. A pull request's title is its line, so retitle it before
+cutting the release if it would read badly there.
 
 Publishing creates the tag and fires
 [`release.yml`](../../../.github/workflows/release.yml), which drives the entire
@@ -87,13 +91,14 @@ Never bump versions by hand in a feature PR — the release workflow owns it.
 
 ## Release notes
 
-`scripts/release-notes.mjs` generates them from Conventional Commits since the
-last stable tag. Commit subjects become the bullets, so write them accordingly:
-`feat(scope):` → Features, `fix:` → Fixes, `perf:` → Performance, `refactor:` →
-Refactors, everything else → Internal. A `!` or a `BREAKING CHANGE:` footer
-promotes a commit to Breaking changes. `chore(release):` commits are skipped, and
-subjects that are not conventional are kept verbatim under Internal rather than
-dropped.
+`scripts/release_notes.py` writes them from the pull requests merged
+(first-parent) since the last stable tag: each pull request's title is a bullet,
+and its label picks the section — `breaking` → Breaking Changes, `security` →
+Security Fixes, `feature` → Features, `bug` → Fixes, `refactor` → Refactors,
+`upgrade` → Upgrades, `docs` → Docs, `internal` (or no label) → Internal.
+`labeler.yml` requires exactly one of those labels on every pull request. Commits
+that name no pull request, like `chore(release):`, are not listed. The script is
+the same file in greensecops and prism; change it in all three together.
 
 The same generated text goes into `release-notes.md` **and** the release body, so
 the file and the stores cannot drift apart.

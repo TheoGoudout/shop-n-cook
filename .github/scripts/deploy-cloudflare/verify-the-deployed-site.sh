@@ -4,9 +4,8 @@
 # wrangler reports on its own upload, not on what the zone routes — and the
 # custom domains here are attached by hand in the Cloudflare dashboard rather
 # than declared in wrangler.jsonc (see the comment in each project's config), so
-# "deployed" and "reachable" are genuinely two claims. deploy-coolify.yml has
-# asserted both about the API since it was written; this is the same assertion
-# for the two static surfaces.
+# "deployed" and "reachable" are genuinely two claims. deploy-coolify.yml
+# asserts both about the API; this is the same assertion for the static sites.
 #
 # PROJECT, ENVIRONMENT and HAS_CLOUDFLARE come from the calling step's env.
 set -euo pipefail

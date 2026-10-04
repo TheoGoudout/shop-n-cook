@@ -58,6 +58,7 @@ rules:
         # Vetted individually — single-purpose actions, no org-wide trust.
         - agilepathway/pull-request-label-checker
         - dorny/paths-filter
+        - eps1lon/actions-label-merge-conflict
         - mxschmitt/action-tmate
         - pre-commit-ci/lite-action
         - r0adkll/upload-google-play

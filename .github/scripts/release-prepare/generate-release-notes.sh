@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
-# Cut the notes for this version, into the file the draft release is created from.
+# Write this version's notes from the pull requests merged since the last
+# stable release: into release-notes.md, and into the file the draft release
+# is created from.
 #
-# VERSION and BODY_FILE come from the calling step's env.
+# VERSION, BODY_FILE and GH_TOKEN come from the calling step's env;
+# GITHUB_REPOSITORY is the runner's.
 set -euo pipefail
 
-# --insert updates release-notes.md; stdout is the body for the release.
-bun scripts/release-notes.mjs --version "$VERSION" --insert > "$BODY_FILE"
+python3 scripts/release_notes.py "$VERSION" --body-file "$BODY_FILE"
 echo "--- generated notes ---"
 cat "$BODY_FILE"

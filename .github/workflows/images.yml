@@ -19,11 +19,11 @@ name: Backend image
 # pull again, so a host that already has it would keep serving the old one.
 #
 # amd64 only: the Coolify hosts are x86. An arm64 host needs a second platform
-# here, built on a native runner as greensecops's images.yml does.
+# here, built on a native runner.
 #
-# No build cache. This workflow runs inside release.yml, which holds every store
-# credential, and a cache entry written by a less-privileged run has no business
-# being restored there. (zizmor: cache-poisoning)
+# No build cache. This workflow runs inside release.yml, which holds the
+# production deploy credentials, and a cache entry written by a less-privileged
+# run has no business being restored there. (zizmor: cache-poisoning)
 
 on:
   workflow_call:

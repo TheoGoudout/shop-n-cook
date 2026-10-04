@@ -221,6 +221,9 @@ Each push runs:
 - `test-frontend.yml` — build `frontend/` + `landing/` for both environments and
   dry-run their Cloudflare deploys
 - `zizmor.yml` — security audit of the workflows themselves
+- `detect-conflicts.yml` — labels pull requests a push to master put in conflict
+- `smokeshow.yml` — publishes `test-backend.yml`'s coverage report (needs the
+  optional `SMOKESHOW_AUTH_KEY` secret)
 - `deploy-staging.yml` — on `master`: build the backend image and push it to
   GHCR (`images.yml`), deploy it to staging Coolify, then `frontend/` +
   `landing/` to staging Cloudflare. Coolify never builds: `compose.yml` names
@@ -228,8 +231,10 @@ Each push runs:
 
 Releasing is two workflows (see `.claude/skills/release/SKILL.md`):
 
-- `release-prepare.yml` — manually dispatched. Validates master, generates
-  release notes from Conventional Commits, bumps every version file, commits to
+- `release-prepare.yml` — manually dispatched. Validates master, writes
+  release notes from the merged pull requests' labels
+  (`scripts/release_notes.py`, shared with greensecops and prism), bumps every
+  version file, commits to
   `master`, and opens a **draft** GitHub Release. It does not create the tag —
   GitHub does that when the draft is published, which is what makes a tag
   without a release impossible.

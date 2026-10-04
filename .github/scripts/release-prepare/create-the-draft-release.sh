@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Open the draft whose publication starts the rollout.
 #
+# The notes are the ones generate-release-notes.sh wrote into release-notes.md,
+# so the draft and the file say the same thing. Review them in the draft before
+# publishing.
+#
 # GH_TOKEN, TAG, SHA, PRERELEASE and BODY_FILE come from the calling step's env.
 set -euo pipefail
 

@@ -5,15 +5,14 @@ import { Suspense, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import { RecipesService } from "@/client"
-import { DataTable } from "@/components/Common/DataTable"
 import PendingItems from "@/components/Pending/PendingItems"
 import AddRecipe from "@/components/Recipes/AddRecipe"
-import { useColumns } from "@/components/Recipes/columns"
 import {
   defaultFilters,
   RecipeFilterBar,
   type RecipeFilters,
 } from "@/components/Recipes/RecipeFilterBar"
+import { RecipeGrid } from "@/components/Recipes/RecipeGrid"
 import { Input } from "@/components/ui/input"
 import { APP_NAME } from "@/lib/config"
 
@@ -31,7 +30,7 @@ export const Route = createFileRoute("/_layout/recipes/")({
   }),
 })
 
-function RecipesTableContent({
+function RecipesGridContent({
   search,
   filters,
 }: {
@@ -40,7 +39,6 @@ function RecipesTableContent({
 }) {
   const { t } = useTranslation("recipes")
   const { data } = useSuspenseQuery(getRecipesQueryOptions())
-  const columns = useColumns()
 
   const filtered = useMemo(() => {
     return data.data.filter((r) => {
@@ -87,7 +85,7 @@ function RecipesTableContent({
     )
   }
 
-  return <DataTable columns={columns} data={filtered} />
+  return <RecipeGrid recipes={filtered} />
 }
 
 function Recipes() {
@@ -99,7 +97,7 @@ function Recipes() {
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">
+          <h1 className="text-3xl font-bold tracking-tight md:text-4xl">
             {t("page.title")}
           </h1>
           <p className="text-muted-foreground">{t("page.subtitle")}</p>
@@ -121,7 +119,7 @@ function Recipes() {
         onClear={() => setFilters(defaultFilters)}
       />
       <Suspense fallback={<PendingItems />}>
-        <RecipesTableContent search={search} filters={filters} />
+        <RecipesGridContent search={search} filters={filters} />
       </Suspense>
     </div>
   )

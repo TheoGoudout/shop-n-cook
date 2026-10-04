@@ -1,3 +1,5 @@
+@import "@fontsource-variable/fraunces/full.css";
+@import "@fontsource-variable/plus-jakarta-sans";
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -23,6 +25,14 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
+  --color-tomato: var(--tomato);
+  --color-saffron: var(--saffron);
+  --color-basil: var(--basil);
+  --color-plum: var(--plum);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -39,96 +49,133 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Playfair Display", Georgia, serif;
+  --font-sans:
+    "Plus Jakarta Sans Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Fraunces Variable", Georgia, serif;
+  /* Warm, brown-tinted shadows: paper resting on a linen table, never grey. */
+  --shadow-xs: 0 1px 2px 0 oklch(0.35 0.05 50 / 0.06);
+  --shadow-sm:
+    0 1px 2px 0 oklch(0.35 0.05 50 / 0.06),
+    0 2px 8px -2px oklch(0.35 0.05 50 / 0.08);
+  --shadow-md:
+    0 2px 4px -1px oklch(0.35 0.05 50 / 0.07),
+    0 8px 20px -6px oklch(0.35 0.05 50 / 0.14);
 }
 
 :root {
-  --radius: 0.625rem;
+  --radius: 0.75rem;
 
-  --background: oklch(0.99 0.006 80);
-  --foreground: oklch(0.16 0.018 55);
+  /* Linen table, paper cards, espresso ink. */
+  --background: oklch(0.972 0.014 78);
+  --foreground: oklch(0.255 0.032 48);
 
-  --card: oklch(0.975 0.008 80);
-  --card-foreground: oklch(0.16 0.018 55);
-  --popover: oklch(0.975 0.008 80);
-  --popover-foreground: oklch(0.16 0.018 55);
+  --card: oklch(0.993 0.006 85);
+  --card-foreground: oklch(0.255 0.032 48);
+  --popover: oklch(0.993 0.006 85);
+  --popover-foreground: oklch(0.255 0.032 48);
 
-  --primary: oklch(0.58 0.175 52);
-  --primary-foreground: oklch(0.1 0.02 52);
+  /* Tomato: ripe, juicy, the colour of the brand. */
+  --primary: oklch(0.585 0.19 36);
+  --primary-foreground: oklch(0.99 0.008 80);
 
-  --secondary: oklch(0.945 0.014 70);
-  --secondary-foreground: oklch(0.28 0.022 52);
+  --secondary: oklch(0.93 0.045 85);
+  --secondary-foreground: oklch(0.36 0.07 65);
 
-  --muted: oklch(0.94 0.01 75);
-  --muted-foreground: oklch(0.51 0.018 55);
+  --muted: oklch(0.945 0.015 78);
+  --muted-foreground: oklch(0.5 0.03 55);
 
-  --accent: oklch(0.93 0.04 148);
-  --accent-foreground: oklch(0.22 0.06 148);
+  /* Sage: fresh herbs, the counterpoint to terracotta. */
+  --accent: oklch(0.93 0.05 140);
+  --accent-foreground: oklch(0.36 0.09 145);
 
-  --destructive: oklch(0.577 0.245 27.325);
+  --destructive: oklch(0.55 0.2 27);
+  --success: oklch(0.52 0.11 145);
+  --success-foreground: oklch(0.99 0.008 80);
+  --warning: oklch(0.75 0.14 75);
+  --warning-foreground: oklch(0.38 0.07 60);
 
-  --border: oklch(0.89 0.015 70);
-  --input: oklch(0.89 0.015 70);
-  --ring: oklch(0.58 0.175 52);
+  /* Pantry colours: identity accents for tiles, chips and illustrations.
+     Tomato is the primary; saffron, basil and plum keep it company. */
+  --tomato: oklch(0.585 0.19 36);
+  --saffron: oklch(0.8 0.16 80);
+  --basil: oklch(0.56 0.13 145);
+  --plum: oklch(0.5 0.14 350);
+  --glow-1: oklch(0.85 0.12 80 / 0.35);
+  --glow-2: oklch(0.75 0.14 40 / 0.16);
 
-  --chart-1: oklch(0.58 0.175 52);
-  --chart-2: oklch(0.56 0.14 148);
-  --chart-3: oklch(0.72 0.16 60);
-  --chart-4: oklch(0.58 0.1 25);
-  --chart-5: oklch(0.68 0.09 190);
+  --border: oklch(0.885 0.02 72);
+  --input: oklch(0.86 0.024 70);
+  --ring: oklch(0.585 0.19 36);
 
-  --sidebar: oklch(0.96 0.012 72);
-  --sidebar-foreground: oklch(0.16 0.018 55);
-  --sidebar-primary: oklch(0.58 0.175 52);
-  --sidebar-primary-foreground: oklch(0.1 0.02 52);
-  --sidebar-accent: oklch(0.93 0.02 68);
-  --sidebar-accent-foreground: oklch(0.28 0.022 52);
-  --sidebar-border: oklch(0.88 0.016 70);
-  --sidebar-ring: oklch(0.58 0.175 52);
+  --chart-1: oklch(0.585 0.19 36);
+  --chart-2: oklch(0.58 0.11 138);
+  --chart-3: oklch(0.74 0.14 78);
+  --chart-4: oklch(0.48 0.1 350);
+  --chart-5: oklch(0.6 0.08 200);
+
+  --sidebar: oklch(0.34 0.085 38);
+  --sidebar-foreground: oklch(0.93 0.03 75);
+  --sidebar-primary: oklch(0.83 0.15 85);
+  --sidebar-primary-foreground: oklch(0.28 0.05 50);
+  --sidebar-accent: oklch(0.975 0.018 80);
+  --sidebar-accent-foreground: oklch(0.48 0.16 36);
+  --sidebar-border: oklch(1 0 0 / 0.12);
+  --sidebar-ring: oklch(0.83 0.15 85);
 }
 
+/* Cocoa and candlelight: the same kitchen after dark, never cold grey. */
 .dark {
-  --background: oklch(0.138 0.012 55);
-  --foreground: oklch(0.96 0.008 75);
+  --background: oklch(0.185 0.013 50);
+  --foreground: oklch(0.945 0.016 80);
 
-  --card: oklch(0.195 0.014 52);
-  --card-foreground: oklch(0.96 0.008 75);
-  --popover: oklch(0.195 0.014 52);
-  --popover-foreground: oklch(0.96 0.008 75);
+  --card: oklch(0.228 0.016 50);
+  --card-foreground: oklch(0.945 0.016 80);
+  --popover: oklch(0.245 0.017 50);
+  --popover-foreground: oklch(0.945 0.016 80);
 
-  --primary: oklch(0.7 0.165 52);
-  --primary-foreground: oklch(0.1 0.02 52);
+  --primary: oklch(0.7 0.17 40);
+  --primary-foreground: oklch(0.2 0.03 45);
 
-  --secondary: oklch(0.26 0.02 52);
-  --secondary-foreground: oklch(0.92 0.012 72);
+  --secondary: oklch(0.32 0.04 70);
+  --secondary-foreground: oklch(0.9 0.06 85);
 
-  --muted: oklch(0.25 0.016 55);
-  --muted-foreground: oklch(0.66 0.016 65);
+  --muted: oklch(0.27 0.016 50);
+  --muted-foreground: oklch(0.72 0.025 70);
 
-  --accent: oklch(0.27 0.04 148);
-  --accent-foreground: oklch(0.88 0.06 148);
+  --accent: oklch(0.31 0.04 130);
+  --accent-foreground: oklch(0.88 0.06 125);
 
-  --destructive: oklch(0.704 0.191 22.216);
+  --destructive: oklch(0.68 0.17 27);
+  --success: oklch(0.7 0.12 145);
+  --success-foreground: oklch(0.2 0.03 145);
+  --warning: oklch(0.8 0.13 78);
+  --warning-foreground: oklch(0.88 0.08 80);
 
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.7 0.165 52);
+  --tomato: oklch(0.7 0.17 40);
+  --saffron: oklch(0.82 0.15 82);
+  --basil: oklch(0.7 0.13 145);
+  --plum: oklch(0.68 0.13 350);
+  --glow-1: oklch(0.6 0.12 70 / 0.12);
+  --glow-2: oklch(0.55 0.14 35 / 0.12);
 
-  --chart-1: oklch(0.72 0.17 52);
-  --chart-2: oklch(0.64 0.13 148);
-  --chart-3: oklch(0.78 0.155 65);
-  --chart-4: oklch(0.65 0.11 25);
-  --chart-5: oklch(0.7 0.09 188);
+  --border: oklch(0.31 0.018 50);
+  --input: oklch(0.36 0.02 50);
+  --ring: oklch(0.7 0.17 40);
 
-  --sidebar: oklch(0.175 0.016 52);
-  --sidebar-foreground: oklch(0.96 0.008 75);
-  --sidebar-primary: oklch(0.7 0.165 52);
-  --sidebar-primary-foreground: oklch(0.1 0.02 52);
-  --sidebar-accent: oklch(0.248 0.02 55);
-  --sidebar-accent-foreground: oklch(0.92 0.012 72);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.7 0.165 52);
+  --chart-1: oklch(0.7 0.17 40);
+  --chart-2: oklch(0.7 0.11 138);
+  --chart-3: oklch(0.8 0.13 80);
+  --chart-4: oklch(0.66 0.1 350);
+  --chart-5: oklch(0.7 0.08 200);
+
+  --sidebar: oklch(0.25 0.055 38);
+  --sidebar-foreground: oklch(0.9 0.03 75);
+  --sidebar-primary: oklch(0.83 0.15 85);
+  --sidebar-primary-foreground: oklch(0.25 0.05 50);
+  --sidebar-accent: oklch(0.36 0.09 38);
+  --sidebar-accent-foreground: oklch(0.97 0.02 80);
+  --sidebar-border: oklch(1 0 0 / 0.08);
+  --sidebar-ring: oklch(0.83 0.15 85);
 }
 
 @layer base {
@@ -138,15 +185,35 @@
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-sans);
-    font-feature-settings: "cv11", "ss01";
+    -webkit-font-smoothing: antialiased;
   }
   h1,
   h2,
   h3 {
     font-family: var(--font-display);
+    font-weight: 600;
+    /* SOFT rounds Fraunces' terminals: a cookbook, not a newspaper. */
+    font-variation-settings:
+      "SOFT" 100,
+      "WONK" 1;
+    letter-spacing: -0.01em;
   }
   button,
   [role="button"] {
     cursor: pointer;
+  }
+  /* Primary actions are a little juicy: tomato with a warm drop shadow. */
+  :is(button, a[data-slot="button"]).bg-primary {
+    box-shadow: 0 6px 16px -6px oklch(0.585 0.19 36 / 0.55);
+  }
+}
+
+@layer utilities {
+  /* Late-afternoon sun on the top of the page. */
+  .bg-kitchen-glow {
+    background-image:
+      radial-gradient(50rem 22rem at 90% -6rem, var(--glow-1), transparent 70%),
+      radial-gradient(40rem 18rem at 20% -8rem, var(--glow-2), transparent 70%);
+    background-repeat: no-repeat;
   }
 }

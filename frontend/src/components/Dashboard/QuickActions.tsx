@@ -10,21 +10,25 @@ export function QuickActions() {
   const actions = [
     {
       icon: Download,
+      tone: "var(--tomato)",
       label: t("quick_actions.import_recipe"),
       to: "/recipes" as const,
     },
     {
       icon: ShoppingCart,
+      tone: "var(--basil)",
       label: t("quick_actions.new_list"),
       to: "/shopping-lists" as const,
     },
     {
       icon: BookOpen,
+      tone: "var(--saffron)",
       label: t("quick_actions.browse_recipes"),
       to: "/recipes" as const,
     },
     {
       icon: ListChecks,
+      tone: "var(--plum)",
       label: t("quick_actions.view_lists"),
       to: "/shopping-lists" as const,
     },
@@ -36,16 +40,24 @@ export function QuickActions() {
         {t("quick_actions.title")}
       </h2>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {actions.map(({ icon: Icon, label, to }) => (
+        {actions.map(({ icon: Icon, label, to, tone }) => (
           <Button
             key={label}
             variant="outline"
-            className="h-auto flex-col gap-2 py-4"
+            className="h-auto flex-col gap-2.5 bg-card py-5 shadow-sm transition-transform hover:-translate-y-0.5 hover:shadow-md"
             asChild
           >
             <Link to={to}>
-              <Icon className="h-5 w-5 text-muted-foreground" />
-              <span className="text-xs font-medium">{label}</span>
+              <span
+                className="flex size-10 items-center justify-center rounded-full"
+                style={{
+                  color: `color-mix(in oklch, ${tone} 80%, var(--foreground))`,
+                  backgroundColor: `color-mix(in oklch, ${tone} 22%, transparent)`,
+                }}
+              >
+                <Icon className="h-5 w-5" />
+              </span>
+              <span className="text-sm font-semibold">{label}</span>
             </Link>
           </Button>
         ))}

@@ -25,8 +25,8 @@ function Layout() {
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset>
-        <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-2 border-b px-4">
+      <SidebarInset className="bg-kitchen-glow">
+        <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-2 border-b bg-background/70 px-4 backdrop-blur">
           <SidebarTrigger className="-ml-1 text-muted-foreground" />
         </header>
         <main className="flex-1 p-6 md:p-8">

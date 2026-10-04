@@ -42,7 +42,7 @@ function Dashboard() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight truncate max-w-sm">
+        <h1 className="text-3xl md:text-4xl font-bold tracking-tight truncate max-w-xl">
           {t("greeting", {
             name: currentUser?.full_name || currentUser?.email,
           })}

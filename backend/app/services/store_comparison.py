@@ -13,6 +13,13 @@ missing a line. This module puts every store on the same footing in two ways.
   the totals rank fairly; how many lines were estimated is reported alongside,
   so the UI can say so.
 
+Both the price level and the estimate are *medians*, never means or ratios of
+sums. Store prices come from product matching, and one bad match — a pack
+priced as a single piece, a premium variant — is routine. With a mean, that one
+line would be copied into every other store's estimate; with a ratio of sums,
+the single most expensive item would set a store's level for the whole basket.
+A median lets no single price dominate either.
+
 An item no store can price is left out of every total alike and counted as
 ``unpriceable``: it does not distort the ranking, but the totals are short of
 it and the caller must say so.
@@ -27,6 +34,7 @@ seeded retailers (all EUR).
 import uuid
 from dataclasses import dataclass
 from decimal import Decimal
+from statistics import median
 
 from app.models.ingredient import Unit
 from app.services.pricing import PriceBook, quantize_money
@@ -132,21 +140,31 @@ def _price_levels(
     compared: list[uuid.UUID],
     common: list[int],
 ) -> dict[uuid.UUID, Decimal] | None:
-    """Each store's price level relative to the average, on the common items.
+    """Each store's price level relative to a typical store, on the common items.
+
+    Per item, a store's price is compared with that item's median price across
+    stores; the store's level is the median of those ratios, taken on a log
+    scale so that "twice as dear" and "half as dear" weigh the same. Every
+    item counts once, whatever it costs, and a single mismatched price cannot
+    move the level.
 
     ``None`` when there is nothing to measure it on, in which case no estimate
     can be grounded and missing lines stay missing.
     """
     if not common or not compared:
         return None
-    sums = {
-        sid: sum((lines[sid][i] or Decimal(0) for i in common), Decimal(0))
-        for sid in compared
-    }
-    mean = sum(sums.values(), Decimal(0)) / len(compared)
-    if mean <= 0 or any(s <= 0 for s in sums.values()):
+    log_ratios: dict[uuid.UUID, list[Decimal]] = {sid: [] for sid in compared}
+    for i in common:
+        prices = {sid: lines[sid][i] or Decimal(0) for sid in compared}
+        if any(p <= 0 for p in prices.values()):
+            # A free line says nothing about how dear the store is.
+            continue
+        typical = median(prices.values())
+        for sid, price in prices.items():
+            log_ratios[sid].append((price / typical).ln())
+    if not all(log_ratios.values()):
         return None
-    return {sid: s / mean for sid, s in sums.items()}
+    return {sid: median(logs).exp() for sid, logs in log_ratios.items()}
 
 
 def _project(
@@ -166,9 +184,10 @@ def _project(
         if levels is None:
             # Missing lines with no grounded estimate: not comparable.
             return None, 0
+        # The other stores' prices, each brought back to a typical price level.
         others = [
             line / levels[sid] for sid in levels if (line := lines[sid][i]) is not None
         ]
-        total += sum(others, Decimal(0)) / len(others) * levels[store_id]
+        total += median(others) * levels[store_id]
         estimated += 1
     return quantize_money(total), estimated

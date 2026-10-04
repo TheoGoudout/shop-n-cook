@@ -8,6 +8,19 @@ name: Release
 # one place to see status, and "Re-run failed jobs" re-drives only the store
 # that broke rather than resubmitting to all of them.
 #
+# Which environments it deploys follows from the release itself:
+#
+#   pre-release -> staging, if enabled       (stores: beta / test tracks)
+#   release     -> production, and staging   (stores: production tracks)
+#                  if enabled
+#
+# Staging is opt-in: set the STAGING_ENABLED repository variable to `true`.
+# Without it a pre-release deploys nothing and a release production alone.
+#
+# deploy-environment.yml does each environment's rollout, so staging and
+# production are the same jobs with a different GitHub Environment. Dev is not
+# here: it deploys itself from master (see deployment.md).
+#
 # Previously each publisher listened for the `release` event independently,
 # which meant no shared status, no partial retry, and a trigger asymmetry where
 # flipping a pre-release to a full release re-ran the extension publish but not
@@ -56,6 +69,7 @@ jobs:
       run_stores: ${{ steps.targets.outputs.stores }}
       run_cloudflare: ${{ steps.targets.outputs.cloudflare }}
       run_coolify: ${{ steps.targets.outputs.coolify }}
+      environments: ${{ steps.environments.outputs.environments }}
     steps:
       # The steps below run scripts from .github/scripts/, and one of them calls
       # scripts/set-version.mjs, so this job needs the tree even though it
@@ -88,6 +102,13 @@ jobs:
         env:
           TARGETS: ${{ inputs.targets || 'all' }}
         run: .github/scripts/release/resolve-targets.sh
+
+      - name: Resolve environments
+        id: environments
+        env:
+          PRERELEASE: ${{ steps.release.outputs.prerelease }}
+          STAGING_ENABLED: ${{ vars.STAGING_ENABLED }}
+        run: .github/scripts/release/resolve-environments.sh
 
   extension:
     name: Browser extensions
@@ -162,10 +183,9 @@ jobs:
   images:
     name: Backend image
     needs: resolve
-    # Built only when it is about to be deployed: same condition as coolify.
-    if: >-
-      needs.resolve.outputs.run_coolify == 'true' &&
-      needs.resolve.outputs.prerelease != 'true'
+    # Built only when it is about to be deployed: same condition as the
+    # backend half of the deploy job.
+    if: needs.resolve.outputs.run_coolify == 'true' && needs.resolve.outputs.environments != '[]'
     permissions:
       contents: read
       packages: write # images.yml pushes the backend image to GHCR.
@@ -175,66 +195,47 @@ jobs:
     with:
       ref: ${{ needs.resolve.outputs.tag }}
 
-  coolify:
-    name: Coolify production (backend)
-    # Behind the image build: the Coolify host pulls the image rather than
-    # building it, so it has to exist first.
+  deploy:
+    name: Deploy ${{ matrix.environment }}
+    # Behind the image build: the Coolify hosts pull the image rather than
+    # building it, so it has to exist first. A failed image build skips every
+    # environment; a skipped one (targets: cloudflare) does not.
     needs: [resolve, images]
-    # Same pre-release exclusion as Cloudflare below — an RC must not reach the
-    # production API any more than it may reach the production domains.
     if: >-
-      needs.resolve.outputs.run_coolify == 'true' &&
-      needs.resolve.outputs.prerelease != 'true'
+      always() &&
+      needs.resolve.result == 'success' &&
+      needs.images.result != 'failure' &&
+      needs.images.result != 'cancelled' &&
+      needs.resolve.outputs.environments != '[]' &&
+      (needs.resolve.outputs.run_coolify == 'true' || needs.resolve.outputs.run_cloudflare == 'true')
+    strategy:
+      # Staging and production roll out side by side; one failing does not
+      # cancel the other.
+      fail-fast: false
+      matrix:
+        # production for a release; with STAGING_ENABLED, staging as well, and
+        # for a pre-release staging alone (resolve-environments.sh).
+        environment: ${{ fromJSON(needs.resolve.outputs.environments) }}
     permissions:
       contents: read
     # `./`, not GitHub's newer `$/`: moving the release pipeline to a
     # different reference syntax is a deliberate change, not a lint fix.
-    uses: ./.github/workflows/deploy-coolify.yml # zizmor: ignore[self-repository]
+    uses: ./.github/workflows/deploy-environment.yml # zizmor: ignore[self-repository]
     with:
-      environment: production
+      environment: ${{ matrix.environment }}
       ref: ${{ needs.resolve.outputs.tag }}
+      coolify: ${{ needs.resolve.outputs.run_coolify == 'true' }}
+      cloudflare: ${{ needs.resolve.outputs.run_cloudflare == 'true' }}
     secrets:
       COOLIFY_URL: ${{ secrets.COOLIFY_URL }}
       COOLIFY_API_TOKEN: ${{ secrets.COOLIFY_API_TOKEN }}
       COOLIFY_APP_UUID: ${{ secrets.COOLIFY_APP_UUID }}
-
-  cloudflare:
-    name: Cloudflare production
-    # Sequenced behind the backend so the API is upgraded before the frontend
-    # that calls it. Coolify used to deploy continuously from master, which kept
-    # the backend permanently ahead of the frontend; pinning it to the released
-    # tag inverts that, so the ordering now has to be explicit.
-    needs: [resolve, images, coolify]
-    # Pre-releases must not reach the production domains; they exist to be
-    # exercised on the store beta tracks first.
-    #
-    # `always()` is what lets a *skipped* coolify job through — `targets: cloudflare`
-    # skips it, and a plain `needs:` would then skip this job too. A coolify job
-    # that actually failed still blocks the frontend deploy — and so does a
-    # failed image build, which skips coolify rather than failing it.
-    if: >-
-      always() &&
-      needs.resolve.outputs.run_cloudflare == 'true' &&
-      needs.resolve.outputs.prerelease != 'true' &&
-      needs.images.result != 'failure' &&
-      needs.images.result != 'cancelled' &&
-      needs.coolify.result != 'failure' &&
-      needs.coolify.result != 'cancelled'
-    permissions:
-      contents: read
-    # `./`, not GitHub's newer `$/`: moving the release pipeline to a
-    # different reference syntax is a deliberate change, not a lint fix.
-    uses: ./.github/workflows/deploy-cloudflare.yml # zizmor: ignore[self-repository]
-    with:
-      environment: production
-      ref: ${{ needs.resolve.outputs.tag }}
-    secrets:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
   release-complete:
     name: Release complete
-    needs: [resolve, extension, stores, cloudflare, coolify, images]
+    needs: [resolve, extension, stores, images, deploy]
     # Runs even when a target failed or was skipped, so the run's conclusion is
     # the release's conclusion rather than just the last job's.
     if: always()
@@ -255,8 +256,8 @@ jobs:
           EXTENSION_RESULT: ${{ needs.extension.result }}
           STORES_RESULT: ${{ needs.stores.result }}
           IMAGES_RESULT: ${{ needs.images.result }}
-          COOLIFY_RESULT: ${{ needs.coolify.result }}
-          CLOUDFLARE_RESULT: ${{ needs.cloudflare.result }}
+          DEPLOY_RESULT: ${{ needs.deploy.result }}
+          ENVIRONMENTS: ${{ needs.resolve.outputs.environments }}
         run: .github/scripts/release/report.sh
 
       - name: Fail if any target failed
@@ -264,6 +265,5 @@ jobs:
           EXTENSION_RESULT: ${{ needs.extension.result }}
           STORES_RESULT: ${{ needs.stores.result }}
           IMAGES_RESULT: ${{ needs.images.result }}
-          COOLIFY_RESULT: ${{ needs.coolify.result }}
-          CLOUDFLARE_RESULT: ${{ needs.cloudflare.result }}
+          DEPLOY_RESULT: ${{ needs.deploy.result }}
         run: .github/scripts/release/fail-if-any-target-failed.sh

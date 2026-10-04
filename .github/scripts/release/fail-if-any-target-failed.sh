@@ -5,15 +5,14 @@
 # last job in the workflow. Skipped is not failed: a narrowed `targets` run
 # deliberately skips the rest, and should be able to go green.
 #
-# The five *_RESULT values come from the calling step's env.
+# The four *_RESULT values come from the calling step's env.
 set -euo pipefail
 
 failed=""
 for target in "Browser extensions:${EXTENSION_RESULT}" \
   "App stores:${STORES_RESULT}" \
   "Backend image:${IMAGES_RESULT}" \
-  "Coolify production:${COOLIFY_RESULT}" \
-  "Cloudflare production:${CLOUDFLARE_RESULT}"; do
+  "Deploy:${DEPLOY_RESULT}"; do
   name=${target%%:*}
   result=${target#*:}
   case "$result" in

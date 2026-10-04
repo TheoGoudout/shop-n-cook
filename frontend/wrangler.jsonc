@@ -20,6 +20,14 @@
   // binding, because nothing here enforces the hostname → Worker mapping.
   "workers_dev": false,
   "env": {
+    "dev": {
+      "name": "shop-n-cook-frontend-dev",
+      "assets": {
+        "directory": "./dist",
+        "binding": "ASSETS",
+        "not_found_handling": "single-page-application"
+      }
+    },
     "staging": {
       "name": "shop-n-cook-frontend-staging",
       // `assets` is repeated rather than left to environment inheritance.

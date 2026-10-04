@@ -8,15 +8,35 @@ Shop n Cook is deployed in two halves:
 - **`backend/` and the database** — deployed by [Coolify](https://coolify.io),
   a self-hosted PaaS that manages Docker Compose deployments.
 
-There are two environments, **staging** and **production**.
+There are three environments, and what deploys each is the one thing that
+differs between them:
+
+| Environment | Deployed by | When |
+|---|---|---|
+| **dev** | Coolify and Cloudflare Workers Builds, watching `master` | every push to `master` |
+| **staging** (opt-in) | [`release.yml`](.github/workflows/release.yml) | every published pre-release and release, once `STAGING_ENABLED` is `true` |
+| **production** | [`release.yml`](.github/workflows/release.yml) | every published release (not pre-releases) |
+
+Staging and production run the same jobs —
+[`deploy-environment.yml`](.github/workflows/deploy-environment.yml), the backend
+then the frontend and landing — with a different GitHub Environment, so each
+reads its own secrets and protection rules. A release deploys both side by side.
+
+Every environment is optional except production. Dev exists only once its
+Coolify application and Workers are set up; staging only once the
+`STAGING_ENABLED` repository variable is `true` (Settings → Secrets and
+variables → Actions → Variables). Without it a release deploys production
+alone and a pre-release deploys nothing.
+
+Dev never goes through Actions: see [Dev](#dev).
 
 ## Domains
 
-| | production | staging |
-|---|---|---|
-| Landing | `shop-n-cook.com`, `www.shop-n-cook.com` | `staging.shop-n-cook.com` |
-| Frontend | `app.shop-n-cook.com` | `app.staging.shop-n-cook.com` |
-| Backend | `api.shop-n-cook.com` | `api.staging.shop-n-cook.com` |
+| | production | staging | dev |
+|---|---|---|---|
+| Landing | `shop-n-cook.com`, `www.shop-n-cook.com` | `staging.shop-n-cook.com` | `dev.shop-n-cook.com` |
+| Frontend | `app.shop-n-cook.com` | `app.staging.shop-n-cook.com` | `app.dev.shop-n-cook.com` |
+| Backend | `api.shop-n-cook.com` | `api.staging.shop-n-cook.com` | `api.dev.shop-n-cook.com` |
 
 The frontend and landing hostnames are attached to their Workers by hand in the
 Cloudflare dashboard — see [Custom domains](#custom-domains). The `api.*` records
@@ -32,15 +52,14 @@ point at the Coolify host and are managed there.
 
 | Trigger | Environment |
 |---|---|
-| Called by [`deploy-staging.yml`](.github/workflows/deploy-staging.yml) on a push to `master`, after the staging backend | staging |
-| Called by [`release.yml`](.github/workflows/release.yml) when a release is published | production |
+| Called by [`release.yml`](.github/workflows/release.yml) (through `deploy-environment.yml`), after that environment's backend | staging for a pre-release; staging and production for a release |
 | Called by [`rollback.yml`](.github/workflows/rollback.yml) | whichever you pick |
 | `workflow_dispatch` | whichever you pick |
 
-Production deploys alongside the extension and app stores, driven by the
-published release rather than by the tag push — see the
-[release skill](.claude/skills/release/SKILL.md). Pre-releases do not reach
-production.
+Releases deploy alongside the extension and app stores, driven by the published
+release rather than by the tag push — see the
+[release skill](.claude/skills/release/SKILL.md). Pre-releases reach staging,
+never production. Dev is deployed by Workers Builds instead — see [Dev](#dev).
 
 Each environment maps to a GitHub Environment of the same name, so production
 can carry a required-reviewers approval gate.
@@ -81,13 +100,16 @@ Domains & Routes → Add → Custom domain**.
 | `shop-n-cook.com` | `shop-n-cook-landing` |
 | `www.shop-n-cook.com` | `shop-n-cook-landing` |
 | `staging.shop-n-cook.com` | `shop-n-cook-landing-staging` |
+| `dev.shop-n-cook.com` | `shop-n-cook-landing-dev` |
 | `app.shop-n-cook.com` | `shop-n-cook-frontend` |
 | `app.staging.shop-n-cook.com` | `shop-n-cook-frontend-staging` |
+| `app.dev.shop-n-cook.com` | `shop-n-cook-frontend-dev` |
 
 Cloudflare creates the DNS record and certificate when you add the binding. A
 Worker has to exist before you can bind a hostname to it, so the order is
-*deploy first, bind second* — the staging pair after the first push to `master`,
-the production pair after the first published release.
+*deploy first, bind second* — the dev pair after Workers Builds' first deploy,
+the staging pair after the first published pre-release or release, the
+production pair after the first published release.
 
 **Why not declare them in `wrangler.jsonc`?** Because wrangler treats the config
 as authoritative and reconciles `routes` against the zone on *every* deploy, not
@@ -113,8 +135,10 @@ bundle and is therefore public by construction.
 | File | Variables |
 |---|---|
 | `frontend/.env` | local development defaults |
+| `frontend/.env.dev` | `VITE_API_URL`, `VITE_PROJECT_NAME` |
 | `frontend/.env.staging` | `VITE_API_URL`, `VITE_PROJECT_NAME` |
 | `frontend/.env.production` | `VITE_API_URL`, `VITE_PROJECT_NAME` |
+| `landing/.env.dev` | `FRONTEND_URL` |
 | `landing/.env.staging` | `FRONTEND_URL` |
 | `landing/.env.production` | `FRONTEND_URL` |
 
@@ -132,6 +156,10 @@ bun install
 # Staging
 bun run --filter frontend build:staging && bun run --filter frontend deploy:staging
 bun run --filter landing  build:staging && bun run --filter landing  deploy:staging
+
+# Dev (normally Workers Builds' job)
+bun run --filter frontend build:dev && bun run --filter frontend deploy:dev
+bun run --filter landing  build:dev && bun run --filter landing  deploy:dev
 
 # Production
 bun run --filter frontend build:production && bun run --filter frontend deploy:production
@@ -192,7 +220,7 @@ self-hosting the stack — see [Local Development](#local-development).
 **Nothing is built on the Coolify host.** [`images.yml`](.github/workflows/images.yml)
 builds `backend/Dockerfile` on a GitHub runner and publishes it to GHCR as
 `ghcr.io/theogoudout/shop-n-cook-backend`, tagged `sha-<short commit>` (plus the
-release tag for a release, and `latest` on `master`). `compose.yml` names that
+release tag for a release or pre-release). `compose.yml` names that
 image and carries no `build:` section, so Coolify only pulls. Its `TAG`
 variable picks the image; CI owns it, so do not set it by hand.
 
@@ -201,20 +229,13 @@ that never moves is one Docker cannot mistake for an image it already has.
 
 | | Tracks | Moved by |
 |---|---|---|
-| staging | `master` | [`deploy-coolify.yml`](.github/workflows/deploy-coolify.yml), called by [`deploy-staging.yml`](.github/workflows/deploy-staging.yml) once that push's image is published |
-| production | the released tag, e.g. `v1.5.0` | [`deploy-coolify.yml`](.github/workflows/deploy-coolify.yml), called by `release.yml` after the image build |
+| staging | the latest pre-release or release tag, e.g. `v1.5.0-rc1` | [`deploy-coolify.yml`](.github/workflows/deploy-coolify.yml), called by `release.yml` after the image build |
+| production | the latest release tag, e.g. `v1.5.0` | the same, for releases only |
+| dev | `master` | Coolify itself — see [Dev](#dev) |
 
-**Turn Coolify's auto-deploy off on both applications** (*Advanced → Auto
-Deploy*). On staging, the GitHub App would otherwise redeploy the moment a push
-lands, minutes before that push's image exists.
-
-[`deploy-staging.yml`](.github/workflows/deploy-staging.yml) runs a `master`
-push the way `release.yml` runs a release: the backend image is built
-([`images.yml`](.github/workflows/images.yml)), the staging backend is deployed,
-and only then the staging frontend and landing page. Staging used to get there
-by independent routes, and the seconds-long Cloudflare upload always beat the
-backend, putting the staging frontend in front of an API that did not serve it
-yet.
+**Turn Coolify's auto-deploy off on the staging and production applications**
+(*Advanced → Auto Deploy*): `release.yml` moves them, after the release's image
+exists.
 
 Each deploy runs `deploy-coolify.yml`, which:
 
@@ -235,8 +256,8 @@ GitHub → your profile → *Packages* → `shop-n-cook-backend` → *Package se
 → *Change visibility*. Step 2 above fails with that hint if it is not.
 
 The backend therefore deploys *before* the Cloudflare frontend in the same
-release run — `release.yml` sequences them that way so the API is upgraded ahead
-of its clients. Pre-releases do not reach production.
+release run — `deploy-environment.yml` sequences them that way, per environment,
+so the API is upgraded ahead of its clients. Pre-releases reach staging only.
 
 > **Coolify 4.2 or newer is required.** 4.2 made every state-changing API
 > endpoint `POST`-only, `/api/v1/deploy` among them, and answers the older `GET`
@@ -246,8 +267,8 @@ of its clients. Pre-releases do not reach production.
 ### Required GitHub secrets
 
 Set these on both the `staging` and `production` GitHub Environments, each
-pointing at its own application — `deploy-staging.yml` needs the staging set on
-every push to `master`:
+pointing at its own application. The `staging` Environment must allow
+deployments from `v*` tags, since every release now deploys it from its tag:
 
 | Secret | Description |
 |---|---|
@@ -295,7 +316,8 @@ and CI.
 No reverse proxy is included — Coolify handles routing and HTTPS termination.
 
 Staging and production are two separate Coolify deployments of the same
-`compose.yml`, differing only in their environment variables.
+`compose.yml`, differing only in their environment variables. Dev is a third,
+deployed from `compose.dev.yml` — see [Dev](#dev).
 
 ### Environment Variables
 
@@ -443,3 +465,52 @@ To preview either project exactly as Cloudflare will serve it:
 ```bash
 bun run --filter landing build:staging && cd landing && bunx wrangler dev --env staging
 ```
+
+---
+
+## Dev
+
+Dev follows `master` without GitHub Actions: Coolify and Cloudflare Workers
+Builds each watch the repository and deploy every push themselves. Nothing
+orders the two, so for a few minutes after a push the dev frontend can run
+ahead of the dev API — acceptable for dev, and the reason staging and
+production are deployed by `release.yml` instead.
+
+### Backend (Coolify)
+
+A third Coolify application, set up like the other two except:
+
+1. **Compose file: `/compose.dev.yml`**, git branch `master`, and
+   **auto-deploy on**.
+2. `compose.dev.yml` is `compose.yml` with the backend image built from the
+   checkout (`build:` and `pull_policy: build`) instead of pulled from GHCR —
+   dev is the one environment whose Coolify host builds. It is generated:
+   after changing `compose.yml`, run `scripts/generate-compose-dev.sh` and
+   commit the result. `test-docker-compose.yml` fails while it is stale.
+3. Do not set `TAG`: nothing pulls by tag here.
+4. Domain `https://api.dev.shop-n-cook.com:8000` on the `backend` service.
+5. Environment variables as for staging, with
+   `FRONTEND_HOST=https://app.dev.shop-n-cook.com`. `ENVIRONMENT` needs no
+   setting: `compose.dev.yml` defaults it to `dev`, which the backend treats
+   like staging and production (real secrets required, no local-only routes).
+
+### Frontend and landing (Cloudflare Workers Builds)
+
+Connect the repository to each dev Worker in the Cloudflare dashboard
+(**Workers & Pages → the Worker → Settings → Builds → Connect**), on branch
+`master`:
+
+| Worker | Root directory | Build command | Deploy command |
+|---|---|---|---|
+| `shop-n-cook-frontend-dev` | `/` | `bun install --frozen-lockfile && bun run --filter frontend build:dev` | `cd frontend && bunx wrangler deploy --env dev` |
+| `shop-n-cook-landing-dev` | `/` | `bun install --frozen-lockfile && bun run --filter landing build:dev` | `cd landing && bunx wrangler deploy --env dev` |
+
+Set `BUN_VERSION` (the value in `.bun-version`) as a build variable on both.
+The URLs come from the committed `frontend/.env.dev` and `landing/.env.dev`, and
+`test-frontend.yml` builds the dev variant of each on every pull request. Turn
+the builds' preview deployments for non-`master` branches off unless you want
+them: they would deploy pull-request code under the dev Workers.
+
+A Worker has to exist before it can be connected, so create each with one
+manual deploy first (`bun run --filter frontend build:dev && bun run --filter
+frontend deploy:dev`, and the same for `landing`), then bind its custom domain.

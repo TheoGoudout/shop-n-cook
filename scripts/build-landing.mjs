@@ -16,7 +16,7 @@ import { copyFile, cp, mkdir, readFile, rm, writeFile } from "node:fs/promises"
 import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
 
-const MODES = ["staging", "production"]
+const MODES = ["dev", "staging", "production"]
 
 const rootDir = join(dirname(fileURLToPath(import.meta.url)), "..")
 const landingDir = join(rootDir, "landing")

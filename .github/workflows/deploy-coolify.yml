@@ -9,9 +9,10 @@ name: Deploy backend to Coolify
 # Coolify reads compose.yml from — but TAG decides which image runs. Both move
 # together here, so the version running is the ref the application tracks.
 #
-#   called by release.yml -> production, pinned to the released tag
-#   called by images.yml  -> staging, after a master push built its image
-#   workflow_dispatch     -> either environment, any ref (also the rollback path)
+#   called by release.yml        -> production, pinned to the released tag
+#   called by deploy-staging.yml -> staging, after a master push built its image
+#   called by rollback.yml       -> either environment, at an older tag
+#   workflow_dispatch            -> either environment, any ref
 #
 # The ref must have an image: every commit images.yml has built does. An older
 # release that predates the images can be made deployable by dispatching

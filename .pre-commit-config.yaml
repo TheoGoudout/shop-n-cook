@@ -72,9 +72,8 @@ repos:
         # library instead of reported as an unreadable path.
         args: [--external-sources]
 
-  # Conventional commits. scripts/release-notes.mjs sorts the changelog by
-  # commit type, and anything it cannot parse falls into "Internal" — so the
-  # format the release notes are built from was, until now, enforced by nothing.
+  # Conventional commits, for a readable history. The release notes no longer
+  # depend on them: scripts/release_notes.py sorts by pull request label.
   - repo: https://github.com/compilerla/conventional-pre-commit
     rev: v4.4.0
     hooks:

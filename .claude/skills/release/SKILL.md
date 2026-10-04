@@ -64,8 +64,9 @@ A version containing `-rcN` is published as a GitHub pre-release. Then:
 - Safari still builds — everything lands in TestFlight first.
 - Android goes to the `internal` track, iOS to the `beta` lane, Windows to a
   flight.
-- **Cloudflare and Coolify production are skipped.** Pre-releases must not reach
-  the production domains or the production API.
+- **Staging is deployed, production is not.** The backend and the frontend +
+  landing go to the staging Coolify application and Workers; production's
+  domains and API are untouched.
 
 Stable releases go to Android `alpha`, iOS `release`, and Google Play submissions
 land as **draft** — a human still promotes them in the Play Console.
@@ -112,9 +113,10 @@ that image, redeploys it (the host pulls, it never builds), and asserts that
 `api.shop-n-cook.com` reports the released version. It runs before the
 Cloudflare deploy so the API is upgraded ahead of the frontend that calls it.
 
-Staging is separate: `deploy-staging.yml` builds the backend image, deploys it
-on every `master` push that touches the backend, and then deploys the frontend,
-through the same reusable workflows. See `deployment.md`.
+A stable release deploys staging the same way, side by side with production
+(`deploy-environment.yml`, once per environment); a pre-release deploys staging
+only. Dev is not part of a release: Coolify and Workers Builds deploy it from
+`master` themselves. See `deployment.md`.
 
 ## Required secrets
 
@@ -124,7 +126,8 @@ through the same reusable workflows. See `deployment.md`.
 the released commit would get no CI.
 
 `COOLIFY_URL`, `COOLIFY_API_TOKEN` and `COOLIFY_APP_UUID` live on the
-`production` GitHub Environment and drive the backend deploy. Unlike the store
+`staging` and `production` GitHub Environments, each pointing at its own
+application, and drive the backend deploy. Unlike the store
 credentials these are **required** — the job fails rather than skipping, because
 a backend that silently did not deploy leaves the frontend on the wrong API.
 

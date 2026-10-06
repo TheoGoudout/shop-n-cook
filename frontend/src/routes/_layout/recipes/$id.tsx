@@ -13,7 +13,11 @@ import { Suspense } from "react"
 import { useTranslation } from "react-i18next"
 
 import { RecipesService } from "@/client"
-import { mealTypeIcon } from "@/components/Common/categoryIcons"
+import {
+  DIFFICULTY_ICONS,
+  mealTypeIcon,
+  SEASON_ICONS,
+} from "@/components/Common/categoryIcons"
 import { DietaryBadges } from "@/components/Recipes/DietaryBadges"
 import { RecipeActionsMenu } from "@/components/Recipes/RecipeActionsMenu"
 import { Badge } from "@/components/ui/badge"
@@ -45,6 +49,9 @@ function RecipeDetailContent() {
   const { id } = Route.useParams()
   const { data: recipe } = useSuspenseQuery(getRecipeQueryOptions(id))
   const MealIcon = mealTypeIcon(recipe.meal_type)
+  const DifficultyIcon = recipe.difficulty
+    ? DIFFICULTY_ICONS[recipe.difficulty]
+    : null
   const catalog = useIngredientCatalog()
 
   const recipeCost = formatMoney(
@@ -163,14 +170,19 @@ function RecipeDetailContent() {
         recipe.meal_type ||
         recipe.cuisine_type) && (
         <div className="flex flex-wrap gap-2">
-          {(recipe.seasons ?? []).map((s) => (
-            <Badge key={s} variant="secondary" className="text-xs capitalize">
-              {t(`form.season_${s}`)}
-            </Badge>
-          ))}
+          {(recipe.seasons ?? []).map((s) => {
+            const SeasonIcon = SEASON_ICONS[s]
+            return (
+              <Badge key={s} variant="secondary" className="text-xs capitalize">
+                <SeasonIcon aria-hidden="true" />
+                {t(`form.season_${s}`)}
+              </Badge>
+            )
+          })}
           <DietaryBadges recipe={recipe} />
-          {recipe.difficulty && (
+          {DifficultyIcon && (
             <Badge variant="secondary" className="text-xs capitalize">
+              <DifficultyIcon aria-hidden="true" />
               {t(`form.difficulty_${recipe.difficulty}`)}
             </Badge>
           )}

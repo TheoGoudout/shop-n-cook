@@ -2,7 +2,11 @@ import { X } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
 import type { Difficulty, MealType, Season } from "@/client"
-import { MEAL_TYPE_ICONS } from "@/components/Common/categoryIcons"
+import {
+  DIFFICULTY_ICONS,
+  MEAL_TYPE_ICONS,
+  SEASON_ICONS,
+} from "@/components/Common/categoryIcons"
 import { DIET_ICONS } from "@/components/Recipes/DietaryBadges"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -90,16 +94,20 @@ export function RecipeFilterBar({
   return (
     <div className="flex flex-wrap items-center gap-2">
       {/* Seasons */}
-      {SEASONS.map((s) => (
-        <button key={s} type="button" onClick={() => toggleSeason(s)}>
-          <Badge
-            variant={filters.seasons.includes(s) ? "default" : "outline"}
-            className="cursor-pointer text-xs"
-          >
-            {t(`form.season_${s}`)}
-          </Badge>
-        </button>
-      ))}
+      {SEASONS.map((s) => {
+        const SeasonIcon = SEASON_ICONS[s]
+        return (
+          <button key={s} type="button" onClick={() => toggleSeason(s)}>
+            <Badge
+              variant={filters.seasons.includes(s) ? "default" : "outline"}
+              className="cursor-pointer text-xs"
+            >
+              <SeasonIcon aria-hidden="true" />
+              {t(`form.season_${s}`)}
+            </Badge>
+          </button>
+        )
+      })}
 
       {/* Dietary toggles */}
       {(["vegan", "vegetarian", "gluten_free", "dairy_free"] as const).map(
@@ -135,11 +143,15 @@ export function RecipeFilterBar({
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="_none">{t("filters.difficulty")}</SelectItem>
-          {DIFFICULTIES.map((d) => (
-            <SelectItem key={d} value={d}>
-              {t(`form.difficulty_${d}`)}
-            </SelectItem>
-          ))}
+          {DIFFICULTIES.map((d) => {
+            const DifficultyIcon = DIFFICULTY_ICONS[d]
+            return (
+              <SelectItem key={d} value={d}>
+                <DifficultyIcon aria-hidden="true" />
+                {t(`form.difficulty_${d}`)}
+              </SelectItem>
+            )
+          })}
         </SelectContent>
       </Select>
 

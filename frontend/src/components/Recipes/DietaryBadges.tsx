@@ -38,41 +38,22 @@ const DIET_CLASSES: Record<Diet, string> = {
   dairy_free: "",
 }
 
-/**
- * A recipe's dietary badges. `compact` (card overlays) keeps the vegan /
- * vegetarian label but shows gluten- and dairy-free as icons alone; their
- * label stays available as a tooltip and to screen readers.
- */
-export function DietaryBadges({
-  recipe,
-  compact = false,
-}: {
-  recipe: DietaryFlags
-  compact?: boolean
-}) {
+/** A recipe's dietary badges, each an icon and its label. */
+export function DietaryBadges({ recipe }: { recipe: DietaryFlags }) {
   const { t } = useTranslation("recipes")
 
   return recipeDiets(recipe).map((diet) => {
     const Icon = DIET_ICONS[diet]
-    const label = t(`form.is_${diet}_label`)
     const isAllergen = diet === "gluten_free" || diet === "dairy_free"
-    const iconOnly = compact && isAllergen
 
     return (
       <Badge
         key={diet}
-        variant={isAllergen ? (compact ? "secondary" : "outline") : "default"}
-        className={cn(
-          "text-xs",
-          compact && "px-1.5 py-0.5",
-          DIET_CLASSES[diet],
-        )}
-        title={iconOnly ? label : undefined}
-        aria-label={iconOnly ? label : undefined}
-        role={iconOnly ? "img" : undefined}
+        variant={isAllergen ? "outline" : "default"}
+        className={cn("text-xs", DIET_CLASSES[diet])}
       >
         <Icon aria-hidden="true" />
-        {!iconOnly && label}
+        {t(`form.is_${diet}_label`)}
       </Badge>
     )
   })

@@ -8,9 +8,25 @@
     "subtitle": "Gérez le catalogue d'ingrédients",
     "empty": "Aucun ingrédient dans le catalogue pour l'instant."
   },
+  "recipes": {
+    "title": "Recettes",
+    "subtitle": "Mettez les recettes importées à jour avec la dernière version de l'import",
+    "version": "Version de l'import",
+    "stale": "Recettes à réimporter",
+    "failed": "Essayées, pas encore à jour",
+    "explain_crawled": "Les recettes publiques collectées sont remplacées par un nouvel import de leur page.",
+    "explain_users": "Les recettes des utilisateurs sont seulement complétées : les champs laissés vides sont remplis, rien de ce qu'ils ont écrit n'est modifié.",
+    "batch_size": "Taille du lot",
+    "reimport_one": "Réimporter {{count}} recette",
+    "reimport_other": "Réimporter {{count}} recettes",
+    "running": "Réimport en cours…",
+    "started": "Réimport lancé en arrière-plan",
+    "up_to_date": "Toutes les recettes importées sont à jour."
+  },
   "tabs": {
     "users": "Utilisateurs",
-    "ingredients": "Ingrédients"
+    "ingredients": "Ingrédients",
+    "recipes": "Recettes"
   },
   "columns": {
     "full_name": "Nom complet",

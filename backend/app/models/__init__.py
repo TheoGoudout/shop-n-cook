@@ -53,6 +53,7 @@ from app.models.recipe import (
     RecipeStepIngredientPublic,
     RecipeStepPublic,
     RecipeUpdate,
+    StaleImportsPublic,
 )
 from app.models.recipe_crawl import CrawledRecipe, CrawlStatus, RecipeCrawlRun
 from app.models.shopping_list import (
@@ -155,6 +156,7 @@ __all__ = [
     "Recipe",
     "RecipePublic",
     "RecipesPublic",
+    "StaleImportsPublic",
     # recipe crawler
     "CrawledRecipe",
     "CrawlStatus",

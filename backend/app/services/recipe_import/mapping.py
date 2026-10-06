@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from app.models import (
+    Recipe,
     RecipeCreate,
     RecipeIngredientCreate,
     RecipeStepCreate,
@@ -46,8 +47,31 @@ def _ingredients_and_steps(
     return ingredients, steps
 
 
+def _clean(parsed: ParsedRecipe) -> ParsedRecipe:
+    """``parsed`` without what the recipe schemas would reject.
+
+    Nobody gets to fix the model's output before it is saved, so an ingredient
+    with no positive quantity is dropped and a description over the length
+    limit is trimmed, rather than failing the whole import.
+    """
+    description = parsed.description
+    if description and len(description) > _DESCRIPTION_MAX_LENGTH:
+        description = description[: _DESCRIPTION_MAX_LENGTH - 1].rstrip() + "…"
+    return parsed.model_copy(
+        update={
+            "title": parsed.title.strip()[:255],
+            "description": description,
+            "servings": parsed.servings
+            if parsed.servings and parsed.servings > 0
+            else None,
+            "ingredients": [ing for ing in parsed.ingredients if ing.quantity > 0],
+        }
+    )
+
+
 def parsed_to_update(parsed: ParsedRecipe) -> RecipeUpdate:
     """Replace a recipe's whole content with what was just re-imported."""
+    parsed = _clean(parsed)
     ingredients, steps = _ingredients_and_steps(parsed.ingredients, parsed)
     return RecipeUpdate(
         title=parsed.title,
@@ -71,22 +95,64 @@ def parsed_to_update(parsed: ParsedRecipe) -> RecipeUpdate:
     )
 
 
-def parsed_to_create(parsed: ParsedRecipe, *, is_public: bool) -> RecipeCreate:
-    """A new recipe imported from ``parsed.source_url``, without a human review.
+#: Fields ``parsed_to_fill`` may complete: those whose empty value can only
+#: mean "unknown". The diet flags are left alone — ``False`` may be a
+#: person's answer, and an import must not overrule it.
+_FILLABLE = (
+    "description",
+    "servings",
+    "prep_time_minutes",
+    "cook_time_minutes",
+    "image_url",
+    "seasons",
+    "kcal_per_serving",
+    "difficulty",
+    "meal_type",
+    "cuisine_type",
+)
 
-    Nobody gets to fix the model's output first, so anything ``RecipeCreate``
-    would reject is dropped or trimmed here rather than failing the import: an
-    ingredient with no positive quantity, a description over the length limit.
+
+def parsed_to_fill(parsed: ParsedRecipe, recipe: Recipe) -> RecipeUpdate:
+    """Only what ``recipe`` is missing, taken from what was just re-imported.
+
+    Nothing the recipe already has is touched, so whatever its owner wrote or
+    corrected survives. Ingredients are filled only when it has none (and then
+    its steps with them); steps alone are filled when it has none, linked to
+    its existing ingredients by name.
     """
-    usable = [ing for ing in parsed.ingredients if ing.quantity > 0]
-    ingredients, steps = _ingredients_and_steps(usable, parsed)
-    description = parsed.description
-    if description and len(description) > _DESCRIPTION_MAX_LENGTH:
-        description = description[: _DESCRIPTION_MAX_LENGTH - 1].rstrip() + "…"
+    parsed = _clean(parsed)
+    update: dict[str, object] = {
+        name: getattr(parsed, name)
+        for name in _FILLABLE
+        if not getattr(recipe, name) and getattr(parsed, name)
+    }
+    if not recipe.recipe_ingredients and parsed.ingredients:
+        ingredients, steps = _ingredients_and_steps(parsed.ingredients, parsed)
+        update["ingredients"] = ingredients
+        if not recipe.steps and steps:
+            update["steps"] = steps
+    elif not recipe.steps and parsed.steps:
+        existing = [
+            ParsedIngredient(
+                name=ri.ingredient_name,
+                quantity=ri.quantity,
+                unit=ri.unit,
+                notes=ri.notes,
+            )
+            for ri in recipe.recipe_ingredients
+        ]
+        _, update["steps"] = _ingredients_and_steps(existing, parsed)
+    return RecipeUpdate.model_validate(update)
+
+
+def parsed_to_create(parsed: ParsedRecipe, *, is_public: bool) -> RecipeCreate:
+    """A new recipe imported from ``parsed.source_url``, without a human review."""
+    parsed = _clean(parsed)
+    ingredients, steps = _ingredients_and_steps(parsed.ingredients, parsed)
     return RecipeCreate(
-        title=parsed.title.strip()[:255],
-        description=description,
-        servings=parsed.servings if parsed.servings and parsed.servings > 0 else None,
+        title=parsed.title,
+        description=parsed.description,
+        servings=parsed.servings,
         prep_time_minutes=parsed.prep_time_minutes,
         cook_time_minutes=parsed.cook_time_minutes,
         source_url=parsed.source_url,

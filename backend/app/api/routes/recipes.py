@@ -12,7 +12,7 @@ from fastapi import (
     Request,
     UploadFile,
 )
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel, Field, HttpUrl
 from sqlmodel import Session, col, select
 from starlette.concurrency import run_in_threadpool
 
@@ -24,6 +24,7 @@ from app.api.deps import (
     get_current_active_superuser,
 )
 from app.core.config import settings
+from app.core.db import engine
 from app.core.limiter import limiter, user_or_ip_key
 from app.models import (
     Message,
@@ -33,12 +34,16 @@ from app.models import (
     RecipePublic,
     RecipesPublic,
     RecipeUpdate,
+    StaleImportsPublic,
 )
 from app.models.ingredient import Ingredient, IngredientCategory
-from app.models.recipe import Difficulty, MealType, Season
+from app.models.recipe import Difficulty, ImportSource, MealType, Season
 from app.models.user import User
+from app.services import recipe_reimport
 from app.services.ingredient_image import fetch_and_update_ingredients_batch
+from app.services.recipe_crawler.crawler import llm_configured
 from app.services.recipe_import import (
+    IMPORT_VERSION,
     InvalidPhotoError,
     NoRecipeFoundError,
     ParsedIngredient,
@@ -59,6 +64,14 @@ class ImportUrlRequest(BaseModel):
 
 
 class ReimportRequest(BaseModel):
+    language: str | None = None
+
+
+class ReimportStaleRequest(BaseModel):
+    #: Each recipe is one page fetch and one model call.
+    limit: int = Field(default=20, ge=1, le=200)
+    #: The language to read pages in when the recipe does not say: any recipe
+    #: that was not crawled.
     language: str | None = None
 
 
@@ -199,6 +212,50 @@ def read_recipes(
     )
 
 
+def _stale_imports_status(session: Session) -> StaleImportsPublic:
+    stale, tried = recipe_reimport.count_stale(session)
+    return StaleImportsPublic(
+        import_version=IMPORT_VERSION,
+        stale_count=stale,
+        failed_count=tried,
+        running=recipe_reimport.is_running(engine),
+    )
+
+
+@router.get(
+    "/stale-imports",
+    response_model=StaleImportsPublic,
+    dependencies=[Depends(get_current_active_superuser)],
+)
+def read_stale_imports(session: SessionDep) -> Any:
+    """How many recipes an older import pipeline produced. Superuser only."""
+    return _stale_imports_status(session)
+
+
+@router.post(
+    "/stale-imports/reimport",
+    response_model=StaleImportsPublic,
+    status_code=202,
+    dependencies=[Depends(get_current_active_superuser)],
+)
+def reimport_stale_imports(
+    session: SessionDep, body: ReimportStaleRequest, background_tasks: BackgroundTasks
+) -> Any:
+    """Start reimporting up to ``limit`` stale recipes, in the background.
+
+    Crawled recipes are replaced; everyone else's are only completed. See
+    ``services/recipe_reimport.py``. Superuser only.
+    """
+    if recipe_reimport.is_running(engine):
+        raise HTTPException(status_code=409, detail="A reimport is already running")
+    if not llm_configured():
+        raise HTTPException(status_code=503, detail="No AI provider is configured")
+    background_tasks.add_task(
+        recipe_reimport.run_batch, engine, limit=body.limit, language=body.language
+    )
+    return _stale_imports_status(session).model_copy(update={"running": True})
+
+
 @router.get("/{id}", response_model=RecipePublic)
 def read_recipe(
     session: SessionDep,
@@ -304,6 +361,8 @@ def reimport_recipe(
             status_code=422, detail=f"Failed to parse recipe: {exc}"
         ) from exc
     recipe_in = parsed_to_update(parsed)
+    if recipe.import_source == ImportSource.URL:
+        recipe.import_version = IMPORT_VERSION
     recipe = crud.update_recipe(session=session, db_recipe=recipe, recipe_in=recipe_in)
     _sync_ingredient_catalog(session, background_tasks, recipe_in.ingredients or [])
     return crud.recipe_to_public(recipe, prices=prices)

@@ -678,6 +678,11 @@ export type ReimportRequest = {
     language?: (string | null);
 };
 
+export type ReimportStaleRequest = {
+    limit?: number;
+    language?: (string | null);
+};
+
 /**
  * Save a menu as a new plan: the reviewed ``meals``, or a fresh one.
  */
@@ -794,6 +799,16 @@ export type ShoppingListUpdate = {
  * Why one ingredient came away without a refreshed price.
  */
 export type SkipReason = 'no_match' | 'no_price' | 'no_pack_size' | 'store_unavailable';
+
+/**
+ * Where the bulk reimport stands (``services/recipe_reimport.py``).
+ */
+export type StaleImportsPublic = {
+    import_version: number;
+    stale_count: number;
+    failed_count: number;
+    running: boolean;
+};
 
 /**
  * Stores ranked by ``projected_total``; unrankable ones last.
@@ -1227,6 +1242,14 @@ export type RecipesCreateRecipeData = {
 };
 
 export type RecipesCreateRecipeResponse = (RecipePublic);
+
+export type RecipesReadStaleImportsResponse = (StaleImportsPublic);
+
+export type RecipesReimportStaleImportsData = {
+    requestBody: ReimportStaleRequest;
+};
+
+export type RecipesReimportStaleImportsResponse = (StaleImportsPublic);
 
 export type RecipesReadRecipeData = {
     id: string;

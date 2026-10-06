@@ -43,7 +43,7 @@ function RecipeCard({
             {t("columns.public")}
           </Badge>
         )}
-        <DietaryBadges recipe={recipe} onImage />
+        <DietaryBadges recipe={recipe} compact />
       </div>
       {/* Above the card-wide link, so the menu stays clickable */}
       {!community && (

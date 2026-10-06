@@ -39,21 +39,23 @@ const DIET_CLASSES: Record<Diet, string> = {
 }
 
 /**
- * A recipe's dietary badges, each an icon and its label. `onImage` gives the
- * outline badges a frosted background so they stay legible over a photo.
+ * A recipe's dietary badges, each an icon and its label. `compact` is for
+ * recipe cards: icons alone over the cover photo, with the outline badges
+ * frosted to stay legible and the label kept as tooltip and accessible name.
  */
 export function DietaryBadges({
   recipe,
-  onImage = false,
+  compact = false,
 }: {
   recipe: DietaryFlags
-  onImage?: boolean
+  compact?: boolean
 }) {
   const { t } = useTranslation("recipes")
 
   return recipeDiets(recipe).map((diet) => {
     const Icon = DIET_ICONS[diet]
     const isAllergen = diet === "gluten_free" || diet === "dairy_free"
+    const label = t(`form.is_${diet}_label`)
 
     return (
       <Badge
@@ -62,13 +64,18 @@ export function DietaryBadges({
         className={cn(
           "text-xs",
           DIET_CLASSES[diet],
-          onImage &&
+          // z-10 lifts the badge above the card-wide link, so its tooltip shows
+          compact && "relative z-10 size-6 p-0",
+          compact &&
             isAllergen &&
             "border-transparent bg-card/90 text-foreground backdrop-blur",
         )}
+        role={compact ? "img" : undefined}
+        aria-label={compact ? label : undefined}
+        title={compact ? label : undefined}
       >
         <Icon aria-hidden="true" />
-        {t(`form.is_${diet}_label`)}
+        {!compact && label}
       </Badge>
     )
   })

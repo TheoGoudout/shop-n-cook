@@ -3,7 +3,9 @@ import { Clock, Globe, ListChecks, Users } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
 import type { RecipePublic } from "@/client"
+import { mealTypeIcon } from "@/components/Common/categoryIcons"
 import { Badge } from "@/components/ui/badge"
+import { DietaryBadges, recipeDiets } from "./DietaryBadges"
 import { RecipeActionsMenu } from "./RecipeActionsMenu"
 import { RecipeCover } from "./RecipeCover"
 
@@ -11,6 +13,7 @@ function RecipeCard({ recipe }: { recipe: RecipePublic }) {
   const { t } = useTranslation("recipes")
   const total =
     (recipe.prep_time_minutes ?? 0) + (recipe.cook_time_minutes ?? 0)
+  const MealIcon = mealTypeIcon(recipe.meal_type)
 
   return (
     <article className="group relative flex flex-col overflow-hidden rounded-2xl border bg-card shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
@@ -46,6 +49,11 @@ function RecipeCard({ recipe }: { recipe: RecipePublic }) {
             {recipe.description}
           </p>
         )}
+        {recipeDiets(recipe).length > 0 && (
+          <div className="flex flex-wrap gap-1 pt-1">
+            <DietaryBadges recipe={recipe} />
+          </div>
+        )}
         <div className="mt-auto flex flex-wrap items-center gap-x-4 gap-y-1 pt-2 text-xs font-medium text-muted-foreground">
           {total > 0 && (
             <span className="flex items-center gap-1">
@@ -57,6 +65,12 @@ function RecipeCard({ recipe }: { recipe: RecipePublic }) {
             <span className="flex items-center gap-1">
               <Users className="size-3.5" />
               {recipe.servings}
+            </span>
+          )}
+          {recipe.meal_type && (
+            <span className="flex items-center gap-1 capitalize">
+              <MealIcon className="size-3.5" aria-hidden="true" />
+              {t(`form.meal_${recipe.meal_type}`)}
             </span>
           )}
           <span className="flex items-center gap-1">

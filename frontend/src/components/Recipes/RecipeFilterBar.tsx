@@ -2,6 +2,7 @@ import { X } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
 import type { Difficulty, MealType, Season } from "@/client"
+import { MEAL_TYPE_ICONS } from "@/components/Common/categoryIcons"
 import { DIET_ICONS } from "@/components/Recipes/DietaryBadges"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -157,11 +158,15 @@ export function RecipeFilterBar({
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="_none">{t("filters.meal_type")}</SelectItem>
-          {MEAL_TYPES.map((m) => (
-            <SelectItem key={m} value={m}>
-              {t(`form.meal_${m}`)}
-            </SelectItem>
-          ))}
+          {MEAL_TYPES.map((m) => {
+            const MealIcon = MEAL_TYPE_ICONS[m]
+            return (
+              <SelectItem key={m} value={m}>
+                <MealIcon aria-hidden="true" />
+                {t(`form.meal_${m}`)}
+              </SelectItem>
+            )
+          })}
         </SelectContent>
       </Select>
 

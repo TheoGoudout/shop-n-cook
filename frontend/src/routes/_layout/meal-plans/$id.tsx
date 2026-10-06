@@ -9,6 +9,7 @@ import {
   type MealPlanPublic,
   MealPlansService,
 } from "@/client"
+import { mealTypeIcon } from "@/components/Common/categoryIcons"
 import { ServingsStepper } from "@/components/Common/ServingsStepper"
 import { AddEntryDialog } from "@/components/MealPlans/AddEntryDialog"
 import PendingItems from "@/components/Pending/PendingItems"
@@ -98,6 +99,7 @@ function EntryRow({
   })
 
   const cost = formatMoney(entry.estimated_cost, currency, i18n.language)
+  const MealIcon = mealTypeIcon(entry.meal_type)
 
   // Batch cooking: a cooked entry names how many meals it makes, a leftover
   // names the day it was cooked.
@@ -124,7 +126,8 @@ function EntryRow({
         >
           {entry.recipe_title}
         </Link>
-        <p className="text-xs text-muted-foreground">
+        <p className="flex items-center gap-1 text-xs text-muted-foreground">
+          <MealIcon className="size-3 shrink-0" aria-hidden="true" />
           {t(`meal_types.${entry.meal_type}`, {
             defaultValue: entry.meal_type ?? "",
           })}

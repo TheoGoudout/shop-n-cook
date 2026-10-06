@@ -5,6 +5,7 @@ import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import { RecipesService } from "@/client"
+import { mealTypeIcon } from "@/components/Common/categoryIcons"
 import { DietaryBadges } from "@/components/Recipes/DietaryBadges"
 import {
   defaultFilters,
@@ -48,6 +49,7 @@ function RecipeCard({
   const { t } = useTranslation("recipes")
   const totalTime =
     (recipe.prep_time_minutes ?? 0) + (recipe.cook_time_minutes ?? 0)
+  const MealIcon = mealTypeIcon(recipe.meal_type)
 
   return (
     <Card className="flex flex-col overflow-hidden hover:shadow-md transition-shadow">
@@ -111,7 +113,8 @@ function RecipeCard({
             </span>
           )}
           {recipe.meal_type && (
-            <span className="capitalize">
+            <span className="flex items-center gap-1 capitalize">
+              <MealIcon className="h-3 w-3" aria-hidden="true" />
               {t(`form.meal_${recipe.meal_type}`)}
             </span>
           )}

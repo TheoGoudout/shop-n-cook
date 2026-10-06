@@ -3,6 +3,7 @@ import type { ReactNode } from "react"
 import { type UseFormReturn, useFieldArray } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 
+import { MEAL_TYPE_ICONS } from "@/components/Common/categoryIcons"
 import { UnitSelect } from "@/components/Common/UnitSelect"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -284,11 +285,15 @@ export function RecipeForm({
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="_none">{t("form.none")}</SelectItem>
-                        {MEAL_TYPES.map((m) => (
-                          <SelectItem key={m} value={m}>
-                            {t(`form.meal_${m}`)}
-                          </SelectItem>
-                        ))}
+                        {MEAL_TYPES.map((m) => {
+                          const MealIcon = MEAL_TYPE_ICONS[m]
+                          return (
+                            <SelectItem key={m} value={m}>
+                              <MealIcon aria-hidden="true" />
+                              {t(`form.meal_${m}`)}
+                            </SelectItem>
+                          )
+                        })}
                       </SelectContent>
                     </Select>
                   </FormItem>

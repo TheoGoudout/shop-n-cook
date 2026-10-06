@@ -13,6 +13,7 @@ import { Suspense } from "react"
 import { useTranslation } from "react-i18next"
 
 import { RecipesService } from "@/client"
+import { mealTypeIcon } from "@/components/Common/categoryIcons"
 import { DietaryBadges } from "@/components/Recipes/DietaryBadges"
 import { RecipeActionsMenu } from "@/components/Recipes/RecipeActionsMenu"
 import { Badge } from "@/components/ui/badge"
@@ -43,6 +44,7 @@ function RecipeDetailContent() {
   const { convert } = useUnitSystem()
   const { id } = Route.useParams()
   const { data: recipe } = useSuspenseQuery(getRecipeQueryOptions(id))
+  const MealIcon = mealTypeIcon(recipe.meal_type)
   const catalog = useIngredientCatalog()
 
   const recipeCost = formatMoney(
@@ -174,6 +176,7 @@ function RecipeDetailContent() {
           )}
           {recipe.meal_type && (
             <Badge variant="secondary" className="text-xs capitalize">
+              <MealIcon aria-hidden="true" />
               {t(`form.meal_${recipe.meal_type}`)}
             </Badge>
           )}

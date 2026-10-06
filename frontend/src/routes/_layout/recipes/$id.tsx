@@ -13,6 +13,12 @@ import { Suspense } from "react"
 import { useTranslation } from "react-i18next"
 
 import { RecipesService } from "@/client"
+import {
+  DIFFICULTY_ICONS,
+  mealTypeIcon,
+  SEASON_ICONS,
+} from "@/components/Common/categoryIcons"
+import { DietaryBadges } from "@/components/Recipes/DietaryBadges"
 import { RecipeActionsMenu } from "@/components/Recipes/RecipeActionsMenu"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -42,6 +48,10 @@ function RecipeDetailContent() {
   const { convert } = useUnitSystem()
   const { id } = Route.useParams()
   const { data: recipe } = useSuspenseQuery(getRecipeQueryOptions(id))
+  const MealIcon = mealTypeIcon(recipe.meal_type)
+  const DifficultyIcon = recipe.difficulty
+    ? DIFFICULTY_ICONS[recipe.difficulty]
+    : null
   const catalog = useIngredientCatalog()
 
   const recipeCost = formatMoney(
@@ -160,38 +170,25 @@ function RecipeDetailContent() {
         recipe.meal_type ||
         recipe.cuisine_type) && (
         <div className="flex flex-wrap gap-2">
-          {(recipe.seasons ?? []).map((s) => (
-            <Badge key={s} variant="secondary" className="text-xs capitalize">
-              {t(`form.season_${s}`)}
-            </Badge>
-          ))}
-          {recipe.is_vegan && (
-            <Badge className="text-xs bg-success text-success-foreground hover:bg-success">
-              {t("form.is_vegan_label")}
-            </Badge>
-          )}
-          {!recipe.is_vegan && recipe.is_vegetarian && (
-            <Badge className="text-xs bg-accent text-accent-foreground hover:bg-accent">
-              {t("form.is_vegetarian_label")}
-            </Badge>
-          )}
-          {recipe.is_gluten_free && (
-            <Badge variant="outline" className="text-xs">
-              {t("form.is_gluten_free_label")}
-            </Badge>
-          )}
-          {recipe.is_dairy_free && (
-            <Badge variant="outline" className="text-xs">
-              {t("form.is_dairy_free_label")}
-            </Badge>
-          )}
-          {recipe.difficulty && (
+          {(recipe.seasons ?? []).map((s) => {
+            const SeasonIcon = SEASON_ICONS[s]
+            return (
+              <Badge key={s} variant="secondary" className="text-xs capitalize">
+                <SeasonIcon aria-hidden="true" />
+                {t(`form.season_${s}`)}
+              </Badge>
+            )
+          })}
+          <DietaryBadges recipe={recipe} />
+          {DifficultyIcon && (
             <Badge variant="secondary" className="text-xs capitalize">
+              <DifficultyIcon aria-hidden="true" />
               {t(`form.difficulty_${recipe.difficulty}`)}
             </Badge>
           )}
           {recipe.meal_type && (
             <Badge variant="secondary" className="text-xs capitalize">
+              <MealIcon aria-hidden="true" />
               {t(`form.meal_${recipe.meal_type}`)}
             </Badge>
           )}

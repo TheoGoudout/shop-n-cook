@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router"
-import { ChefHat } from "lucide-react"
+import { ChefHat, Clock, Users } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
 import type { RecipesPublic } from "@/client"
@@ -69,6 +69,7 @@ export function RecentRecipes({ data }: Props) {
                     <div className="mt-1.5 flex flex-wrap gap-1">
                       {recipe.servings != null && (
                         <Badge variant="secondary" className="text-xs">
+                          <Users aria-hidden="true" />
                           {t("recent_recipes.servings", {
                             count: recipe.servings,
                           })}
@@ -77,6 +78,7 @@ export function RecentRecipes({ data }: Props) {
                       {recipe.prep_time_minutes != null &&
                         totalTime == null && (
                           <Badge variant="secondary" className="text-xs">
+                            <Clock aria-hidden="true" />
                             {t("recent_recipes.prep_min", {
                               count: recipe.prep_time_minutes,
                             })}
@@ -84,6 +86,7 @@ export function RecentRecipes({ data }: Props) {
                         )}
                       {totalTime != null && (
                         <Badge variant="secondary" className="text-xs">
+                          <Clock aria-hidden="true" />
                           {t("recent_recipes.total_min", { count: totalTime })}
                         </Badge>
                       )}

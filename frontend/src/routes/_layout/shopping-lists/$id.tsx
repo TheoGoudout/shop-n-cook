@@ -26,6 +26,7 @@ import {
   type ShoppingListRecipePublic,
   ShoppingListsService,
 } from "@/client"
+import { categoryIcon } from "@/components/Common/categoryIcons"
 import { PantryCheckDialog } from "@/components/ShoppingLists/PantryCheckDialog"
 import { StoreComparison } from "@/components/ShoppingLists/StoreComparison"
 import { Badge } from "@/components/ui/badge"
@@ -315,18 +316,24 @@ function ShoppingTab({ list }: { list: ShoppingListPublic }) {
       </div>
       <StoreComparison listId={list.id} />
       <div className="space-y-4">
-        {grouped.map(({ category, items: groupItems }) => (
-          <Card key={category}>
-            <CardHeader className="py-3 px-4">
-              <CardTitle className="text-sm text-muted-foreground font-medium tracking-wide">
-                {tCommon(`categories.${category}`, { defaultValue: category })}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="px-4 pb-3 space-y-2">
-              {groupItems.map(renderItem)}
-            </CardContent>
-          </Card>
-        ))}
+        {grouped.map(({ category, items: groupItems }) => {
+          const CategoryIcon = categoryIcon(category)
+          return (
+            <Card key={category}>
+              <CardHeader className="py-3 px-4">
+                <CardTitle className="flex items-center gap-2 text-sm text-muted-foreground font-medium tracking-wide">
+                  <CategoryIcon className="size-4" aria-hidden="true" />
+                  {tCommon(`categories.${category}`, {
+                    defaultValue: category,
+                  })}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-3 space-y-2">
+                {groupItems.map(renderItem)}
+              </CardContent>
+            </Card>
+          )
+        })}
         {atHomeItems.length > 0 && (
           <Card className="bg-muted/40">
             <CardHeader className="py-3 px-4">

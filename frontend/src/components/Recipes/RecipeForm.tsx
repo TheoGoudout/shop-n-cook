@@ -3,6 +3,11 @@ import type { ReactNode } from "react"
 import { type UseFormReturn, useFieldArray } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 
+import {
+  DIFFICULTY_ICONS,
+  MEAL_TYPE_ICONS,
+  SEASON_ICONS,
+} from "@/components/Common/categoryIcons"
 import { UnitSelect } from "@/components/Common/UnitSelect"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -255,11 +260,15 @@ export function RecipeForm({
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="_none">{t("form.none")}</SelectItem>
-                        {DIFFICULTIES.map((d) => (
-                          <SelectItem key={d} value={d}>
-                            {t(`form.difficulty_${d}`)}
-                          </SelectItem>
-                        ))}
+                        {DIFFICULTIES.map((d) => {
+                          const DifficultyIcon = DIFFICULTY_ICONS[d]
+                          return (
+                            <SelectItem key={d} value={d}>
+                              <DifficultyIcon aria-hidden="true" />
+                              {t(`form.difficulty_${d}`)}
+                            </SelectItem>
+                          )
+                        })}
                       </SelectContent>
                     </Select>
                   </FormItem>
@@ -284,11 +293,15 @@ export function RecipeForm({
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="_none">{t("form.none")}</SelectItem>
-                        {MEAL_TYPES.map((m) => (
-                          <SelectItem key={m} value={m}>
-                            {t(`form.meal_${m}`)}
-                          </SelectItem>
-                        ))}
+                        {MEAL_TYPES.map((m) => {
+                          const MealIcon = MEAL_TYPE_ICONS[m]
+                          return (
+                            <SelectItem key={m} value={m}>
+                              <MealIcon aria-hidden="true" />
+                              {t(`form.meal_${m}`)}
+                            </SelectItem>
+                          )
+                        })}
                       </SelectContent>
                     </Select>
                   </FormItem>
@@ -333,25 +346,29 @@ export function RecipeForm({
               <div>
                 <FormLabel>{t("form.seasons_label")}</FormLabel>
                 <div className="flex flex-wrap gap-3 mt-2">
-                  {SEASONS.map((season) => (
-                    <button
-                      key={season}
-                      type="button"
-                      onClick={() => toggleSeason(season)}
-                      className="focus:outline-none"
-                    >
-                      <Badge
-                        variant={
-                          watchedSeasons?.includes(season)
-                            ? "default"
-                            : "outline"
-                        }
-                        className="text-xs cursor-pointer"
+                  {SEASONS.map((season) => {
+                    const SeasonIcon = SEASON_ICONS[season]
+                    return (
+                      <button
+                        key={season}
+                        type="button"
+                        onClick={() => toggleSeason(season)}
+                        className="focus:outline-none"
                       >
-                        {t(`form.season_${season}`)}
-                      </Badge>
-                    </button>
-                  ))}
+                        <Badge
+                          variant={
+                            watchedSeasons?.includes(season)
+                              ? "default"
+                              : "outline"
+                          }
+                          className="text-xs cursor-pointer"
+                        >
+                          <SeasonIcon aria-hidden="true" />
+                          {t(`form.season_${season}`)}
+                        </Badge>
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
             </div>

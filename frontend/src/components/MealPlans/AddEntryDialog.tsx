@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import { MealPlansService, RecipesService } from "@/client"
+import { MEAL_TYPE_ICONS } from "@/components/Common/categoryIcons"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -120,11 +121,15 @@ export function AddEntryDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {MEAL_TYPES.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {t(`meal_types.${type}`)}
-                    </SelectItem>
-                  ))}
+                  {MEAL_TYPES.map((type) => {
+                    const MealIcon = MEAL_TYPE_ICONS[type]
+                    return (
+                      <SelectItem key={type} value={type}>
+                        <MealIcon aria-hidden="true" />
+                        {t(`meal_types.${type}`)}
+                      </SelectItem>
+                    )
+                  })}
                 </SelectContent>
               </Select>
             </div>

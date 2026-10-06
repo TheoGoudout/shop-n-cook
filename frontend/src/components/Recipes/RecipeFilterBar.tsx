@@ -2,6 +2,12 @@ import { X } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
 import type { Difficulty, MealType, Season } from "@/client"
+import {
+  DIFFICULTY_ICONS,
+  MEAL_TYPE_ICONS,
+  SEASON_ICONS,
+} from "@/components/Common/categoryIcons"
+import { DIET_ICONS } from "@/components/Recipes/DietaryBadges"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -88,35 +94,39 @@ export function RecipeFilterBar({
   return (
     <div className="flex flex-wrap items-center gap-2">
       {/* Seasons */}
-      {SEASONS.map((s) => (
-        <button key={s} type="button" onClick={() => toggleSeason(s)}>
-          <Badge
-            variant={filters.seasons.includes(s) ? "default" : "outline"}
-            className="cursor-pointer text-xs"
-          >
-            {t(`form.season_${s}`)}
-          </Badge>
-        </button>
-      ))}
+      {SEASONS.map((s) => {
+        const SeasonIcon = SEASON_ICONS[s]
+        return (
+          <button key={s} type="button" onClick={() => toggleSeason(s)}>
+            <Badge
+              variant={filters.seasons.includes(s) ? "default" : "outline"}
+              className="cursor-pointer text-xs"
+            >
+              <SeasonIcon aria-hidden="true" />
+              {t(`form.season_${s}`)}
+            </Badge>
+          </button>
+        )
+      })}
 
       {/* Dietary toggles */}
-      {(
-        [
-          ["is_vegan", "form.is_vegan_label"],
-          ["is_vegetarian", "form.is_vegetarian_label"],
-          ["is_gluten_free", "form.is_gluten_free_label"],
-          ["is_dairy_free", "form.is_dairy_free_label"],
-        ] as [keyof RecipeFilters, string][]
-      ).map(([key, labelKey]) => (
-        <button key={key} type="button" onClick={() => toggleDietary(key)}>
-          <Badge
-            variant={filters[key] ? "default" : "outline"}
-            className="cursor-pointer text-xs"
-          >
-            {t(labelKey)}
-          </Badge>
-        </button>
-      ))}
+      {(["vegan", "vegetarian", "gluten_free", "dairy_free"] as const).map(
+        (diet) => {
+          const key = `is_${diet}` as const
+          const Icon = DIET_ICONS[diet]
+          return (
+            <button key={key} type="button" onClick={() => toggleDietary(key)}>
+              <Badge
+                variant={filters[key] ? "default" : "outline"}
+                className="cursor-pointer text-xs"
+              >
+                <Icon aria-hidden="true" />
+                {t(`form.${key}_label`)}
+              </Badge>
+            </button>
+          )
+        },
+      )}
 
       {/* Difficulty select */}
       <Select
@@ -133,11 +143,15 @@ export function RecipeFilterBar({
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="_none">{t("filters.difficulty")}</SelectItem>
-          {DIFFICULTIES.map((d) => (
-            <SelectItem key={d} value={d}>
-              {t(`form.difficulty_${d}`)}
-            </SelectItem>
-          ))}
+          {DIFFICULTIES.map((d) => {
+            const DifficultyIcon = DIFFICULTY_ICONS[d]
+            return (
+              <SelectItem key={d} value={d}>
+                <DifficultyIcon aria-hidden="true" />
+                {t(`form.difficulty_${d}`)}
+              </SelectItem>
+            )
+          })}
         </SelectContent>
       </Select>
 
@@ -156,11 +170,15 @@ export function RecipeFilterBar({
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="_none">{t("filters.meal_type")}</SelectItem>
-          {MEAL_TYPES.map((m) => (
-            <SelectItem key={m} value={m}>
-              {t(`form.meal_${m}`)}
-            </SelectItem>
-          ))}
+          {MEAL_TYPES.map((m) => {
+            const MealIcon = MEAL_TYPE_ICONS[m]
+            return (
+              <SelectItem key={m} value={m}>
+                <MealIcon aria-hidden="true" />
+                {t(`form.meal_${m}`)}
+              </SelectItem>
+            )
+          })}
         </SelectContent>
       </Select>
 

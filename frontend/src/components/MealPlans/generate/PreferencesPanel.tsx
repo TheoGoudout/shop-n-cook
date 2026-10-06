@@ -2,6 +2,8 @@ import { Check } from "lucide-react"
 import type { ReactNode } from "react"
 import { useTranslation } from "react-i18next"
 
+import { MEAL_TYPE_ICONS } from "@/components/Common/categoryIcons"
+import { DIET_ICONS } from "@/components/Recipes/DietaryBadges"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -106,27 +108,31 @@ function MealGrid({
             {weekdayName(i, i18n.language, "short")}
           </span>
         ))}
-        {PLANNED_MEALS.map((meal) => (
-          <div key={meal} className="contents">
-            <span className="pr-1 text-xs text-muted-foreground">
-              {t(`meal_types.${meal}`)}
-            </span>
-            {value.map((day, i) => (
-              <Toggle
-                key={i}
-                pressed={day[meal]}
-                onClick={() => toggle(i, meal)}
-                className="h-8"
-                label={t("generate.meal_cell", {
-                  meal: t(`meal_types.${meal}`),
-                  day: weekdayName(i, i18n.language, "long"),
-                })}
-              >
-                {day[meal] && <Check className="h-3.5 w-3.5" />}
-              </Toggle>
-            ))}
-          </div>
-        ))}
+        {PLANNED_MEALS.map((meal) => {
+          const MealIcon = MEAL_TYPE_ICONS[meal]
+          return (
+            <div key={meal} className="contents">
+              <span className="flex items-center gap-1 pr-1 text-xs text-muted-foreground">
+                <MealIcon className="size-3 shrink-0" aria-hidden="true" />
+                {t(`meal_types.${meal}`)}
+              </span>
+              {value.map((day, i) => (
+                <Toggle
+                  key={i}
+                  pressed={day[meal]}
+                  onClick={() => toggle(i, meal)}
+                  className="h-8"
+                  label={t("generate.meal_cell", {
+                    meal: t(`meal_types.${meal}`),
+                    day: weekdayName(i, i18n.language, "long"),
+                  })}
+                >
+                  {day[meal] && <Check className="h-3.5 w-3.5" />}
+                </Toggle>
+              ))}
+            </div>
+          )
+        })}
       </div>
       <div className="flex flex-wrap gap-1.5">
         {(
@@ -247,21 +253,28 @@ export function PreferencesPanel({
 
       <Section title={t("generate.diet_label")}>
         <div className="flex flex-wrap gap-1.5">
-          {DIETS.map(([key, label]) => (
-            <Toggle
-              key={key}
-              pressed={value.diets[key]}
-              onClick={() =>
-                onChange({
-                  diets: { ...value.diets, [key]: !value.diets[key] },
-                })
-              }
-              className="h-8 rounded-full px-3"
-            >
-              {value.diets[key] && <Check className="h-3.5 w-3.5" />}
-              {t(`generate.${label}`)}
-            </Toggle>
-          ))}
+          {DIETS.map(([key, diet]) => {
+            const Icon = DIET_ICONS[diet]
+            return (
+              <Toggle
+                key={key}
+                pressed={value.diets[key]}
+                onClick={() =>
+                  onChange({
+                    diets: { ...value.diets, [key]: !value.diets[key] },
+                  })
+                }
+                className="h-8 rounded-full px-3"
+              >
+                {value.diets[key] ? (
+                  <Check className="h-3.5 w-3.5" />
+                ) : (
+                  <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+                )}
+                {t(`generate.${diet}`)}
+              </Toggle>
+            )
+          })}
         </div>
       </Section>
 

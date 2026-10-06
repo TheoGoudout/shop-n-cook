@@ -9,6 +9,7 @@ import {
 import { useTranslation } from "react-i18next"
 
 import type { MenuPreview, MenuSlot, ProposedMeal } from "@/client"
+import { mealTypeIcon } from "@/components/Common/categoryIcons"
 import { ServingsStepper } from "@/components/Common/ServingsStepper"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -77,6 +78,7 @@ function MealRow({
   const { t, i18n } = useTranslation("mealPlans")
   const isLeftover = portion > 0
   const isBatch = meal.slots.length > 1
+  const MealIcon = mealTypeIcon(slot.meal_type)
   const mealLabel = t(`meal_types.${slot.meal_type}`, {
     defaultValue: slot.meal_type ?? "",
   })
@@ -105,6 +107,7 @@ function MealRow({
         <div className="min-w-0 flex-1 space-y-0.5">
           <div className="flex flex-wrap items-center gap-1">
             <Badge variant="secondary" className="px-1.5 py-0 text-[11px]">
+              <MealIcon className="h-3 w-3" aria-hidden="true" />
               {mealLabel}
             </Badge>
             {isBatch && !isLeftover && (

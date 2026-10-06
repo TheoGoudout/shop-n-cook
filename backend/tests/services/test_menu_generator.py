@@ -162,6 +162,28 @@ def test_desserts_and_drinks_are_not_served_as_dinner() -> None:
     assert {m.recipe.id for m in meals} == {dinner.id}
 
 
+def test_desserts_are_never_generated_even_for_a_dessert_slot() -> None:
+    dessert = make_recipe("cake", meal_type=MealType.DESSERT)
+    stew = make_recipe("stew", meal_type=None)
+    meals = generate_menu(
+        [dessert, stew], request(days=2, meal_types=(MealType.DESSERT,))
+    )
+    assert dessert.id not in {m.recipe.id for m in meals}
+
+
+def test_a_swap_never_brings_in_a_dessert() -> None:
+    dessert = make_recipe("cake", meal_type=MealType.DESSERT)
+    current = make_recipe("stew", meal_type=MealType.DINNER)
+    replacement = pick_replacement(
+        [dessert, current],
+        request(meal_types=(MealType.DESSERT,)),
+        MONDAY,
+        MealType.DESSERT,
+        current_recipe_id=current.id,
+    )
+    assert replacement is None
+
+
 def test_an_unclassified_recipe_may_be_used_for_any_meal() -> None:
     unclassified = make_recipe("anything", meal_type=None)
     assert is_eligible(unclassified, request(), MealType.BREAKFAST)

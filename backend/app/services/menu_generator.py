@@ -8,7 +8,8 @@ to arithmetic.
 
 The algorithm is a greedy fill with a variety penalty:
 
-1. discard anything violating a hard constraint (diet, season, time, meal type);
+1. discard anything violating a hard constraint (diet, season, time, meal type),
+   and every dessert and drink — a menu is a list of meals;
 2. score what remains on how well it fits the request;
 3. fill slots in order, re-ranking after each pick so that a cuisine already
    used this week is penalised — this is what stops seven pasta nights;
@@ -182,6 +183,16 @@ def is_eligible(
     return True
 
 
+#: Never chosen automatically, whatever slot is being filled: a generated menu
+#: plans meals, and a cake is not one. They can still be added by hand.
+_NEVER_AUTO_PICKED = frozenset({MealType.DESSERT, MealType.DRINK})
+
+
+def _auto_pickable(recipe: Recipe) -> bool:
+    """Whether the generator may choose this recipe on its own."""
+    return recipe.meal_type not in _NEVER_AUTO_PICKED
+
+
 def score(
     recipe: Recipe,
     request: GenerationRequest,
@@ -337,7 +348,7 @@ def generate_menu(
 
     costs = costs_for(1)
 
-    pool = list(recipes)
+    pool = [r for r in recipes if _auto_pickable(r)]
     tiebreak = _tiebreaker(request.seed)
 
     used_cuisines: dict[str, int] = {}
@@ -452,7 +463,9 @@ def pick_replacement(
     eligible = [
         r
         for r in recipes
-        if r.id != current_recipe_id and is_eligible(r, request, meal_type)
+        if r.id != current_recipe_id
+        and _auto_pickable(r)
+        and is_eligible(r, request, meal_type)
     ]
     if not eligible:
         return None

@@ -1,5 +1,16 @@
 # Release Notes
 
+## 1.8.0 (2026-10-06)
+
+### Features
+
+* Use icons for dietary badges, categories, meal types, seasons and difficulty. PR [#99](https://github.com/TheoGoudout/shop-n-cook/pull/99) by [@TheoGoudout](https://github.com/TheoGoudout).
+* Bulk reimport of recipes made by an older import pipeline. PR [#97](https://github.com/TheoGoudout/shop-n-cook/pull/97) by [@TheoGoudout](https://github.com/TheoGoudout).
+
+### Fixes
+
+* Give the mobile tab bar equal-width cells. PR [#98](https://github.com/TheoGoudout/shop-n-cook/pull/98) by [@TheoGoudout](https://github.com/TheoGoudout).
+
 ## 1.7.3 (2026-10-06)
 
 ### Fixes

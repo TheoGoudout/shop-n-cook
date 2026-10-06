@@ -1,5 +1,11 @@
 # Release Notes
 
+## 1.7.3 (2026-10-06)
+
+### Fixes
+
+* Keep desserts, snacks and sauces out of generated menus. PR [#96](https://github.com/TheoGoudout/shop-n-cook/pull/96) by [@TheoGoudout](https://github.com/TheoGoudout).
+
 ## 1.7.2 (2026-10-04)
 
 ### Features

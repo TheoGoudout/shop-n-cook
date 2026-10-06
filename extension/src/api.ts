@@ -36,6 +36,8 @@ export function parsedRecipeToCreate(parsed: ParsedRecipe): RecipeCreate {
     source_url: parsed.source_url,
     image_url: parsed.image_url,
     import_consent: true,
+    import_source: "url",
+    import_language: parsed.language ?? null,
     ingredients,
     steps,
   }

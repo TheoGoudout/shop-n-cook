@@ -171,4 +171,5 @@ def parsed_to_create(parsed: ParsedRecipe, *, is_public: bool) -> RecipeCreate:
         cuisine_type=parsed.cuisine_type,
         import_consent=True,
         import_source=ImportSource.URL,
+        import_language=parsed.language,
     )

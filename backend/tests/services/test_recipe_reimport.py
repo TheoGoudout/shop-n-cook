@@ -218,6 +218,7 @@ def test_a_crawled_recipe_is_replaced_and_read_in_its_sites_language(
     assert recipe.import_version == IMPORT_VERSION
     system_prompt = llm.invoke.call_args.args[0][0].content
     assert "French" in system_prompt
+    assert recipe.import_language == "fr", "the language used is recorded"
 
 
 def test_a_crawled_recipe_is_not_replaced_by_an_incomplete_reply(
@@ -280,6 +281,28 @@ def test_a_persons_recipe_is_only_completed(
     assert recipe.import_version == IMPORT_VERSION
     system_prompt = llm.invoke.call_args.args[0][0].content
     assert "French" in system_prompt, "read in the language the admin asked for"
+    assert recipe.import_language == "fr"
+
+
+def test_a_recipe_is_read_again_in_the_language_it_was_imported_in(
+    db: Session, web: FakeWeb, llm: MagicMock
+) -> None:
+    recipe = _recipe(db, web.add(f"{_host()}/1"), import_language="fr-FR")
+    assert recipe.import_language == "fr"
+
+    assert _run(db, language="en").updated == 1
+
+    system_prompt = llm.invoke.call_args.args[0][0].content
+    assert "French" in system_prompt, "never translated into the admin's language"
+    assert _fresh(db, recipe).import_language == "fr"
+
+
+def test_a_typed_in_recipe_records_no_import_language(db: Session) -> None:
+    owner = create_random_user(db)
+    typed = crud.create_recipe(
+        session=db, recipe_in=RecipeCreate(title="À la main"), owner_id=owner.id
+    )
+    assert typed.import_language is None
 
 
 def test_a_recipe_that_fails_goes_to_the_back_of_the_queue(

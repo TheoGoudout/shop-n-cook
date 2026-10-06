@@ -1063,7 +1063,9 @@ export class RecipesService {
      * Re-fetch and re-parse a recipe from its source URL. Superuser only.
      *
      * Fully replaces the recipe's content (title, description, ingredients, steps,
-     * image) while preserving its id, owner, and creation date.
+     * image) while preserving its id, owner, and creation date. The page is read
+     * in the language the recipe was imported in; ``language`` only stands in
+     * for a recipe that does not record one.
      * @param data The data for the request.
      * @param data.id
      * @param data.requestBody

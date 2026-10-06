@@ -98,6 +98,8 @@ def test_reimport_runs_a_batch_in_the_background(
     refreshed = db.get(Recipe, recipe.id)
     assert refreshed is not None
     assert refreshed.import_version == IMPORT_VERSION
+    # No language recorded: read in, and recorded as, the one asked for.
+    assert refreshed.import_language == "fr"
     # Someone's recipe: completed, never replaced.
     assert refreshed.title == "Vieille recette"
     assert refreshed.servings == 6
@@ -135,6 +137,36 @@ def test_reimport_batch_size_is_bounded(
     assert response.status_code == 422
 
 
+def test_single_reimport_reads_the_recipe_in_its_import_language(
+    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+) -> None:
+    recipe = _stale_recipe(db)
+    recipe.import_language = "fr"
+    db.add(recipe)
+    db.commit()
+    llm = _llm()
+
+    with (
+        patch(
+            "app.services.recipe_import.scraper.fetch_page",
+            return_value=("recipe text", None),
+        ),
+        patch("app.services.recipe_import.llm.get_llm", return_value=llm),
+    ):
+        response = client.post(
+            f"{settings.API_V1_STR}/recipes/{recipe.id}/reimport",
+            headers=superuser_token_headers,
+            json={"language": "en"},
+        )
+
+    assert response.status_code == 200
+    assert "French" in llm.invoke.call_args.args[0][0].content
+    db.expire_all()
+    refreshed = db.get(Recipe, recipe.id)
+    assert refreshed is not None
+    assert refreshed.import_language == "fr"
+
+
 def test_single_reimport_stamps_the_current_version(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:
@@ -158,3 +190,5 @@ def test_single_reimport_stamps_the_current_version(
     refreshed = db.get(Recipe, recipe.id)
     assert refreshed is not None
     assert refreshed.import_version == IMPORT_VERSION
+    # No language recorded and none asked for: read, and recorded, as English.
+    assert refreshed.import_language == "en"

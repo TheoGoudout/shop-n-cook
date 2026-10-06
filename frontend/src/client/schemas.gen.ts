@@ -2295,6 +2295,17 @@ export const ParsedRecipeSchema = {
             ],
             title: 'Image Url'
         },
+        language: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Language'
+        },
         seasons: {
             items: {
                 '$ref': '#/components/schemas/Season'
@@ -2711,6 +2722,18 @@ export const RecipeCreateSchema = {
                     type: 'null'
                 }
             ]
+        },
+        import_language: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 35
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Import Language'
         }
     },
     type: 'object',

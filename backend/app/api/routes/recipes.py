@@ -64,14 +64,14 @@ class ImportUrlRequest(BaseModel):
 
 
 class ReimportRequest(BaseModel):
+    #: Used only when the recipe does not record the language it was read in.
     language: str | None = None
 
 
 class ReimportStaleRequest(BaseModel):
     #: Each recipe is one page fetch and one model call.
     limit: int = Field(default=20, ge=1, le=200)
-    #: The language to read pages in when the recipe does not say: any recipe
-    #: that was not crawled.
+    #: The language to read pages in when the recipe does not record one.
     language: str | None = None
 
 
@@ -131,6 +131,7 @@ def _recipe_to_parsed(recipe: Recipe, session: Session) -> ParsedRecipe:
         difficulty=recipe.difficulty,
         meal_type=recipe.meal_type,
         cuisine_type=recipe.cuisine_type,
+        language=recipe.import_language,
     )
 
 
@@ -343,7 +344,9 @@ def reimport_recipe(
     """Re-fetch and re-parse a recipe from its source URL. Superuser only.
 
     Fully replaces the recipe's content (title, description, ingredients, steps,
-    image) while preserving its id, owner, and creation date.
+    image) while preserving its id, owner, and creation date. The page is read
+    in the language the recipe was imported in; ``language`` only stands in
+    for a recipe that does not record one.
     """
     recipe = crud.get_recipe(session=session, recipe_id=id)
     if not recipe:
@@ -353,7 +356,9 @@ def reimport_recipe(
             status_code=422, detail="Recipe has no source URL to reimport from"
         )
     try:
-        parsed = import_recipe_from_url(recipe.source_url, language=body.language)
+        parsed = import_recipe_from_url(
+            recipe.source_url, language=recipe.import_language or body.language
+        )
     except ValueError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     except Exception as exc:
@@ -363,6 +368,7 @@ def reimport_recipe(
     recipe_in = parsed_to_update(parsed)
     if recipe.import_source == ImportSource.URL:
         recipe.import_version = IMPORT_VERSION
+    recipe.import_language = parsed.language
     recipe = crud.update_recipe(session=session, db_recipe=recipe, recipe_in=recipe_in)
     _sync_ingredient_catalog(session, background_tasks, recipe_in.ingredients or [])
     return crud.recipe_to_public(recipe, prices=prices)

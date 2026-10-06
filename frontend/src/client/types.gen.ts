@@ -488,6 +488,7 @@ export type ParsedRecipe = {
     ingredients?: Array<ParsedIngredient>;
     source_url?: (string | null);
     image_url?: (string | null);
+    language?: (string | null);
     seasons?: Array<Season>;
     is_vegan?: boolean;
     is_vegetarian?: boolean;
@@ -562,6 +563,7 @@ export type RecipeCreate = {
     steps?: Array<RecipeStepCreate>;
     import_consent?: boolean;
     import_source?: (ImportSource | null);
+    import_language?: (string | null);
 };
 
 export type RecipeIngredientCreate = {

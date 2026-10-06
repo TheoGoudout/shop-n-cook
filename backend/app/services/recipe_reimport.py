@@ -11,11 +11,15 @@ What a reimport may change depends on who could have edited the recipe:
 
 - **Crawled recipes** (a ``CrawledRecipe`` row points at them) belong to the
   crawler's account and nobody curates them: they are **replaced** with the
-  fresh import, read in their site's language. A reply missing a title,
-  ingredients or steps replaces nothing.
+  fresh import. A reply missing a title, ingredients or steps replaces nothing.
 - **Everyone else's** were reviewed, and maybe corrected, before being saved:
   they are only **completed** — fields still empty get the fresh import's
   value, and nothing already there is touched (``mapping.parsed_to_fill``).
+
+Every recipe is read in the language it was first imported in
+(``Recipe.import_language``), so a reimport never translates it. A recipe
+imported before that was recorded falls back to its site's language if it was
+crawled, and to the admin's otherwise; the language used is then recorded.
 
 Fetching is a background job's, not a person's, so it follows the crawler's
 rules: robots.txt first, ``RECIPE_CRAWL_DELAY_SECONDS`` between two requests
@@ -165,6 +169,7 @@ def _reimport_one(
     else:
         recipe_in = parsed_to_fill(parsed, recipe)
     recipe.import_version = IMPORT_VERSION
+    recipe.import_language = parsed.language
     recipe.reimport_attempted_at = get_datetime_utc()
     crud.update_recipe(session=session, db_recipe=recipe, recipe_in=recipe_in)
     return recipe_in
@@ -180,8 +185,8 @@ def reimport_stale(
 ) -> ReimportReport:
     """Reimport up to ``limit`` stale recipes, the least recently tried first.
 
-    ``language`` is the one to read pages in when the recipe does not say
-    (any recipe that was not crawled).
+    ``language`` is the one to read pages in when neither the recipe nor its
+    crawled site says.
     """
     report = ReimportReport()
     recipes = session.exec(
@@ -213,7 +218,7 @@ def reimport_stale(
                 session,
                 recipe,
                 html,
-                language=crawled.get(recipe.id) or language,
+                language=recipe.import_language or crawled.get(recipe.id) or language,
                 replace=recipe.id in crawled,
             )
         except _HostUnavailableError as exc:

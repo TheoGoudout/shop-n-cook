@@ -186,6 +186,8 @@ class RecipeCreate(RecipeBase):
     steps: list[RecipeStepCreate] = []
     import_consent: bool = Field(default=False)
     import_source: ImportSource | None = Field(default=None)
+    #: ``ParsedRecipe.language`` from the import, if the recipe was imported.
+    import_language: str | None = Field(default=None, max_length=35)
 
     @model_validator(mode="after")
     def check_import_consent(self) -> "RecipeCreate":
@@ -245,6 +247,9 @@ class Recipe(RecipeBase, table=True):
     #: ``None`` for a URL import made before versions were tracked, and for any
     #: recipe that was never imported from a URL.
     import_version: int | None = Field(default=None)
+    #: The language the recipe was read in (``fr``, ``en``), which a reimport
+    #: reads it in again. ``None`` when it was not imported, or not recorded.
+    import_language: str | None = Field(default=None, max_length=10)
     #: When the bulk reimport last tried this recipe, whatever came of it. Puts
     #: a recipe that keeps failing at the back of the queue, not the front.
     reimport_attempted_at: datetime | None = Field(

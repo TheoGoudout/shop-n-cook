@@ -22,6 +22,7 @@ from app.models import (
 from app.models.recipe import Difficulty, ImportSource, MealType, Season
 from app.models.user import User
 from app.services.pricing import CostSummary, PriceBook, quantize_money
+from app.services.recipe_import.prompt import language_code
 from app.services.recipe_import.version import IMPORT_VERSION
 
 
@@ -293,6 +294,8 @@ def create_recipe(
     db_recipe = Recipe(**recipe_data, owner_id=owner_id)
     if db_recipe.import_consent:
         db_recipe.import_consent_at = datetime.now(timezone.utc)
+    if db_recipe.import_language is not None:
+        db_recipe.import_language = language_code(db_recipe.import_language)
     if db_recipe.import_source == ImportSource.URL:
         # The page was parsed moments ago, by this server's pipeline.
         db_recipe.import_version = IMPORT_VERSION

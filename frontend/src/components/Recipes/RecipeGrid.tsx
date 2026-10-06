@@ -5,7 +5,8 @@ import { useTranslation } from "react-i18next"
 import type { RecipePublic } from "@/client"
 import { mealTypeIcon } from "@/components/Common/categoryIcons"
 import { Badge } from "@/components/ui/badge"
-import { DietaryBadges, recipeDiets } from "./DietaryBadges"
+import { cn } from "@/lib/utils"
+import { DietaryBadges } from "./DietaryBadges"
 import { RecipeActionsMenu } from "./RecipeActionsMenu"
 import { RecipeCover } from "./RecipeCover"
 
@@ -29,12 +30,21 @@ function RecipeCard({
           className="transition-transform duration-300 group-hover:scale-105"
         />
       </div>
-      {!community && recipe.is_public && (
-        <Badge className="absolute left-3 top-3 gap-1 bg-card/90 text-foreground backdrop-blur hover:bg-card/90">
-          <Globe className="h-3 w-3" />
-          {t("columns.public")}
-        </Badge>
-      )}
+      {/* right-14 keeps the row clear of the actions menu */}
+      <div
+        className={cn(
+          "absolute left-3 top-3 flex flex-wrap gap-1",
+          community ? "right-3" : "right-14",
+        )}
+      >
+        {!community && recipe.is_public && (
+          <Badge className="gap-1 bg-card/90 text-foreground backdrop-blur hover:bg-card/90">
+            <Globe className="h-3 w-3" />
+            {t("columns.public")}
+          </Badge>
+        )}
+        <DietaryBadges recipe={recipe} onImage />
+      </div>
       {/* Above the card-wide link, so the menu stays clickable */}
       {!community && (
         <div className="absolute right-2 top-2 z-10 rounded-full bg-card/90 backdrop-blur">
@@ -72,11 +82,6 @@ function RecipeCard({
           <p className="line-clamp-2 text-sm text-muted-foreground">
             {recipe.description}
           </p>
-        )}
-        {recipeDiets(recipe).length > 0 && (
-          <div className="flex flex-wrap gap-1 pt-1">
-            <DietaryBadges recipe={recipe} />
-          </div>
         )}
         <div className="mt-auto flex flex-wrap items-center gap-x-4 gap-y-1 pt-2 text-xs font-medium text-muted-foreground">
           {total > 0 && (

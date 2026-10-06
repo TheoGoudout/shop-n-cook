@@ -38,8 +38,17 @@ const DIET_CLASSES: Record<Diet, string> = {
   dairy_free: "",
 }
 
-/** A recipe's dietary badges, each an icon and its label. */
-export function DietaryBadges({ recipe }: { recipe: DietaryFlags }) {
+/**
+ * A recipe's dietary badges, each an icon and its label. `onImage` gives the
+ * outline badges a frosted background so they stay legible over a photo.
+ */
+export function DietaryBadges({
+  recipe,
+  onImage = false,
+}: {
+  recipe: DietaryFlags
+  onImage?: boolean
+}) {
   const { t } = useTranslation("recipes")
 
   return recipeDiets(recipe).map((diet) => {
@@ -50,7 +59,13 @@ export function DietaryBadges({ recipe }: { recipe: DietaryFlags }) {
       <Badge
         key={diet}
         variant={isAllergen ? "outline" : "default"}
-        className={cn("text-xs", DIET_CLASSES[diet])}
+        className={cn(
+          "text-xs",
+          DIET_CLASSES[diet],
+          onImage &&
+            isAllergen &&
+            "border-transparent bg-card/90 text-foreground backdrop-blur",
+        )}
       >
         <Icon aria-hidden="true" />
         {t(`form.is_${diet}_label`)}

@@ -6,7 +6,8 @@
       "**",
       "!**/dist/**/*",
       "!**/node_modules/**/*",
-      "!**/src/client/**/*"
+      "!**/src/client/**/*",
+      "!public/manifest.json"
     ]
   },
   "linter": {

@@ -14,8 +14,9 @@ This package is structured around sibling modules:
 - jsonld.py: find_recipe (the schema.org Recipe a page publishes, however nested)
 - orchestrator.py: import_recipe_from_url / import_recipe_from_html /
   import_recipe_from_photos tie them together
-- mapping.py: parsed_to_create / parsed_to_update turn a ParsedRecipe into a
-  RecipeCreate / RecipeUpdate
+- mapping.py: parsed_to_create / parsed_to_update / parsed_to_fill turn a
+  ParsedRecipe into a RecipeCreate / RecipeUpdate
+- version.py: IMPORT_VERSION, the pipeline revision stamped on imported recipes
 
 The public surface (re-exported below) is the import functions plus the
 ParsedRecipe schemas. The orchestrator imports its dependencies via module
@@ -43,8 +44,10 @@ from app.services.recipe_import.orchestrator import (
     import_recipe_from_url,
 )
 from app.services.recipe_import.photos import PhotoInput, validate_photos
+from app.services.recipe_import.version import IMPORT_VERSION
 
 __all__ = [
+    "IMPORT_VERSION",
     "InvalidPhotoError",
     "NoRecipeFoundError",
     "ParsedIngredient",

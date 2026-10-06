@@ -49,3 +49,16 @@ def test_parsed_to_update_links_steps_by_name() -> None:
     assert len(recipe_in.ingredients) == 3
     assert recipe_in.steps is not None
     assert [s.ingredient_indices for s in recipe_in.steps] == [[0], [1, 2]]
+
+
+def test_parsed_to_update_drops_what_update_would_reject() -> None:
+    recipe_in = parsed_to_update(_parsed(description="x" * 1500, servings=0))
+    assert recipe_in.title == "Gratin dauphinois"
+    assert recipe_in.ingredients is not None
+    assert [i.ingredient_name for i in recipe_in.ingredients] == [
+        "Pommes de terre",
+        "crème",
+    ]
+    assert recipe_in.description is not None
+    assert len(recipe_in.description) == 1000
+    assert recipe_in.servings is None

@@ -45,6 +45,13 @@ describe("parsedRecipeToCreate", () => {
     expect(result.image_url).toBe("https://example.com/pasta.jpg")
   })
 
+  it("records a URL import and the language it was read in", () => {
+    const result = parsedRecipeToCreate({ ...baseParsed, language: "fr" })
+    expect(result.import_source).toBe("url")
+    expect(result.import_language).toBe("fr")
+    expect(parsedRecipeToCreate(baseParsed).import_language).toBeNull()
+  })
+
   it("maps ingredients using ingredient_name (not ingredient_id)", () => {
     const result = parsedRecipeToCreate(baseParsed)
     expect(result.ingredients).toHaveLength(3)

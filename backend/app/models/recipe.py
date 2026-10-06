@@ -186,6 +186,8 @@ class RecipeCreate(RecipeBase):
     steps: list[RecipeStepCreate] = []
     import_consent: bool = Field(default=False)
     import_source: ImportSource | None = Field(default=None)
+    #: ``ParsedRecipe.language`` from the import, if the recipe was imported.
+    import_language: str | None = Field(default=None, max_length=35)
 
     @model_validator(mode="after")
     def check_import_consent(self) -> "RecipeCreate":
@@ -241,6 +243,19 @@ class Recipe(RecipeBase, table=True):
     import_source: ImportSource | None = Field(
         default=None, sa_type=stored_enum(ImportSource, 10)
     )
+    #: ``recipe_import.IMPORT_VERSION`` at the last import from ``source_url``.
+    #: ``None`` for a URL import made before versions were tracked, and for any
+    #: recipe that was never imported from a URL.
+    import_version: int | None = Field(default=None)
+    #: The language the recipe was read in (``fr``, ``en``), which a reimport
+    #: reads it in again. ``None`` when it was not imported, or not recorded.
+    import_language: str | None = Field(default=None, max_length=10)
+    #: When the bulk reimport last tried this recipe, whatever came of it. Puts
+    #: a recipe that keeps failing at the back of the queue, not the front.
+    reimport_attempted_at: datetime | None = Field(
+        default=None,
+        sa_type=DateTime(timezone=True),  # type: ignore
+    )
     owner: "User" = Relationship(back_populates="recipes")
     recipe_ingredients: list[RecipeIngredient] = Relationship(
         back_populates="recipe",
@@ -278,3 +293,16 @@ class RecipePublic(RecipeBase):
 class RecipesPublic(SQLModel):
     data: list[RecipePublic]
     count: int
+
+
+class StaleImportsPublic(SQLModel):
+    """Where the bulk reimport stands (``services/recipe_reimport.py``)."""
+
+    #: The import pipeline's current revision; anything older is stale.
+    import_version: int
+    #: Recipes imported from a URL by an older pipeline, still to reimport.
+    stale_count: int
+    #: Of those, how many a batch already tried and could not bring up to date.
+    failed_count: int
+    #: Whether a batch is running right now.
+    running: bool

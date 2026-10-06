@@ -32,6 +32,9 @@ class ParsedRecipe(BaseModel):
     ingredients: list[ParsedIngredient] = []
     source_url: str | None = None
     image_url: str | None = None
+    #: The language the recipe was read in (``prompt.language_code``). Save it
+    #: on the recipe as ``import_language`` so a reimport reads it the same way.
+    language: str | None = None
     # Metadata
     seasons: list[Season] = []
     is_vegan: bool = False

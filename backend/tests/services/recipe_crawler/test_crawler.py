@@ -153,6 +153,7 @@ def test_imports_a_good_recipe_as_a_public_recipe_of_the_crawler(
     # The page was read in the language of the site.
     system_prompt = llm.invoke.call_args.args[0][0].content
     assert "French" in system_prompt
+    assert recipe.import_language == "fr", "recorded for a reimport"
 
 
 def test_never_imports_the_same_recipe_twice(

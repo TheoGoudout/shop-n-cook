@@ -140,6 +140,7 @@ function ShareTargetPage() {
           image_url: vars.parsed.image_url ?? null,
           import_consent: true,
           import_source: vars.source,
+          import_language: vars.parsed.language ?? null,
           ingredients: (vars.parsed.ingredients ?? []).map((ing) => ({
             ingredient_name: ing.name,
             name_en: ing.name_en ?? null,

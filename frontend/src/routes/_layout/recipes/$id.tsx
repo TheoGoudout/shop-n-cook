@@ -13,6 +13,7 @@ import { Suspense } from "react"
 import { useTranslation } from "react-i18next"
 
 import { RecipesService } from "@/client"
+import { DietaryBadges } from "@/components/Recipes/DietaryBadges"
 import { RecipeActionsMenu } from "@/components/Recipes/RecipeActionsMenu"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -165,26 +166,7 @@ function RecipeDetailContent() {
               {t(`form.season_${s}`)}
             </Badge>
           ))}
-          {recipe.is_vegan && (
-            <Badge className="text-xs bg-success text-success-foreground hover:bg-success">
-              {t("form.is_vegan_label")}
-            </Badge>
-          )}
-          {!recipe.is_vegan && recipe.is_vegetarian && (
-            <Badge className="text-xs bg-accent text-accent-foreground hover:bg-accent">
-              {t("form.is_vegetarian_label")}
-            </Badge>
-          )}
-          {recipe.is_gluten_free && (
-            <Badge variant="outline" className="text-xs">
-              {t("form.is_gluten_free_label")}
-            </Badge>
-          )}
-          {recipe.is_dairy_free && (
-            <Badge variant="outline" className="text-xs">
-              {t("form.is_dairy_free_label")}
-            </Badge>
-          )}
+          <DietaryBadges recipe={recipe} />
           {recipe.difficulty && (
             <Badge variant="secondary" className="text-xs capitalize">
               {t(`form.difficulty_${recipe.difficulty}`)}

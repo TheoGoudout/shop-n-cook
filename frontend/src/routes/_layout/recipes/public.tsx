@@ -5,6 +5,7 @@ import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import { RecipesService } from "@/client"
+import { DietaryBadges } from "@/components/Recipes/DietaryBadges"
 import {
   defaultFilters,
   RecipeFilterBar,
@@ -58,26 +59,7 @@ function RecipeCard({
             className="w-full h-full object-cover"
           />
           <div className="absolute top-2 left-2 flex flex-wrap gap-1">
-            {recipe.is_vegan && (
-              <Badge className="text-xs px-1.5 py-0.5 bg-success text-success-foreground hover:bg-success">
-                {t("form.is_vegan_label")}
-              </Badge>
-            )}
-            {!recipe.is_vegan && recipe.is_vegetarian && (
-              <Badge className="text-xs px-1.5 py-0.5 bg-accent text-accent-foreground hover:bg-accent">
-                {t("form.is_vegetarian_label")}
-              </Badge>
-            )}
-            {recipe.is_gluten_free && (
-              <Badge variant="secondary" className="text-xs px-1.5 py-0.5">
-                GF
-              </Badge>
-            )}
-            {recipe.is_dairy_free && (
-              <Badge variant="secondary" className="text-xs px-1.5 py-0.5">
-                DF
-              </Badge>
-            )}
+            <DietaryBadges recipe={recipe} compact />
           </div>
         </div>
       )}

@@ -2,6 +2,7 @@ import { Check } from "lucide-react"
 import type { ReactNode } from "react"
 import { useTranslation } from "react-i18next"
 
+import { DIET_ICONS } from "@/components/Recipes/DietaryBadges"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -247,21 +248,28 @@ export function PreferencesPanel({
 
       <Section title={t("generate.diet_label")}>
         <div className="flex flex-wrap gap-1.5">
-          {DIETS.map(([key, label]) => (
-            <Toggle
-              key={key}
-              pressed={value.diets[key]}
-              onClick={() =>
-                onChange({
-                  diets: { ...value.diets, [key]: !value.diets[key] },
-                })
-              }
-              className="h-8 rounded-full px-3"
-            >
-              {value.diets[key] && <Check className="h-3.5 w-3.5" />}
-              {t(`generate.${label}`)}
-            </Toggle>
-          ))}
+          {DIETS.map(([key, diet]) => {
+            const Icon = DIET_ICONS[diet]
+            return (
+              <Toggle
+                key={key}
+                pressed={value.diets[key]}
+                onClick={() =>
+                  onChange({
+                    diets: { ...value.diets, [key]: !value.diets[key] },
+                  })
+                }
+                className="h-8 rounded-full px-3"
+              >
+                {value.diets[key] ? (
+                  <Check className="h-3.5 w-3.5" />
+                ) : (
+                  <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+                )}
+                {t(`generate.${diet}`)}
+              </Toggle>
+            )
+          })}
         </div>
       </Section>
 

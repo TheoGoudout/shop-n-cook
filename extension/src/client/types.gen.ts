@@ -488,6 +488,7 @@ export type ParsedRecipe = {
     ingredients?: Array<ParsedIngredient>;
     source_url?: (string | null);
     image_url?: (string | null);
+    language?: (string | null);
     seasons?: Array<Season>;
     is_vegan?: boolean;
     is_vegetarian?: boolean;
@@ -562,6 +563,7 @@ export type RecipeCreate = {
     steps?: Array<RecipeStepCreate>;
     import_consent?: boolean;
     import_source?: (ImportSource | null);
+    import_language?: (string | null);
 };
 
 export type RecipeIngredientCreate = {
@@ -675,6 +677,11 @@ export type RefreshSkip = {
 };
 
 export type ReimportRequest = {
+    language?: (string | null);
+};
+
+export type ReimportStaleRequest = {
+    limit?: number;
     language?: (string | null);
 };
 
@@ -794,6 +801,16 @@ export type ShoppingListUpdate = {
  * Why one ingredient came away without a refreshed price.
  */
 export type SkipReason = 'no_match' | 'no_price' | 'no_pack_size' | 'store_unavailable';
+
+/**
+ * Where the bulk reimport stands (``services/recipe_reimport.py``).
+ */
+export type StaleImportsPublic = {
+    import_version: number;
+    stale_count: number;
+    failed_count: number;
+    running: boolean;
+};
 
 /**
  * Stores ranked by ``projected_total``; unrankable ones last.
@@ -1227,6 +1244,14 @@ export type RecipesCreateRecipeData = {
 };
 
 export type RecipesCreateRecipeResponse = (RecipePublic);
+
+export type RecipesReadStaleImportsResponse = (StaleImportsPublic);
+
+export type RecipesReimportStaleImportsData = {
+    requestBody: ReimportStaleRequest;
+};
+
+export type RecipesReimportStaleImportsResponse = (StaleImportsPublic);
 
 export type RecipesReadRecipeData = {
     id: string;

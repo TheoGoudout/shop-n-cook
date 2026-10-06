@@ -14,7 +14,7 @@ from app.services.recipe_import import scraper as scraper_module
 from app.services.recipe_import.errors import NoRecipeFoundError
 from app.services.recipe_import.models import ParsedRecipe
 from app.services.recipe_import.photos import PhotoInput
-from app.services.recipe_import.prompt import build_system_prompt
+from app.services.recipe_import.prompt import build_system_prompt, language_code
 
 
 def _parse_llm_response(raw: Any) -> dict[str, Any]:
@@ -95,7 +95,9 @@ Content:
 
     response = llm.invoke(messages)
     data = _parse_llm_response(response.content)
-    return ParsedRecipe(**data, source_url=url, image_url=image_url)
+    return ParsedRecipe(
+        **data, source_url=url, image_url=image_url, language=language_code(language)
+    )
 
 
 def import_recipe_from_photos(
@@ -141,4 +143,4 @@ def import_recipe_from_photos(
     data = _parse_llm_response(response.content)
     if not str(data.get("title") or "").strip():
         raise NoRecipeFoundError("No recipe could be read from the photos")
-    return ParsedRecipe(**data)
+    return ParsedRecipe(**data, language=language_code(language))

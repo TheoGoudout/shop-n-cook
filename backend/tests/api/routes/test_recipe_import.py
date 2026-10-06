@@ -68,6 +68,8 @@ def test_import_recipe_url_success(
     assert data["ingredients"][0]["name"] == "pasta"
     assert len(data["steps"]) == 2
     assert data["steps"][0]["ingredient_names"] == ["pasta"]
+    # No language asked for: read in English, and said so for the save.
+    assert data["language"] == "en"
 
 
 def test_import_recipe_url_no_api_key_returns_503(
@@ -696,4 +698,48 @@ def test_import_url_cache_is_per_user(
         )
 
     assert response.status_code == 200
+    assert llm_mock.invoke.call_count == 1
+
+
+def test_imported_recipe_keeps_the_language_it_was_read_in(
+    client: TestClient, superuser_token_headers: dict[str, str]
+) -> None:
+    llm_mock = MagicMock()
+    llm_mock.invoke.return_value = _make_llm_response(_SAMPLE_RECIPE)
+    with (
+        patch(
+            "app.services.recipe_import.scraper.fetch_page",
+            return_value=("some recipe text", None),
+        ),
+        patch("app.services.recipe_import.llm.get_llm", return_value=llm_mock),
+    ):
+        parsed = client.post(
+            f"{settings.API_V1_STR}/recipes/import-url",
+            headers=superuser_token_headers,
+            json={"url": "https://example.com/language-test", "language": "fr-FR"},
+        ).json()
+    assert parsed["language"] == "fr"
+
+    response = client.post(
+        f"{settings.API_V1_STR}/recipes/",
+        headers=superuser_token_headers,
+        json={
+            "title": parsed["title"],
+            "source_url": parsed["source_url"],
+            "import_consent": True,
+            "import_source": "url",
+            "import_language": parsed["language"],
+        },
+    )
+    assert response.status_code == 200
+
+    # A later import of the same URL is served from the saved recipe, language
+    # included.
+    with patch("app.services.recipe_import.llm.get_llm", return_value=llm_mock):
+        cached = client.post(
+            f"{settings.API_V1_STR}/recipes/import-url",
+            headers=superuser_token_headers,
+            json={"url": "https://example.com/language-test"},
+        ).json()
+    assert cached["language"] == "fr"
     assert llm_mock.invoke.call_count == 1

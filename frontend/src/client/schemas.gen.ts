@@ -2295,6 +2295,17 @@ export const ParsedRecipeSchema = {
             ],
             title: 'Image Url'
         },
+        language: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Language'
+        },
         seasons: {
             items: {
                 '$ref': '#/components/schemas/Season'
@@ -2711,6 +2722,18 @@ export const RecipeCreateSchema = {
                     type: 'null'
                 }
             ]
+        },
+        import_language: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 35
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Import Language'
         }
     },
     type: 'object',
@@ -3453,6 +3476,31 @@ export const ReimportRequestSchema = {
     title: 'ReimportRequest'
 } as const;
 
+export const ReimportStaleRequestSchema = {
+    properties: {
+        limit: {
+            type: 'integer',
+            maximum: 200,
+            minimum: 1,
+            title: 'Limit',
+            default: 20
+        },
+        language: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Language'
+        }
+    },
+    type: 'object',
+    title: 'ReimportStaleRequest'
+} as const;
+
 export const SaveMenuRequestSchema = {
     properties: {
         name: {
@@ -4095,6 +4143,31 @@ export const SkipReasonSchema = {
     enum: ['no_match', 'no_price', 'no_pack_size', 'store_unavailable'],
     title: 'SkipReason',
     description: 'Why one ingredient came away without a refreshed price.'
+} as const;
+
+export const StaleImportsPublicSchema = {
+    properties: {
+        import_version: {
+            type: 'integer',
+            title: 'Import Version'
+        },
+        stale_count: {
+            type: 'integer',
+            title: 'Stale Count'
+        },
+        failed_count: {
+            type: 'integer',
+            title: 'Failed Count'
+        },
+        running: {
+            type: 'boolean',
+            title: 'Running'
+        }
+    },
+    type: 'object',
+    required: ['import_version', 'stale_count', 'failed_count', 'running'],
+    title: 'StaleImportsPublic',
+    description: 'Where the bulk reimport stands (``services/recipe_reimport.py``).'
 } as const;
 
 export const StoreComparisonSchema = {

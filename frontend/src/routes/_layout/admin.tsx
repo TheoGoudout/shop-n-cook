@@ -30,7 +30,9 @@ function AdminLayout() {
   const { t } = useTranslation("admin")
   const activeTab = location.pathname.endsWith("ingredients")
     ? "ingredients"
-    : "users"
+    : location.pathname.endsWith("recipes")
+      ? "recipes"
+      : "users"
 
   return (
     <div className="flex flex-col gap-6">
@@ -41,6 +43,7 @@ function AdminLayout() {
         <TabsList>
           <TabsTrigger value="users">{t("tabs.users")}</TabsTrigger>
           <TabsTrigger value="ingredients">{t("tabs.ingredients")}</TabsTrigger>
+          <TabsTrigger value="recipes">{t("tabs.recipes")}</TabsTrigger>
         </TabsList>
         <div className="mt-4">
           <Outlet />

@@ -49,6 +49,7 @@ export function parsedRecipeToFormValues(
     source_url: parsed.source_url ?? "",
     image_url: parsed.image_url ?? "",
     import_source: importSource,
+    import_language: parsed.language ?? null,
     ingredients: mappedIngredients,
     steps: mappedSteps,
     seasons: (parsed.seasons ?? []) as Season[],

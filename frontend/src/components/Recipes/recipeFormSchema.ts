@@ -38,6 +38,8 @@ export type RecipeFormValues = {
   import_consent: boolean
   /** How this recipe was imported, if it was. Drives the consent requirement. */
   import_source?: ImportSource | null
+  /** The language the import read the recipe in, kept for a later reimport. */
+  import_language?: string | null
   ingredients: Array<{
     ingredient_name: string
     quantity: number
@@ -109,6 +111,7 @@ export const createRecipeFormSchema = (
     is_public: z.boolean().default(false),
     import_consent: z.boolean().default(false),
     import_source: z.enum(IMPORT_SOURCES).nullable().optional(),
+    import_language: z.string().nullable().optional(),
     ingredients: z.array(ingredientSchema),
     steps: z.array(stepSchema),
     // Metadata
@@ -152,6 +155,7 @@ export const defaultCreateValues: RecipeFormValues = {
   is_public: false,
   import_consent: false,
   import_source: null,
+  import_language: null,
   ingredients: [],
   steps: [],
   seasons: [],
@@ -191,6 +195,7 @@ export const buildEditDefaults = (recipe: RecipePublic): RecipeFormValues => {
     import_consent: false,
     // Editing an existing recipe never re-triggers the import consent gate.
     import_source: null,
+    import_language: null,
     ingredients: (recipe.ingredients ?? []).map((i) => ({
       ingredient_name: i.ingredient_name,
       quantity: i.quantity,
@@ -241,6 +246,7 @@ export const toRecipeCreatePayload = (
   image_url: data.image_url || null,
   is_public: data.is_public,
   import_source: data.import_source ?? null,
+  import_language: data.import_source ? (data.import_language ?? null) : null,
   import_consent:
     !!(data.source_url || data.import_source) && data.import_consent,
   ingredients: data.ingredients.map(toIngredientPayload),

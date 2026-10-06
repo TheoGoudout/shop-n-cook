@@ -19,6 +19,8 @@ import { UserMenu } from "./UserMenu"
 type NavItem = {
   icon: LucideIcon
   title: string
+  /** A shorter label for the narrow cells of the mobile tab bar. */
+  shortTitle: string
   path: string
 }
 
@@ -26,16 +28,21 @@ function useNavItems(): NavItem[] {
   const { t } = useTranslation("navigation")
   const { user } = useAuth()
 
+  const item = (icon: LucideIcon, key: string, path: string): NavItem => ({
+    icon,
+    title: t(key),
+    shortTitle: t(`short.${key}`),
+    path,
+  })
+
   const items: NavItem[] = [
-    { icon: Home, title: t("dashboard"), path: "/" },
-    { icon: ChefHat, title: t("recipes"), path: "/recipes" },
-    { icon: Globe, title: t("community"), path: "/recipes/public" },
-    { icon: CalendarDays, title: t("meal_plans"), path: "/meal-plans" },
-    { icon: ShoppingCart, title: t("shopping_lists"), path: "/shopping-lists" },
+    item(Home, "dashboard", "/"),
+    item(ChefHat, "recipes", "/recipes"),
+    item(Globe, "community", "/recipes/public"),
+    item(CalendarDays, "meal_plans", "/meal-plans"),
+    item(ShoppingCart, "shopping_lists", "/shopping-lists"),
   ]
-  return user?.is_superuser
-    ? [...items, { icon: Users, title: t("admin"), path: "/admin" }]
-    : items
+  return user?.is_superuser ? [...items, item(Users, "admin", "/admin")] : items
 }
 
 /** The item owning the current path: the longest path that prefixes it. */
@@ -87,18 +94,21 @@ export function TopNav() {
           </div>
         </div>
       </header>
-      <nav className="fixed inset-x-0 bottom-0 z-30 flex border-t bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-30 grid auto-cols-[minmax(0,1fr)] grid-flow-col border-t bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
         {items.map((item) => (
           <Link
             key={item.path}
             to={item.path}
+            aria-label={item.title}
             className={cn(
-              "flex flex-1 flex-col items-center gap-1 py-2 text-[0.6875rem] font-medium",
+              "flex min-w-0 flex-col items-center gap-1 py-2 text-[0.6875rem] font-medium",
               item.path === active ? "text-primary" : "text-muted-foreground",
             )}
           >
             <item.icon className="size-5" />
-            <span className="max-w-full truncate px-1">{item.title}</span>
+            <span className="max-w-full truncate px-0.5">
+              {item.shortTitle}
+            </span>
           </Link>
         ))}
       </nav>

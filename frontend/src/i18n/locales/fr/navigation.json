@@ -12,5 +12,13 @@
     "dark": "Sombre",
     "system": "Système"
   },
-  "meal_plans": "Menus"
+  "meal_plans": "Menus",
+  "short": {
+    "dashboard": "Accueil",
+    "recipes": "Recettes",
+    "community": "Communauté",
+    "meal_plans": "Menus",
+    "shopping_lists": "Courses",
+    "admin": "Admin"
+  }
 }

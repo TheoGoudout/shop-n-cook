@@ -12,5 +12,13 @@
     "dark": "Dark",
     "system": "System"
   },
-  "meal_plans": "Meal plans"
+  "meal_plans": "Meal plans",
+  "short": {
+    "dashboard": "Home",
+    "recipes": "Recipes",
+    "community": "Community",
+    "meal_plans": "Meal plans",
+    "shopping_lists": "Shopping",
+    "admin": "Admin"
+  }
 }

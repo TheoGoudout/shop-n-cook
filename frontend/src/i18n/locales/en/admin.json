@@ -8,9 +8,25 @@
     "subtitle": "Manage the ingredient catalog",
     "empty": "No ingredients in the catalog yet."
   },
+  "recipes": {
+    "title": "Recipes",
+    "subtitle": "Bring imported recipes up to the latest import pipeline",
+    "version": "Import pipeline version",
+    "stale": "Recipes to reimport",
+    "failed": "Tried, not yet updated",
+    "explain_crawled": "Crawled public recipes are replaced with a fresh import of their page.",
+    "explain_users": "Users' recipes are only completed: fields they left empty are filled in, and nothing they wrote is changed.",
+    "batch_size": "Batch size",
+    "reimport_one": "Reimport {{count}} recipe",
+    "reimport_other": "Reimport {{count}} recipes",
+    "running": "Reimporting…",
+    "started": "Reimport started in the background",
+    "up_to_date": "Every imported recipe is up to date."
+  },
   "tabs": {
     "users": "Users",
-    "ingredients": "Ingredients"
+    "ingredients": "Ingredients",
+    "recipes": "Recipes"
   },
   "columns": {
     "full_name": "Full Name",

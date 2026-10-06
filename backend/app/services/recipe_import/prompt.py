@@ -12,6 +12,13 @@ _DIFFICULTIES = ", ".join(d.value for d in Difficulty)
 _MEAL_TYPES = ", ".join(m.value for m in MealType)
 
 
+def language_code(language: str | None) -> str:
+    """The language a recipe is read in, as its primary subtag: ``fr-FR`` →
+    ``fr``. No language means English, as it does for the prompt."""
+    # A primary subtag is at most 8 letters (RFC 5646).
+    return (language or "en").split("-")[0].strip().lower()[:8] or "en"
+
+
 def build_system_prompt(language: str | None = None, source: str = "web") -> str:
     """Build the extraction system prompt.
 
@@ -20,7 +27,7 @@ def build_system_prompt(language: str | None = None, source: str = "web") -> str
     contract and every extraction rule are shared; only the framing and a short
     block of OCR-specific rules differ.
     """
-    lang = (language or "en").split("-")[0].lower()
+    lang = language_code(language)
 
     if lang == "fr":
         lang_rule = (

@@ -29,6 +29,7 @@ import { Route as LayoutProfileUserIdRouteImport } from './routes/_layout/profil
 import { Route as LayoutMealPlansGenerateRouteImport } from './routes/_layout/meal-plans/generate'
 import { Route as LayoutMealPlansIdRouteImport } from './routes/_layout/meal-plans/$id'
 import { Route as LayoutAdminUsersRouteImport } from './routes/_layout/admin/users'
+import { Route as LayoutAdminRecipesRouteImport } from './routes/_layout/admin/recipes'
 import { Route as LayoutAdminIngredientsRouteImport } from './routes/_layout/admin/ingredients'
 
 const SignupRoute = SignupRouteImport.update({
@@ -131,6 +132,11 @@ const LayoutAdminUsersRoute = LayoutAdminUsersRouteImport.update({
   path: '/users',
   getParentRoute: () => LayoutAdminRoute,
 } as any)
+const LayoutAdminRecipesRoute = LayoutAdminRecipesRouteImport.update({
+  id: '/recipes',
+  path: '/recipes',
+  getParentRoute: () => LayoutAdminRoute,
+} as any)
 const LayoutAdminIngredientsRoute = LayoutAdminIngredientsRouteImport.update({
   id: '/ingredients',
   path: '/ingredients',
@@ -147,6 +153,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof LayoutSettingsRoute
   '/share-target': typeof LayoutShareTargetRoute
   '/admin/ingredients': typeof LayoutAdminIngredientsRoute
+  '/admin/recipes': typeof LayoutAdminRecipesRoute
   '/admin/users': typeof LayoutAdminUsersRoute
   '/meal-plans/$id': typeof LayoutMealPlansIdRoute
   '/meal-plans/generate': typeof LayoutMealPlansGenerateRoute
@@ -168,6 +175,7 @@ export interface FileRoutesByTo {
   '/share-target': typeof LayoutShareTargetRoute
   '/': typeof LayoutIndexRoute
   '/admin/ingredients': typeof LayoutAdminIngredientsRoute
+  '/admin/recipes': typeof LayoutAdminRecipesRoute
   '/admin/users': typeof LayoutAdminUsersRoute
   '/meal-plans/$id': typeof LayoutMealPlansIdRoute
   '/meal-plans/generate': typeof LayoutMealPlansGenerateRoute
@@ -192,6 +200,7 @@ export interface FileRoutesById {
   '/_layout/share-target': typeof LayoutShareTargetRoute
   '/_layout/': typeof LayoutIndexRoute
   '/_layout/admin/ingredients': typeof LayoutAdminIngredientsRoute
+  '/_layout/admin/recipes': typeof LayoutAdminRecipesRoute
   '/_layout/admin/users': typeof LayoutAdminUsersRoute
   '/_layout/meal-plans/$id': typeof LayoutMealPlansIdRoute
   '/_layout/meal-plans/generate': typeof LayoutMealPlansGenerateRoute
@@ -216,6 +225,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/share-target'
     | '/admin/ingredients'
+    | '/admin/recipes'
     | '/admin/users'
     | '/meal-plans/$id'
     | '/meal-plans/generate'
@@ -237,6 +247,7 @@ export interface FileRouteTypes {
     | '/share-target'
     | '/'
     | '/admin/ingredients'
+    | '/admin/recipes'
     | '/admin/users'
     | '/meal-plans/$id'
     | '/meal-plans/generate'
@@ -260,6 +271,7 @@ export interface FileRouteTypes {
     | '/_layout/share-target'
     | '/_layout/'
     | '/_layout/admin/ingredients'
+    | '/_layout/admin/recipes'
     | '/_layout/admin/users'
     | '/_layout/meal-plans/$id'
     | '/_layout/meal-plans/generate'
@@ -423,6 +435,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutAdminUsersRouteImport
       parentRoute: typeof LayoutAdminRoute
     }
+    '/_layout/admin/recipes': {
+      id: '/_layout/admin/recipes'
+      path: '/recipes'
+      fullPath: '/admin/recipes'
+      preLoaderRoute: typeof LayoutAdminRecipesRouteImport
+      parentRoute: typeof LayoutAdminRoute
+    }
     '/_layout/admin/ingredients': {
       id: '/_layout/admin/ingredients'
       path: '/ingredients'
@@ -435,12 +454,14 @@ declare module '@tanstack/react-router' {
 
 interface LayoutAdminRouteChildren {
   LayoutAdminIngredientsRoute: typeof LayoutAdminIngredientsRoute
+  LayoutAdminRecipesRoute: typeof LayoutAdminRecipesRoute
   LayoutAdminUsersRoute: typeof LayoutAdminUsersRoute
   LayoutAdminIndexRoute: typeof LayoutAdminIndexRoute
 }
 
 const LayoutAdminRouteChildren: LayoutAdminRouteChildren = {
   LayoutAdminIngredientsRoute: LayoutAdminIngredientsRoute,
+  LayoutAdminRecipesRoute: LayoutAdminRecipesRoute,
   LayoutAdminUsersRoute: LayoutAdminUsersRoute,
   LayoutAdminIndexRoute: LayoutAdminIndexRoute,
 }

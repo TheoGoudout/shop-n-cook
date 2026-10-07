@@ -6,19 +6,16 @@ import { clearAuthData, getAuthData, saveAuthData } from "./storage"
 
 const DEFAULT_BASE_URL = __API_URL__
 
+/** Who is signed in, and to which server. */
+type Session = { email: string; baseUrl: string }
+
 type State =
   | { kind: "loading" }
   | { kind: "login"; error?: string }
-  | { kind: "authenticated"; email: string; baseUrl: string }
-  | { kind: "importing"; email: string; baseUrl: string }
-  | {
-      kind: "success"
-      email: string
-      baseUrl: string
-      title: string
-      recipeId: string
-    }
-  | { kind: "error"; email: string; baseUrl: string; message: string }
+  | ({ kind: "authenticated" } & Session)
+  | ({ kind: "importing" } & Session)
+  | ({ kind: "success"; title: string; recipeId: string } & Session)
+  | ({ kind: "error"; message: string } & Session)
 
 let currentState: State = { kind: "loading" }
 
@@ -51,12 +48,7 @@ function render(state: State) {
 
   header.querySelector(".user-info")?.remove()
 
-  if (
-    state.kind === "authenticated" ||
-    state.kind === "importing" ||
-    state.kind === "success" ||
-    state.kind === "error"
-  ) {
+  if (state.kind !== "loading" && state.kind !== "login") {
     const userInfo = el("div", "user-info")
     const emailSpan = el("span")
     emailSpan.textContent = state.email
@@ -83,7 +75,7 @@ function render(state: State) {
       renderImporting(main)
       break
     case "success":
-      renderSuccess(main, state.baseUrl, state.title, state.recipeId)
+      renderSuccess(main, state.title, state.recipeId)
       break
     case "error":
       renderError(main, state.message)
@@ -92,8 +84,7 @@ function render(state: State) {
 }
 
 function renderLoading(main: HTMLElement) {
-  const div = el("div")
-  div.setAttribute("style", "text-align:center;padding:20px;color:#9ca3af;")
+  const div = el("div", "loading")
   div.textContent = t("loading")
   main.appendChild(div)
 }
@@ -200,12 +191,15 @@ function renderImporting(main: HTMLElement) {
   append(main, hint, importBtn)
 }
 
-function renderSuccess(
-  main: HTMLElement,
-  _baseUrl: string,
-  title: string,
-  recipeId: string,
-) {
+/** Back from a result to the import button, still signed in. */
+function backToImport() {
+  if (currentState.kind === "success" || currentState.kind === "error") {
+    const { email, baseUrl } = currentState
+    render({ kind: "authenticated", email, baseUrl })
+  }
+}
+
+function renderSuccess(main: HTMLElement, title: string, recipeId: string) {
   const icon = el("div", "success-icon")
   icon.textContent = "✅"
 
@@ -225,15 +219,7 @@ function renderSuccess(
   const anotherBtn = el("button", "btn-secondary")
   anotherBtn.id = "import-another-btn"
   anotherBtn.textContent = t("importAnother")
-  anotherBtn.addEventListener("click", () => {
-    if (currentState.kind === "success") {
-      render({
-        kind: "authenticated",
-        email: currentState.email,
-        baseUrl: currentState.baseUrl,
-      })
-    }
-  })
+  anotherBtn.addEventListener("click", backToImport)
 
   append(actionsRow, link, anotherBtn)
   append(main, icon, titleP, actionsRow)
@@ -246,15 +232,7 @@ function renderError(main: HTMLElement, message: string) {
   const retryBtn = el("button", "btn-primary")
   retryBtn.id = "retry-btn"
   retryBtn.textContent = t("tryAgain")
-  retryBtn.addEventListener("click", () => {
-    if (currentState.kind === "error") {
-      render({
-        kind: "authenticated",
-        email: currentState.email,
-        baseUrl: currentState.baseUrl,
-      })
-    }
-  })
+  retryBtn.addEventListener("click", backToImport)
 
   append(main, errDiv, retryBtn)
 }
@@ -283,18 +261,12 @@ async function handleLogin() {
 
   try {
     OpenAPI.BASE = baseUrl
-    const tokenResp = await LoginService.loginAccessToken({
+    const { access_token: token } = await LoginService.loginAccessToken({
       formData: { username: email, password },
     })
-    OpenAPI.TOKEN = tokenResp.access_token
-
-    const user = await UsersService.readUserMe()
-    await saveAuthData({
-      baseUrl,
-      token: tokenResp.access_token,
-      email: user.email,
-    })
-    render({ kind: "authenticated", email: user.email, baseUrl })
+    const session = await startSession(baseUrl, token)
+    await saveAuthData({ ...session, token })
+    render({ kind: "authenticated", ...session })
   } catch {
     render({
       kind: "login",
@@ -305,19 +277,8 @@ async function handleLogin() {
 
 async function handleLogout() {
   await clearAuthData()
-  // Best-effort: also clear the token from the frontend tab so the user
-  // is logged out there too. Fails silently if no tab is open.
-  try {
-    const tabs = await chrome.tabs.query({ url: `${__FRONTEND_URL__}/*` })
-    if (tabs.length && tabs[0].id) {
-      await chrome.scripting.executeScript({
-        target: { tabId: tabs[0].id },
-        func: () => localStorage.removeItem("access_token"),
-      })
-    }
-  } catch {
-    /* ignore */
-  }
+  // Log the web app out too, if it is open.
+  await inWebAppTab(() => localStorage.removeItem("access_token"))
   render({ kind: "login" })
 }
 
@@ -361,47 +322,48 @@ async function handleImport() {
   }
 }
 
-async function borrowFromWebApp(): Promise<{
-  token: string | null
-  language: string | null
-}> {
+/**
+ * Runs `func` in the open web-app tab and returns what it returned, or `null`
+ * when no tab is open or the script cannot run there.
+ */
+async function inWebAppTab<T>(func: () => T): Promise<T | null> {
   try {
-    const tabs = await chrome.tabs.query({ url: `${__FRONTEND_URL__}/*` })
-    if (!tabs.length || !tabs[0].id) return { token: null, language: null }
-    const results = await chrome.scripting.executeScript({
-      target: { tabId: tabs[0].id },
-      func: () => ({
-        token: localStorage.getItem("access_token"),
-        language: localStorage.getItem("i18n-language"),
-      }),
+    const [tab] = await chrome.tabs.query({ url: `${__FRONTEND_URL__}/*` })
+    if (!tab?.id) return null
+    const [injection] = await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func,
     })
-    const result = results[0]?.result as {
-      token: string | null
-      language: string | null
-    } | null
-    return result ?? { token: null, language: null }
+    return (injection?.result as T | undefined) ?? null
   } catch {
-    return { token: null, language: null }
+    return null
   }
+}
+
+/** Uses `token` against `baseUrl`; throws if the server refuses it. */
+async function startSession(baseUrl: string, token: string): Promise<Session> {
+  OpenAPI.BASE = baseUrl
+  OpenAPI.TOKEN = token
+  const user = await UsersService.readUserMe()
+  return { email: user.email, baseUrl }
 }
 
 async function init() {
   render({ kind: "loading" })
 
-  const auth = await getAuthData()
+  // The web app's language, and its session when the popup has none.
+  const webApp = await inWebAppTab(() => ({
+    token: localStorage.getItem("access_token"),
+    language: localStorage.getItem("i18n-language"),
+  }))
+  if (webApp?.language) setLang(webApp.language)
 
+  const auth = await getAuthData()
   if (auth) {
-    OpenAPI.BASE = auth.baseUrl
-    OpenAPI.TOKEN = auth.token
     try {
-      const user = await UsersService.readUserMe()
-      // Borrow language from web app to match user's preference there
-      const { language } = await borrowFromWebApp()
-      if (language) setLang(language)
       render({
         kind: "authenticated",
-        email: user.email,
-        baseUrl: auth.baseUrl,
+        ...(await startSession(auth.baseUrl, auth.token)),
       })
     } catch {
       await clearAuthData()
@@ -410,24 +372,11 @@ async function init() {
     return
   }
 
-  const { token: borrowed, language } = await borrowFromWebApp()
-  if (language) setLang(language)
-
-  if (borrowed) {
-    OpenAPI.BASE = DEFAULT_BASE_URL
-    OpenAPI.TOKEN = borrowed
+  if (webApp?.token) {
     try {
-      const user = await UsersService.readUserMe()
-      await saveAuthData({
-        baseUrl: DEFAULT_BASE_URL,
-        token: borrowed,
-        email: user.email,
-      })
-      render({
-        kind: "authenticated",
-        email: user.email,
-        baseUrl: DEFAULT_BASE_URL,
-      })
+      const session = await startSession(DEFAULT_BASE_URL, webApp.token)
+      await saveAuthData({ ...session, token: webApp.token })
+      render({ kind: "authenticated", ...session })
     } catch {
       render({ kind: "login" })
     }
@@ -438,12 +387,6 @@ async function init() {
 }
 
 const versionFooter = document.getElementById("version-footer")
-if (versionFooter) {
-  versionFooter.textContent = __APP_VERSION__
-  versionFooter.setAttribute(
-    "style",
-    "text-align:center;padding:4px 0 8px;color:#9ca3af;font-size:10px;font-family:monospace;",
-  )
-}
+if (versionFooter) versionFooter.textContent = __APP_VERSION__
 
 init()

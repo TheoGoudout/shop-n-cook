@@ -4,10 +4,8 @@ import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { z } from "zod"
-
 import { type UserPublic, UsersService } from "@/client"
 import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
 import {
   Dialog,
   DialogClose,
@@ -18,17 +16,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
+import { Form } from "@/components/ui/form"
 import { LoadingButton } from "@/components/ui/loading-button"
 import { useCrudMutation } from "@/hooks/useCrudMutation"
+import { passwordsMismatch } from "@/lib/passwordSchema"
+import { UserFormFields } from "./UserFormFields"
 
 type FormData = {
   email: string
@@ -65,10 +57,7 @@ const EditUser = ({ user, onSuccess }: EditUserProps) => {
     })
     .refine(
       (data) => !data.password || data.password === data.confirm_password,
-      {
-        message: tAuth("validation.passwords_mismatch"),
-        path: ["confirm_password"],
-      },
+      passwordsMismatch(tAuth),
     )
 
   const form = useForm<FormData>({
@@ -120,119 +109,7 @@ const EditUser = ({ user, onSuccess }: EditUserProps) => {
                 {t("edit.dialog_description")}
               </DialogDescription>
             </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      {t("forms.email_label")}{" "}
-                      <span className="text-destructive">*</span>
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder={t("forms.email_placeholder")}
-                        type="email"
-                        {...field}
-                        required
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="full_name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("forms.full_name_label")}</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder={t("forms.full_name_placeholder")}
-                        type="text"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("forms.set_password_label")}</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder={t("forms.password_placeholder")}
-                        type="password"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="confirm_password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("forms.confirm_password_label")}</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder={t("forms.password_placeholder")}
-                        type="password"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="is_superuser"
-                render={({ field }) => (
-                  <FormItem className="flex items-center gap-3 space-y-0">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <FormLabel className="font-normal">
-                      {t("forms.is_superuser_label")}
-                    </FormLabel>
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="is_active"
-                render={({ field }) => (
-                  <FormItem className="flex items-center gap-3 space-y-0">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <FormLabel className="font-normal">
-                      {t("forms.is_active_label")}
-                    </FormLabel>
-                  </FormItem>
-                )}
-              />
-            </div>
+            <UserFormFields passwordRequired={false} />
 
             <DialogFooter>
               <DialogClose asChild>

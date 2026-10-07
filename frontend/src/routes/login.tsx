@@ -8,7 +8,6 @@ import {
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { z } from "zod"
-
 import type { Body_login_login_access_token as AccessToken } from "@/client"
 import { AuthLayout } from "@/components/Common/AuthLayout"
 import {
@@ -24,6 +23,7 @@ import { LoadingButton } from "@/components/ui/loading-button"
 import { PasswordInput } from "@/components/ui/password-input"
 import useAuth, { isLoggedIn } from "@/hooks/useAuth"
 import { APP_NAME } from "@/lib/config"
+import { passwordSchema } from "@/lib/passwordSchema"
 
 type FormData = {
   username: string
@@ -59,10 +59,7 @@ function Login() {
 
   const formSchema = z.object({
     username: z.email(),
-    password: z
-      .string()
-      .min(1, { message: t("validation.password_required") })
-      .min(8, { message: t("validation.password_min") }),
+    password: passwordSchema(t),
   }) satisfies z.ZodType<AccessToken>
 
   const form = useForm<FormData>({

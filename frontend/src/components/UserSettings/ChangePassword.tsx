@@ -2,7 +2,6 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { z } from "zod"
-
 import { type UpdatePassword, UsersService } from "@/client"
 import {
   Form,
@@ -15,6 +14,7 @@ import {
 import { LoadingButton } from "@/components/ui/loading-button"
 import { PasswordInput } from "@/components/ui/password-input"
 import { useCrudMutation } from "@/hooks/useCrudMutation"
+import { passwordSchema, passwordsMismatch } from "@/lib/passwordSchema"
 
 type FormData = {
   current_password: string
@@ -27,22 +27,16 @@ const ChangePassword = () => {
   const { t: tAuth } = useTranslation("auth")
   const formSchema = z
     .object({
-      current_password: z
-        .string()
-        .min(1, { message: tAuth("validation.password_required") })
-        .min(8, { message: tAuth("validation.password_min") }),
-      new_password: z
-        .string()
-        .min(1, { message: tAuth("validation.password_required") })
-        .min(8, { message: tAuth("validation.password_min") }),
+      current_password: passwordSchema(tAuth),
+      new_password: passwordSchema(tAuth),
       confirm_password: z
         .string()
         .min(1, { message: tAuth("validation.confirm_required") }),
     })
-    .refine((data) => data.new_password === data.confirm_password, {
-      message: tAuth("validation.passwords_mismatch"),
-      path: ["confirm_password"],
-    })
+    .refine(
+      (data) => data.new_password === data.confirm_password,
+      passwordsMismatch(tAuth),
+    )
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),

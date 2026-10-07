@@ -1,5 +1,11 @@
 # Release Notes
 
+## 1.8.1 (2026-10-07)
+
+### Refactors
+
+* Make each request one database transaction, and simplify the codebase. PR [#100](https://github.com/TheoGoudout/shop-n-cook/pull/100) by [@TheoGoudout](https://github.com/TheoGoudout).
+
 ## 1.8.0 (2026-10-06)
 
 ### Features

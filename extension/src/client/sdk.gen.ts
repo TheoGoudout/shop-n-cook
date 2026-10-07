@@ -517,7 +517,7 @@ export class LoginService {
 export class MealPlansService {
     /**
      * Read Meal Plans
-     * List meal plans. Superusers see all; regular users see only their own.
+     * List the plans shared with your household. Superusers see all.
      * @param data The data for the request.
      * @param data.skip
      * @param data.limit
@@ -652,8 +652,8 @@ export class MealPlansService {
      * Update Entry
      * Move an entry to another slot, change its servings, or swap its recipe.
      * @param data The data for the request.
-     * @param data.id
      * @param data.entryId
+     * @param data.id
      * @param data.requestBody
      * @returns MealPlanEntryPublic Successful Response
      * @throws ApiError
@@ -663,8 +663,8 @@ export class MealPlansService {
             method: 'PATCH',
             url: '/api/v1/meal-plans/{id}/entries/{entry_id}',
             path: {
-                id: data.id,
-                entry_id: data.entryId
+                entry_id: data.entryId,
+                id: data.id
             },
             body: data.requestBody,
             mediaType: 'application/json',
@@ -678,8 +678,8 @@ export class MealPlansService {
      * Delete Entry
      * Remove one entry from the plan.
      * @param data The data for the request.
-     * @param data.id
      * @param data.entryId
+     * @param data.id
      * @returns Message Successful Response
      * @throws ApiError
      */
@@ -688,8 +688,8 @@ export class MealPlansService {
             method: 'DELETE',
             url: '/api/v1/meal-plans/{id}/entries/{entry_id}',
             path: {
-                id: data.id,
-                entry_id: data.entryId
+                entry_id: data.entryId,
+                id: data.id
             },
             errors: {
                 422: 'Validation Error'
@@ -806,8 +806,8 @@ export class MealPlansService {
      * preferences the plan was generated with apply. A batch-cooked meal is
      * swapped together with its leftovers, whichever of them was asked for.
      * @param data The data for the request.
-     * @param data.id
      * @param data.entryId
+     * @param data.id
      * @param data.requestBody
      * @returns MealPlanEntryPublic Successful Response
      * @throws ApiError
@@ -817,8 +817,8 @@ export class MealPlansService {
             method: 'POST',
             url: '/api/v1/meal-plans/{id}/entries/{entry_id}/swap',
             path: {
-                id: data.id,
-                entry_id: data.entryId
+                entry_id: data.entryId,
+                id: data.id
             },
             body: data.requestBody,
             mediaType: 'application/json',
@@ -856,10 +856,7 @@ export class RecipesService {
      * Read Public Recipes
      * List all public recipes. Optionally filter by owner_id or search query.
      * @param data The data for the request.
-     * @param data.ownerId
      * @param data.search
-     * @param data.skip
-     * @param data.limit
      * @param data.seasons
      * @param data.isVegan
      * @param data.isVegetarian
@@ -868,6 +865,9 @@ export class RecipesService {
      * @param data.difficulty
      * @param data.mealType
      * @param data.cuisineType
+     * @param data.skip
+     * @param data.limit
+     * @param data.ownerId
      * @returns RecipesPublic Successful Response
      * @throws ApiError
      */
@@ -876,10 +876,7 @@ export class RecipesService {
             method: 'GET',
             url: '/api/v1/recipes/public',
             query: {
-                owner_id: data.ownerId,
                 search: data.search,
-                skip: data.skip,
-                limit: data.limit,
                 seasons: data.seasons,
                 is_vegan: data.isVegan,
                 is_vegetarian: data.isVegetarian,
@@ -887,7 +884,10 @@ export class RecipesService {
                 is_dairy_free: data.isDairyFree,
                 difficulty: data.difficulty,
                 meal_type: data.mealType,
-                cuisine_type: data.cuisineType
+                cuisine_type: data.cuisineType,
+                skip: data.skip,
+                limit: data.limit,
+                owner_id: data.ownerId
             },
             errors: {
                 422: 'Validation Error'
@@ -900,8 +900,6 @@ export class RecipesService {
      * List recipes. Superusers see all; regular users see only their own.
      * @param data The data for the request.
      * @param data.search
-     * @param data.skip
-     * @param data.limit
      * @param data.seasons
      * @param data.isVegan
      * @param data.isVegetarian
@@ -910,6 +908,8 @@ export class RecipesService {
      * @param data.difficulty
      * @param data.mealType
      * @param data.cuisineType
+     * @param data.skip
+     * @param data.limit
      * @returns RecipesPublic Successful Response
      * @throws ApiError
      */
@@ -919,8 +919,6 @@ export class RecipesService {
             url: '/api/v1/recipes/',
             query: {
                 search: data.search,
-                skip: data.skip,
-                limit: data.limit,
                 seasons: data.seasons,
                 is_vegan: data.isVegan,
                 is_vegetarian: data.isVegetarian,
@@ -928,7 +926,9 @@ export class RecipesService {
                 is_dairy_free: data.isDairyFree,
                 difficulty: data.difficulty,
                 meal_type: data.mealType,
-                cuisine_type: data.cuisineType
+                cuisine_type: data.cuisineType,
+                skip: data.skip,
+                limit: data.limit
             },
             errors: {
                 422: 'Validation Error'
@@ -1142,7 +1142,7 @@ export class RecipesService {
 export class ShoppingListsService {
     /**
      * Read Shopping Lists
-     * List shopping lists. Superusers see all; regular users see only their own.
+     * List the lists shared with your household. Superusers see all.
      * @param data The data for the request.
      * @param data.skip
      * @param data.limit
@@ -1277,8 +1277,8 @@ export class ShoppingListsService {
      * Update Item
      * Update a shopping list item (quantity, unit, is_checked, notes).
      * @param data The data for the request.
-     * @param data.id
      * @param data.itemId
+     * @param data.id
      * @param data.requestBody
      * @returns ShoppingListItemPublic Successful Response
      * @throws ApiError
@@ -1288,8 +1288,8 @@ export class ShoppingListsService {
             method: 'PUT',
             url: '/api/v1/shopping-lists/{id}/items/{item_id}',
             path: {
-                id: data.id,
-                item_id: data.itemId
+                item_id: data.itemId,
+                id: data.id
             },
             body: data.requestBody,
             mediaType: 'application/json',
@@ -1303,8 +1303,8 @@ export class ShoppingListsService {
      * Delete Item
      * Remove an item from a shopping list.
      * @param data The data for the request.
-     * @param data.id
      * @param data.itemId
+     * @param data.id
      * @returns Message Successful Response
      * @throws ApiError
      */
@@ -1313,8 +1313,8 @@ export class ShoppingListsService {
             method: 'DELETE',
             url: '/api/v1/shopping-lists/{id}/items/{item_id}',
             path: {
-                id: data.id,
-                item_id: data.itemId
+                item_id: data.itemId,
+                id: data.id
             },
             errors: {
                 422: 'Validation Error'
@@ -1329,8 +1329,8 @@ export class ShoppingListsService {
      * Items with the same ingredient + unit are aggregated (quantities summed).
      * A ShoppingListRecipe record is created to track this recipe in the list.
      * @param data The data for the request.
-     * @param data.id
      * @param data.recipeId
+     * @param data.id
      * @param data.servings
      * @returns ShoppingListPublic Successful Response
      * @throws ApiError
@@ -1340,8 +1340,8 @@ export class ShoppingListsService {
             method: 'POST',
             url: '/api/v1/shopping-lists/{id}/add-recipe/{recipe_id}',
             path: {
-                id: data.id,
-                recipe_id: data.recipeId
+                recipe_id: data.recipeId,
+                id: data.id
             },
             query: {
                 servings: data.servings
@@ -1411,8 +1411,8 @@ export class ShoppingListsService {
      * Update Planned Recipe
      * Update a planned recipe (e.g. mark as prepared, change servings).
      * @param data The data for the request.
-     * @param data.id
      * @param data.plannedRecipeId
+     * @param data.id
      * @param data.requestBody
      * @returns ShoppingListRecipePublic Successful Response
      * @throws ApiError
@@ -1422,8 +1422,8 @@ export class ShoppingListsService {
             method: 'PATCH',
             url: '/api/v1/shopping-lists/{id}/planned-recipes/{planned_recipe_id}',
             path: {
-                id: data.id,
-                planned_recipe_id: data.plannedRecipeId
+                planned_recipe_id: data.plannedRecipeId,
+                id: data.id
             },
             body: data.requestBody,
             mediaType: 'application/json',
@@ -1437,8 +1437,8 @@ export class ShoppingListsService {
      * Delete Planned Recipe
      * Remove a planned recipe from the shopping list.
      * @param data The data for the request.
-     * @param data.id
      * @param data.plannedRecipeId
+     * @param data.id
      * @returns Message Successful Response
      * @throws ApiError
      */
@@ -1447,8 +1447,8 @@ export class ShoppingListsService {
             method: 'DELETE',
             url: '/api/v1/shopping-lists/{id}/planned-recipes/{planned_recipe_id}',
             path: {
-                id: data.id,
-                planned_recipe_id: data.plannedRecipeId
+                planned_recipe_id: data.plannedRecipeId,
+                id: data.id
             },
             errors: {
                 422: 'Validation Error'

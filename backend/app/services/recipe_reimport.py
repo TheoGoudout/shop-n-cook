@@ -235,12 +235,14 @@ def reimport_stale(
             session.commit()
             report.failed += 1
             continue
-        report.updated += 1
         if recipe_in.ingredients:
             ids = crud.sync_ingredient_catalog(
                 session=session, ingredients=recipe_in.ingredients
             )
             ingredient_ids.extend(i for i in ids if i not in ingredient_ids)
+        # The recipe and the catalogue entries it needs land together.
+        session.commit()
+        report.updated += 1
 
     if ingredient_ids:
         fetch_and_update_ingredients_batch(ingredient_ids)

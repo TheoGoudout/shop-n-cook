@@ -379,7 +379,7 @@ def crawler_owner(session: Session) -> User:
     user = crud.get_user_by_email(session=session, email=email)
     if user is not None:
         return user
-    return crud.create_user(
+    user = crud.create_user(
         session=session,
         user_create=UserCreate(
             email=email,
@@ -388,6 +388,10 @@ def crawler_owner(session: Session) -> User:
             is_active=False,
         ),
     )
+    # Committed on its own: a failed import rolls back, and must not take the
+    # account every later import is owned by with it.
+    session.commit()
+    return user
 
 
 def llm_configured() -> bool:

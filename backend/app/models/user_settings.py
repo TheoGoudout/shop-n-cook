@@ -3,6 +3,7 @@ from decimal import Decimal
 from enum import Enum
 from typing import TYPE_CHECKING
 
+from sqlalchemy import CheckConstraint
 from sqlmodel import Field, Relationship, SQLModel
 
 from app.models.base import stored_enum
@@ -59,6 +60,10 @@ class UserSettingsPublic(UserSettingsBase):
 
 
 class UserSettings(UserSettingsBase, table=True):
+    __table_args__ = (
+        CheckConstraint("household_size >= 1", name="ck_usersettings_household_size"),
+    )
+
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     user_id: uuid.UUID = Field(
         foreign_key="user.id", nullable=False, ondelete="CASCADE", unique=True

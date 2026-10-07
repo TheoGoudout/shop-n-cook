@@ -111,7 +111,8 @@ def refresh_due_stores(
         if not result.stopped_early:
             store.prices_refreshed_at = get_datetime_utc()
             session.add(store)
-            session.commit()
+        # One transaction per store: its prices land together, or not at all.
+        session.commit()
         logger.info(
             "Refreshed %s: %d priced, %d skipped%s",
             store.slug,

@@ -18,7 +18,7 @@ def get_or_create_user_settings(
     if settings is None:
         settings = UserSettings(user_id=user_id)
         session.add(settings)
-        session.commit()
+        session.flush()
         session.refresh(settings)
     return settings
 
@@ -32,6 +32,6 @@ def update_user_settings(
     update_data = update_in.model_dump(exclude_unset=True)
     settings.sqlmodel_update(update_data)
     session.add(settings)
-    session.commit()
+    session.flush()
     session.refresh(settings)
     return settings

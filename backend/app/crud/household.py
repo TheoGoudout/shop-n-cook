@@ -111,6 +111,17 @@ def user_can_access(*, session: Session, user: User, owner_id: uuid.UUID) -> boo
     return owner_id in household_member_ids(session=session, user_id=user.id)
 
 
+def visible_owner_ids(*, session: Session, user: User) -> set[uuid.UUID] | None:
+    """Whose shopping lists and meal plans ``user`` sees listed.
+
+    The listing side of :func:`user_can_access`: the whole household's, or —
+    ``None`` — everyone's for a superuser.
+    """
+    if user.is_superuser:
+        return None
+    return household_member_ids(session=session, user_id=user.id)
+
+
 # --------------------------------------------------------------------------- #
 # Households                                                                   #
 # --------------------------------------------------------------------------- #
@@ -130,7 +141,7 @@ def create_household(
             role=HouseholdRole.OWNER,
         )
     )
-    session.commit()
+    session.flush()
     session.refresh(household)
     return household
 
@@ -140,19 +151,29 @@ def update_household(
 ) -> Household:
     household.sqlmodel_update(update_in.model_dump(exclude_unset=True))
     session.add(household)
-    session.commit()
+    session.flush()
     session.refresh(household)
     return household
 
 
 def delete_household(*, session: Session, household: Household) -> None:
     session.delete(household)
-    session.commit()
+    session.flush()
 
 
 def remove_member(*, session: Session, member: HouseholdMember) -> None:
     session.delete(member)
-    session.commit()
+    session.flush()
+
+
+def lock_household(*, session: Session, household: Household) -> Household:
+    """Lock the household's row until the transaction ends, and reload it.
+
+    Seat checks read the members and invites, then write. Two invites sent, or
+    accepted, at the same moment would otherwise both see the last free seat.
+    """
+    session.refresh(household, with_for_update=True)
+    return household
 
 
 def get_member(*, session: Session, member_id: uuid.UUID) -> HouseholdMember | None:
@@ -196,14 +217,14 @@ def create_invite(
         + timedelta(hours=settings.HOUSEHOLD_INVITE_EXPIRE_HOURS),
     )
     session.add(invite)
-    session.commit()
+    session.flush()
     session.refresh(invite)
     return invite
 
 
 def delete_invite(*, session: Session, invite: HouseholdInvite) -> None:
     session.delete(invite)
-    session.commit()
+    session.flush()
 
 
 def accept_invite(
@@ -218,6 +239,6 @@ def accept_invite(
     invite.accepted_at = get_datetime_utc()
     session.add(member)
     session.add(invite)
-    session.commit()
+    session.flush()
     session.refresh(member)
     return member

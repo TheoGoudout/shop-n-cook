@@ -3,7 +3,7 @@ import uuid
 from collections.abc import Sequence
 
 from sqlalchemy import update
-from sqlmodel import Session, func, select
+from sqlmodel import Session, col, func, select
 
 from app.models.ingredient import (
     Ingredient,
@@ -19,6 +19,16 @@ def get_ingredient_by_name(session: Session, name: str) -> Ingredient | None:
     return session.exec(
         select(Ingredient).where(func.lower(Ingredient.name) == name.lower())
     ).first()
+
+
+def get_ingredients_by_name(
+    *, session: Session, names: Sequence[str]
+) -> dict[str, Ingredient]:
+    """The catalogue entries named exactly ``names``, keyed by name."""
+    if not names:
+        return {}
+    rows = session.exec(select(Ingredient).where(col(Ingredient.name).in_(names)))
+    return {row.name: row for row in rows}
 
 
 def get_ingredient_categories_by_name(
@@ -45,7 +55,7 @@ def get_or_create_ingredient(session: Session, name: str) -> tuple[Ingredient, b
         return existing, False
     ingredient = Ingredient(name=name)
     session.add(ingredient)
-    session.commit()
+    session.flush()
     session.refresh(ingredient)
     return ingredient, True
 
@@ -80,7 +90,7 @@ def sync_ingredient_catalog(
         if not ingredient.image_url:
             ids_missing_image.append(ingredient.id)
     if needs_commit:
-        session.commit()
+        session.flush()
     return ids_missing_image
 
 
@@ -101,7 +111,7 @@ def get_ingredient(session: Session, ingredient_id: uuid.UUID) -> Ingredient | N
 def create_ingredient(session: Session, ingredient_in: IngredientCreate) -> Ingredient:
     ingredient = Ingredient.model_validate(ingredient_in)
     session.add(ingredient)
-    session.commit()
+    session.flush()
     session.refresh(ingredient)
     return ingredient
 
@@ -112,7 +122,7 @@ def update_ingredient(
     data = update_in.model_dump(exclude_unset=True)
     ingredient.sqlmodel_update(data)
     session.add(ingredient)
-    session.commit()
+    session.flush()
     session.refresh(ingredient)
     return ingredient
 
@@ -218,11 +228,11 @@ def rename_ingredient_references(
     )
     session.flush()
     _merge_duplicate_shopping_list_items(session, new_name)
-    session.commit()
+    session.flush()
 
 
 def delete_ingredient(session: Session, ingredient: Ingredient) -> None:
     obj = session.get(Ingredient, ingredient.id)
     if obj:
         session.delete(obj)
-    session.commit()
+    session.flush()

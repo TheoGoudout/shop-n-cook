@@ -1,11 +1,12 @@
 import uuid
 from decimal import Decimal
 
-from sqlmodel import Session, col, func, select
+from sqlmodel import Session, col
 
 from app.core.naming import normalize_ingredient_name
 from app.core.units import convert, merge_key
-from app.crud.recipe import recipe_ingredient_to_public
+from app.crud.query import owner_filter, paginate
+from app.crud.recipe import recipe_cost, recipe_ingredient_to_public, servings_scale
 from app.models import (
     PantryCheck,
     Recipe,
@@ -51,25 +52,11 @@ def items_to_buy(shopping_list: ShoppingList) -> list[tuple[ShoppingListItem, fl
     ]
 
 
-def _recipe_scale(slr: ShoppingListRecipe) -> float:
-    """How far the planned servings stretch the recipe's own quantities."""
-    return slr.servings_planned / (slr.recipe.servings or 1)
-
-
-def _sl_recipe_to_public(
+def planned_recipe_to_public(
     slr: ShoppingListRecipe, prices: PriceBook | None = None
 ) -> ShoppingListRecipePublic:
-    scale = _recipe_scale(slr)
-    cost = (
-        prices.summarize(
-            [
-                (ri.ingredient_name, ri.quantity * scale, ri.unit)
-                for ri in slr.recipe.recipe_ingredients
-            ]
-        )
-        if prices is not None
-        else None
-    )
+    scale = servings_scale(slr.recipe, slr.servings_planned)
+    cost = recipe_cost(slr.recipe, prices, scale=scale) if prices is not None else None
     return ShoppingListRecipePublic(
         id=slr.id,
         recipe_id=slr.recipe_id,
@@ -85,7 +72,7 @@ def _sl_recipe_to_public(
     )
 
 
-def _item_to_public(
+def shopping_list_item_to_public(
     item: ShoppingListItem, prices: PriceBook | None = None
 ) -> ShoppingListItemPublic:
     to_buy = quantity_to_buy(item)
@@ -123,9 +110,9 @@ def shopping_list_to_public(
         owner_id=shopping_list.owner_id,
         created_at=shopping_list.created_at,
         pantry_checked_at=shopping_list.pantry_checked_at,
-        items=[_item_to_public(i, prices) for i in shopping_list.items],
+        items=[shopping_list_item_to_public(i, prices) for i in shopping_list.items],
         planned_recipes=[
-            _sl_recipe_to_public(r, prices) for r in shopping_list.planned_recipes
+            planned_recipe_to_public(r, prices) for r in shopping_list.planned_recipes
         ],
         estimated_total=cost.total if cost else None,
         unpriced_item_count=cost.unpriced_count if cost else 0,
@@ -142,32 +129,23 @@ def get_shopping_list(
 def get_shopping_lists(
     *,
     session: Session,
-    owner_id: uuid.UUID | None = None,
     owner_ids: set[uuid.UUID] | None = None,
     skip: int = 0,
     limit: int = 100,
 ) -> tuple[list[ShoppingList], int]:
-    """List shopping lists, optionally restricted to a set of owners.
+    """Newest lists first, owned by any of ``owner_ids`` (``None``: everyone's).
 
-    ``owner_ids`` is how a household sees its shared lists: pass every member's
-    id and the result covers all of them. It takes precedence over ``owner_id``.
+    Passing every household member's id is how a household sees its shared
+    lists; see ``crud.visible_owner_ids``.
     """
-    query = select(ShoppingList)
-    count_query = select(func.count()).select_from(ShoppingList)
-
-    if owner_ids is not None:
-        owner_filter = col(ShoppingList.owner_id).in_(owner_ids)
-        query = query.where(owner_filter)
-        count_query = count_query.where(owner_filter)
-    elif owner_id is not None:
-        query = query.where(ShoppingList.owner_id == owner_id)
-        count_query = count_query.where(ShoppingList.owner_id == owner_id)
-
-    count = session.exec(count_query).one()
-    lists = session.exec(
-        query.order_by(col(ShoppingList.created_at).desc()).offset(skip).limit(limit)
-    ).all()
-    return list(lists), count
+    return paginate(
+        session,
+        ShoppingList,
+        where=owner_filter(ShoppingList.owner_id, owner_ids),
+        order_by=col(ShoppingList.created_at).desc(),
+        skip=skip,
+        limit=limit,
+    )
 
 
 def create_shopping_list(
@@ -175,7 +153,7 @@ def create_shopping_list(
 ) -> ShoppingList:
     db_list = ShoppingList(**list_in.model_dump(), owner_id=owner_id)
     session.add(db_list)
-    session.commit()
+    session.flush()
     session.refresh(db_list)
     return db_list
 
@@ -189,14 +167,14 @@ def update_shopping_list(
     update_data = list_in.model_dump(exclude_unset=True)
     db_list.sqlmodel_update(update_data)
     session.add(db_list)
-    session.commit()
+    session.flush()
     session.refresh(db_list)
     return db_list
 
 
 def delete_shopping_list(*, session: Session, shopping_list: ShoppingList) -> None:
     session.delete(shopping_list)
-    session.commit()
+    session.flush()
 
 
 def add_item_to_shopping_list(
@@ -220,7 +198,7 @@ def add_item_to_shopping_list(
             if item_in.notes and not existing.notes:
                 existing.notes = item_in.notes
             session.add(existing)
-            session.commit()
+            session.flush()
             session.refresh(shopping_list)
             return shopping_list
 
@@ -233,7 +211,7 @@ def add_item_to_shopping_list(
         notes=item_in.notes,
     )
     session.add(item)
-    session.commit()
+    session.flush()
     session.refresh(shopping_list)
     return shopping_list
 
@@ -259,7 +237,7 @@ def update_shopping_list_item(
         )
     item.sqlmodel_update(update_data)
     session.add(item)
-    session.commit()
+    session.flush()
     session.refresh(item)
     return item
 
@@ -279,7 +257,7 @@ def apply_pantry_check(
         session.add(item)
     shopping_list.pantry_checked_at = get_datetime_utc()
     session.add(shopping_list)
-    session.commit()
+    session.flush()
     session.refresh(shopping_list)
     return shopping_list
 
@@ -292,7 +270,7 @@ def get_shopping_list_item(
 
 def delete_shopping_list_item(*, session: Session, item: ShoppingListItem) -> None:
     session.delete(item)
-    session.commit()
+    session.flush()
 
 
 def get_shopping_list_recipe(
@@ -373,17 +351,16 @@ def _adjust_items_for_recipe(
     session: Session,
     shopping_list: ShoppingList,
     sl_recipe: ShoppingListRecipe,
-    old_servings: int,
     new_servings: int,
 ) -> None:
-    """Adjust shopping list items when a recipe's planned servings change."""
-    original_servings = sl_recipe.recipe.servings or 1
+    """Move the list's items as a planned recipe goes to ``new_servings``."""
+    recipe = sl_recipe.recipe
     _apply_recipe_delta(
         session=session,
         shopping_list=shopping_list,
-        recipe=sl_recipe.recipe,
-        old_scale=old_servings / original_servings,
-        new_scale=new_servings / original_servings,
+        recipe=recipe,
+        old_scale=servings_scale(recipe, sl_recipe.servings_planned),
+        new_scale=servings_scale(recipe, new_servings),
     )
 
 
@@ -402,13 +379,12 @@ def update_shopping_list_recipe(
             session=session,
             shopping_list=shopping_list,
             sl_recipe=sl_recipe,
-            old_servings=sl_recipe.servings_planned,
             new_servings=update_in.servings_planned,
         )
     update_data = update_in.model_dump(exclude_unset=True)
     sl_recipe.sqlmodel_update(update_data)
     session.add(sl_recipe)
-    session.commit()
+    session.flush()
     session.refresh(sl_recipe)
     return sl_recipe
 
@@ -420,11 +396,10 @@ def delete_shopping_list_recipe(
         session=session,
         shopping_list=shopping_list,
         sl_recipe=sl_recipe,
-        old_servings=sl_recipe.servings_planned,
         new_servings=0,
     )
     session.delete(sl_recipe)
-    session.commit()
+    session.flush()
 
 
 def add_recipe_to_shopping_list(
@@ -441,7 +416,6 @@ def add_recipe_to_shopping_list(
     :func:`_item_key`.
     """
     target_servings = servings or recipe.servings or 1
-    original_servings = recipe.servings or 1
 
     sl_recipe = ShoppingListRecipe(
         shopping_list_id=shopping_list.id,
@@ -456,9 +430,9 @@ def add_recipe_to_shopping_list(
         shopping_list=shopping_list,
         recipe=recipe,
         old_scale=0.0,
-        new_scale=target_servings / original_servings,
+        new_scale=servings_scale(recipe, target_servings),
     )
 
-    session.commit()
+    session.flush()
     session.refresh(shopping_list)
     return shopping_list

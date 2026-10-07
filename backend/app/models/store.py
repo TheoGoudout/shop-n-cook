@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import DateTime, UniqueConstraint
+from sqlalchemy import CheckConstraint, DateTime, UniqueConstraint
 from sqlmodel import Field, Relationship, SQLModel
 
 from app.models.base import get_datetime_utc, stored_enum
@@ -72,6 +72,8 @@ class StoresPublic(SQLModel):
 
 
 class Store(StoreBase, table=True):
+    __table_args__ = (CheckConstraint("price_index > 0", name="ck_store_price_index"),)
+
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     slug: str = Field(min_length=1, max_length=255, unique=True, index=True)
     #: Set by ``store_providers.scheduler`` after a complete refresh. Not on
@@ -135,6 +137,8 @@ class IngredientPricesPublic(SQLModel):
 class IngredientPrice(IngredientPriceBase, table=True):
     __table_args__ = (
         UniqueConstraint("ingredient_id", "store_id", name="uq_ingredient_store_price"),
+        CheckConstraint("price_amount >= 0", name="ck_ingredientprice_amount"),
+        CheckConstraint("price_quantity > 0", name="ck_ingredientprice_quantity"),
     )
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)

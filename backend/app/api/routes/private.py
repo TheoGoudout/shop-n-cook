@@ -33,6 +33,6 @@ def create_user(user_in: PrivateUserCreate, session: SessionDep) -> Any:
     )
 
     session.add(user)
-    session.commit()
+    session.flush()
 
     return user

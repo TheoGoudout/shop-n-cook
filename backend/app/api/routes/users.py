@@ -1,7 +1,7 @@
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from sqlmodel import col, func, select
 
 from app import crud
@@ -53,7 +53,9 @@ def read_users(session: SessionDep, skip: int = 0, limit: int = 100) -> Any:
 @router.post(
     "/", dependencies=[Depends(get_current_active_superuser)], response_model=UserPublic
 )
-def create_user(*, session: SessionDep, user_in: UserCreate) -> Any:
+def create_user(
+    *, session: SessionDep, user_in: UserCreate, background_tasks: BackgroundTasks
+) -> Any:
     """
     Create new user.
     """
@@ -69,7 +71,9 @@ def create_user(*, session: SessionDep, user_in: UserCreate) -> Any:
         email_data = generate_new_account_email(
             email_to=user_in.email, username=user_in.email, password=user_in.password
         )
-        send_email(
+        # Sent once the request has committed, never for an account that wasn't.
+        background_tasks.add_task(
+            send_email,
             email_to=user_in.email,
             subject=email_data.subject,
             html_content=email_data.html_content,
@@ -94,8 +98,6 @@ def update_user_me(
     user_data = user_in.model_dump(exclude_unset=True)
     current_user.sqlmodel_update(user_data)
     session.add(current_user)
-    session.commit()
-    session.refresh(current_user)
     return current_user
 
 
@@ -116,7 +118,6 @@ def update_password_me(
     hashed_password = get_password_hash(body.new_password)
     current_user.hashed_password = hashed_password
     session.add(current_user)
-    session.commit()
     return Message(message="Password updated successfully")
 
 
@@ -138,7 +139,6 @@ def delete_user_me(session: SessionDep, current_user: CurrentUser) -> Any:
             status_code=403, detail="Super users are not allowed to delete themselves"
         )
     session.delete(current_user)
-    session.commit()
     return Message(message="User deleted successfully")
 
 
@@ -226,5 +226,4 @@ def delete_user(
             status_code=403, detail="Super users are not allowed to delete themselves"
         )
     session.delete(user)
-    session.commit()
     return Message(message="User deleted successfully")

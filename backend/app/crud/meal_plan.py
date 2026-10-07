@@ -1,7 +1,10 @@
 import uuid
 
-from sqlmodel import Session, col, func, select
+from sqlmodel import Session, col, select
 
+from app.crud.query import owner_filter, paginate
+from app.crud.recipe import recipe_cost, servings_scale
+from app.crud.shopping_list import add_recipe_to_shopping_list, create_shopping_list
 from app.models.meal_plan import (
     MealPlan,
     MealPlanCreate,
@@ -12,29 +15,16 @@ from app.models.meal_plan import (
     MealPlanPublic,
     MealPlanUpdate,
 )
-from app.models.recipe import Recipe
 from app.models.shopping_list import ShoppingList, ShoppingListCreate
 from app.services.pricing import PriceBook
-
-
-def _entry_scale(entry: MealPlanEntry) -> float:
-    """How far this entry's servings stretch the recipe's own quantities."""
-    return entry.servings / (entry.recipe.servings or 1)
 
 
 def meal_plan_entry_to_public(
     entry: MealPlanEntry, prices: PriceBook | None = None
 ) -> MealPlanEntryPublic:
-    scale = _entry_scale(entry)
+    scale = servings_scale(entry.recipe, entry.servings)
     cost = (
-        prices.summarize(
-            [
-                (ri.ingredient_name, ri.quantity * scale, ri.unit)
-                for ri in entry.recipe.recipe_ingredients
-            ]
-        )
-        if prices is not None
-        else None
+        recipe_cost(entry.recipe, prices, scale=scale) if prices is not None else None
     )
     return MealPlanEntryPublic(
         id=entry.id,
@@ -96,31 +86,23 @@ def get_meal_plan(*, session: Session, plan_id: uuid.UUID) -> MealPlan | None:
 def get_meal_plans(
     *,
     session: Session,
-    owner_id: uuid.UUID | None = None,
     owner_ids: set[uuid.UUID] | None = None,
     skip: int = 0,
     limit: int = 100,
 ) -> tuple[list[MealPlan], int]:
-    """List meal plans, optionally restricted to a set of owners.
+    """Latest plans first, owned by any of ``owner_ids`` (``None``: everyone's).
 
-    ``owner_ids`` is how a household sees its shared plans; it takes precedence
-    over ``owner_id``.
+    Passing every household member's id is how a household sees its shared
+    plans; see ``crud.visible_owner_ids``.
     """
-    query = select(MealPlan)
-    count_query = select(func.count()).select_from(MealPlan)
-    if owner_ids is not None:
-        owner_filter = col(MealPlan.owner_id).in_(owner_ids)
-        query = query.where(owner_filter)
-        count_query = count_query.where(owner_filter)
-    elif owner_id is not None:
-        query = query.where(MealPlan.owner_id == owner_id)
-        count_query = count_query.where(MealPlan.owner_id == owner_id)
-
-    count = session.exec(count_query).one()
-    plans = session.exec(
-        query.order_by(col(MealPlan.start_date).desc()).offset(skip).limit(limit)
-    ).all()
-    return list(plans), count
+    return paginate(
+        session,
+        MealPlan,
+        where=owner_filter(MealPlan.owner_id, owner_ids),
+        order_by=col(MealPlan.start_date).desc(),
+        skip=skip,
+        limit=limit,
+    )
 
 
 def create_meal_plan(
@@ -128,7 +110,7 @@ def create_meal_plan(
 ) -> MealPlan:
     plan = MealPlan(**plan_in.model_dump(), owner_id=owner_id)
     session.add(plan)
-    session.commit()
+    session.flush()
     session.refresh(plan)
     return plan
 
@@ -138,14 +120,14 @@ def update_meal_plan(
 ) -> MealPlan:
     plan.sqlmodel_update(update_in.model_dump(exclude_unset=True))
     session.add(plan)
-    session.commit()
+    session.flush()
     session.refresh(plan)
     return plan
 
 
 def delete_meal_plan(*, session: Session, plan: MealPlan) -> None:
     session.delete(plan)
-    session.commit()
+    session.flush()
 
 
 # --------------------------------------------------------------------------- #
@@ -173,7 +155,7 @@ def add_entry(
         batch_of_id=batch_of.id if batch_of is not None else None,
     )
     session.add(entry)
-    session.commit()
+    session.flush()
     session.refresh(entry)
     return entry
 
@@ -209,14 +191,14 @@ def update_entry(
                 session.add(leftover)
     entry.sqlmodel_update(changes)
     session.add(entry)
-    session.commit()
+    session.flush()
     session.refresh(entry)
     return entry
 
 
 def delete_entry(*, session: Session, entry: MealPlanEntry) -> None:
     session.delete(entry)
-    session.commit()
+    session.flush()
 
 
 # --------------------------------------------------------------------------- #
@@ -237,10 +219,6 @@ def generate_shopping_list(
     The list is linked back onto the plan so the UI can offer to open it
     instead of generating another.
     """
-    # Imported here: shopping_list's CRUD imports recipe's, and importing it at
-    # module scope would close the loop through this module's own helpers.
-    from app.crud.shopping_list import add_recipe_to_shopping_list, create_shopping_list
-
     shopping_list = create_shopping_list(
         session=session,
         list_in=ShoppingListCreate(
@@ -252,16 +230,15 @@ def generate_shopping_list(
     )
 
     for entry in plan.entries:
-        recipe: Recipe = entry.recipe
         shopping_list = add_recipe_to_shopping_list(
             session=session,
             shopping_list=shopping_list,
-            recipe=recipe,
+            recipe=entry.recipe,
             servings=entry.servings,
         )
 
     plan.shopping_list_id = shopping_list.id
     session.add(plan)
-    session.commit()
+    session.flush()
     session.refresh(shopping_list)
     return shopping_list

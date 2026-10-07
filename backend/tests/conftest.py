@@ -73,7 +73,14 @@ def fresh_provider_caches() -> Generator[None, None, None]:
 
 @pytest.fixture(scope="session", autouse=True)
 def db() -> Generator[Session, None, None]:
-    with Session(engine) as session:
+    """The session tests build their fixtures with.
+
+    CRUD functions only flush; the app commits once per request. Tests call
+    CRUD directly and then go through the API, which reads on another
+    connection, so this session autocommits every statement it flushes.
+    """
+    autocommit = engine.execution_options(isolation_level="AUTOCOMMIT")
+    with Session(autocommit) as session:
         init_db(session)
         yield session
         session.execute(delete(CrawledRecipe))

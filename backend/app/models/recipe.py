@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 import sqlalchemy as sa
 from pydantic import model_validator
-from sqlalchemy import Column, DateTime
+from sqlalchemy import CheckConstraint, Column, DateTime
 from sqlalchemy.dialects.postgresql import ARRAY as PG_ARRAY
 from sqlmodel import Field, Relationship, SQLModel
 
@@ -86,6 +86,10 @@ class RecipeIngredientPublic(SQLModel):
 
 
 class RecipeIngredient(RecipeIngredientBase, table=True):
+    __table_args__ = (
+        CheckConstraint("quantity > 0", name="ck_recipeingredient_quantity"),
+    )
+
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     recipe_id: uuid.UUID = Field(
         foreign_key="recipe.id", nullable=False, ondelete="CASCADE"
@@ -288,6 +292,24 @@ class RecipePublic(RecipeBase):
     #: ``estimated_cost`` is a floor, not the real total.
     unpriced_ingredient_count: int = 0
     currency: str = "EUR"
+
+
+class RecipeFilters(SQLModel):
+    """What a recipe listing can be narrowed by, as query parameters.
+
+    A diet flag narrows only when ``True``: ``False`` means "don't care", not
+    "exclude vegan recipes".
+    """
+
+    search: str | None = None
+    seasons: list[Season] | None = None
+    is_vegan: bool | None = None
+    is_vegetarian: bool | None = None
+    is_gluten_free: bool | None = None
+    is_dairy_free: bool | None = None
+    difficulty: Difficulty | None = None
+    meal_type: MealType | None = None
+    cuisine_type: str | None = None
 
 
 class RecipesPublic(SQLModel):

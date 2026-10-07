@@ -45,9 +45,9 @@ def _store(
         store.prices_refreshed_at = get_datetime_utc() - timedelta(
             hours=refreshed_hours_ago
         )
-        db.add(store)
-        db.commit()
-        db.refresh(store)
+    # Committed, so that a refresh rolling back a failed store keeps it.
+    db.commit()
+    db.refresh(store)
     return store
 
 

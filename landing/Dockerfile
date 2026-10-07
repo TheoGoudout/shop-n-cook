@@ -9,6 +9,7 @@ COPY ./landing/nginx.conf /etc/nginx/conf.d/default.conf
 COPY ./landing/index.html /usr/share/nginx/html/index.html.template
 
 COPY ./landing/privacy.html /usr/share/nginx/html/privacy.html
+COPY ./landing/base.css /usr/share/nginx/html/base.css
 COPY ./landing/fonts /usr/share/nginx/html/fonts
 
 COPY ./landing/docker-entrypoint.sh /docker-entrypoint.d/40-envsubst-html.sh

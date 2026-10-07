@@ -33,7 +33,6 @@ from __future__ import annotations
 
 import logging
 import secrets
-import time
 import uuid
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
@@ -56,12 +55,16 @@ from app.models import (
 from app.models.base import get_datetime_utc
 from app.services.ingredient_image import fetch_and_update_ingredients_batch
 from app.services.recipe_crawler import discovery, quality
+from app.services.recipe_crawler.fetcher import (
+    Pause,
+    PoliteFetcher,
+    SiteUnavailableError,
+    sleep,
+)
 from app.services.recipe_crawler.sites import SITES, RecipeSite
 from app.services.recipe_import import import_recipe_from_html
 from app.services.recipe_import import llm as llm_module
 from app.services.recipe_import.mapping import parsed_to_create
-from app.services.store_providers.errors import ProviderUnavailableError
-from app.services.store_providers.families import http_client, robots
 
 logger = logging.getLogger(__name__)
 
@@ -71,18 +74,6 @@ REJECTED_RECHECK_AFTER = timedelta(days=90)
 #: day, and given up on after this many attempts.
 FAILED_RETRY_AFTER = timedelta(days=1)
 MAX_FAILED_ATTEMPTS = 3
-
-#: Waits up to the given seconds; returns ``True`` if the run should stop.
-Pause = Callable[[float], bool]
-
-
-def _sleep(seconds: float) -> bool:
-    time.sleep(seconds)
-    return False
-
-
-class SiteUnavailableError(Exception):
-    """The site stopped answering, or its robots.txt cannot be read."""
 
 
 @dataclass(frozen=True)
@@ -102,51 +93,6 @@ class CrawlReport:
 
     def with_status(self, status: CrawlStatus) -> list[Outcome]:
         return [o for o in self.outcomes if o.status == status]
-
-
-class _PoliteFetcher:
-    """robots.txt first, then at most one request per ``delay`` per site."""
-
-    def __init__(self, *, delay: float, pause: Pause, report: CrawlReport) -> None:
-        self._delay = delay
-        self._pause = pause
-        self._report = report
-        self._last_request: dict[str, float] = {}
-        self.stopped = False
-
-    def get(self, url: str, site: RecipeSite) -> http_client.FetchedPage | None:
-        """The page, or ``None`` if robots.txt forbids it.
-
-        Raises ``SiteUnavailableError`` if the site or its robots.txt cannot be
-        reached: a 5xx robots.txt means "disallow everything for now", which is
-        an outage, not a verdict on any one recipe.
-        """
-        try:
-            policy = robots.policy_for(site.origin)
-        except ProviderUnavailableError as exc:
-            raise SiteUnavailableError(str(exc)) from exc
-        if policy.disallow_all:
-            raise SiteUnavailableError(f"{site.origin}/robots.txt is unavailable")
-        if not policy.allows(url):
-            return None
-
-        last = self._last_request.get(site.origin)
-        if last is not None:
-            wait = self._delay - (time.monotonic() - last)
-            if wait > 0 and self._pause(wait):
-                self.stopped = True
-                raise SiteUnavailableError("crawl stopped")
-        try:
-            page = http_client.fetch(url)
-        except ProviderUnavailableError as exc:
-            raise SiteUnavailableError(str(exc)) from exc
-        finally:
-            self._last_request[site.origin] = time.monotonic()
-            self._report.pages_fetched += 1
-        if page.status_code in (403, 429) or page.status_code >= 500:
-            # Throttled, shielded or down: stop asking for this run.
-            raise SiteUnavailableError(f"{url} returned HTTP {page.status_code}")
-        return page
 
 
 # --------------------------------------------------------------------------- #
@@ -267,7 +213,7 @@ def _judge_site(
     session: Session,
     site: RecipeSite,
     *,
-    fetcher: _PoliteFetcher,
+    fetcher: PoliteFetcher,
     report: CrawlReport,
     pages: dict[str, str],
     max_pages: int,
@@ -281,7 +227,7 @@ def _judge_site(
     """
     links: list[str] = []
     for seed in site.seed_urls:
-        page = fetcher.get(seed, site)
+        page = fetcher.get(seed, site.origin)
         if page is None or page.status_code != 200:
             logger.warning(
                 "Recipe crawl: cannot read %s (%s)",
@@ -309,7 +255,7 @@ def _judge_site(
     for url in fresh[:max_pages]:
         if should_stop():
             return
-        page = fetcher.get(url, site)
+        page = fetcher.get(url, site.origin)
         if page is None or page.status_code != 200:
             reason = (
                 "robots.txt disallows" if page is None else f"HTTP {page.status_code}"
@@ -469,7 +415,7 @@ def _import_backlog(
     session: Session,
     sites: Sequence[RecipeSite],
     *,
-    fetcher: _PoliteFetcher,
+    fetcher: PoliteFetcher,
     report: CrawlReport,
     pages: dict[str, str],
     max_imports: int,
@@ -503,7 +449,7 @@ def _import_backlog(
         html = pages.get(url)
         if html is None:
             try:
-                page = fetcher.get(url, site)
+                page = fetcher.get(url, site.origin)
             except SiteUnavailableError as exc:
                 logger.warning("Recipe crawl: skipping %s: %s", site.slug, exc)
                 unavailable.add(site.slug)
@@ -556,13 +502,13 @@ def crawl(
     max_imports: int,
     max_pages_per_site: int,
     delay_seconds: float,
-    pause: Pause = _sleep,
+    pause: Pause = sleep,
     should_stop: Callable[[], bool] = lambda: False,
     dry_run: bool = False,
 ) -> CrawlReport:
     """Run one pass. With ``dry_run``, judge but neither record nor import."""
     report = CrawlReport()
-    fetcher = _PoliteFetcher(delay=delay_seconds, pause=pause, report=report)
+    fetcher = PoliteFetcher(delay=delay_seconds, pause=pause)
     pages: dict[str, str] = {}
     reachable: list[RecipeSite] = []
 
@@ -595,13 +541,14 @@ def crawl(
             max_imports=max_imports,
             should_stop=should_stop,
         )
+    report.pages_fetched = fetcher.pages_fetched
     return report
 
 
 def run_crawl(
     session: Session,
     *,
-    pause: Pause = _sleep,
+    pause: Pause = sleep,
     should_stop: Callable[[], bool] = lambda: False,
 ) -> CrawlReport | None:
     """A logged pass with the configured limits. ``None`` when no AI provider

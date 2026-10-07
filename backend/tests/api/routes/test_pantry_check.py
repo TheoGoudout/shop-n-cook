@@ -325,7 +325,7 @@ def test_rename_merge_sums_what_is_at_home(db: Session) -> None:
         db.add(item)
     db.commit()
 
-    crud.rename_ingredient_references(db, old, new)
+    crud.rename_ingredient_references(session=db, old_name=old, new_name=new)
     db.refresh(sl)
     assert len(sl.items) == 1
     assert sl.items[0].quantity == 8

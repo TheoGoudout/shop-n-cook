@@ -15,7 +15,7 @@ from app.models.recipe import RecipeIngredient, RecipeIngredientCreate
 from app.models.shopping_list import ShoppingListItem
 
 
-def get_ingredient_by_name(session: Session, name: str) -> Ingredient | None:
+def get_ingredient_by_name(*, session: Session, name: str) -> Ingredient | None:
     return session.exec(
         select(Ingredient).where(func.lower(Ingredient.name) == name.lower())
     ).first()
@@ -49,8 +49,8 @@ def get_ingredient_categories_by_name(
     return {row.name.strip().lower(): row.category for row in rows}
 
 
-def get_or_create_ingredient(session: Session, name: str) -> tuple[Ingredient, bool]:
-    existing = get_ingredient_by_name(session, name)
+def get_or_create_ingredient(*, session: Session, name: str) -> tuple[Ingredient, bool]:
+    existing = get_ingredient_by_name(session=session, name=name)
     if existing:
         return existing, False
     ingredient = Ingredient(name=name)
@@ -70,32 +70,26 @@ def sync_ingredient_catalog(
     still have no image, for the caller to fetch one in the background.
     """
     ids_missing_image: list[uuid.UUID] = []
-    needs_commit = False
     for ing in ingredients:
-        ingredient, _ = get_or_create_ingredient(session, ing.ingredient_name)
-        changed = False
+        ingredient, _ = get_or_create_ingredient(
+            session=session, name=ing.ingredient_name
+        )
         if (
             ing.category is not None
             and ing.category != IngredientCategory.OTHER
             and ingredient.category == IngredientCategory.OTHER
         ):
             ingredient.category = ing.category
-            changed = True
         if ing.name_en and not ingredient.name_en:
             ingredient.name_en = ing.name_en
-            changed = True
-        if changed:
-            session.add(ingredient)
-            needs_commit = True
         if not ingredient.image_url:
             ids_missing_image.append(ingredient.id)
-    if needs_commit:
-        session.flush()
+    session.flush()
     return ids_missing_image
 
 
 def get_ingredients(
-    session: Session, skip: int = 0, limit: int = 1000
+    *, session: Session, skip: int = 0, limit: int = 1000
 ) -> tuple[list[Ingredient], int]:
     count = session.exec(select(func.count()).select_from(Ingredient)).one()
     ingredients = session.exec(
@@ -104,11 +98,13 @@ def get_ingredients(
     return list(ingredients), count
 
 
-def get_ingredient(session: Session, ingredient_id: uuid.UUID) -> Ingredient | None:
+def get_ingredient(*, session: Session, ingredient_id: uuid.UUID) -> Ingredient | None:
     return session.get(Ingredient, ingredient_id)
 
 
-def create_ingredient(session: Session, ingredient_in: IngredientCreate) -> Ingredient:
+def create_ingredient(
+    *, session: Session, ingredient_in: IngredientCreate
+) -> Ingredient:
     ingredient = Ingredient.model_validate(ingredient_in)
     session.add(ingredient)
     session.flush()
@@ -117,7 +113,7 @@ def create_ingredient(session: Session, ingredient_in: IngredientCreate) -> Ingr
 
 
 def update_ingredient(
-    session: Session, ingredient: Ingredient, update_in: IngredientUpdate
+    *, session: Session, ingredient: Ingredient, update_in: IngredientUpdate
 ) -> Ingredient:
     data = update_in.model_dump(exclude_unset=True)
     ingredient.sqlmodel_update(data)
@@ -127,7 +123,7 @@ def update_ingredient(
     return ingredient
 
 
-def get_duplicate_groups(session: Session) -> list[list[Ingredient]]:
+def get_duplicate_groups(*, session: Session) -> list[list[Ingredient]]:
     """Ask the LLM to identify groups of duplicate ingredient names."""
     from langchain_core.messages import HumanMessage, SystemMessage
 
@@ -188,7 +184,9 @@ def get_duplicate_groups(session: Session) -> list[list[Ingredient]]:
     return result
 
 
-def _merge_duplicate_shopping_list_items(session: Session, canonical_name: str) -> None:
+def _merge_duplicate_shopping_list_items(
+    *, session: Session, canonical_name: str
+) -> None:
     """Merge shopping list items that share the same name+unit after a rename."""
     items = session.exec(
         select(ShoppingListItem).where(
@@ -213,7 +211,7 @@ def _merge_duplicate_shopping_list_items(session: Session, canonical_name: str) 
 
 
 def rename_ingredient_references(
-    session: Session, old_name: str, new_name: str
+    *, session: Session, old_name: str, new_name: str
 ) -> None:
     """Update all recipe and shopping list references from old_name to new_name."""
     session.execute(
@@ -227,11 +225,12 @@ def rename_ingredient_references(
         .values(name=new_name)
     )
     session.flush()
-    _merge_duplicate_shopping_list_items(session, new_name)
+    _merge_duplicate_shopping_list_items(session=session, canonical_name=new_name)
     session.flush()
 
 
-def delete_ingredient(session: Session, ingredient: Ingredient) -> None:
+def delete_ingredient(*, session: Session, ingredient: Ingredient) -> None:
+    # Looked up again so an instance loaded by another session can be passed.
     obj = session.get(Ingredient, ingredient.id)
     if obj:
         session.delete(obj)

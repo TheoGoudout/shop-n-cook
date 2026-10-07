@@ -72,6 +72,9 @@ def get_current_active_superuser(current_user: CurrentUser) -> User:
     return current_user
 
 
+CurrentSuperuser = Annotated[User, Depends(get_current_active_superuser)]
+
+
 def get_price_book(session: SessionDep, current_user: CurrentUser) -> PriceBook:
     """Prices for this request, at the caller's chosen store and currency.
 

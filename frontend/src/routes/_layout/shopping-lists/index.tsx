@@ -3,8 +3,9 @@ import { createFileRoute } from "@tanstack/react-router"
 import { ShoppingCart } from "lucide-react"
 import { Suspense } from "react"
 import { useTranslation } from "react-i18next"
-
 import { ShoppingListsService } from "@/client"
+import { EmptyListState } from "@/components/Common/EmptyListState"
+import { PageHeader } from "@/components/Common/PageHeader"
 import PendingItems from "@/components/Pending/PendingItems"
 import AddShoppingList from "@/components/ShoppingLists/AddShoppingList"
 import { ShoppingListCard } from "@/components/ShoppingLists/ShoppingListCard"
@@ -30,13 +31,11 @@ function ShoppingListsContent() {
 
   if (data.data.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center text-center py-12">
-        <div className="rounded-full bg-muted p-4 mb-4">
-          <ShoppingCart className="h-8 w-8 text-muted-foreground" />
-        </div>
-        <h3 className="text-lg font-semibold">{t("page.empty_title")}</h3>
-        <p className="text-muted-foreground">{t("page.empty_subtitle")}</p>
-      </div>
+      <EmptyListState
+        icon={ShoppingCart}
+        title={t("page.empty_title")}
+        subtitle={t("page.empty_subtitle")}
+      />
     )
   }
 
@@ -54,15 +53,9 @@ function ShoppingLists() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">
-            {t("page.title")}
-          </h1>
-          <p className="text-muted-foreground">{t("page.subtitle")}</p>
-        </div>
+      <PageHeader title={t("page.title")} subtitle={t("page.subtitle")}>
         <AddShoppingList />
-      </div>
+      </PageHeader>
       <Suspense fallback={<PendingItems />}>
         <ShoppingListsContent />
       </Suspense>

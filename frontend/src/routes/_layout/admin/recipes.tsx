@@ -1,18 +1,17 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 import { RefreshCw } from "lucide-react"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
-
 import { RecipesService } from "@/client"
+import { PageHeader } from "@/components/Common/PageHeader"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { LoadingButton } from "@/components/ui/loading-button"
 import { Skeleton } from "@/components/ui/skeleton"
-import useCustomToast from "@/hooks/useCustomToast"
+import { useCrudMutation } from "@/hooks/useCrudMutation"
 import { APP_NAME } from "@/lib/config"
-import { handleError } from "@/utils"
 
 export const Route = createFileRoute("/_layout/admin/recipes")({
   component: RecipesAdminPage,
@@ -49,7 +48,6 @@ function Stat({ label, value }: { label: string; value: number | undefined }) {
 function RecipesAdminPage() {
   const { t, i18n } = useTranslation("admin")
   const queryClient = useQueryClient()
-  const { showSuccessToast, showErrorToast } = useCustomToast()
   const [batch, setBatch] = useState(DEFAULT_BATCH)
 
   const { data } = useQuery({
@@ -58,18 +56,14 @@ function RecipesAdminPage() {
     refetchInterval: (query) => (query.state.data?.running ? 5000 : false),
   })
 
-  const mutation = useMutation({
+  const mutation = useCrudMutation({
     mutationFn: () =>
       RecipesService.reimportStaleImports({
         requestBody: { limit: batch, language: i18n.language },
       }),
-    onSuccess: (status) => {
-      queryClient.setQueryData(STALE_IMPORTS_KEY, status)
-      showSuccessToast(t("recipes.started"))
-    },
-    onError: handleError.bind(showErrorToast),
-    onSettled: () =>
-      queryClient.invalidateQueries({ queryKey: STALE_IMPORTS_KEY }),
+    successMessage: t("recipes.started"),
+    onSuccess: (status) => queryClient.setQueryData(STALE_IMPORTS_KEY, status),
+    invalidateKeys: STALE_IMPORTS_KEY,
   })
 
   const running = data?.running ?? false
@@ -78,12 +72,7 @@ function RecipesAdminPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">
-          {t("recipes.title")}
-        </h1>
-        <p className="text-muted-foreground">{t("recipes.subtitle")}</p>
-      </div>
+      <PageHeader title={t("recipes.title")} subtitle={t("recipes.subtitle")} />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <Stat label={t("recipes.version")} value={data?.import_version} />

@@ -1,5 +1,4 @@
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
@@ -29,8 +28,7 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
-import useCustomToast from "@/hooks/useCustomToast"
-import { handleError } from "@/utils"
+import { useCrudMutation } from "@/hooks/useCrudMutation"
 
 type FormData = {
   email: string
@@ -43,8 +41,6 @@ type FormData = {
 
 const AddUser = () => {
   const [isOpen, setIsOpen] = useState(false)
-  const queryClient = useQueryClient()
-  const { showSuccessToast, showErrorToast } = useCustomToast()
   const { t } = useTranslation("admin")
   const { t: tAuth } = useTranslation("auth")
   const { t: tCommon } = useTranslation("common")
@@ -82,18 +78,15 @@ const AddUser = () => {
     },
   })
 
-  const mutation = useMutation({
+  const mutation = useCrudMutation({
     mutationFn: (data: UserCreate) =>
       UsersService.createUser({ requestBody: data }),
+    successMessage: t("add.success"),
     onSuccess: () => {
-      showSuccessToast(t("add.success"))
       form.reset()
       setIsOpen(false)
     },
-    onError: handleError.bind(showErrorToast),
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["users"] })
-    },
+    invalidateKeys: ["users"],
   })
 
   const onSubmit = (data: FormData) => {

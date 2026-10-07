@@ -1,6 +1,5 @@
 import type { TFunction } from "i18next"
 import { z } from "zod"
-
 import type {
   Difficulty,
   ImportSource,
@@ -12,19 +11,17 @@ import type {
   Season,
   Unit,
 } from "@/client"
+import {
+  DifficultySchema,
+  ImportSourceSchema,
+  MealTypeSchema,
+  SeasonSchema,
+} from "@/client/schemas.gen"
 
-const SEASONS = ["spring", "summer", "autumn", "winter"] as const
-const IMPORT_SOURCES = ["url", "photo"] as const
-const DIFFICULTIES = ["easy", "medium", "hard"] as const
-const MEAL_TYPES = [
-  "breakfast",
-  "lunch",
-  "dinner",
-  "snack",
-  "dessert",
-  "drink",
-  "other",
-] as const
+const SEASONS = SeasonSchema.enum
+const IMPORT_SOURCES = ImportSourceSchema.enum
+const DIFFICULTIES = DifficultySchema.enum
+const MEAL_TYPES = MealTypeSchema.enum
 
 export type RecipeFormValues = {
   title: string

@@ -1,12 +1,12 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 import { Combine, Package, Sparkles } from "lucide-react"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
-
 import { IngredientsService } from "@/client"
 import { IngredientActionsMenu } from "@/components/Admin/IngredientActionsMenu"
 import { IngredientPriceDialog } from "@/components/Admin/IngredientPriceDialog"
+import { PageHeader } from "@/components/Common/PageHeader"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -18,10 +18,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { LoadingButton } from "@/components/ui/loading-button"
+import { useCrudMutation } from "@/hooks/useCrudMutation"
 import useCustomToast from "@/hooks/useCustomToast"
 import { APP_NAME } from "@/lib/config"
 import { formatMoney } from "@/lib/money"
-import { handleError } from "@/utils"
 
 export const Route = createFileRoute("/_layout/admin/ingredients")({
   component: IngredientsPage,
@@ -37,18 +37,14 @@ export const Route = createFileRoute("/_layout/admin/ingredients")({
  * repeatedly after a bulk recipe import.
  */
 function EstimatePricesButton() {
-  const queryClient = useQueryClient()
-  const { showSuccessToast, showErrorToast } = useCustomToast()
+  const { showSuccessToast } = useCustomToast()
   const { t } = useTranslation("admin")
 
-  const mutation = useMutation({
+  const mutation = useCrudMutation({
     mutationFn: () =>
       IngredientsService.estimateIngredientPricesRoute({ requestBody: {} }),
-    onSuccess: (data) => {
-      showSuccessToast(data.message)
-      queryClient.invalidateQueries({ queryKey: ["ingredient-catalog"] })
-    },
-    onError: handleError.bind(showErrorToast),
+    onSuccess: (data) => showSuccessToast(data.message),
+    invalidateKeys: ["ingredient-catalog"],
   })
 
   return (
@@ -65,25 +61,21 @@ function EstimatePricesButton() {
 
 function DeduplicateButton() {
   const [open, setOpen] = useState(false)
-  const queryClient = useQueryClient()
-  const { showSuccessToast, showErrorToast } = useCustomToast()
+  const { showSuccessToast } = useCustomToast()
   const { t } = useTranslation("admin")
 
-  const mutation = useMutation({
+  const mutation = useCrudMutation({
     mutationFn: () =>
       IngredientsService.deduplicateIngredients({ dryRun: false }),
     onSuccess: (data) => {
       setOpen(false)
-      if (data.removed_count === 0) {
-        showSuccessToast(t("ingredient.deduplicate_none"))
-      } else {
-        showSuccessToast(
-          t("ingredient.deduplicate_success", { count: data.removed_count }),
-        )
-      }
-      queryClient.invalidateQueries({ queryKey: ["ingredient-catalog"] })
+      showSuccessToast(
+        data.removed_count === 0
+          ? t("ingredient.deduplicate_none")
+          : t("ingredient.deduplicate_success", { count: data.removed_count }),
+      )
     },
-    onError: handleError.bind(showErrorToast),
+    invalidateKeys: ["ingredient-catalog"],
   })
 
   return (
@@ -262,18 +254,13 @@ function IngredientsPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">
-            {t("ingredients.title")}
-          </h1>
-          <p className="text-muted-foreground">{t("ingredients.subtitle")}</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <EstimatePricesButton />
-          <DeduplicateButton />
-        </div>
-      </div>
+      <PageHeader
+        title={t("ingredients.title")}
+        subtitle={t("ingredients.subtitle")}
+      >
+        <EstimatePricesButton />
+        <DeduplicateButton />
+      </PageHeader>
       <IngredientsTableContent />
     </div>
   )

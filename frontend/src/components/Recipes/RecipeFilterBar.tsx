@@ -1,7 +1,11 @@
 import { X } from "lucide-react"
 import { useTranslation } from "react-i18next"
-
 import type { Difficulty, MealType, Season } from "@/client"
+import {
+  DifficultySchema,
+  MealTypeSchema,
+  SeasonSchema,
+} from "@/client/schemas.gen"
 import {
   DIFFICULTY_ICONS,
   MEAL_TYPE_ICONS,
@@ -40,6 +44,20 @@ export const defaultFilters: RecipeFilters = {
   cuisine_type: "",
 }
 
+/** The filters as the recipe listing endpoints take them; unset ones are left out. */
+export function recipeFilterParams(filters: RecipeFilters) {
+  return {
+    seasons: filters.seasons.length ? filters.seasons : null,
+    isVegan: filters.is_vegan || null,
+    isVegetarian: filters.is_vegetarian || null,
+    isGlutenFree: filters.is_gluten_free || null,
+    isDairyFree: filters.is_dairy_free || null,
+    difficulty: filters.difficulty || null,
+    mealType: filters.meal_type || null,
+    cuisineType: filters.cuisine_type.trim() || null,
+  }
+}
+
 export function activeFilterCount(filters: RecipeFilters): number {
   return (
     filters.seasons.length +
@@ -53,17 +71,9 @@ export function activeFilterCount(filters: RecipeFilters): number {
   )
 }
 
-const SEASONS: Season[] = ["spring", "summer", "autumn", "winter"]
-const DIFFICULTIES: Difficulty[] = ["easy", "medium", "hard"]
-const MEAL_TYPES: MealType[] = [
-  "breakfast",
-  "lunch",
-  "dinner",
-  "snack",
-  "dessert",
-  "drink",
-  "other",
-]
+const SEASONS = SeasonSchema.enum
+const DIFFICULTIES = DifficultySchema.enum
+const MEAL_TYPES = MealTypeSchema.enum
 
 interface RecipeFilterBarProps {
   filters: RecipeFilters

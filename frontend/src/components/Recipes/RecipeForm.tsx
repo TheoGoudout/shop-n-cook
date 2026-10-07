@@ -2,6 +2,11 @@ import { Plus, Trash2 } from "lucide-react"
 import type { ReactNode } from "react"
 import { type UseFormReturn, useFieldArray } from "react-hook-form"
 import { useTranslation } from "react-i18next"
+import {
+  DifficultySchema,
+  MealTypeSchema,
+  SeasonSchema,
+} from "@/client/schemas.gen"
 
 import {
   DIFFICULTY_ICONS,
@@ -33,17 +38,9 @@ import {
 
 import type { RecipeFormValues } from "./recipeFormSchema"
 
-const SEASONS = ["spring", "summer", "autumn", "winter"] as const
-const DIFFICULTIES = ["easy", "medium", "hard"] as const
-const MEAL_TYPES = [
-  "breakfast",
-  "lunch",
-  "dinner",
-  "snack",
-  "dessert",
-  "drink",
-  "other",
-] as const
+const SEASONS = SeasonSchema.enum
+const DIFFICULTIES = DifficultySchema.enum
+const MEAL_TYPES = MealTypeSchema.enum
 
 interface RecipeFormProps {
   form: UseFormReturn<RecipeFormValues>

@@ -2,11 +2,11 @@ import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 import { Suspense } from "react"
 import { useTranslation } from "react-i18next"
-
 import { type UserPublic, UsersService } from "@/client"
 import AddUser from "@/components/Admin/AddUser"
 import { type UserTableData, useUserColumns } from "@/components/Admin/columns"
 import { DataTable } from "@/components/Common/DataTable"
+import { PageHeader } from "@/components/Common/PageHeader"
 import PendingUsers from "@/components/Pending/PendingUsers"
 import useAuth from "@/hooks/useAuth"
 import { APP_NAME } from "@/lib/config"
@@ -51,15 +51,9 @@ function UsersPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">
-            {t("users.title")}
-          </h1>
-          <p className="text-muted-foreground">{t("users.subtitle")}</p>
-        </div>
+      <PageHeader title={t("users.title")} subtitle={t("users.subtitle")}>
         <AddUser />
-      </div>
+      </PageHeader>
       <UsersTable />
     </div>
   )

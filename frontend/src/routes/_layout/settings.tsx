@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { useTranslation } from "react-i18next"
+import { PageHeader } from "@/components/Common/PageHeader"
 import { AppPreferences } from "@/components/UserSettings/AppPreferences"
 import ChangePassword from "@/components/UserSettings/ChangePassword"
 import DeleteAccount from "@/components/UserSettings/DeleteAccount"
@@ -61,10 +62,7 @@ function UserSettings() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">{t("page.title")}</h1>
-        <p className="text-muted-foreground">{t("page.subtitle")}</p>
-      </div>
+      <PageHeader title={t("page.title")} subtitle={t("page.subtitle")} />
 
       <Tabs defaultValue="my-profile">
         <TabsList>

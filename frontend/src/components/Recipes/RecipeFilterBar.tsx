@@ -1,26 +1,12 @@
 import { X } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import type { Difficulty, MealType, Season } from "@/client"
-import {
-  DifficultySchema,
-  MealTypeSchema,
-  SeasonSchema,
-} from "@/client/schemas.gen"
-import {
-  DIFFICULTY_ICONS,
-  MEAL_TYPE_ICONS,
-  SEASON_ICONS,
-} from "@/components/Common/categoryIcons"
+import { SeasonSchema } from "@/client/schemas.gen"
+import { SEASON_ICONS } from "@/components/Common/categoryIcons"
 import { DIET_ICONS } from "@/components/Recipes/DietaryBadges"
+import { RecipeEnumSelect } from "@/components/Recipes/RecipeEnumSelect"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 
 export type RecipeFilters = {
   seasons: Season[]
@@ -72,8 +58,6 @@ export function activeFilterCount(filters: RecipeFilters): number {
 }
 
 const SEASONS = SeasonSchema.enum
-const DIFFICULTIES = DifficultySchema.enum
-const MEAL_TYPES = MealTypeSchema.enum
 
 interface RecipeFilterBarProps {
   filters: RecipeFilters
@@ -139,58 +123,22 @@ export function RecipeFilterBar({
       )}
 
       {/* Difficulty select */}
-      <Select
-        value={filters.difficulty || "_none"}
-        onValueChange={(v) =>
-          onChange({
-            ...filters,
-            difficulty: v === "_none" ? "" : (v as Difficulty),
-          })
-        }
-      >
-        <SelectTrigger className="h-7 w-28 text-xs">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="_none">{t("filters.difficulty")}</SelectItem>
-          {DIFFICULTIES.map((d) => {
-            const DifficultyIcon = DIFFICULTY_ICONS[d]
-            return (
-              <SelectItem key={d} value={d}>
-                <DifficultyIcon aria-hidden="true" />
-                {t(`form.difficulty_${d}`)}
-              </SelectItem>
-            )
-          })}
-        </SelectContent>
-      </Select>
+      <RecipeEnumSelect
+        kind="difficulty"
+        value={filters.difficulty}
+        onChange={(value) => onChange({ ...filters, difficulty: value })}
+        noneLabel={t("filters.difficulty")}
+        triggerClassName="h-7 w-28 text-xs"
+      />
 
       {/* Meal type select */}
-      <Select
-        value={filters.meal_type || "_none"}
-        onValueChange={(v) =>
-          onChange({
-            ...filters,
-            meal_type: v === "_none" ? "" : (v as MealType),
-          })
-        }
-      >
-        <SelectTrigger className="h-7 w-28 text-xs">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="_none">{t("filters.meal_type")}</SelectItem>
-          {MEAL_TYPES.map((m) => {
-            const MealIcon = MEAL_TYPE_ICONS[m]
-            return (
-              <SelectItem key={m} value={m}>
-                <MealIcon aria-hidden="true" />
-                {t(`form.meal_${m}`)}
-              </SelectItem>
-            )
-          })}
-        </SelectContent>
-      </Select>
+      <RecipeEnumSelect
+        kind="meal_type"
+        value={filters.meal_type}
+        onChange={(value) => onChange({ ...filters, meal_type: value })}
+        noneLabel={t("filters.meal_type")}
+        triggerClassName="h-7 w-28 text-xs"
+      />
 
       {/* Cuisine type text */}
       <input

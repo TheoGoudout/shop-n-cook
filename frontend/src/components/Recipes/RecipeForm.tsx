@@ -2,18 +2,10 @@ import { Plus, Trash2 } from "lucide-react"
 import type { ReactNode } from "react"
 import { type UseFormReturn, useFieldArray } from "react-hook-form"
 import { useTranslation } from "react-i18next"
-import {
-  DifficultySchema,
-  MealTypeSchema,
-  SeasonSchema,
-} from "@/client/schemas.gen"
-
-import {
-  DIFFICULTY_ICONS,
-  MEAL_TYPE_ICONS,
-  SEASON_ICONS,
-} from "@/components/Common/categoryIcons"
+import { SeasonSchema } from "@/client/schemas.gen"
+import { SEASON_ICONS } from "@/components/Common/categoryIcons"
 import { UnitSelect } from "@/components/Common/UnitSelect"
+import { RecipeEnumSelect } from "@/components/Recipes/RecipeEnumSelect"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -28,19 +20,10 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 
 import type { RecipeFormValues } from "./recipeFormSchema"
 
 const SEASONS = SeasonSchema.enum
-const DIFFICULTIES = DifficultySchema.enum
-const MEAL_TYPES = MealTypeSchema.enum
 
 interface RecipeFormProps {
   form: UseFormReturn<RecipeFormValues>
@@ -244,30 +227,13 @@ export function RecipeForm({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t("form.difficulty_label")}</FormLabel>
-                    <Select
-                      onValueChange={(v) =>
-                        field.onChange(v === "_none" ? "" : v)
-                      }
-                      value={field.value || "_none"}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="_none">{t("form.none")}</SelectItem>
-                        {DIFFICULTIES.map((d) => {
-                          const DifficultyIcon = DIFFICULTY_ICONS[d]
-                          return (
-                            <SelectItem key={d} value={d}>
-                              <DifficultyIcon aria-hidden="true" />
-                              {t(`form.difficulty_${d}`)}
-                            </SelectItem>
-                          )
-                        })}
-                      </SelectContent>
-                    </Select>
+                    <RecipeEnumSelect
+                      kind="difficulty"
+                      value={field.value ?? ""}
+                      onChange={field.onChange}
+                      noneLabel={t("form.none")}
+                      inForm
+                    />
                   </FormItem>
                 )}
               />
@@ -277,30 +243,13 @@ export function RecipeForm({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t("form.meal_type_label")}</FormLabel>
-                    <Select
-                      onValueChange={(v) =>
-                        field.onChange(v === "_none" ? "" : v)
-                      }
-                      value={field.value || "_none"}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="_none">{t("form.none")}</SelectItem>
-                        {MEAL_TYPES.map((m) => {
-                          const MealIcon = MEAL_TYPE_ICONS[m]
-                          return (
-                            <SelectItem key={m} value={m}>
-                              <MealIcon aria-hidden="true" />
-                              {t(`form.meal_${m}`)}
-                            </SelectItem>
-                          )
-                        })}
-                      </SelectContent>
-                    </Select>
+                    <RecipeEnumSelect
+                      kind="meal_type"
+                      value={field.value ?? ""}
+                      onChange={field.onChange}
+                      noneLabel={t("form.none")}
+                      inForm
+                    />
                   </FormItem>
                 )}
               />

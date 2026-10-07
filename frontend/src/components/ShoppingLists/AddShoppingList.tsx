@@ -1,5 +1,4 @@
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
@@ -28,8 +27,7 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
-import useCustomToast from "@/hooks/useCustomToast"
-import { handleError } from "@/utils"
+import { useCrudMutation } from "@/hooks/useCrudMutation"
 
 function toDateInput(d: Date): string {
   return d.toISOString().split("T")[0]
@@ -64,9 +62,6 @@ const AddShoppingList = () => {
   const { t, i18n } = useTranslation("shopping")
   const { t: tCommon } = useTranslation("common")
   const [isOpen, setIsOpen] = useState(false)
-  const queryClient = useQueryClient()
-  const { showSuccessToast, showErrorToast } = useCustomToast()
-
   const defaults = () => getDefaultListDefaults(i18n.language)
 
   const formSchema = z.object({
@@ -80,7 +75,7 @@ const AddShoppingList = () => {
     defaultValues: defaults(),
   })
 
-  const mutation = useMutation({
+  const mutation = useCrudMutation({
     mutationFn: (data: FormData) =>
       ShoppingListsService.createShoppingList({
         requestBody: {
@@ -89,14 +84,12 @@ const AddShoppingList = () => {
           end_date: data.end_date || null,
         },
       }),
+    successMessage: t("add_list.success"),
     onSuccess: () => {
-      showSuccessToast(t("add_list.success"))
       form.reset(defaults())
       setIsOpen(false)
     },
-    onError: handleError.bind(showErrorToast),
-    onSettled: () =>
-      queryClient.invalidateQueries({ queryKey: ["shopping-lists"] }),
+    invalidateKeys: ["shopping-lists"],
   })
 
   return (

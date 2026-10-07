@@ -3,7 +3,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime
+from sqlalchemy import CheckConstraint, DateTime
 from sqlmodel import Field, Relationship, SQLModel
 
 from app.models.base import get_datetime_utc, stored_enum
@@ -47,6 +47,10 @@ class ShoppingListRecipePublic(SQLModel):
 
 
 class ShoppingListRecipe(ShoppingListRecipeBase, table=True):
+    __table_args__ = (
+        CheckConstraint("servings_planned >= 1", name="ck_shoppinglistrecipe_servings"),
+    )
+
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     shopping_list_id: uuid.UUID = Field(
         foreign_key="shoppinglist.id", nullable=False, ondelete="CASCADE"
@@ -122,6 +126,13 @@ class PantryCheck(SQLModel):
 
 
 class ShoppingListItem(ShoppingListItemBase, table=True):
+    __table_args__ = (
+        CheckConstraint("quantity > 0", name="ck_shoppinglistitem_quantity"),
+        CheckConstraint(
+            "quantity_at_home >= 0", name="ck_shoppinglistitem_quantity_at_home"
+        ),
+    )
+
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     shopping_list_id: uuid.UUID = Field(
         foreign_key="shoppinglist.id", nullable=False, ondelete="CASCADE"

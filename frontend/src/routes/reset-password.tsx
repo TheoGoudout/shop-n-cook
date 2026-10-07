@@ -1,5 +1,4 @@
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useMutation } from "@tanstack/react-query"
 import {
   createFileRoute,
   Link as RouterLink,
@@ -9,7 +8,6 @@ import {
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { z } from "zod"
-
 import { LoginService } from "@/client"
 import { AuthLayout } from "@/components/Common/AuthLayout"
 import {
@@ -23,9 +21,9 @@ import {
 import { LoadingButton } from "@/components/ui/loading-button"
 import { PasswordInput } from "@/components/ui/password-input"
 import { isLoggedIn } from "@/hooks/useAuth"
-import useCustomToast from "@/hooks/useCustomToast"
+import { useCrudMutation } from "@/hooks/useCrudMutation"
 import { APP_NAME } from "@/lib/config"
-import { handleError } from "@/utils"
+import { passwordSchema, passwordsMismatch } from "@/lib/passwordSchema"
 
 const searchSchema = z.object({
   token: z.string().catch(""),
@@ -59,23 +57,19 @@ export const Route = createFileRoute("/reset-password")({
 function ResetPassword() {
   const { t } = useTranslation("auth")
   const { token } = Route.useSearch()
-  const { showSuccessToast, showErrorToast } = useCustomToast()
   const navigate = useNavigate()
 
   const formSchema = z
     .object({
-      new_password: z
-        .string()
-        .min(1, { message: t("validation.password_required") })
-        .min(8, { message: t("validation.password_min") }),
+      new_password: passwordSchema(t),
       confirm_password: z
         .string()
         .min(1, { message: t("validation.confirm_required") }),
     })
-    .refine((data) => data.new_password === data.confirm_password, {
-      message: t("validation.passwords_mismatch"),
-      path: ["confirm_password"],
-    })
+    .refine(
+      (data) => data.new_password === data.confirm_password,
+      passwordsMismatch(t),
+    )
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -87,15 +81,14 @@ function ResetPassword() {
     },
   })
 
-  const mutation = useMutation({
+  const mutation = useCrudMutation({
     mutationFn: (data: { new_password: string; token: string }) =>
       LoginService.resetPassword({ requestBody: data }),
+    successMessage: t("reset.success"),
     onSuccess: () => {
-      showSuccessToast(t("reset.success"))
       form.reset()
       navigate({ to: "/login" })
     },
-    onError: handleError.bind(showErrorToast),
   })
 
   const onSubmit = (data: FormData) => {

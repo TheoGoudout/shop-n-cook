@@ -72,6 +72,7 @@ await rm(distDir, { recursive: true, force: true })
 await mkdir(distDir, { recursive: true })
 await writeFile(join(distDir, "index.html"), html)
 await copyFile(join(landingDir, "privacy.html"), join(distDir, "privacy.html"))
+await copyFile(join(landingDir, "base.css"), join(distDir, "base.css"))
 // Self-hosted fonts: no request leaves the site for a typeface.
 await cp(join(landingDir, "fonts"), join(distDir, "fonts"), { recursive: true })
 

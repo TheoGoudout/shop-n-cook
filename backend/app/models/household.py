@@ -3,7 +3,7 @@ from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, UniqueConstraint
+from sqlalchemy import DateTime
 from sqlmodel import Field, Relationship, SQLModel
 
 from app.models.base import get_datetime_utc, stored_enum
@@ -103,18 +103,17 @@ class Household(HouseholdBase, table=True):
 
 
 class HouseholdMember(SQLModel, table=True):
-    __table_args__ = (
-        # A user belongs to a household at most once, and — enforced in CRUD —
-        # to at most one household overall.
-        UniqueConstraint("household_id", "user_id", name="uq_household_member"),
-    )
-
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     household_id: uuid.UUID = Field(
         foreign_key="household.id", nullable=False, ondelete="CASCADE", index=True
     )
+    #: Unique: a user belongs to at most one household (see ``get_membership``).
     user_id: uuid.UUID = Field(
-        foreign_key="user.id", nullable=False, ondelete="CASCADE", index=True
+        foreign_key="user.id",
+        nullable=False,
+        ondelete="CASCADE",
+        index=True,
+        unique=True,
     )
     role: HouseholdRole = Field(
         default=HouseholdRole.MEMBER, sa_type=stored_enum(HouseholdRole, 20)

@@ -1,5 +1,4 @@
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useMutation } from "@tanstack/react-query"
 import {
   createFileRoute,
   Link as RouterLink,
@@ -22,9 +21,8 @@ import {
 import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
 import { isLoggedIn } from "@/hooks/useAuth"
-import useCustomToast from "@/hooks/useCustomToast"
+import { useCrudMutation } from "@/hooks/useCrudMutation"
 import { APP_NAME } from "@/lib/config"
-import { handleError } from "@/utils"
 
 const formSchema = z.object({
   email: z.email(),
@@ -58,21 +56,16 @@ function RecoverPassword() {
       email: "",
     },
   })
-  const { showSuccessToast, showErrorToast } = useCustomToast()
-
   const recoverPassword = async (data: FormData) => {
     await LoginService.recoverPassword({
       email: data.email,
     })
   }
 
-  const mutation = useMutation({
+  const mutation = useCrudMutation({
     mutationFn: recoverPassword,
-    onSuccess: () => {
-      showSuccessToast(t("recover.success"))
-      form.reset()
-    },
-    onError: handleError.bind(showErrorToast),
+    successMessage: t("recover.success"),
+    onSuccess: () => form.reset(),
   })
 
   const onSubmit = async (data: FormData) => {

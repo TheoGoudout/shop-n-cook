@@ -12,6 +12,7 @@ from app.models.household import (
     Household,
     HouseholdCreate,
     HouseholdInviteCreate,
+    HouseholdMember,
     HouseholdPublic,
     HouseholdRole,
     HouseholdUpdate,
@@ -21,27 +22,26 @@ from app.utils import generate_household_invite_email, send_email
 router = APIRouter(prefix="/households", tags=["households"])
 
 
-def _require_membership(*, session: SessionDep, current_user: User) -> Household:
-    household = crud.get_household_for_user(session=session, user_id=current_user.id)
-    if household is None:
+def _require_membership(*, session: SessionDep, current_user: User) -> HouseholdMember:
+    membership = crud.get_membership(session=session, user_id=current_user.id)
+    if membership is None:
         raise HTTPException(status_code=404, detail="You are not in a household")
-    return household
+    return membership
 
 
 def _require_owner(*, session: SessionDep, current_user: User) -> Household:
     """Membership changes are the owner's to make."""
-    household = _require_membership(session=session, current_user=current_user)
-    membership = crud.get_membership(session=session, user_id=current_user.id)
-    if membership is None or membership.role is not HouseholdRole.OWNER:
+    membership = _require_membership(session=session, current_user=current_user)
+    if membership.role is not HouseholdRole.OWNER:
         raise HTTPException(status_code=403, detail="Not enough permissions")
-    return household
+    return membership.household
 
 
 @router.get("/me", response_model=HouseholdPublic)
 def read_my_household(session: SessionDep, current_user: CurrentUser) -> Any:
     """The household this user belongs to, with its members and open invites."""
-    household = _require_membership(session=session, current_user=current_user)
-    return crud.household_to_public(household)
+    membership = _require_membership(session=session, current_user=current_user)
+    return crud.household_to_public(membership.household)
 
 
 @router.post("/", response_model=HouseholdPublic)
@@ -94,9 +94,7 @@ def leave_my_household(session: SessionDep, current_user: CurrentUser) -> Messag
     The owner cannot leave — they disband it instead, which makes the outcome
     explicit rather than silently orphaning everyone else.
     """
-    _require_membership(session=session, current_user=current_user)
-    membership = crud.get_membership(session=session, user_id=current_user.id)
-    assert membership is not None
+    membership = _require_membership(session=session, current_user=current_user)
     if membership.role is HouseholdRole.OWNER:
         raise HTTPException(
             status_code=409,
@@ -142,6 +140,7 @@ def invite_member(
     let a sixth in through the gap.
     """
     household = _require_owner(session=session, current_user=current_user)
+    crud.lock_household(session=session, household=household)
     email = invite_in.email.strip().lower()
 
     if email == current_user.email.lower():
@@ -152,7 +151,7 @@ def invite_member(
         session=session, household_id=household.id, email=email
     ):
         raise HTTPException(status_code=409, detail="Already invited")
-    if crud.seats_used(household=household) >= (settings.MAX_HOUSEHOLD_MEMBERS):
+    if crud.seats_used(household=household) >= settings.MAX_HOUSEHOLD_MEMBERS:
         raise HTTPException(
             status_code=409,
             detail=(
@@ -216,7 +215,8 @@ def accept_invite(
     household = crud.get_household(session=session, household_id=invite.household_id)
     if household is None:
         raise HTTPException(status_code=404, detail="Household not found")
-    if crud.seats_used(household=household) > (settings.MAX_HOUSEHOLD_MEMBERS):
+    crud.lock_household(session=session, household=household)
+    if crud.seats_used(household=household) > settings.MAX_HOUSEHOLD_MEMBERS:
         raise HTTPException(status_code=409, detail="This household is full")
 
     crud.accept_invite(session=session, invite=invite, user=current_user)

@@ -1,16 +1,17 @@
 import logging
 import uuid
-from typing import Annotated, Any
+from typing import Any
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, HTTPException
 from pydantic import BaseModel
 
 from app import crud
-from app.api.deps import CurrentUser, SessionDep, get_current_active_superuser
+from app.api.deps import CurrentSuperuser, CurrentUser, SessionDep
 from app.models.base import Message
 from app.models.ingredient import (
     DeduplicateMerge,
     DeduplicateResponse,
+    Ingredient,
     IngredientCreate,
     IngredientPublic,
     IngredientsPublic,
@@ -25,6 +26,13 @@ from app.services.ingredient_price import (
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/ingredients", tags=["ingredients"])
+
+
+def ingredient_or_404(*, session: SessionDep, ingredient_id: uuid.UUID) -> Ingredient:
+    ingredient = crud.get_ingredient(session=session, ingredient_id=ingredient_id)
+    if ingredient is None:
+        raise HTTPException(status_code=404, detail="Ingredient not found")
+    return ingredient
 
 
 @router.get("/", response_model=IngredientsPublic)
@@ -45,7 +53,7 @@ def read_ingredients(
 def create_ingredient(
     *,
     session: SessionDep,
-    _current_user: Annotated[Any, Depends(get_current_active_superuser)],
+    _current_user: CurrentSuperuser,
     ingredient_in: IngredientCreate,
     background_tasks: BackgroundTasks,
 ) -> Any:
@@ -63,14 +71,12 @@ def create_ingredient(
 def update_ingredient(
     *,
     session: SessionDep,
-    _current_user: Annotated[Any, Depends(get_current_active_superuser)],
+    _current_user: CurrentSuperuser,
     id: uuid.UUID,
     update_in: IngredientUpdate,
 ) -> Any:
     """Update an ingredient's category, image or reference price. Superuser only."""
-    ingredient = crud.get_ingredient(session=session, ingredient_id=id)
-    if not ingredient:
-        raise HTTPException(status_code=404, detail="Ingredient not found")
+    ingredient = ingredient_or_404(session=session, ingredient_id=id)
     ingredient = crud.update_ingredient(
         session=session, ingredient=ingredient, update_in=update_in
     )
@@ -81,7 +87,7 @@ def update_ingredient(
 def deduplicate_ingredients(
     *,
     session: SessionDep,
-    _current_user: Annotated[Any, Depends(get_current_active_superuser)],
+    _current_user: CurrentSuperuser,
     dry_run: bool = True,
 ) -> Any:
     """Merge near-duplicate ingredient catalog entries. Superuser only.
@@ -130,7 +136,7 @@ class EstimatePricesRequest(BaseModel):
 def estimate_ingredient_price_route(
     *,
     session: SessionDep,
-    _current_user: Annotated[Any, Depends(get_current_active_superuser)],
+    _current_user: CurrentSuperuser,
     id: uuid.UUID,
     background_tasks: BackgroundTasks,
     currency: str = "EUR",
@@ -140,9 +146,7 @@ def estimate_ingredient_price_route(
     A price a human curated is never overwritten — see
     ``services.ingredient_price.may_overwrite``.
     """
-    ingredient = crud.get_ingredient(session=session, ingredient_id=id)
-    if not ingredient:
-        raise HTTPException(status_code=404, detail="Ingredient not found")
+    ingredient = ingredient_or_404(session=session, ingredient_id=id)
     background_tasks.add_task(
         estimate_ingredient_price, ingredient.id, currency=currency
     )
@@ -153,7 +157,7 @@ def estimate_ingredient_price_route(
 def estimate_ingredient_prices_route(
     *,
     session: SessionDep,
-    _current_user: Annotated[Any, Depends(get_current_active_superuser)],
+    _current_user: CurrentSuperuser,
     body: EstimatePricesRequest,
     background_tasks: BackgroundTasks,
 ) -> Any:
@@ -175,14 +179,12 @@ def estimate_ingredient_prices_route(
 def fetch_ingredient_image(
     *,
     session: SessionDep,
-    _current_user: Annotated[Any, Depends(get_current_active_superuser)],
+    _current_user: CurrentSuperuser,
     id: uuid.UUID,
     background_tasks: BackgroundTasks,
 ) -> Any:
     """Trigger an Open Food Facts image fetch for this ingredient. Superuser only."""
-    ingredient = crud.get_ingredient(session=session, ingredient_id=id)
-    if not ingredient:
-        raise HTTPException(status_code=404, detail="Ingredient not found")
+    ingredient = ingredient_or_404(session=session, ingredient_id=id)
     logger.info(
         "Queuing image fetch for ingredient %r (id=%s, current image=%s)",
         ingredient.name,

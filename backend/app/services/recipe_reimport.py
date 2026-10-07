@@ -33,40 +33,34 @@ batch tries the others first.
 from __future__ import annotations
 
 import logging
-import time
 import uuid
-from collections.abc import Callable
 from dataclasses import dataclass
 from urllib.parse import urlsplit
 
-from sqlalchemy import text
 from sqlalchemy.engine import Engine
 from sqlalchemy.sql.elements import ColumnElement
 from sqlmodel import Session, and_, col, func, or_, select
 
 from app import crud
+from app.core.background import advisory_lock
 from app.core.config import settings
 from app.models import CrawledRecipe, Recipe, RecipeUpdate
 from app.models.base import get_datetime_utc
 from app.models.recipe import ImportSource
 from app.services.ingredient_image import fetch_and_update_ingredients_batch
+from app.services.recipe_crawler.fetcher import (
+    Pause,
+    PoliteFetcher,
+    SiteUnavailableError,
+    sleep,
+)
 from app.services.recipe_crawler.sites import SITES
 from app.services.recipe_import import IMPORT_VERSION, import_recipe_from_html
 from app.services.recipe_import.mapping import parsed_to_fill, parsed_to_update
-from app.services.store_providers.errors import ProviderUnavailableError
-from app.services.store_providers.families import http_client, robots
 
 logger = logging.getLogger(__name__)
 
 ADVISORY_LOCK_KEY = 0x53_4E_43_52_45_49_4D_50  # "SNCREIMP"
-
-#: Waits up to the given seconds; returns ``True`` if the batch should stop.
-Pause = Callable[[float], bool]
-
-
-def _sleep(seconds: float) -> bool:
-    time.sleep(seconds)
-    return False
 
 
 def is_stale() -> ColumnElement[bool]:
@@ -99,48 +93,17 @@ class ReimportReport:
     skipped: int = 0
 
 
-class _HostUnavailableError(Exception):
-    """The host stopped answering, or its robots.txt cannot be read."""
-
-
 class _PageRefusedError(Exception):
     """This page cannot be imported: robots.txt forbids it, or it is gone."""
 
 
-class _PoliteFetcher:
-    """robots.txt first, then at most one request per ``delay`` per host."""
-
-    def __init__(self, *, delay: float, pause: Pause) -> None:
-        self._delay = delay
-        self._pause = pause
-        self._last_request: dict[str, float] = {}
-
-    def get(self, url: str, origin: str) -> str:
-        try:
-            policy = robots.policy_for(origin)
-        except ProviderUnavailableError as exc:
-            raise _HostUnavailableError(str(exc)) from exc
-        if policy.disallow_all:
-            raise _HostUnavailableError(f"{origin}/robots.txt is unavailable")
-        if not policy.allows(url):
-            raise _PageRefusedError("robots.txt disallows")
-
-        last = self._last_request.get(origin)
-        if last is not None:
-            wait = self._delay - (time.monotonic() - last)
-            if wait > 0 and self._pause(wait):
-                raise _HostUnavailableError("batch stopped")
-        try:
-            page = http_client.fetch(url)
-        except ProviderUnavailableError as exc:
-            raise _HostUnavailableError(str(exc)) from exc
-        finally:
-            self._last_request[origin] = time.monotonic()
-        if page.status_code in (403, 429) or page.status_code >= 500:
-            raise _HostUnavailableError(f"{url} returned HTTP {page.status_code}")
-        if page.status_code != 200:
-            raise _PageRefusedError(f"HTTP {page.status_code}")
-        return page.text
+def _fetch(fetcher: PoliteFetcher, url: str, origin: str) -> str:
+    page = fetcher.get(url, origin)
+    if page is None:
+        raise _PageRefusedError("robots.txt disallows")
+    if page.status_code != 200:
+        raise _PageRefusedError(f"HTTP {page.status_code}")
+    return page.text
 
 
 def _crawled_languages(
@@ -181,7 +144,7 @@ def reimport_stale(
     limit: int,
     language: str | None,
     delay_seconds: float,
-    pause: Pause = _sleep,
+    pause: Pause = sleep,
 ) -> ReimportReport:
     """Reimport up to ``limit`` stale recipes, the least recently tried first.
 
@@ -201,7 +164,7 @@ def reimport_stale(
     if not recipes:
         return report
     crawled = _crawled_languages(session, [r.id for r in recipes])
-    fetcher = _PoliteFetcher(delay=delay_seconds, pause=pause)
+    fetcher = PoliteFetcher(delay=delay_seconds, pause=pause)
     unavailable: set[str] = set()
     ingredient_ids: list[uuid.UUID] = []
 
@@ -213,7 +176,7 @@ def reimport_stale(
             report.skipped += 1
             continue
         try:
-            html = fetcher.get(url, origin)
+            html = _fetch(fetcher, url, origin)
             recipe_in = _reimport_one(
                 session,
                 recipe,
@@ -221,7 +184,7 @@ def reimport_stale(
                 language=recipe.import_language or crawled.get(recipe.id) or language,
                 replace=recipe.id in crawled,
             )
-        except _HostUnavailableError as exc:
+        except SiteUnavailableError as exc:
             logger.warning("Recipe reimport: skipping %s: %s", origin, exc)
             unavailable.add(origin)
             report.skipped += 1
@@ -235,12 +198,14 @@ def reimport_stale(
             session.commit()
             report.failed += 1
             continue
-        report.updated += 1
         if recipe_in.ingredients:
             ids = crud.sync_ingredient_catalog(
                 session=session, ingredients=recipe_in.ingredients
             )
             ingredient_ids.extend(i for i in ids if i not in ingredient_ids)
+        # The recipe and the catalogue entries it needs land together.
+        session.commit()
+        report.updated += 1
 
     if ingredient_ids:
         fetch_and_update_ingredients_batch(ingredient_ids)
@@ -250,39 +215,21 @@ def reimport_stale(
 
 def is_running(engine: Engine) -> bool:
     """Whether a batch holds the lock right now, on any worker."""
-    with engine.connect() as connection:
-        acquired = connection.execute(
-            text("SELECT pg_try_advisory_lock(:key)"), {"key": ADVISORY_LOCK_KEY}
-        ).scalar()
-        if acquired:
-            connection.execute(
-                text("SELECT pg_advisory_unlock(:key)"), {"key": ADVISORY_LOCK_KEY}
-            )
-        connection.commit()
-    return not acquired
+    with advisory_lock(engine, ADVISORY_LOCK_KEY) as acquired:
+        return not acquired
 
 
 def run_batch(
     engine: Engine, *, limit: int, language: str | None
 ) -> ReimportReport | None:
     """Take the lock and run one batch. ``None`` if another batch holds it."""
-    with engine.connect() as lock_connection:
-        acquired = lock_connection.execute(
-            text("SELECT pg_try_advisory_lock(:key)"), {"key": ADVISORY_LOCK_KEY}
-        ).scalar()
-        lock_connection.commit()
+    with advisory_lock(engine, ADVISORY_LOCK_KEY) as acquired:
         if not acquired:
             return None
-        try:
-            with Session(engine) as session:
-                return reimport_stale(
-                    session,
-                    limit=limit,
-                    language=language,
-                    delay_seconds=settings.RECIPE_CRAWL_DELAY_SECONDS,
-                )
-        finally:
-            lock_connection.execute(
-                text("SELECT pg_advisory_unlock(:key)"), {"key": ADVISORY_LOCK_KEY}
+        with Session(engine) as session:
+            return reimport_stale(
+                session,
+                limit=limit,
+                language=language,
+                delay_seconds=settings.RECIPE_CRAWL_DELAY_SECONDS,
             )
-            lock_connection.commit()

@@ -1,8 +1,4 @@
-import {
-  useMutation,
-  useQueryClient,
-  useSuspenseQuery,
-} from "@tanstack/react-query"
+import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
 import {
   ArrowLeft,
@@ -34,13 +30,12 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import useCustomToast from "@/hooks/useCustomToast"
+import { useCrudMutation } from "@/hooks/useCrudMutation"
 import { useIngredientCatalog } from "@/hooks/useIngredientCatalog"
 import { useUnitSystem } from "@/hooks/useUnitSystem"
 import { APP_NAME } from "@/lib/config"
 import { formatMoney } from "@/lib/money"
 import { itemsToBuy } from "@/lib/pantry"
-import { handleError } from "@/utils"
 
 function getListQueryOptions(id: string) {
   return {
@@ -116,8 +111,6 @@ function ShoppingTab({ list }: { list: ShoppingListPublic }) {
   const { t } = useTranslation("shopping")
   const { t: tCommon, i18n } = useTranslation("common")
   const { convert } = useUnitSystem()
-  const queryClient = useQueryClient()
-  const { showErrorToast } = useCustomToast()
   const catalog = useIngredientCatalog()
   const id = list.id
   const planned = list.planned_recipes ?? []
@@ -126,25 +119,20 @@ function ShoppingTab({ list }: { list: ShoppingListPublic }) {
   const atHomeItems = allItems.filter((i) => i.quantity_to_buy <= 0)
   const [pantryOpen, setPantryOpen] = useState(false)
 
-  const invalidate = () =>
-    queryClient.invalidateQueries({ queryKey: ["shopping-list", id] })
-
-  const checkMutation = useMutation({
+  const checkMutation = useCrudMutation({
     mutationFn: ({ itemId, checked }: { itemId: string; checked: boolean }) =>
       ShoppingListsService.updateItem({
         id,
         itemId,
         requestBody: { is_checked: checked },
       }),
-    onError: handleError.bind(showErrorToast),
-    onSettled: invalidate,
+    invalidateKeys: ["shopping-list", id],
   })
 
-  const removeItemMutation = useMutation({
+  const removeItemMutation = useCrudMutation({
     mutationFn: (itemId: string) =>
       ShoppingListsService.deleteItem({ id, itemId }),
-    onError: handleError.bind(showErrorToast),
-    onSettled: invalidate,
+    invalidateKeys: ["shopping-list", id],
   })
 
   if (allItems.length === 0) {
@@ -372,15 +360,10 @@ function ShoppingTab({ list }: { list: ShoppingListPublic }) {
 
 function MealsTab({ list }: { list: ShoppingListPublic }) {
   const { t } = useTranslation("shopping")
-  const queryClient = useQueryClient()
-  const { showErrorToast } = useCustomToast()
   const id = list.id
   const planned = list.planned_recipes ?? []
 
-  const invalidate = () =>
-    queryClient.invalidateQueries({ queryKey: ["shopping-list", id] })
-
-  const togglePrepared = useMutation({
+  const togglePrepared = useCrudMutation({
     mutationFn: ({
       plannedRecipeId,
       isPrepared,
@@ -393,18 +376,16 @@ function MealsTab({ list }: { list: ShoppingListPublic }) {
         plannedRecipeId,
         requestBody: { is_prepared: isPrepared },
       }),
-    onError: handleError.bind(showErrorToast),
-    onSettled: invalidate,
+    invalidateKeys: ["shopping-list", id],
   })
 
-  const removePlanned = useMutation({
+  const removePlanned = useCrudMutation({
     mutationFn: (plannedRecipeId: string) =>
       ShoppingListsService.deletePlannedRecipe({ id, plannedRecipeId }),
-    onError: handleError.bind(showErrorToast),
-    onSettled: invalidate,
+    invalidateKeys: ["shopping-list", id],
   })
 
-  const updateServings = useMutation({
+  const updateServings = useCrudMutation({
     mutationFn: ({
       plannedRecipeId,
       servings,
@@ -417,8 +398,7 @@ function MealsTab({ list }: { list: ShoppingListPublic }) {
         plannedRecipeId,
         requestBody: { servings_planned: servings },
       }),
-    onError: handleError.bind(showErrorToast),
-    onSettled: invalidate,
+    invalidateKeys: ["shopping-list", id],
   })
 
   if (planned.length === 0) {

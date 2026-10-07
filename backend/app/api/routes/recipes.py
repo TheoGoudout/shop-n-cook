@@ -1,4 +1,6 @@
 import uuid
+from collections.abc import Iterator
+from contextlib import contextmanager
 from typing import Annotated, Any
 
 from fastapi import (
@@ -13,13 +15,15 @@ from fastapi import (
     UploadFile,
 )
 from pydantic import BaseModel, Field, HttpUrl
-from sqlmodel import Session, col, select
+from sqlmodel import Session
 from starlette.concurrency import run_in_threadpool
 
 from app import crud
 from app.api.deps import (
     CurrentUser,
+    EditableRecipe,
     PriceBookDep,
+    ReadableRecipe,
     SessionDep,
     get_current_active_superuser,
 )
@@ -30,15 +34,14 @@ from app.models import (
     Message,
     Recipe,
     RecipeCreate,
+    RecipeFilters,
     RecipeIngredientCreate,
     RecipePublic,
     RecipesPublic,
     RecipeUpdate,
     StaleImportsPublic,
 )
-from app.models.ingredient import Ingredient, IngredientCategory
-from app.models.recipe import Difficulty, ImportSource, MealType, Season
-from app.models.user import User
+from app.models.recipe import ImportSource
 from app.services import recipe_reimport
 from app.services.ingredient_image import fetch_and_update_ingredients_batch
 from app.services.recipe_crawler.crawler import llm_configured
@@ -46,14 +49,12 @@ from app.services.recipe_import import (
     IMPORT_VERSION,
     InvalidPhotoError,
     NoRecipeFoundError,
-    ParsedIngredient,
     ParsedRecipe,
-    ParsedStep,
     import_recipe_from_photos,
     import_recipe_from_url,
     validate_photos,
 )
-from app.services.recipe_import.mapping import parsed_to_update
+from app.services.recipe_import.mapping import parsed_to_update, recipe_to_parsed
 
 router = APIRouter(prefix="/recipes", tags=["recipes"])
 
@@ -75,63 +76,36 @@ class ReimportStaleRequest(BaseModel):
     language: str | None = None
 
 
-def _recipe_to_parsed(recipe: Recipe, session: Session) -> ParsedRecipe:
-    """Convert a saved Recipe back to ParsedRecipe format (used as DB cache hit)."""
-    names = [ri.ingredient_name for ri in recipe.recipe_ingredients]
-    catalog: dict[str, Ingredient] = {}
-    if names:
-        rows = session.exec(
-            select(Ingredient).where(col(Ingredient.name).in_(names))
-        ).all()
-        catalog = {row.name: row for row in rows}
+class RecipeListQuery(RecipeFilters):
+    skip: int = 0
+    limit: int = 100
 
-    ri_map = {ri.id: ri for ri in recipe.recipe_ingredients}
-    ingredients = [
-        ParsedIngredient(
-            name=ri.ingredient_name,
-            name_en=catalog[ri.ingredient_name].name_en
-            if ri.ingredient_name in catalog
-            else None,
-            category=catalog[ri.ingredient_name].category
-            if ri.ingredient_name in catalog
-            else IngredientCategory.OTHER,
-            quantity=ri.quantity,
-            unit=ri.unit,
-            notes=ri.notes,
-        )
-        for ri in recipe.recipe_ingredients
-    ]
-    steps = [
-        ParsedStep(
-            instruction=step.instruction,
-            ingredient_names=[
-                ri_map[si.recipe_ingredient_id].ingredient_name
-                for si in step.step_ingredients
-                if si.recipe_ingredient_id in ri_map
-            ],
-        )
-        for step in sorted(recipe.steps, key=lambda s: s.step_number)
-    ]
-    return ParsedRecipe(
-        title=recipe.title,
-        description=recipe.description,
-        servings=recipe.servings,
-        prep_time_minutes=recipe.prep_time_minutes,
-        cook_time_minutes=recipe.cook_time_minutes,
-        source_url=recipe.source_url,
-        image_url=recipe.image_url,
-        ingredients=ingredients,
-        steps=steps,
-        seasons=recipe.seasons or [],
-        is_vegan=recipe.is_vegan,
-        is_vegetarian=recipe.is_vegetarian,
-        is_gluten_free=recipe.is_gluten_free,
-        is_dairy_free=recipe.is_dairy_free,
-        kcal_per_serving=recipe.kcal_per_serving,
-        difficulty=recipe.difficulty,
-        meal_type=recipe.meal_type,
-        cuisine_type=recipe.cuisine_type,
-        language=recipe.import_language,
+
+class PublicRecipeListQuery(RecipeListQuery):
+    owner_id: uuid.UUID | None = None
+
+
+@contextmanager
+def _import_errors() -> Iterator[None]:
+    """Turn a failed import into the HTTP error the client knows how to show."""
+    try:
+        yield
+    except NoRecipeFoundError as exc:
+        raise HTTPException(status_code=422, detail="no_recipe_found") from exc
+    except ValueError as exc:
+        # The pipeline raises ValueError when no AI provider is configured.
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=422, detail=f"Failed to parse recipe: {exc}"
+        ) from exc
+
+
+def _recipes_page(
+    recipes: list[Recipe], count: int, prices: PriceBookDep
+) -> RecipesPublic:
+    return RecipesPublic(
+        data=[crud.recipe_to_public(r, prices=prices) for r in recipes], count=count
     )
 
 
@@ -140,38 +114,18 @@ def read_public_recipes(
     session: SessionDep,
     _current_user: CurrentUser,
     prices: PriceBookDep,
-    owner_id: uuid.UUID | None = None,
-    search: str | None = None,
-    skip: int = 0,
-    limit: int = 100,
-    seasons: list[Season] | None = Query(default=None),
-    is_vegan: bool | None = None,
-    is_vegetarian: bool | None = None,
-    is_gluten_free: bool | None = None,
-    is_dairy_free: bool | None = None,
-    difficulty: Difficulty | None = None,
-    meal_type: MealType | None = None,
-    cuisine_type: str | None = None,
+    query: Annotated[PublicRecipeListQuery, Query()],
 ) -> Any:
     """List all public recipes. Optionally filter by owner_id or search query."""
-    recipes, count = crud.get_public_recipes(
+    recipes, count = crud.get_recipes(
         session=session,
-        owner_id=owner_id,
-        search=search,
-        skip=skip,
-        limit=limit,
-        seasons=seasons,
-        is_vegan=is_vegan,
-        is_vegetarian=is_vegetarian,
-        is_gluten_free=is_gluten_free,
-        is_dairy_free=is_dairy_free,
-        difficulty=difficulty,
-        meal_type=meal_type,
-        cuisine_type=cuisine_type,
+        filters=query,
+        owner_id=query.owner_id,
+        public_only=True,
+        skip=query.skip,
+        limit=query.limit,
     )
-    return RecipesPublic(
-        data=[crud.recipe_to_public(r, prices=prices) for r in recipes], count=count
-    )
+    return _recipes_page(recipes, count, prices)
 
 
 @router.get("/", response_model=RecipesPublic)
@@ -179,38 +133,17 @@ def read_recipes(
     session: SessionDep,
     current_user: CurrentUser,
     prices: PriceBookDep,
-    search: str | None = None,
-    skip: int = 0,
-    limit: int = 100,
-    seasons: list[Season] | None = Query(default=None),
-    is_vegan: bool | None = None,
-    is_vegetarian: bool | None = None,
-    is_gluten_free: bool | None = None,
-    is_dairy_free: bool | None = None,
-    difficulty: Difficulty | None = None,
-    meal_type: MealType | None = None,
-    cuisine_type: str | None = None,
+    query: Annotated[RecipeListQuery, Query()],
 ) -> Any:
     """List recipes. Superusers see all; regular users see only their own."""
-    owner_id = None if current_user.is_superuser else current_user.id
     recipes, count = crud.get_recipes(
         session=session,
-        owner_id=owner_id,
-        search=search,
-        skip=skip,
-        limit=limit,
-        seasons=seasons,
-        is_vegan=is_vegan,
-        is_vegetarian=is_vegetarian,
-        is_gluten_free=is_gluten_free,
-        is_dairy_free=is_dairy_free,
-        difficulty=difficulty,
-        meal_type=meal_type,
-        cuisine_type=cuisine_type,
+        filters=query,
+        owner_id=None if current_user.is_superuser else current_user.id,
+        skip=query.skip,
+        limit=query.limit,
     )
-    return RecipesPublic(
-        data=[crud.recipe_to_public(r, prices=prices) for r in recipes], count=count
-    )
+    return _recipes_page(recipes, count, prices)
 
 
 def _stale_imports_status(session: Session) -> StaleImportsPublic:
@@ -258,22 +191,8 @@ def reimport_stale_imports(
 
 
 @router.get("/{id}", response_model=RecipePublic)
-def read_recipe(
-    session: SessionDep,
-    current_user: CurrentUser,
-    prices: PriceBookDep,
-    id: uuid.UUID,
-) -> Any:
+def read_recipe(recipe: ReadableRecipe, prices: PriceBookDep) -> Any:
     """Get a single recipe by ID. Public recipes are visible to all authenticated users."""
-    recipe = crud.get_recipe(session=session, recipe_id=id)
-    if not recipe:
-        raise HTTPException(status_code=404, detail="Recipe not found")
-    if (
-        not current_user.is_superuser
-        and recipe.owner_id != current_user.id
-        and not recipe.is_public
-    ):
-        raise HTTPException(status_code=403, detail="Not enough permissions")
     return crud.recipe_to_public(recipe, prices=prices)
 
 
@@ -289,6 +208,18 @@ def _sync_ingredient_catalog(
         background_tasks.add_task(fetch_and_update_ingredients_batch, ids_to_update)
 
 
+def _save_update(
+    session: SessionDep,
+    background_tasks: BackgroundTasks,
+    recipe: Recipe,
+    recipe_in: RecipeUpdate,
+    prices: PriceBookDep,
+) -> RecipePublic:
+    recipe = crud.update_recipe(session=session, db_recipe=recipe, recipe_in=recipe_in)
+    _sync_ingredient_catalog(session, background_tasks, recipe_in.ingredients or [])
+    return crud.recipe_to_public(recipe, prices=prices)
+
+
 @router.post("/", response_model=RecipePublic)
 def create_recipe(
     *,
@@ -302,7 +233,7 @@ def create_recipe(
     recipe = crud.create_recipe(
         session=session, recipe_in=recipe_in, owner_id=current_user.id
     )
-    _sync_ingredient_catalog(session, background_tasks, recipe_in.ingredients or [])
+    _sync_ingredient_catalog(session, background_tasks, recipe_in.ingredients)
     return crud.recipe_to_public(recipe, prices=prices)
 
 
@@ -310,32 +241,27 @@ def create_recipe(
 def update_recipe(
     *,
     session: SessionDep,
-    current_user: CurrentUser,
+    recipe: EditableRecipe,
     prices: PriceBookDep,
-    id: uuid.UUID,
     recipe_in: RecipeUpdate,
     background_tasks: BackgroundTasks,
 ) -> Any:
     """Update a recipe. If `ingredients` is provided the list is fully replaced."""
-    recipe: Recipe | None = crud.get_recipe(session=session, recipe_id=id)
-    if not recipe:
-        raise HTTPException(status_code=404, detail="Recipe not found")
-    if not current_user.is_superuser and recipe.owner_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Not enough permissions")
     if recipe.is_public and recipe_in.is_public is False:
         raise HTTPException(
             status_code=422, detail="Cannot make a public recipe private"
         )
-    recipe = crud.update_recipe(session=session, db_recipe=recipe, recipe_in=recipe_in)
-    _sync_ingredient_catalog(session, background_tasks, recipe_in.ingredients or [])
-    return crud.recipe_to_public(recipe, prices=prices)
+    return _save_update(session, background_tasks, recipe, recipe_in, prices)
 
 
-@router.post("/{id}/reimport", response_model=RecipePublic)
+@router.post(
+    "/{id}/reimport",
+    response_model=RecipePublic,
+    dependencies=[Depends(get_current_active_superuser)],
+)
 def reimport_recipe(
     *,
     session: SessionDep,
-    _current_user: Annotated[User, Depends(get_current_active_superuser)],
     prices: PriceBookDep,
     id: uuid.UUID,
     body: ReimportRequest,
@@ -355,35 +281,21 @@ def reimport_recipe(
         raise HTTPException(
             status_code=422, detail="Recipe has no source URL to reimport from"
         )
-    try:
+    with _import_errors():
         parsed = import_recipe_from_url(
             recipe.source_url, language=recipe.import_language or body.language
         )
-    except ValueError as exc:
-        raise HTTPException(status_code=503, detail=str(exc)) from exc
-    except Exception as exc:
-        raise HTTPException(
-            status_code=422, detail=f"Failed to parse recipe: {exc}"
-        ) from exc
-    recipe_in = parsed_to_update(parsed)
     if recipe.import_source == ImportSource.URL:
         recipe.import_version = IMPORT_VERSION
     recipe.import_language = parsed.language
-    recipe = crud.update_recipe(session=session, db_recipe=recipe, recipe_in=recipe_in)
-    _sync_ingredient_catalog(session, background_tasks, recipe_in.ingredients or [])
-    return crud.recipe_to_public(recipe, prices=prices)
+    return _save_update(
+        session, background_tasks, recipe, parsed_to_update(parsed), prices
+    )
 
 
 @router.delete("/{id}")
-def delete_recipe(
-    session: SessionDep, current_user: CurrentUser, id: uuid.UUID
-) -> Message:
+def delete_recipe(session: SessionDep, recipe: EditableRecipe) -> Message:
     """Delete a recipe (owner or superuser only)."""
-    recipe = crud.get_recipe(session=session, recipe_id=id)
-    if not recipe:
-        raise HTTPException(status_code=404, detail="Recipe not found")
-    if not current_user.is_superuser and recipe.owner_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Not enough permissions")
     crud.delete_recipe(session=session, recipe=recipe)
     return Message(message="Recipe deleted successfully")
 
@@ -407,17 +319,13 @@ def import_recipe_url(
         session=session, owner_id=current_user.id, source_url=url
     )
     if existing:
-        return _recipe_to_parsed(existing, session)
-
-    try:
-        parsed = import_recipe_from_url(url, language=body.language)
-    except ValueError as exc:
-        raise HTTPException(status_code=503, detail=str(exc)) from exc
-    except Exception as exc:
-        raise HTTPException(
-            status_code=422, detail=f"Failed to parse recipe: {exc}"
-        ) from exc
-    return parsed
+        catalog = crud.get_ingredients_by_name(
+            session=session,
+            names=[ri.ingredient_name for ri in existing.recipe_ingredients],
+        )
+        return recipe_to_parsed(existing, catalog)
+    with _import_errors():
+        return import_recipe_from_url(url, language=body.language)
 
 
 async def _read_upload(photo: UploadFile) -> bytes:
@@ -453,17 +361,8 @@ async def import_recipe_photos(
     except InvalidPhotoError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
-    try:
+    with _import_errors():
         # The provider call blocks for up to two minutes; keep it off the event loop.
-        parsed = await run_in_threadpool(
+        return await run_in_threadpool(
             import_recipe_from_photos, validated, language=language
         )
-    except NoRecipeFoundError as exc:
-        raise HTTPException(status_code=422, detail="no_recipe_found") from exc
-    except ValueError as exc:
-        raise HTTPException(status_code=503, detail=str(exc)) from exc
-    except Exception as exc:
-        raise HTTPException(
-            status_code=422, detail=f"Failed to parse recipe: {exc}"
-        ) from exc
-    return parsed

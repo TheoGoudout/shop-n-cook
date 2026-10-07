@@ -21,6 +21,7 @@ import { LoadingButton } from "@/components/ui/loading-button"
 import { PasswordInput } from "@/components/ui/password-input"
 import useAuth, { isLoggedIn } from "@/hooks/useAuth"
 import { APP_NAME } from "@/lib/config"
+import { passwordSchema, passwordsMismatch } from "@/lib/passwordSchema"
 
 type FormData = {
   email: string
@@ -57,18 +58,15 @@ function SignUp() {
       full_name: z
         .string()
         .min(1, { message: t("validation.full_name_required") }),
-      password: z
-        .string()
-        .min(1, { message: t("validation.password_required") })
-        .min(8, { message: t("validation.password_min") }),
+      password: passwordSchema(t),
       confirm_password: z
         .string()
         .min(1, { message: t("validation.confirm_required") }),
     })
-    .refine((data) => data.password === data.confirm_password, {
-      message: t("validation.passwords_mismatch"),
-      path: ["confirm_password"],
-    })
+    .refine(
+      (data) => data.password === data.confirm_password,
+      passwordsMismatch(t),
+    )
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),

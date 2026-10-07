@@ -138,7 +138,9 @@ class TestRefreshPrices:
     def test_writes_provider_prices_into_the_price_book(
         self, client: TestClient, db: Session, superuser_token_headers: dict[str, str]
     ) -> None:
-        ingredient, _ = crud.get_or_create_ingredient(db, "tomates cerises")
+        ingredient, _ = crud.get_or_create_ingredient(
+            session=db, name="tomates cerises"
+        )
         crud.update_ingredient(
             session=db,
             ingredient=ingredient,
@@ -186,7 +188,7 @@ class TestRefreshPrices:
     def test_unreachable_retailer_degrades_rather_than_failing(
         self, client: TestClient, db: Session, superuser_token_headers: dict[str, str]
     ) -> None:
-        crud.get_or_create_ingredient(db, "tomates cerises")
+        crud.get_or_create_ingredient(session=db, name="tomates cerises")
         store_id = _store(db, provider_slug="openprices")
         with patch(
             "app.services.store_providers.families.openprices."

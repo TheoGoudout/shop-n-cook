@@ -3,7 +3,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import JSON, Column, DateTime, UniqueConstraint
+from sqlalchemy import JSON, CheckConstraint, Column, DateTime, UniqueConstraint
 from sqlmodel import Field, Relationship, SQLModel
 
 from app.models.base import get_datetime_utc, stored_enum
@@ -69,6 +69,7 @@ class MealPlanEntry(MealPlanEntryBase, table=True):
             "recipe_id",
             name="uq_meal_plan_slot_recipe",
         ),
+        CheckConstraint("servings >= 1", name="ck_mealplanentry_servings"),
     )
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
@@ -134,6 +135,10 @@ class MealPlansPublic(SQLModel):
 
 
 class MealPlan(MealPlanBase, table=True):
+    __table_args__ = (
+        CheckConstraint("end_date >= start_date", name="ck_mealplan_dates"),
+    )
+
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     owner_id: uuid.UUID = Field(
         foreign_key="user.id", nullable=False, ondelete="CASCADE", index=True

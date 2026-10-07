@@ -10,7 +10,6 @@ import {
 } from "lucide-react"
 import { type ReactNode, useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
-
 import {
   type ApiError,
   type GenerateMenuRequest,
@@ -18,6 +17,7 @@ import {
   type MenuPreview,
   type ProposedMealIn,
 } from "@/client"
+import { PageHeader } from "@/components/Common/PageHeader"
 import {
   MenuBoard,
   type SlotRef,
@@ -243,12 +243,10 @@ function GenerateMenuPage() {
         {tCommon("back")}
       </Link>
 
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">
-          {t("generate.title")}
-        </h1>
-        <p className="text-muted-foreground">{t("generate.description")}</p>
-      </div>
+      <PageHeader
+        title={t("generate.title")}
+        subtitle={t("generate.description")}
+      />
 
       <div className="grid items-start gap-6 lg:grid-cols-[22rem_minmax(0,1fr)]">
         <Card className="py-5">

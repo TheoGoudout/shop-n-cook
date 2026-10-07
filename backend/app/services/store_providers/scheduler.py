@@ -22,14 +22,13 @@ cheap, because a provider stops at the first failure.
 from __future__ import annotations
 
 import logging
-import threading
 from collections.abc import Callable
 from datetime import datetime, timedelta
 
-from sqlalchemy import text
 from sqlalchemy.engine import Engine
 from sqlmodel import Session, col, or_, select
 
+from app.core.background import PeriodicJob, advisory_lock
 from app.core.config import settings
 from app.models.base import get_datetime_utc
 from app.models.ingredient import Ingredient
@@ -111,7 +110,8 @@ def refresh_due_stores(
         if not result.stopped_early:
             store.prices_refreshed_at = get_datetime_utc()
             session.add(store)
-            session.commit()
+        # One transaction per store: its prices land together, or not at all.
+        session.commit()
         logger.info(
             "Refreshed %s: %d priced, %d skipped%s",
             store.slug,
@@ -131,14 +131,7 @@ def run_once(
 ) -> list[RefreshResult] | None:
     """One tick: take the lock, refresh what is due. ``None`` if another
     worker holds the lock."""
-    with engine.connect() as lock_connection:
-        acquired = lock_connection.execute(
-            text("SELECT pg_try_advisory_lock(:key)"), {"key": ADVISORY_LOCK_KEY}
-        ).scalar()
-        # The lock is held by the connection, not the transaction. Ending the
-        # transaction now keeps this connection from sitting "idle in
-        # transaction" for the length of the refresh.
-        lock_connection.commit()
+    with advisory_lock(engine, ADVISORY_LOCK_KEY) as acquired:
         if not acquired:
             return None
         try:
@@ -147,63 +140,22 @@ def run_once(
                     session, interval=interval, should_stop=should_stop
                 )
         finally:
-            lock_connection.execute(
-                text("SELECT pg_advisory_unlock(:key)"), {"key": ADVISORY_LOCK_KEY}
-            )
-            lock_connection.commit()
             # Only this run needed the day's price table; free it now rather
             # than hold it in a web worker until tomorrow.
             openprices_snapshot.clear_cache()
 
 
-class PriceRefreshScheduler:
-    """A daemon thread calling ``run_once`` every ``check_seconds``."""
-
-    def __init__(
-        self,
-        engine: Engine,
-        *,
-        interval: timedelta,
-        check_seconds: float = CHECK_SECONDS,
-        startup_delay_seconds: float = STARTUP_DELAY_SECONDS,
-    ) -> None:
-        self._engine = engine
-        self._interval = interval
-        self._check_seconds = check_seconds
-        self._startup_delay_seconds = startup_delay_seconds
-        self._stop = threading.Event()
-        self._thread = threading.Thread(
-            target=self._loop, name="price-refresh", daemon=True
-        )
-
-    def start(self) -> None:
-        self._thread.start()
-
-    def stop(self, timeout: float = 5.0) -> None:
-        """Ask the loop to end. A refresh in progress finishes its current
-        store; the thread is a daemon, so it never holds up shutdown."""
-        self._stop.set()
-        self._thread.join(timeout=timeout)
-
-    def _loop(self) -> None:
-        if self._stop.wait(self._startup_delay_seconds):
-            return
-        while True:
-            try:
-                run_once(
-                    self._engine, interval=self._interval, should_stop=self._stop.is_set
-                )
-            except Exception:
-                logger.exception("Price refresh tick failed")
-            if self._stop.wait(self._check_seconds):
-                return
-
-
-def start_price_refresh_scheduler(engine: Engine) -> PriceRefreshScheduler | None:
+def start_price_refresh_scheduler(engine: Engine) -> PeriodicJob | None:
     """Start the background refresh, unless ``STORE_PRICE_REFRESH_HOURS`` is 0."""
     hours = settings.STORE_PRICE_REFRESH_HOURS
     if hours <= 0:
         return None
-    scheduler = PriceRefreshScheduler(engine, interval=timedelta(hours=hours))
-    scheduler.start()
-    return scheduler
+    interval = timedelta(hours=hours)
+    job = PeriodicJob(
+        "price-refresh",
+        lambda stop: run_once(engine, interval=interval, should_stop=stop.is_set),
+        check_seconds=CHECK_SECONDS,
+        startup_delay_seconds=STARTUP_DELAY_SECONDS,
+    )
+    job.start()
+    return job

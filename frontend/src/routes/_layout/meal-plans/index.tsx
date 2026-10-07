@@ -3,8 +3,9 @@ import { createFileRoute, Link } from "@tanstack/react-router"
 import { CalendarDays, Sparkles } from "lucide-react"
 import { Suspense } from "react"
 import { useTranslation } from "react-i18next"
-
 import { MealPlansService } from "@/client"
+import { EmptyListState } from "@/components/Common/EmptyListState"
+import { PageHeader } from "@/components/Common/PageHeader"
 import { AddMealPlan } from "@/components/MealPlans/AddMealPlan"
 import PendingItems from "@/components/Pending/PendingItems"
 import { Button } from "@/components/ui/button"
@@ -33,19 +34,18 @@ function MealPlansContent() {
 
   if (data.data.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center text-center py-12">
-        <div className="rounded-full bg-muted p-4 mb-4">
-          <CalendarDays className="h-8 w-8 text-muted-foreground" />
-        </div>
-        <h3 className="text-lg font-semibold">{t("page.empty_title")}</h3>
-        <p className="text-muted-foreground">{t("page.empty_subtitle")}</p>
+      <EmptyListState
+        icon={CalendarDays}
+        title={t("page.empty_title")}
+        subtitle={t("page.empty_subtitle")}
+      >
         <Button className="mt-4" asChild>
           <Link to="/meal-plans/generate">
             <Sparkles />
             {t("generate.trigger")}
           </Link>
         </Button>
-      </div>
+      </EmptyListState>
     )
   }
 
@@ -97,23 +97,15 @@ function MealPlans() {
   const { t } = useTranslation("mealPlans")
   return (
     <div className="w-full space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">
-            {t("page.title")}
-          </h1>
-          <p className="text-muted-foreground">{t("page.subtitle")}</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <AddMealPlan />
-          <Button asChild>
-            <Link to="/meal-plans/generate">
-              <Sparkles />
-              {t("generate.trigger")}
-            </Link>
-          </Button>
-        </div>
-      </div>
+      <PageHeader title={t("page.title")} subtitle={t("page.subtitle")}>
+        <AddMealPlan />
+        <Button asChild>
+          <Link to="/meal-plans/generate">
+            <Sparkles />
+            {t("generate.trigger")}
+          </Link>
+        </Button>
+      </PageHeader>
       <Suspense fallback={<PendingItems />}>
         <MealPlansContent />
       </Suspense>

@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
+from typing import Any
+
 from app.models import (
+    Ingredient,
+    IngredientCategory,
     Recipe,
     RecipeCreate,
     RecipeIngredientCreate,
@@ -10,7 +15,11 @@ from app.models import (
     RecipeUpdate,
 )
 from app.models.recipe import ImportSource
-from app.services.recipe_import.models import ParsedIngredient, ParsedRecipe
+from app.services.recipe_import.models import (
+    ParsedIngredient,
+    ParsedRecipe,
+    ParsedStep,
+)
 
 #: ``RecipeBase.description``'s limit; a model's summary occasionally runs past it.
 _DESCRIPTION_MAX_LENGTH = 1000
@@ -69,30 +78,41 @@ def _clean(parsed: ParsedRecipe) -> ParsedRecipe:
     )
 
 
-def parsed_to_update(parsed: ParsedRecipe) -> RecipeUpdate:
-    """Replace a recipe's whole content with what was just re-imported."""
+#: What an import says about a recipe beyond its ingredients and steps.
+_CONTENT_FIELDS = {
+    "title",
+    "description",
+    "servings",
+    "prep_time_minutes",
+    "cook_time_minutes",
+    "source_url",
+    "image_url",
+    "seasons",
+    "is_vegan",
+    "is_vegetarian",
+    "is_gluten_free",
+    "is_dairy_free",
+    "kcal_per_serving",
+    "difficulty",
+    "meal_type",
+    "cuisine_type",
+}
+
+
+def _content(parsed: ParsedRecipe) -> dict[str, Any]:
+    """Everything an import says about a recipe, as recipe-schema fields."""
     parsed = _clean(parsed)
     ingredients, steps = _ingredients_and_steps(parsed.ingredients, parsed)
-    return RecipeUpdate(
-        title=parsed.title,
-        description=parsed.description,
-        servings=parsed.servings,
-        prep_time_minutes=parsed.prep_time_minutes,
-        cook_time_minutes=parsed.cook_time_minutes,
-        source_url=parsed.source_url,
-        image_url=parsed.image_url,
-        ingredients=ingredients,
-        steps=steps,
-        seasons=parsed.seasons,
-        is_vegan=parsed.is_vegan,
-        is_vegetarian=parsed.is_vegetarian,
-        is_gluten_free=parsed.is_gluten_free,
-        is_dairy_free=parsed.is_dairy_free,
-        kcal_per_serving=parsed.kcal_per_serving,
-        difficulty=parsed.difficulty,
-        meal_type=parsed.meal_type,
-        cuisine_type=parsed.cuisine_type,
-    )
+    return {
+        **parsed.model_dump(include=_CONTENT_FIELDS),
+        "ingredients": ingredients,
+        "steps": steps,
+    }
+
+
+def parsed_to_update(parsed: ParsedRecipe) -> RecipeUpdate:
+    """Replace a recipe's whole content with what was just re-imported."""
+    return RecipeUpdate(**_content(parsed))
 
 
 #: Fields ``parsed_to_fill`` may complete: those whose empty value can only
@@ -147,29 +167,50 @@ def parsed_to_fill(parsed: ParsedRecipe, recipe: Recipe) -> RecipeUpdate:
 
 def parsed_to_create(parsed: ParsedRecipe, *, is_public: bool) -> RecipeCreate:
     """A new recipe imported from ``parsed.source_url``, without a human review."""
-    parsed = _clean(parsed)
-    ingredients, steps = _ingredients_and_steps(parsed.ingredients, parsed)
     return RecipeCreate(
-        title=parsed.title,
-        description=parsed.description,
-        servings=parsed.servings,
-        prep_time_minutes=parsed.prep_time_minutes,
-        cook_time_minutes=parsed.cook_time_minutes,
-        source_url=parsed.source_url,
-        image_url=parsed.image_url,
+        **_content(parsed),
         is_public=is_public,
-        ingredients=ingredients,
-        steps=steps,
-        seasons=parsed.seasons,
-        is_vegan=parsed.is_vegan,
-        is_vegetarian=parsed.is_vegetarian,
-        is_gluten_free=parsed.is_gluten_free,
-        is_dairy_free=parsed.is_dairy_free,
-        kcal_per_serving=parsed.kcal_per_serving,
-        difficulty=parsed.difficulty,
-        meal_type=parsed.meal_type,
-        cuisine_type=parsed.cuisine_type,
         import_consent=True,
         import_source=ImportSource.URL,
         import_language=parsed.language,
+    )
+
+
+def recipe_to_parsed(recipe: Recipe, catalog: Mapping[str, Ingredient]) -> ParsedRecipe:
+    """A saved recipe in the shape an import returns, for the client to review.
+
+    ``catalog`` maps ingredient names to their catalogue entries, which hold
+    the English names and categories a recipe row does not.
+    """
+    by_id = {ri.id: ri for ri in recipe.recipe_ingredients}
+    ingredients = []
+    for ri in recipe.recipe_ingredients:
+        entry = catalog.get(ri.ingredient_name)
+        ingredients.append(
+            ParsedIngredient(
+                name=ri.ingredient_name,
+                name_en=entry.name_en if entry else None,
+                category=entry.category if entry else IngredientCategory.OTHER,
+                quantity=ri.quantity,
+                unit=ri.unit,
+                notes=ri.notes,
+            )
+        )
+    steps = [
+        ParsedStep(
+            instruction=step.instruction,
+            ingredient_names=[
+                by_id[si.recipe_ingredient_id].ingredient_name
+                for si in step.step_ingredients
+                if si.recipe_ingredient_id in by_id
+            ],
+        )
+        for step in sorted(recipe.steps, key=lambda s: s.step_number)
+    ]
+    return ParsedRecipe(
+        **recipe.model_dump(include=_CONTENT_FIELDS - {"seasons"}),
+        seasons=recipe.seasons or [],  # the column is nullable
+        ingredients=ingredients,
+        steps=steps,
+        language=recipe.import_language,
     )

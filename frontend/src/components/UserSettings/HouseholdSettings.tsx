@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 
@@ -23,8 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import useCustomToast from "@/hooks/useCustomToast"
-import { handleError } from "@/utils"
+import { useCrudMutation } from "@/hooks/useCrudMutation"
 
 /** Currencies the app formats costs in. */
 const CURRENCIES = ["EUR", "GBP", "USD", "CHF", "CAD"] as const
@@ -34,9 +33,6 @@ const NO_STORE = "__none__"
 
 export function HouseholdSettings() {
   const { t } = useTranslation("settings")
-  const queryClient = useQueryClient()
-  const { showSuccessToast, showErrorToast } = useCustomToast()
-
   const { data: settings, isLoading } = useQuery({
     queryKey: ["user-settings"],
     queryFn: () => UserSettingsService.readUserSettings(),
@@ -63,7 +59,7 @@ export function HouseholdSettings() {
   // The select cannot hold an empty value, so "no preference" gets a sentinel.
   const currentStore = storeId || (settings?.preferred_store_id ?? NO_STORE)
 
-  const mutation = useMutation({
+  const mutation = useCrudMutation({
     mutationFn: () =>
       UserSettingsService.updateUserSettings({
         requestBody: {
@@ -76,11 +72,8 @@ export function HouseholdSettings() {
           preferred_store_id: currentStore === NO_STORE ? null : currentStore,
         },
       }),
-    onSuccess: () => {
-      showSuccessToast(t("household.success"))
-      queryClient.invalidateQueries({ queryKey: ["user-settings"] })
-    },
-    onError: handleError.bind(showErrorToast),
+    successMessage: t("household.success"),
+    invalidateKeys: ["user-settings"],
   })
 
   if (isLoading) {

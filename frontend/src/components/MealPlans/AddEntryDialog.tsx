@@ -2,8 +2,8 @@ import { useQuery } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
-
 import { MealPlansService, RecipesService } from "@/client"
+import { MealTypeSchema } from "@/client/schemas.gen"
 import { MEAL_TYPE_ICONS } from "@/components/Common/categoryIcons"
 import { Button } from "@/components/ui/button"
 import {
@@ -26,14 +26,8 @@ import {
 } from "@/components/ui/select"
 import { useCrudMutation } from "@/hooks/useCrudMutation"
 
-const MEAL_TYPES = [
-  "breakfast",
-  "lunch",
-  "dinner",
-  "snack",
-  "dessert",
-  "drink",
-] as const
+/** Every meal a plan slot can hold; "other" is a recipe category, not a meal. */
+const MEAL_TYPES = MealTypeSchema.enum.filter((type) => type !== "other")
 
 /** Put a recipe into one day of a plan. */
 export function AddEntryDialog({

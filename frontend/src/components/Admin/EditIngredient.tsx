@@ -1,16 +1,15 @@
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Pencil } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { z } from "zod"
-
 import {
   type IngredientCategory,
   type IngredientPublic,
   IngredientsService,
 } from "@/client"
+import { IngredientCategorySchema } from "@/client/schemas.gen"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -37,22 +36,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import useCustomToast from "@/hooks/useCustomToast"
-import { handleError } from "@/utils"
+import { useCrudMutation } from "@/hooks/useCrudMutation"
 
-const CATEGORIES: IngredientCategory[] = [
-  "produce",
-  "dairy",
-  "meat",
-  "seafood",
-  "grains",
-  "pantry",
-  "spices",
-  "beverages",
-  "frozen",
-  "bakery",
-  "other",
-]
+const CATEGORIES = IngredientCategorySchema.enum
 
 const formSchema = z.object({
   category: z.string(),
@@ -69,9 +55,6 @@ interface EditIngredientProps {
 const EditIngredient = ({ ingredient, onSuccess }: EditIngredientProps) => {
   const [isOpen, setIsOpen] = useState(false)
   const { t } = useTranslation("common")
-  const queryClient = useQueryClient()
-  const { showSuccessToast, showErrorToast } = useCustomToast()
-
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -80,7 +63,7 @@ const EditIngredient = ({ ingredient, onSuccess }: EditIngredientProps) => {
     },
   })
 
-  const mutation = useMutation({
+  const mutation = useCrudMutation({
     mutationFn: (data: FormData) =>
       IngredientsService.updateIngredient({
         id: ingredient.id,
@@ -89,15 +72,12 @@ const EditIngredient = ({ ingredient, onSuccess }: EditIngredientProps) => {
           image_url: data.image_url || null,
         },
       }),
+    successMessage: t("ingredient.updated", { ns: "admin" }),
     onSuccess: () => {
-      showSuccessToast(t("ingredient.updated", { ns: "admin" }))
       setIsOpen(false)
       onSuccess()
     },
-    onError: handleError.bind(showErrorToast),
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["ingredient-catalog"] })
-    },
+    invalidateKeys: ["ingredient-catalog"],
   })
 
   return (

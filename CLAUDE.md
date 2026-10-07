@@ -70,6 +70,7 @@ Never use `--no-verify` — fix the underlying issue.
 **Units**
 - Always read unit choices from `UnitSchema.enum` (`frontend/src/client/schemas.gen.ts`).
   Never hardcode arrays of units — the backend `Unit` enum is the source of truth.
+  The same goes for every enum (`SeasonSchema`, `MealTypeSchema`, …).
 - Display unit labels via the `common` namespace:
   `tCommon(\`unit_labels.${u}\`, { defaultValue: u })`.
 - The shared `<UnitSelect>` (`frontend/src/components/Common/UnitSelect.tsx`)
@@ -99,13 +100,42 @@ Never use `--no-verify` — fix the underlying issue.
 - Store prices resolve as: the store's own price → the catalog price scaled by
   `Store.price_index` → unpriced. A curated store price is never index-scaled.
 
+**Transactions**
+- A request is one transaction. `get_db` (`backend/app/api/deps.py`) commits
+  once the endpoint has returned and its response is serialized, and rolls back
+  if anything raised; `Depends(..., scope="function")` makes that happen
+  *before* the response is sent. CRUD functions therefore **flush, never
+  commit**, and routes never call `session.commit()`.
+- Code outside a request (background jobs, scripts, `init_db`) opens its own
+  `Session` and commits once per unit of work: one store's prices, one
+  reimported recipe with its catalogue entries.
+- Side effects that must not happen for a rolled-back request (emails, image
+  fetches) go in a `BackgroundTask`, which runs after the commit.
+- Invariants live in the database too (unique indexes, CHECK constraints), not
+  only in Pydantic. A check-then-write on shared rows takes a row lock first
+  (`crud.lock_household`).
+- The test `db` fixture autocommits, so fixtures built through CRUD are
+  visible to the app's requests. A helper whose data must survive a service's
+  `rollback()` calls `db.commit()` itself.
+
 **Access control for shared resources**
 - Shopping lists and meal plans are visible to a user's whole household. The
   rule lives in exactly one function, `crud.user_can_access`
   (`backend/app/crud/household.py`) — call it rather than comparing `owner_id`.
-- List endpoints must filter on `crud.household_member_ids(...)`, not on
+  Recipes have theirs in `crud.user_can_read_recipe` / `user_can_edit_recipe`.
+- Routes on one resource take it through a dependency that applies the rule
+  and answers 404/403: `SharedShoppingList`, `SharedMealPlan`,
+  `ReadableRecipe`, `EditableRecipe` (`api/deps.py`). Don't re-check by hand.
+- List endpoints must filter on `crud.visible_owner_ids(...)`, not on
   `current_user.id`, or a member can open a shared list by URL but never see it
   listed.
+- Paginated listings go through `crud.query.paginate`.
+
+**Background jobs**
+- `app/core/background.py` has the two building blocks: `advisory_lock` (one
+  worker at a time) and `PeriodicJob` (a daemon thread with a stop event). The
+  crawler and the reimport fetch pages through one `PoliteFetcher`
+  (`services/recipe_crawler/fetcher.py`).
 
 **Mutations**
 - Use the `useCrudMutation` hook (`frontend/src/hooks/useCrudMutation.ts`)
@@ -114,6 +144,13 @@ Never use `--no-verify` — fix the underlying issue.
   `handleError.bind(showErrorToast)` and supports multi-key invalidation.
 - Use raw `useMutation` only when you need richer lifecycle hooks
   (optimistic updates, custom `onMutate`, etc.).
+
+**Shared page pieces**
+- `PageHeader`, `SearchInput` and `EmptyListState` (`components/Common/`) are
+  the title bar, search box and empty state of a list page.
+- Recipe listings search on the server through `useRecipeSearch` and render
+  with `RecipeResults`; never fetch a page of recipes and filter it in the
+  browser, which hides everything past the first page.
 
 **Confirmation dialogs**
 - Destructive flows use `<ConfirmDialog variant="destructive">`

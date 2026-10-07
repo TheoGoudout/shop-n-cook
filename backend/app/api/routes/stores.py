@@ -1,10 +1,11 @@
 import uuid
-from typing import Annotated, Any
+from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query
 
 from app import crud
-from app.api.deps import CurrentUser, SessionDep, get_current_active_superuser
+from app.api.deps import CurrentSuperuser, CurrentUser, SessionDep
+from app.api.routes.ingredients import ingredient_or_404
 from app.api.routes.shopping_lists import lines_for_list
 from app.models.base import Message
 from app.models.store import (
@@ -33,6 +34,13 @@ from app.services.store_providers.refresh import RefreshResult, refresh_store_pr
 router = APIRouter(prefix="/stores", tags=["stores"])
 
 
+def _store_or_404(*, session: SessionDep, store_id: uuid.UUID) -> Store:
+    store = crud.get_store(session=session, store_id=store_id)
+    if store is None:
+        raise HTTPException(status_code=404, detail="Store not found")
+    return store
+
+
 @router.get("/", response_model=StoresPublic)
 def read_stores(
     session: SessionDep,
@@ -52,7 +60,7 @@ def read_stores(
 def create_store(
     *,
     session: SessionDep,
-    _current_user: Annotated[Any, Depends(get_current_active_superuser)],
+    _current_user: CurrentSuperuser,
     store_in: StoreCreate,
 ) -> Any:
     """Add a retailer. Superuser only."""
@@ -65,14 +73,12 @@ def create_store(
 def update_store(
     *,
     session: SessionDep,
-    _current_user: Annotated[Any, Depends(get_current_active_superuser)],
+    _current_user: CurrentSuperuser,
     id: uuid.UUID,
     update_in: StoreUpdate,
 ) -> Any:
     """Update a retailer. Superuser only."""
-    store = crud.get_store(session=session, store_id=id)
-    if not store:
-        raise HTTPException(status_code=404, detail="Store not found")
+    store = _store_or_404(session=session, store_id=id)
     return crud.store_to_public(
         crud.update_store(session=session, store=store, update_in=update_in)
     )
@@ -82,13 +88,11 @@ def update_store(
 def delete_store(
     *,
     session: SessionDep,
-    _current_user: Annotated[Any, Depends(get_current_active_superuser)],
+    _current_user: CurrentSuperuser,
     id: uuid.UUID,
 ) -> Message:
     """Delete a retailer and every price recorded against it. Superuser only."""
-    store = crud.get_store(session=session, store_id=id)
-    if not store:
-        raise HTTPException(status_code=404, detail="Store not found")
+    store = _store_or_404(session=session, store_id=id)
     crud.delete_store(session=session, store=store)
     return Message(message="Store deleted successfully")
 
@@ -107,9 +111,7 @@ def read_ingredient_prices(
     id: uuid.UUID,
 ) -> Any:
     """Every store price recorded for one ingredient."""
-    ingredient = crud.get_ingredient(session=session, ingredient_id=id)
-    if not ingredient:
-        raise HTTPException(status_code=404, detail="Ingredient not found")
+    ingredient_or_404(session=session, ingredient_id=id)
     prices = crud.get_ingredient_prices(session=session, ingredient_id=id)
     return IngredientPricesPublic(
         data=[crud.ingredient_price_to_public(p) for p in prices], count=len(prices)
@@ -120,16 +122,13 @@ def read_ingredient_prices(
 def upsert_ingredient_price(
     *,
     session: SessionDep,
-    _current_user: Annotated[Any, Depends(get_current_active_superuser)],
+    _current_user: CurrentSuperuser,
     id: uuid.UUID,
     price_in: IngredientPriceCreate,
 ) -> Any:
     """Set this ingredient's price at one store. Superuser only."""
-    ingredient = crud.get_ingredient(session=session, ingredient_id=id)
-    if not ingredient:
-        raise HTTPException(status_code=404, detail="Ingredient not found")
-    if not crud.get_store(session=session, store_id=price_in.store_id):
-        raise HTTPException(status_code=404, detail="Store not found")
+    ingredient = ingredient_or_404(session=session, ingredient_id=id)
+    _store_or_404(session=session, store_id=price_in.store_id)
     price = crud.upsert_ingredient_price(
         session=session, ingredient=ingredient, price_in=price_in
     )
@@ -140,7 +139,7 @@ def upsert_ingredient_price(
 def delete_ingredient_price(
     *,
     session: SessionDep,
-    _current_user: Annotated[Any, Depends(get_current_active_superuser)],
+    _current_user: CurrentSuperuser,
     id: uuid.UUID,
     store_id: uuid.UUID,
 ) -> Message:
@@ -179,18 +178,11 @@ def _provider_for(store: Store) -> StoreProvider:
         ) from None
 
 
-def _store_or_404(*, session: SessionDep, store_id: uuid.UUID) -> Store:
-    store = crud.get_store(session=session, store_id=store_id)
-    if store is None:
-        raise HTTPException(status_code=404, detail="Store not found")
-    return store
-
-
 @router.post("/{store_id}/refresh-prices", response_model=RefreshResult)
 def refresh_store_prices_route(
     *,
     session: SessionDep,
-    _current_user: Annotated[Any, Depends(get_current_active_superuser)],
+    _current_user: CurrentSuperuser,
     store_id: uuid.UUID,
     limit: int = Query(default=200, ge=1, le=2000),
 ) -> Any:

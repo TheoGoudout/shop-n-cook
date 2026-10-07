@@ -94,7 +94,7 @@ def get_stores(
 def create_store(*, session: Session, store_in: StoreCreate) -> Store:
     store = Store(**store_in.model_dump())
     session.add(store)
-    session.commit()
+    session.flush()
     session.refresh(store)
     return store
 
@@ -102,14 +102,14 @@ def create_store(*, session: Session, store_in: StoreCreate) -> Store:
 def update_store(*, session: Session, store: Store, update_in: StoreUpdate) -> Store:
     store.sqlmodel_update(update_in.model_dump(exclude_unset=True))
     session.add(store)
-    session.commit()
+    session.flush()
     session.refresh(store)
     return store
 
 
 def delete_store(*, session: Session, store: Store) -> None:
     session.delete(store)
-    session.commit()
+    session.flush()
 
 
 # --------------------------------------------------------------------------- #
@@ -159,7 +159,7 @@ def upsert_ingredient_price(
         existing.price_quantity = price_in.price_quantity
         existing.price_unit = price_in.price_unit
         session.add(existing)
-        session.commit()
+        session.flush()
         session.refresh(existing)
         return existing
 
@@ -171,7 +171,7 @@ def upsert_ingredient_price(
         price_unit=price_in.price_unit,
     )
     session.add(price)
-    session.commit()
+    session.flush()
     session.refresh(price)
     return price
 
@@ -181,11 +181,11 @@ def update_ingredient_price(
 ) -> IngredientPrice:
     price.sqlmodel_update(update_in.model_dump(exclude_unset=True))
     session.add(price)
-    session.commit()
+    session.flush()
     session.refresh(price)
     return price
 
 
 def delete_ingredient_price(*, session: Session, price: IngredientPrice) -> None:
     session.delete(price)
-    session.commit()
+    session.flush()

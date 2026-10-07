@@ -1,15 +1,20 @@
 import uuid
+from collections.abc import Sequence
 from datetime import datetime, timezone
 
 import sqlalchemy as sa
+from sqlalchemy import ColumnElement
 from sqlalchemy.dialects.postgresql import array as pg_array
 from sqlalchemy.orm import selectinload
-from sqlmodel import Session, col, func, or_, select
+from sqlmodel import Session, col, or_, select
 
+from app.crud.query import paginate
 from app.models import (
     Recipe,
     RecipeCreate,
+    RecipeFilters,
     RecipeIngredient,
+    RecipeIngredientCreate,
     RecipeIngredientPublic,
     RecipePublic,
     RecipeStep,
@@ -19,7 +24,7 @@ from app.models import (
     RecipeStepPublic,
     RecipeUpdate,
 )
-from app.models.recipe import Difficulty, ImportSource, MealType, Season
+from app.models.recipe import ImportSource
 from app.models.user import User
 from app.services.pricing import CostSummary, PriceBook, quantize_money
 from app.services.recipe_import.prompt import language_code
@@ -70,8 +75,23 @@ def _step_to_public(step: RecipeStep) -> RecipeStepPublic:
     )
 
 
+def user_can_read_recipe(*, user: User, recipe: Recipe) -> bool:
+    """Your own recipes, public ones, or any recipe if you are a superuser."""
+    return user.is_superuser or recipe.owner_id == user.id or recipe.is_public
+
+
+def user_can_edit_recipe(*, user: User, recipe: Recipe) -> bool:
+    """Only the owner, or a superuser, may change a recipe — public or not."""
+    return user.is_superuser or recipe.owner_id == user.id
+
+
 def _owner_display_name(owner: User) -> str:
     return owner.full_name or owner.email.split("@")[0]
+
+
+def servings_scale(recipe: Recipe, servings: int) -> float:
+    """How far cooking ``servings`` stretches the recipe's own quantities."""
+    return servings / (recipe.servings or 1)
 
 
 def recipe_cost(
@@ -128,30 +148,51 @@ def recipe_to_public(
     )
 
 
-def _create_steps(
-    *,
+def _add_ingredients(
     session: Session,
-    recipe_id: uuid.UUID,
-    steps_in: list[RecipeStepCreate],
-    ri_list: list[RecipeIngredient],
+    recipe: Recipe,
+    ingredients_in: Sequence[RecipeIngredientCreate],
+) -> list[RecipeIngredient]:
+    """Add the recipe's ingredient rows, in order: steps refer to them by index."""
+    rows = [
+        RecipeIngredient(
+            recipe_id=recipe.id,
+            ingredient_name=ing.ingredient_name,
+            quantity=ing.quantity,
+            unit=ing.unit,
+            notes=ing.notes,
+        )
+        for ing in ingredients_in
+    ]
+    session.add_all(rows)
+    return rows
+
+
+def _add_steps(
+    session: Session,
+    recipe: Recipe,
+    steps_in: Sequence[RecipeStepCreate],
+    ingredients: Sequence[RecipeIngredient],
 ) -> None:
-    """Create RecipeStep rows and their RecipeStepIngredient links."""
+    """Add the recipe's steps, each linked to the ingredients it uses.
+
+    An ingredient index out of range is ignored rather than refused: it comes
+    from an AI import as often as from a person.
+    """
     for step_in in steps_in:
         step = RecipeStep(
-            recipe_id=recipe_id,
+            recipe_id=recipe.id,
             step_number=step_in.step_number,
             instruction=step_in.instruction,
         )
         session.add(step)
-        session.flush()
-        for idx in step_in.ingredient_indices:
-            if 0 <= idx < len(ri_list):
-                session.add(
-                    RecipeStepIngredient(
-                        step_id=step.id,
-                        recipe_ingredient_id=ri_list[idx].id,
-                    )
-                )
+        session.add_all(
+            RecipeStepIngredient(
+                step_id=step.id, recipe_ingredient_id=ingredients[i].id
+            )
+            for i in step_in.ingredient_indices
+            if 0 <= i < len(ingredients)
+        )
 
 
 def get_recipe(*, session: Session, recipe_id: uuid.UUID) -> Recipe | None:
@@ -169,162 +210,77 @@ def get_recipe_by_source_url(
     ).first()
 
 
+def _filter_conditions(filters: RecipeFilters) -> list[ColumnElement[bool]]:
+    conditions: list[ColumnElement[bool]] = []
+    if filters.search:
+        pattern = f"%{filters.search}%"
+        conditions.append(
+            or_(
+                col(Recipe.title).ilike(pattern),
+                col(Recipe.description).ilike(pattern),
+            )
+        )
+    if filters.seasons:
+        seasons = pg_array([s.value for s in filters.seasons], type_=sa.String)
+        conditions.append(col(Recipe.seasons).bool_op("&&")(seasons))
+    for flag in ("is_vegan", "is_vegetarian", "is_gluten_free", "is_dairy_free"):
+        if getattr(filters, flag) is True:
+            conditions.append(col(getattr(Recipe, flag)).is_(True))
+    if filters.difficulty is not None:
+        conditions.append(col(Recipe.difficulty) == filters.difficulty)
+    if filters.meal_type is not None:
+        conditions.append(col(Recipe.meal_type) == filters.meal_type)
+    if filters.cuisine_type:
+        conditions.append(col(Recipe.cuisine_type).ilike(f"%{filters.cuisine_type}%"))
+    return conditions
+
+
 def get_recipes(
     *,
     session: Session,
+    filters: RecipeFilters | None = None,
     owner_id: uuid.UUID | None = None,
-    search: str | None = None,
     public_only: bool = False,
-    eager_load_owner: bool = False,
     skip: int = 0,
     limit: int = 100,
-    seasons: list[Season] | None = None,
-    is_vegan: bool | None = None,
-    is_vegetarian: bool | None = None,
-    is_gluten_free: bool | None = None,
-    is_dairy_free: bool | None = None,
-    difficulty: Difficulty | None = None,
-    meal_type: MealType | None = None,
-    cuisine_type: str | None = None,
 ) -> tuple[list[Recipe], int]:
-    query = select(Recipe)
-    count_query = select(func.count()).select_from(Recipe)
-
+    """Newest recipes first, narrowed by ``filters``, an owner, or public ones."""
+    where = _filter_conditions(filters or RecipeFilters())
     if public_only:
-        query = query.where(Recipe.is_public == True)  # noqa: E712
-        count_query = count_query.where(Recipe.is_public == True)  # noqa: E712
-
-    if eager_load_owner:
-        query = query.options(selectinload(Recipe.owner))  # type: ignore[arg-type]
-
+        where.append(col(Recipe.is_public).is_(True))
     if owner_id is not None:
-        query = query.where(Recipe.owner_id == owner_id)
-        count_query = count_query.where(Recipe.owner_id == owner_id)
-
-    if search:
-        pattern = f"%{search}%"
-        search_filter = or_(
-            col(Recipe.title).ilike(pattern),
-            col(Recipe.description).ilike(pattern),
-        )
-        query = query.where(search_filter)
-        count_query = count_query.where(search_filter)
-
-    if seasons:
-        seasons_arr = pg_array([s.value for s in seasons], type_=sa.String)
-        seasons_filter = col(Recipe.seasons).bool_op("&&")(seasons_arr)
-        query = query.where(seasons_filter)
-        count_query = count_query.where(seasons_filter)
-
-    if is_vegan is True:
-        query = query.where(Recipe.is_vegan == True)  # noqa: E712
-        count_query = count_query.where(Recipe.is_vegan == True)  # noqa: E712
-
-    if is_vegetarian is True:
-        query = query.where(Recipe.is_vegetarian == True)  # noqa: E712
-        count_query = count_query.where(Recipe.is_vegetarian == True)  # noqa: E712
-
-    if is_gluten_free is True:
-        query = query.where(Recipe.is_gluten_free == True)  # noqa: E712
-        count_query = count_query.where(Recipe.is_gluten_free == True)  # noqa: E712
-
-    if is_dairy_free is True:
-        query = query.where(Recipe.is_dairy_free == True)  # noqa: E712
-        count_query = count_query.where(Recipe.is_dairy_free == True)  # noqa: E712
-
-    if difficulty is not None:
-        query = query.where(Recipe.difficulty == difficulty.value)
-        count_query = count_query.where(Recipe.difficulty == difficulty.value)
-
-    if meal_type is not None:
-        query = query.where(Recipe.meal_type == meal_type.value)
-        count_query = count_query.where(Recipe.meal_type == meal_type.value)
-
-    if cuisine_type:
-        pattern = f"%{cuisine_type}%"
-        query = query.where(col(Recipe.cuisine_type).ilike(pattern))
-        count_query = count_query.where(col(Recipe.cuisine_type).ilike(pattern))
-
-    count = session.exec(count_query).one()
-    recipes = session.exec(
-        query.order_by(col(Recipe.created_at).desc()).offset(skip).limit(limit)
-    ).all()
-    return list(recipes), count
-
-
-def get_public_recipes(
-    *,
-    session: Session,
-    owner_id: uuid.UUID | None = None,
-    search: str | None = None,
-    skip: int = 0,
-    limit: int = 100,
-    seasons: list[Season] | None = None,
-    is_vegan: bool | None = None,
-    is_vegetarian: bool | None = None,
-    is_gluten_free: bool | None = None,
-    is_dairy_free: bool | None = None,
-    difficulty: Difficulty | None = None,
-    meal_type: MealType | None = None,
-    cuisine_type: str | None = None,
-) -> tuple[list[Recipe], int]:
-    return get_recipes(
-        session=session,
-        owner_id=owner_id,
-        search=search,
-        public_only=True,
-        eager_load_owner=True,
+        where.append(col(Recipe.owner_id) == owner_id)
+    return paginate(
+        session,
+        Recipe,
+        where=where,
+        order_by=col(Recipe.created_at).desc(),
         skip=skip,
         limit=limit,
-        seasons=seasons,
-        is_vegan=is_vegan,
-        is_vegetarian=is_vegetarian,
-        is_gluten_free=is_gluten_free,
-        is_dairy_free=is_dairy_free,
-        difficulty=difficulty,
-        meal_type=meal_type,
-        cuisine_type=cuisine_type,
+        # Every listed recipe shows its owner's name.
+        options=[selectinload(Recipe.owner)],  # type: ignore[arg-type]
     )
 
 
 def create_recipe(
     *, session: Session, recipe_in: RecipeCreate, owner_id: uuid.UUID
 ) -> Recipe:
-    recipe_data = recipe_in.model_dump(exclude={"ingredients", "steps"})
-    db_recipe = Recipe(**recipe_data, owner_id=owner_id)
-    if db_recipe.import_consent:
-        db_recipe.import_consent_at = datetime.now(timezone.utc)
-    if db_recipe.import_language is not None:
-        db_recipe.import_language = language_code(db_recipe.import_language)
-    if db_recipe.import_source == ImportSource.URL:
-        # The page was parsed moments ago, by this server's pipeline.
-        db_recipe.import_version = IMPORT_VERSION
-    session.add(db_recipe)
-    session.flush()
-
-    ri_list: list[RecipeIngredient] = []
-    for ing_in in recipe_in.ingredients:
-        ri = RecipeIngredient(
-            recipe_id=db_recipe.id,
-            ingredient_name=ing_in.ingredient_name,
-            quantity=ing_in.quantity,
-            unit=ing_in.unit,
-            notes=ing_in.notes,
-        )
-        session.add(ri)
-        session.flush()
-        ri_list.append(ri)
-
-    _create_steps(
-        session=session,
-        recipe_id=db_recipe.id,
-        steps_in=recipe_in.steps,
-        ri_list=ri_list,
+    recipe = Recipe(
+        **recipe_in.model_dump(exclude={"ingredients", "steps"}), owner_id=owner_id
     )
-
-    session.commit()
-    session.refresh(db_recipe)
-    return db_recipe
+    if recipe.import_consent:
+        recipe.import_consent_at = datetime.now(timezone.utc)
+    if recipe.import_language is not None:
+        recipe.import_language = language_code(recipe.import_language)
+    if recipe.import_source == ImportSource.URL:
+        # The page was parsed moments ago, by this server's pipeline.
+        recipe.import_version = IMPORT_VERSION
+    session.add(recipe)
+    ingredients = _add_ingredients(session, recipe, recipe_in.ingredients)
+    _add_steps(session, recipe, recipe_in.steps, ingredients)
+    session.flush()
+    session.refresh(recipe)
+    return recipe
 
 
 def update_recipe(
@@ -333,46 +289,29 @@ def update_recipe(
     db_recipe: Recipe,
     recipe_in: RecipeUpdate,
 ) -> Recipe:
-    update_data = recipe_in.model_dump(
-        exclude_unset=True, exclude={"ingredients", "steps"}
+    """Update a recipe; ``ingredients`` and ``steps``, when given, replace all."""
+    db_recipe.sqlmodel_update(
+        recipe_in.model_dump(exclude_unset=True, exclude={"ingredients", "steps"})
     )
-    db_recipe.sqlmodel_update(update_data)
 
-    ri_list: list[RecipeIngredient] = list(db_recipe.recipe_ingredients)
-
+    ingredients = list(db_recipe.recipe_ingredients)
     if recipe_in.ingredients is not None:
-        for ri in list(db_recipe.recipe_ingredients):
-            session.delete(ri)
+        for row in ingredients:
+            session.delete(row)
         session.flush()
-        ri_list = []
-        for ing_in in recipe_in.ingredients:
-            ri = RecipeIngredient(
-                recipe_id=db_recipe.id,
-                ingredient_name=ing_in.ingredient_name,
-                quantity=ing_in.quantity,
-                unit=ing_in.unit,
-                notes=ing_in.notes,
-            )
-            session.add(ri)
-            session.flush()
-            ri_list.append(ri)
+        ingredients = _add_ingredients(session, db_recipe, recipe_in.ingredients)
 
     if recipe_in.steps is not None:
         for step in list(db_recipe.steps):
             session.delete(step)
         session.flush()
-        _create_steps(
-            session=session,
-            recipe_id=db_recipe.id,
-            steps_in=recipe_in.steps,
-            ri_list=ri_list,
-        )
+        _add_steps(session, db_recipe, recipe_in.steps, ingredients)
 
-    session.commit()
+    session.flush()
     session.refresh(db_recipe)
     return db_recipe
 
 
 def delete_recipe(*, session: Session, recipe: Recipe) -> None:
     session.delete(recipe)
-    session.commit()
+    session.flush()

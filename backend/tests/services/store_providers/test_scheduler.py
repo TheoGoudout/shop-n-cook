@@ -12,6 +12,7 @@ from sqlalchemy import text
 from sqlmodel import Session
 
 from app import crud
+from app.core.background import PeriodicJob
 from app.core.config import settings
 from app.core.db import engine
 from app.models.base import get_datetime_utc
@@ -45,9 +46,9 @@ def _store(
         store.prices_refreshed_at = get_datetime_utc() - timedelta(
             hours=refreshed_hours_ago
         )
-        db.add(store)
-        db.commit()
-        db.refresh(store)
+    # Committed, so that a refresh rolling back a failed store keeps it.
+    db.commit()
+    db.refresh(store)
     return store
 
 
@@ -201,29 +202,14 @@ class TestThread:
         assert settings.STORE_PRICE_REFRESH_HOURS == 0, "tests run with it off"
         assert scheduler.start_price_refresh_scheduler(engine) is None
 
-    def test_ticks_until_stopped(self) -> None:
-        ticked = threading.Event()
-
-        def run_once(*_: object, **__: object) -> None:
-            ticked.set()
-            raise RuntimeError("a failed tick must not kill the thread")
-
-        with patch(f"{SCHEDULER}.run_once", side_effect=run_once) as tick:
-            job = scheduler.PriceRefreshScheduler(
-                engine, interval=DAY, check_seconds=0.01, startup_delay_seconds=0
-            )
-            job.start()
-            assert ticked.wait(timeout=5)
-            job.stop()
-        assert tick.call_count >= 1
-        assert not job._thread.is_alive()
-
     def test_started_when_enabled(self) -> None:
         with (
             patch.object(settings, "STORE_PRICE_REFRESH_HOURS", 24),
-            patch.object(scheduler.PriceRefreshScheduler, "start") as start,
+            patch.object(PeriodicJob, "start") as start,
         ):
             job = scheduler.start_price_refresh_scheduler(engine)
         assert job is not None
-        assert job._interval == DAY
         start.assert_called_once()
+        with patch(f"{SCHEDULER}.run_once") as tick:
+            job._tick(threading.Event())
+        assert tick.call_args.kwargs["interval"] == DAY

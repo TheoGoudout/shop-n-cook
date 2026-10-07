@@ -1,11 +1,9 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { RefreshCw } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
 import { RecipesService } from "@/client"
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
-import useCustomToast from "@/hooks/useCustomToast"
-import { handleError } from "@/utils"
+import { useCrudMutation } from "@/hooks/useCrudMutation"
 
 interface Props {
   id: string
@@ -14,22 +12,18 @@ interface Props {
 
 const ReimportRecipe = ({ id, onSuccess }: Props) => {
   const { t, i18n } = useTranslation("recipes")
-  const queryClient = useQueryClient()
-  const { showSuccessToast, showErrorToast } = useCustomToast()
-
-  const mutation = useMutation({
+  const mutation = useCrudMutation({
     mutationFn: () =>
       RecipesService.reimportRecipe({
         id,
         requestBody: { language: i18n.language },
       }),
+    successMessage: t("reimport.success"),
     onSuccess: () => {
-      showSuccessToast(t("reimport.success"))
       onSuccess()
       window.location.reload()
     },
-    onError: handleError.bind(showErrorToast),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: ["recipes"] }),
+    invalidateKeys: ["recipes"],
   })
 
   return (

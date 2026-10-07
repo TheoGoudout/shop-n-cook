@@ -1,5 +1,4 @@
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
 import { useMemo, useState } from "react"
 import { type Resolver, useForm } from "react-hook-form"
@@ -15,8 +14,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import useCustomToast from "@/hooks/useCustomToast"
-import { handleError } from "@/utils"
+import { useCrudMutation } from "@/hooks/useCrudMutation"
 
 import { RecipeForm } from "./RecipeForm"
 import { RecipeImportTabs } from "./RecipeImportTabs"
@@ -30,9 +28,6 @@ import {
 const AddRecipe = () => {
   const { t } = useTranslation("recipes")
   const [isOpen, setIsOpen] = useState(false)
-  const queryClient = useQueryClient()
-  const { showSuccessToast, showErrorToast } = useCustomToast()
-
   const formSchema = useMemo(
     () => createRecipeFormSchema(t, { requireImportConsent: true }),
     [t],
@@ -43,18 +38,15 @@ const AddRecipe = () => {
     defaultValues: defaultCreateValues,
   })
 
-  const mutation = useMutation({
+  const mutation = useCrudMutation({
     mutationFn: (data: RecipeFormValues) =>
       RecipesService.createRecipe({ requestBody: toRecipeCreatePayload(data) }),
+    successMessage: t("add.success"),
     onSuccess: () => {
-      showSuccessToast(t("add.success"))
       form.reset(defaultCreateValues)
       setIsOpen(false)
     },
-    onError: handleError.bind(showErrorToast),
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["recipes"] })
-    },
+    invalidateKeys: ["recipes"],
   })
 
   return (

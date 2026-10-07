@@ -11,7 +11,7 @@ def create_user(*, session: Session, user_create: UserCreate) -> User:
         user_create, update={"hashed_password": get_password_hash(user_create.password)}
     )
     session.add(db_obj)
-    session.commit()
+    session.flush()
     session.refresh(db_obj)
     return db_obj
 
@@ -25,7 +25,7 @@ def update_user(*, session: Session, db_user: User, user_in: UserUpdate) -> Any:
         extra_data["hashed_password"] = hashed_password
     db_user.sqlmodel_update(user_data, update=extra_data)
     session.add(db_user)
-    session.commit()
+    session.flush()
     session.refresh(db_user)
     return db_user
 
@@ -54,6 +54,6 @@ def authenticate(*, session: Session, email: str, password: str) -> User | None:
     if updated_password_hash:
         db_user.hashed_password = updated_password_hash
         session.add(db_user)
-        session.commit()
+        session.flush()
         session.refresh(db_user)
     return db_user

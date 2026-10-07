@@ -5,8 +5,14 @@ from fastapi import APIRouter, BackgroundTasks, HTTPException
 from sqlmodel import Session
 
 from app import crud
-from app.api.deps import CurrentUser, PriceBookDep, SessionDep
-from app.crud.shopping_list import _item_to_public, _sl_recipe_to_public
+from app.api.deps import (
+    CurrentUser,
+    PriceBookDep,
+    SessionDep,
+    SharedShoppingList,
+    readable_recipe,
+    shared_shopping_list,
+)
 from app.models import (
     Message,
     PantryCheck,
@@ -24,6 +30,7 @@ from app.models import (
     ShoppingListUpdate,
     StoreComparison,
     StoreComparisonEntry,
+    User,
 )
 from app.services.ingredient_image import fetch_and_update_ingredient_image
 from app.services.pricing import PriceBook
@@ -39,35 +46,30 @@ from app.services.store_providers.layouts import get_layout
 router = APIRouter(prefix="/shopping-lists", tags=["shopping-lists"])
 
 
-def _check_list_access(
-    shopping_list: ShoppingList | None,
-    current_user: Any,
-    _list_id: uuid.UUID,
-    session: Session | None = None,
-) -> ShoppingList:
-    """Gate every read and write of one list.
+def _item_of(
+    session: Session, shopping_list: ShoppingList, item_id: uuid.UUID
+) -> ShoppingListItem:
+    item = crud.get_shopping_list_item(session=session, item_id=item_id)
+    if not item or item.shopping_list_id != shopping_list.id:
+        raise HTTPException(status_code=404, detail="Item not found")
+    return item
 
-    Access is decided by ``crud.user_can_access`` — your own lists, your
-    household's, or anything if you are a superuser — so the household rule
-    lives in exactly one place. ``session`` is optional only so the handful of
-    superuser/self cases that cannot reach the database still work; every route
-    here passes it.
-    """
-    if not shopping_list:
-        raise HTTPException(status_code=404, detail="Shopping list not found")
-    if current_user.is_superuser or shopping_list.owner_id == current_user.id:
-        return shopping_list
-    if session is not None and crud.user_can_access(
-        session=session, user=current_user, owner_id=shopping_list.owner_id
-    ):
-        return shopping_list
-    raise HTTPException(status_code=403, detail="Not enough permissions")
+
+def _planned_recipe_of(
+    session: Session, shopping_list: ShoppingList, planned_recipe_id: uuid.UUID
+) -> ShoppingListRecipe:
+    planned = crud.get_shopping_list_recipe(
+        session=session, sl_recipe_id=planned_recipe_id
+    )
+    if not planned or planned.shopping_list_id != shopping_list.id:
+        raise HTTPException(status_code=404, detail="Planned recipe not found")
+    return planned
 
 
 def lines_for_list(
     *,
     session: Session,
-    current_user: Any,
+    current_user: User,
     shopping_list_id: uuid.UUID,
 ) -> list[ListLine]:
     """A shopping list as the store-provider layer sees it.
@@ -76,11 +78,8 @@ def lines_for_list(
     database dependency, and so the household access rule is applied in the
     one place that owns it.
     """
-    shopping_list = crud.get_shopping_list(
-        session=session, shopping_list_id=shopping_list_id
-    )
-    shopping_list = _check_list_access(
-        shopping_list, current_user, shopping_list_id, session
+    shopping_list = shared_shopping_list(
+        session=session, user=current_user, shopping_list_id=shopping_list_id
     )
     # Checked-off items are already in the basket, and what is at home is not
     # bought again: only the remainder goes to a store or onto paper.
@@ -112,15 +111,12 @@ def read_shopping_lists(
     skip: int = 0,
     limit: int = 100,
 ) -> Any:
-    """List shopping lists. Superusers see all; regular users see only their own."""
-    # A household member sees the whole household's lists, not just their own.
-    owner_ids = (
-        None
-        if current_user.is_superuser
-        else crud.household_member_ids(session=session, user_id=current_user.id)
-    )
+    """List the lists shared with your household. Superusers see all."""
     lists, count = crud.get_shopping_lists(
-        session=session, owner_ids=owner_ids, skip=skip, limit=limit
+        session=session,
+        owner_ids=crud.visible_owner_ids(session=session, user=current_user),
+        skip=skip,
+        limit=limit,
     )
     return ShoppingListsPublic(
         data=[crud.shopping_list_to_public(sl, prices) for sl in lists], count=count
@@ -128,16 +124,9 @@ def read_shopping_lists(
 
 
 @router.get("/{id}", response_model=ShoppingListPublic)
-def read_shopping_list(
-    session: SessionDep,
-    current_user: CurrentUser,
-    prices: PriceBookDep,
-    id: uuid.UUID,
-) -> Any:
+def read_shopping_list(shopping_list: SharedShoppingList, prices: PriceBookDep) -> Any:
     """Get a single shopping list with all its items and planned recipes."""
-    sl = crud.get_shopping_list(session=session, shopping_list_id=id)
-    _check_list_access(sl, current_user, id, session)
-    return crud.shopping_list_to_public(sl, prices)  # type: ignore[arg-type]
+    return crud.shopping_list_to_public(shopping_list, prices)
 
 
 @router.post("/", response_model=ShoppingListPublic)
@@ -149,40 +138,33 @@ def create_shopping_list(
     list_in: ShoppingListCreate,
 ) -> Any:
     """Create a new (empty) shopping list."""
-    sl = crud.create_shopping_list(
+    shopping_list = crud.create_shopping_list(
         session=session, list_in=list_in, owner_id=current_user.id
     )
-    return crud.shopping_list_to_public(sl, prices)
+    return crud.shopping_list_to_public(shopping_list, prices)
 
 
 @router.put("/{id}", response_model=ShoppingListPublic)
 def update_shopping_list(
     *,
     session: SessionDep,
-    current_user: CurrentUser,
+    shopping_list: SharedShoppingList,
     prices: PriceBookDep,
-    id: uuid.UUID,
     list_in: ShoppingListUpdate,
 ) -> Any:
     """Update a shopping list name and/or date range."""
-    sl = crud.get_shopping_list(session=session, shopping_list_id=id)
-    sl = _check_list_access(sl, current_user, id, session)
-    sl = crud.update_shopping_list(
-        session=session,
-        db_list=sl,
-        list_in=list_in,
+    shopping_list = crud.update_shopping_list(
+        session=session, db_list=shopping_list, list_in=list_in
     )
-    return crud.shopping_list_to_public(sl, prices)
+    return crud.shopping_list_to_public(shopping_list, prices)
 
 
 @router.delete("/{id}")
 def delete_shopping_list(
-    session: SessionDep, current_user: CurrentUser, id: uuid.UUID
+    session: SessionDep, shopping_list: SharedShoppingList
 ) -> Message:
     """Delete a shopping list and all its items."""
-    sl = crud.get_shopping_list(session=session, shopping_list_id=id)
-    _check_list_access(sl, current_user, id, session)
-    crud.delete_shopping_list(session=session, shopping_list=sl)  # type: ignore[arg-type]
+    crud.delete_shopping_list(session=session, shopping_list=shopping_list)
     return Message(message="Shopping list deleted successfully")
 
 
@@ -193,70 +175,45 @@ def delete_shopping_list(
 def add_item(
     *,
     session: SessionDep,
-    current_user: CurrentUser,
+    shopping_list: SharedShoppingList,
     prices: PriceBookDep,
-    id: uuid.UUID,
     item_in: ShoppingListItemCreate,
     background_tasks: BackgroundTasks,
 ) -> Any:
     """Add an item to a shopping list."""
-    sl = crud.get_shopping_list(session=session, shopping_list_id=id)
-    sl = _check_list_access(sl, current_user, id, session)
     ingredient, created = crud.get_or_create_ingredient(
         session=session, name=item_in.name
     )
     if created:
         background_tasks.add_task(fetch_and_update_ingredient_image, ingredient.id)
-    sl = crud.add_item_to_shopping_list(
-        session=session,
-        shopping_list=sl,
-        item_in=item_in,
+    shopping_list = crud.add_item_to_shopping_list(
+        session=session, shopping_list=shopping_list, item_in=item_in
     )
-    return crud.shopping_list_to_public(sl, prices)
+    return crud.shopping_list_to_public(shopping_list, prices)
 
 
 @router.put("/{id}/items/{item_id}", response_model=ShoppingListItemPublic)
 def update_item(
     *,
     session: SessionDep,
-    current_user: CurrentUser,
-    id: uuid.UUID,
+    shopping_list: SharedShoppingList,
     item_id: uuid.UUID,
     item_in: ShoppingListItemUpdate,
 ) -> Any:
     """Update a shopping list item (quantity, unit, is_checked, notes)."""
-    sl: ShoppingList | None = crud.get_shopping_list(
-        session=session, shopping_list_id=id
-    )
-    _check_list_access(sl, current_user, id, session)
-    item: ShoppingListItem | None = crud.get_shopping_list_item(
-        session=session, item_id=item_id
-    )
-    if not item or item.shopping_list_id != id:
-        raise HTTPException(status_code=404, detail="Item not found")
+    item = _item_of(session, shopping_list, item_id)
     updated = crud.update_shopping_list_item(
         session=session, item=item, item_in=item_in
     )
-    return _item_to_public(updated)
+    return crud.shopping_list_item_to_public(updated)
 
 
 @router.delete("/{id}/items/{item_id}")
 def delete_item(
-    session: SessionDep,
-    current_user: CurrentUser,
-    id: uuid.UUID,
-    item_id: uuid.UUID,
+    session: SessionDep, shopping_list: SharedShoppingList, item_id: uuid.UUID
 ) -> Message:
     """Remove an item from a shopping list."""
-    sl: ShoppingList | None = crud.get_shopping_list(
-        session=session, shopping_list_id=id
-    )
-    _check_list_access(sl, current_user, id, session)
-    item: ShoppingListItem | None = crud.get_shopping_list_item(
-        session=session, item_id=item_id
-    )
-    if not item or item.shopping_list_id != id:
-        raise HTTPException(status_code=404, detail="Item not found")
+    item = _item_of(session, shopping_list, item_id)
     crud.delete_shopping_list_item(session=session, item=item)
     return Message(message="Item removed successfully")
 
@@ -268,8 +225,8 @@ def delete_item(
 def add_recipe(
     session: SessionDep,
     current_user: CurrentUser,
+    shopping_list: SharedShoppingList,
     prices: PriceBookDep,
-    id: uuid.UUID,
     recipe_id: uuid.UUID,
     servings: int | None = None,
 ) -> Any:
@@ -278,33 +235,19 @@ def add_recipe(
     Items with the same ingredient + unit are aggregated (quantities summed).
     A ShoppingListRecipe record is created to track this recipe in the list.
     """
-    sl = crud.get_shopping_list(session=session, shopping_list_id=id)
-    sl = _check_list_access(sl, current_user, id, session)
-    recipe = crud.get_recipe(session=session, recipe_id=recipe_id)
-    if not recipe:
-        raise HTTPException(status_code=404, detail="Recipe not found")
-    if (
-        not current_user.is_superuser
-        and recipe.owner_id != current_user.id
-        and not recipe.is_public
-    ):
-        raise HTTPException(status_code=403, detail="Not enough permissions")
-    sl = crud.add_recipe_to_shopping_list(
-        session=session,
-        shopping_list=sl,
-        recipe=recipe,
-        servings=servings,
+    recipe = readable_recipe(session=session, user=current_user, recipe_id=recipe_id)
+    shopping_list = crud.add_recipe_to_shopping_list(
+        session=session, shopping_list=shopping_list, recipe=recipe, servings=servings
     )
-    return crud.shopping_list_to_public(sl, prices)
+    return crud.shopping_list_to_public(shopping_list, prices)
 
 
 @router.put("/{id}/pantry-check", response_model=ShoppingListPublic)
 def pantry_check(
     *,
     session: SessionDep,
-    current_user: CurrentUser,
+    shopping_list: SharedShoppingList,
     prices: PriceBookDep,
-    id: uuid.UUID,
     check_in: PantryCheck,
 ) -> Any:
     """Record what is already at home before going shopping.
@@ -313,21 +256,17 @@ def pantry_check(
     the cupboard; the list then asks to buy only the rest. Saving also marks
     the list as checked, even with no entries ("nothing at home").
     """
-    sl = crud.get_shopping_list(session=session, shopping_list_id=id)
-    sl = _check_list_access(sl, current_user, id, session)
-    item_ids = {item.id for item in sl.items}
+    item_ids = {item.id for item in shopping_list.items}
     if any(entry.item_id not in item_ids for entry in check_in.items):
         raise HTTPException(status_code=404, detail="Item not found")
-    sl = crud.apply_pantry_check(session=session, shopping_list=sl, check=check_in)
-    return crud.shopping_list_to_public(sl, prices)
+    shopping_list = crud.apply_pantry_check(
+        session=session, shopping_list=shopping_list, check=check_in
+    )
+    return crud.shopping_list_to_public(shopping_list, prices)
 
 
 @router.get("/{id}/store-comparison", response_model=StoreComparison)
-def compare_stores(
-    session: SessionDep,
-    current_user: CurrentUser,
-    id: uuid.UUID,
-) -> Any:
+def compare_stores(session: SessionDep, shopping_list: SharedShoppingList) -> Any:
     """What this list would cost at each active retailer.
 
     Stores rarely price the same items, so a raw sum of each store's priced
@@ -336,10 +275,7 @@ def compare_stores(
     the number of estimated lines reported per store; see
     ``app.services.store_comparison``.
     """
-    sl = crud.get_shopping_list(session=session, shopping_list_id=id)
-    sl = _check_list_access(sl, current_user, id, session)
-
-    items = [(i.name, qty, i.unit) for i, qty in crud.items_to_buy(sl)]
+    items = [(i.name, qty, i.unit) for i, qty in crud.items_to_buy(shopping_list)]
     stores, _ = crud.get_stores(session=session, active_only=True, limit=100)
     by_id = {store.id: store for store in stores}
 
@@ -382,47 +318,32 @@ def compare_stores(
 def update_planned_recipe(
     *,
     session: SessionDep,
-    current_user: CurrentUser,
+    shopping_list: SharedShoppingList,
     prices: PriceBookDep,
-    id: uuid.UUID,
     planned_recipe_id: uuid.UUID,
     update_in: ShoppingListRecipeUpdate,
 ) -> Any:
     """Update a planned recipe (e.g. mark as prepared, change servings)."""
-    sl: ShoppingList | None = crud.get_shopping_list(
-        session=session, shopping_list_id=id
-    )
-    sl = _check_list_access(sl, current_user, id, session)
-    sl_recipe: ShoppingListRecipe | None = crud.get_shopping_list_recipe(
-        session=session, sl_recipe_id=planned_recipe_id
-    )
-    if not sl_recipe or sl_recipe.shopping_list_id != id:
-        raise HTTPException(status_code=404, detail="Planned recipe not found")
+    planned = _planned_recipe_of(session, shopping_list, planned_recipe_id)
     updated = crud.update_shopping_list_recipe(
-        session=session, shopping_list=sl, sl_recipe=sl_recipe, update_in=update_in
+        session=session,
+        shopping_list=shopping_list,
+        sl_recipe=planned,
+        update_in=update_in,
     )
-    return _sl_recipe_to_public(updated, prices)
+    return crud.planned_recipe_to_public(updated, prices)
 
 
 @router.delete("/{id}/planned-recipes/{planned_recipe_id}")
 def delete_planned_recipe(
     session: SessionDep,
-    current_user: CurrentUser,
-    id: uuid.UUID,
+    shopping_list: SharedShoppingList,
     planned_recipe_id: uuid.UUID,
 ) -> Message:
     """Remove a planned recipe from the shopping list."""
-    sl: ShoppingList | None = crud.get_shopping_list(
-        session=session, shopping_list_id=id
-    )
-    sl = _check_list_access(sl, current_user, id, session)
-    sl_recipe: ShoppingListRecipe | None = crud.get_shopping_list_recipe(
-        session=session, sl_recipe_id=planned_recipe_id
-    )
-    if not sl_recipe or sl_recipe.shopping_list_id != id:
-        raise HTTPException(status_code=404, detail="Planned recipe not found")
+    planned = _planned_recipe_of(session, shopping_list, planned_recipe_id)
     crud.delete_shopping_list_recipe(
-        session=session, shopping_list=sl, sl_recipe=sl_recipe
+        session=session, shopping_list=shopping_list, sl_recipe=planned
     )
     return Message(message="Planned recipe removed successfully")
 

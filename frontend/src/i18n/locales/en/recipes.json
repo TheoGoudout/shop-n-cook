@@ -159,5 +159,15 @@
     "unknown_user": "Unknown user",
     "empty_title": "No public recipes",
     "empty_subtitle": "This user hasn't shared any public recipes yet."
+  },
+  "add_to_list": {
+    "button": "Add to shopping list",
+    "dialog_title": "Add to shopping list",
+    "dialog_description": "Add the ingredients of “{{title}}” to a shopping list, scaled to the servings you need.",
+    "list_label": "Shopping list",
+    "new_list": "New list: {{name}}",
+    "servings_label": "Servings",
+    "submit": "Add",
+    "success": "Added to “{{name}}”"
   }
 }

@@ -159,5 +159,15 @@
     "unknown_user": "Utilisateur inconnu",
     "empty_title": "Aucune recette publique",
     "empty_subtitle": "Cet utilisateur n'a pas encore partagé de recettes publiques."
+  },
+  "add_to_list": {
+    "button": "Ajouter à la liste de courses",
+    "dialog_title": "Ajouter à la liste de courses",
+    "dialog_description": "Ajoutez les ingrédients de « {{title}} » à une liste de courses, ajustés au nombre de portions voulu.",
+    "list_label": "Liste de courses",
+    "new_list": "Nouvelle liste : {{name}}",
+    "servings_label": "Portions",
+    "submit": "Ajouter",
+    "success": "Ajoutée à « {{name}} »"
   }
 }

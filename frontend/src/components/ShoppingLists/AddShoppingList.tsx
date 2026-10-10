@@ -33,7 +33,7 @@ function toDateInput(d: Date): string {
   return d.toISOString().split("T")[0]
 }
 
-function getDefaultListDefaults(locale: string) {
+export function getDefaultListDefaults(locale: string) {
   const now = new Date()
   const day = now.getDay()
   const daysToMonday = day === 0 ? 1 : 8 - day

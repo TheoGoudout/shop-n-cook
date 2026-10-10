@@ -56,11 +56,11 @@ class CrawledRecipe(SQLModel, table=True):
     attempts: int = Field(default=0)
     first_seen_at: datetime = Field(
         default_factory=get_datetime_utc,
-        sa_type=DateTime(timezone=True),  # type: ignore
+        sa_type=DateTime(timezone=True),
     )
     last_attempt_at: datetime = Field(
         default_factory=get_datetime_utc,
-        sa_type=DateTime(timezone=True),  # type: ignore
+        sa_type=DateTime(timezone=True),
     )
 
 
@@ -70,11 +70,11 @@ class RecipeCrawlRun(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     started_at: datetime = Field(
         default_factory=get_datetime_utc,
-        sa_type=DateTime(timezone=True),  # type: ignore
+        sa_type=DateTime(timezone=True),
     )
     finished_at: datetime | None = Field(
         default=None,
-        sa_type=DateTime(timezone=True),  # type: ignore
+        sa_type=DateTime(timezone=True),
     )
     pages_fetched: int = 0
     qualified_count: int = 0

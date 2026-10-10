@@ -237,12 +237,12 @@ class Recipe(RecipeBase, table=True):
     )
     created_at: datetime | None = Field(
         default_factory=get_datetime_utc,
-        sa_type=DateTime(timezone=True),  # type: ignore
+        sa_type=DateTime(timezone=True),
     )
     import_consent: bool = Field(default=False)
     import_consent_at: datetime | None = Field(
         default=None,
-        sa_type=DateTime(timezone=True),  # type: ignore
+        sa_type=DateTime(timezone=True),
     )
     import_source: ImportSource | None = Field(
         default=None, sa_type=stored_enum(ImportSource, 10)
@@ -258,7 +258,7 @@ class Recipe(RecipeBase, table=True):
     #: a recipe that keeps failing at the back of the queue, not the front.
     reimport_attempted_at: datetime | None = Field(
         default=None,
-        sa_type=DateTime(timezone=True),  # type: ignore
+        sa_type=DateTime(timezone=True),
     )
     owner: "User" = Relationship(back_populates="recipes")
     recipe_ingredients: list[RecipeIngredient] = Relationship(

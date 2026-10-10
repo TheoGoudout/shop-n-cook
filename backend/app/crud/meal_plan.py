@@ -1,4 +1,5 @@
 import uuid
+from decimal import Decimal
 
 from sqlmodel import Session, col, select
 
@@ -57,7 +58,7 @@ def meal_plan_to_public(
     if prices is not None:
         priced = [e.estimated_cost for e in public_entries if e.estimated_cost]
         unpriced = sum(1 for e in public_entries if e.estimated_cost is None)
-        total = sum(priced) if priced else None
+        total = sum(priced, Decimal(0)) if priced else None
 
     return MealPlanPublic(
         id=plan.id,

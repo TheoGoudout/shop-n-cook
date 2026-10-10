@@ -173,13 +173,13 @@ class ShoppingList(ShoppingListBase, table=True):
     )
     created_at: datetime | None = Field(
         default_factory=get_datetime_utc,
-        sa_type=DateTime(timezone=True),  # type: ignore
+        sa_type=DateTime(timezone=True),
     )
     #: When someone last went through the list checking what is at home;
     #: ``None`` until they have, which is what prompts the UI to suggest it.
     pantry_checked_at: datetime | None = Field(
         default=None,
-        sa_type=DateTime(timezone=True),  # type: ignore
+        sa_type=DateTime(timezone=True),
     )
     owner: "User" = Relationship(back_populates="shopping_lists")
     items: list[ShoppingListItem] = Relationship(

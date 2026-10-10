@@ -291,7 +291,7 @@ async function handleImport() {
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
     const url = tab?.url
-    if (!url || !url.startsWith("http")) {
+    if (!url?.startsWith("http")) {
       render({
         kind: "error",
         email,

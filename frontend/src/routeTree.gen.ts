@@ -9,42 +9,31 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SignupRouteImport } from './routes/signup'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as RecoverPasswordRouteImport } from './routes/recover-password'
-import { Route as LoginRouteImport } from './routes/login'
 import { Route as LayoutRouteImport } from './routes/_layout'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as RecoverPasswordRouteImport } from './routes/recover-password'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as SignupRouteImport } from './routes/signup'
 import { Route as LayoutIndexRouteImport } from './routes/_layout/index'
-import { Route as LayoutShareTargetRouteImport } from './routes/_layout/share-target'
-import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
 import { Route as LayoutAdminRouteImport } from './routes/_layout/admin'
-import { Route as LayoutShoppingListsIndexRouteImport } from './routes/_layout/shopping-lists/index'
-import { Route as LayoutRecipesIndexRouteImport } from './routes/_layout/recipes/index'
-import { Route as LayoutMealPlansIndexRouteImport } from './routes/_layout/meal-plans/index'
+import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
+import { Route as LayoutShareTargetRouteImport } from './routes/_layout/share-target'
 import { Route as LayoutAdminIndexRouteImport } from './routes/_layout/admin/index'
-import { Route as LayoutShoppingListsIdRouteImport } from './routes/_layout/shopping-lists/$id'
-import { Route as LayoutRecipesPublicRouteImport } from './routes/_layout/recipes/public'
-import { Route as LayoutRecipesIdRouteImport } from './routes/_layout/recipes/$id'
-import { Route as LayoutProfileUserIdRouteImport } from './routes/_layout/profile/$userId'
-import { Route as LayoutMealPlansGenerateRouteImport } from './routes/_layout/meal-plans/generate'
-import { Route as LayoutMealPlansIdRouteImport } from './routes/_layout/meal-plans/$id'
-import { Route as LayoutAdminUsersRouteImport } from './routes/_layout/admin/users'
-import { Route as LayoutAdminRecipesRouteImport } from './routes/_layout/admin/recipes'
 import { Route as LayoutAdminIngredientsRouteImport } from './routes/_layout/admin/ingredients'
+import { Route as LayoutAdminRecipesRouteImport } from './routes/_layout/admin/recipes'
+import { Route as LayoutAdminUsersRouteImport } from './routes/_layout/admin/users'
+import { Route as LayoutMealPlansIndexRouteImport } from './routes/_layout/meal-plans/index'
+import { Route as LayoutMealPlansIdRouteImport } from './routes/_layout/meal-plans/$id'
+import { Route as LayoutMealPlansGenerateRouteImport } from './routes/_layout/meal-plans/generate'
+import { Route as LayoutProfileUserIdRouteImport } from './routes/_layout/profile/$userId'
+import { Route as LayoutRecipesIndexRouteImport } from './routes/_layout/recipes/index'
+import { Route as LayoutRecipesIdRouteImport } from './routes/_layout/recipes/$id'
+import { Route as LayoutRecipesPublicRouteImport } from './routes/_layout/recipes/public'
+import { Route as LayoutShoppingListsIndexRouteImport } from './routes/_layout/shopping-lists/index'
+import { Route as LayoutShoppingListsIdRouteImport } from './routes/_layout/shopping-lists/$id'
 
-const SignupRoute = SignupRouteImport.update({
-  id: '/signup',
-  path: '/signup',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RecoverPasswordRoute = RecoverPasswordRouteImport.update({
-  id: '/recover-password',
-  path: '/recover-password',
+const LayoutRoute = LayoutRouteImport.update({
+  id: '/_layout',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -52,8 +41,19 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LayoutRoute = LayoutRouteImport.update({
-  id: '/_layout',
+const RecoverPasswordRoute = RecoverPasswordRouteImport.update({
+  id: '/recover-password',
+  path: '/recover-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LayoutIndexRoute = LayoutIndexRouteImport.update({
@@ -61,9 +61,9 @@ const LayoutIndexRoute = LayoutIndexRouteImport.update({
   path: '/',
   getParentRoute: () => LayoutRoute,
 } as any)
-const LayoutShareTargetRoute = LayoutShareTargetRouteImport.update({
-  id: '/share-target',
-  path: '/share-target',
+const LayoutAdminRoute = LayoutAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => LayoutRoute,
 } as any)
 const LayoutSettingsRoute = LayoutSettingsRouteImport.update({
@@ -71,9 +71,64 @@ const LayoutSettingsRoute = LayoutSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => LayoutRoute,
 } as any)
-const LayoutAdminRoute = LayoutAdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
+const LayoutShareTargetRoute = LayoutShareTargetRouteImport.update({
+  id: '/share-target',
+  path: '/share-target',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutAdminIndexRoute = LayoutAdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => LayoutAdminRoute,
+} as any)
+const LayoutAdminIngredientsRoute = LayoutAdminIngredientsRouteImport.update({
+  id: '/ingredients',
+  path: '/ingredients',
+  getParentRoute: () => LayoutAdminRoute,
+} as any)
+const LayoutAdminRecipesRoute = LayoutAdminRecipesRouteImport.update({
+  id: '/recipes',
+  path: '/recipes',
+  getParentRoute: () => LayoutAdminRoute,
+} as any)
+const LayoutAdminUsersRoute = LayoutAdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => LayoutAdminRoute,
+} as any)
+const LayoutMealPlansIndexRoute = LayoutMealPlansIndexRouteImport.update({
+  id: '/meal-plans/',
+  path: '/meal-plans/',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutMealPlansIdRoute = LayoutMealPlansIdRouteImport.update({
+  id: '/meal-plans/$id',
+  path: '/meal-plans/$id',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutMealPlansGenerateRoute = LayoutMealPlansGenerateRouteImport.update({
+  id: '/meal-plans/generate',
+  path: '/meal-plans/generate',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutProfileUserIdRoute = LayoutProfileUserIdRouteImport.update({
+  id: '/profile/$userId',
+  path: '/profile/$userId',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutRecipesIndexRoute = LayoutRecipesIndexRouteImport.update({
+  id: '/recipes/',
+  path: '/recipes/',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutRecipesIdRoute = LayoutRecipesIdRouteImport.update({
+  id: '/recipes/$id',
+  path: '/recipes/$id',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutRecipesPublicRoute = LayoutRecipesPublicRouteImport.update({
+  id: '/recipes/public',
+  path: '/recipes/public',
   getParentRoute: () => LayoutRoute,
 } as any)
 const LayoutShoppingListsIndexRoute =
@@ -82,65 +137,10 @@ const LayoutShoppingListsIndexRoute =
     path: '/shopping-lists/',
     getParentRoute: () => LayoutRoute,
   } as any)
-const LayoutRecipesIndexRoute = LayoutRecipesIndexRouteImport.update({
-  id: '/recipes/',
-  path: '/recipes/',
-  getParentRoute: () => LayoutRoute,
-} as any)
-const LayoutMealPlansIndexRoute = LayoutMealPlansIndexRouteImport.update({
-  id: '/meal-plans/',
-  path: '/meal-plans/',
-  getParentRoute: () => LayoutRoute,
-} as any)
-const LayoutAdminIndexRoute = LayoutAdminIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => LayoutAdminRoute,
-} as any)
 const LayoutShoppingListsIdRoute = LayoutShoppingListsIdRouteImport.update({
   id: '/shopping-lists/$id',
   path: '/shopping-lists/$id',
   getParentRoute: () => LayoutRoute,
-} as any)
-const LayoutRecipesPublicRoute = LayoutRecipesPublicRouteImport.update({
-  id: '/recipes/public',
-  path: '/recipes/public',
-  getParentRoute: () => LayoutRoute,
-} as any)
-const LayoutRecipesIdRoute = LayoutRecipesIdRouteImport.update({
-  id: '/recipes/$id',
-  path: '/recipes/$id',
-  getParentRoute: () => LayoutRoute,
-} as any)
-const LayoutProfileUserIdRoute = LayoutProfileUserIdRouteImport.update({
-  id: '/profile/$userId',
-  path: '/profile/$userId',
-  getParentRoute: () => LayoutRoute,
-} as any)
-const LayoutMealPlansGenerateRoute = LayoutMealPlansGenerateRouteImport.update({
-  id: '/meal-plans/generate',
-  path: '/meal-plans/generate',
-  getParentRoute: () => LayoutRoute,
-} as any)
-const LayoutMealPlansIdRoute = LayoutMealPlansIdRouteImport.update({
-  id: '/meal-plans/$id',
-  path: '/meal-plans/$id',
-  getParentRoute: () => LayoutRoute,
-} as any)
-const LayoutAdminUsersRoute = LayoutAdminUsersRouteImport.update({
-  id: '/users',
-  path: '/users',
-  getParentRoute: () => LayoutAdminRoute,
-} as any)
-const LayoutAdminRecipesRoute = LayoutAdminRecipesRouteImport.update({
-  id: '/recipes',
-  path: '/recipes',
-  getParentRoute: () => LayoutAdminRoute,
-} as any)
-const LayoutAdminIngredientsRoute = LayoutAdminIngredientsRouteImport.update({
-  id: '/ingredients',
-  path: '/ingredients',
-  getParentRoute: () => LayoutAdminRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -295,25 +295,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/signup': {
-      id: '/signup'
-      path: '/signup'
-      fullPath: '/signup'
-      preLoaderRoute: typeof SignupRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/recover-password': {
-      id: '/recover-password'
-      path: '/recover-password'
-      fullPath: '/recover-password'
-      preLoaderRoute: typeof RecoverPasswordRouteImport
+    '/_layout': {
+      id: '/_layout'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof LayoutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -323,11 +309,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_layout': {
-      id: '/_layout'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof LayoutRouteImport
+    '/recover-password': {
+      id: '/recover-password'
+      path: '/recover-password'
+      fullPath: '/recover-password'
+      preLoaderRoute: typeof RecoverPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_layout/': {
@@ -337,11 +337,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutIndexRouteImport
       parentRoute: typeof LayoutRoute
     }
-    '/_layout/share-target': {
-      id: '/_layout/share-target'
-      path: '/share-target'
-      fullPath: '/share-target'
-      preLoaderRoute: typeof LayoutShareTargetRouteImport
+    '/_layout/admin': {
+      id: '/_layout/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof LayoutAdminRouteImport
       parentRoute: typeof LayoutRoute
     }
     '/_layout/settings': {
@@ -351,32 +351,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutSettingsRouteImport
       parentRoute: typeof LayoutRoute
     }
-    '/_layout/admin': {
-      id: '/_layout/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof LayoutAdminRouteImport
-      parentRoute: typeof LayoutRoute
-    }
-    '/_layout/shopping-lists/': {
-      id: '/_layout/shopping-lists/'
-      path: '/shopping-lists'
-      fullPath: '/shopping-lists/'
-      preLoaderRoute: typeof LayoutShoppingListsIndexRouteImport
-      parentRoute: typeof LayoutRoute
-    }
-    '/_layout/recipes/': {
-      id: '/_layout/recipes/'
-      path: '/recipes'
-      fullPath: '/recipes/'
-      preLoaderRoute: typeof LayoutRecipesIndexRouteImport
-      parentRoute: typeof LayoutRoute
-    }
-    '/_layout/meal-plans/': {
-      id: '/_layout/meal-plans/'
-      path: '/meal-plans'
-      fullPath: '/meal-plans/'
-      preLoaderRoute: typeof LayoutMealPlansIndexRouteImport
+    '/_layout/share-target': {
+      id: '/_layout/share-target'
+      path: '/share-target'
+      fullPath: '/share-target'
+      preLoaderRoute: typeof LayoutShareTargetRouteImport
       parentRoute: typeof LayoutRoute
     }
     '/_layout/admin/': {
@@ -386,53 +365,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutAdminIndexRouteImport
       parentRoute: typeof LayoutAdminRoute
     }
-    '/_layout/shopping-lists/$id': {
-      id: '/_layout/shopping-lists/$id'
-      path: '/shopping-lists/$id'
-      fullPath: '/shopping-lists/$id'
-      preLoaderRoute: typeof LayoutShoppingListsIdRouteImport
-      parentRoute: typeof LayoutRoute
-    }
-    '/_layout/recipes/public': {
-      id: '/_layout/recipes/public'
-      path: '/recipes/public'
-      fullPath: '/recipes/public'
-      preLoaderRoute: typeof LayoutRecipesPublicRouteImport
-      parentRoute: typeof LayoutRoute
-    }
-    '/_layout/recipes/$id': {
-      id: '/_layout/recipes/$id'
-      path: '/recipes/$id'
-      fullPath: '/recipes/$id'
-      preLoaderRoute: typeof LayoutRecipesIdRouteImport
-      parentRoute: typeof LayoutRoute
-    }
-    '/_layout/profile/$userId': {
-      id: '/_layout/profile/$userId'
-      path: '/profile/$userId'
-      fullPath: '/profile/$userId'
-      preLoaderRoute: typeof LayoutProfileUserIdRouteImport
-      parentRoute: typeof LayoutRoute
-    }
-    '/_layout/meal-plans/generate': {
-      id: '/_layout/meal-plans/generate'
-      path: '/meal-plans/generate'
-      fullPath: '/meal-plans/generate'
-      preLoaderRoute: typeof LayoutMealPlansGenerateRouteImport
-      parentRoute: typeof LayoutRoute
-    }
-    '/_layout/meal-plans/$id': {
-      id: '/_layout/meal-plans/$id'
-      path: '/meal-plans/$id'
-      fullPath: '/meal-plans/$id'
-      preLoaderRoute: typeof LayoutMealPlansIdRouteImport
-      parentRoute: typeof LayoutRoute
-    }
-    '/_layout/admin/users': {
-      id: '/_layout/admin/users'
-      path: '/users'
-      fullPath: '/admin/users'
-      preLoaderRoute: typeof LayoutAdminUsersRouteImport
+    '/_layout/admin/ingredients': {
+      id: '/_layout/admin/ingredients'
+      path: '/ingredients'
+      fullPath: '/admin/ingredients'
+      preLoaderRoute: typeof LayoutAdminIngredientsRouteImport
       parentRoute: typeof LayoutAdminRoute
     }
     '/_layout/admin/recipes': {
@@ -442,12 +379,75 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutAdminRecipesRouteImport
       parentRoute: typeof LayoutAdminRoute
     }
-    '/_layout/admin/ingredients': {
-      id: '/_layout/admin/ingredients'
-      path: '/ingredients'
-      fullPath: '/admin/ingredients'
-      preLoaderRoute: typeof LayoutAdminIngredientsRouteImport
+    '/_layout/admin/users': {
+      id: '/_layout/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof LayoutAdminUsersRouteImport
       parentRoute: typeof LayoutAdminRoute
+    }
+    '/_layout/meal-plans/': {
+      id: '/_layout/meal-plans/'
+      path: '/meal-plans'
+      fullPath: '/meal-plans/'
+      preLoaderRoute: typeof LayoutMealPlansIndexRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/meal-plans/$id': {
+      id: '/_layout/meal-plans/$id'
+      path: '/meal-plans/$id'
+      fullPath: '/meal-plans/$id'
+      preLoaderRoute: typeof LayoutMealPlansIdRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/meal-plans/generate': {
+      id: '/_layout/meal-plans/generate'
+      path: '/meal-plans/generate'
+      fullPath: '/meal-plans/generate'
+      preLoaderRoute: typeof LayoutMealPlansGenerateRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/profile/$userId': {
+      id: '/_layout/profile/$userId'
+      path: '/profile/$userId'
+      fullPath: '/profile/$userId'
+      preLoaderRoute: typeof LayoutProfileUserIdRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/recipes/': {
+      id: '/_layout/recipes/'
+      path: '/recipes'
+      fullPath: '/recipes/'
+      preLoaderRoute: typeof LayoutRecipesIndexRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/recipes/$id': {
+      id: '/_layout/recipes/$id'
+      path: '/recipes/$id'
+      fullPath: '/recipes/$id'
+      preLoaderRoute: typeof LayoutRecipesIdRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/recipes/public': {
+      id: '/_layout/recipes/public'
+      path: '/recipes/public'
+      fullPath: '/recipes/public'
+      preLoaderRoute: typeof LayoutRecipesPublicRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/shopping-lists/': {
+      id: '/_layout/shopping-lists/'
+      path: '/shopping-lists'
+      fullPath: '/shopping-lists/'
+      preLoaderRoute: typeof LayoutShoppingListsIndexRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/shopping-lists/$id': {
+      id: '/_layout/shopping-lists/$id'
+      path: '/shopping-lists/$id'
+      fullPath: '/shopping-lists/$id'
+      preLoaderRoute: typeof LayoutShoppingListsIdRouteImport
+      parentRoute: typeof LayoutRoute
     }
   }
 }

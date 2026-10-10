@@ -1,3 +1,4 @@
+import secrets
 import uuid
 from dataclasses import replace
 from datetime import date, timedelta
@@ -29,6 +30,7 @@ from app.models.meal_plan import (
     MealPlanUpdate,
 )
 from app.models.recipe import MealType
+from app.services.menu_balancer import suggest_menu
 from app.services.menu_generator import (
     GenerationRequest,
     cost_of,
@@ -222,6 +224,10 @@ class GenerateMenuRequest(BaseModel):
     max_prep_minutes: int | None = Field(default=None, ge=0)
     match_season: bool = True
     include_public: bool = True
+    #: Have an LLM suggest a balanced week (proteins, vegetables, richer and
+    #: lighter dishes) before the usual checks; falls back to the scorer alone
+    #: when no AI provider is configured or the call fails.
+    use_ai: bool = False
     seed: int = 0
 
 
@@ -281,6 +287,8 @@ class MenuPreview(BaseModel):
     estimated_total: Decimal | None = None
     unpriced_meal_count: int = 0
     currency: str = "EUR"
+    #: Whether an LLM's suggestions shaped this menu.
+    ai_balanced: bool = False
 
 
 class MenuPreviewRequest(GenerateMenuRequest):
@@ -361,6 +369,7 @@ def _user_request(
 
     Household size and budget fall back to the user's settings when the request
     does not override them, so the common case is a single button with no form.
+    What the household ate in the weeks before is made less likely to return.
     """
     user_settings = crud.get_or_create_user_settings(
         session=session, user_id=current_user.id
@@ -368,27 +377,54 @@ def _user_request(
     servings = body.servings or user_settings.household_size
     budget = body.budget if body.budget is not None else user_settings.budget_amount
     request = _generation_request(body, servings=servings)
-    return replace(request, budget=budget)
+    return replace(
+        request,
+        budget=budget,
+        recent_recipe_ids=_recently_eaten(
+            session=session, current_user=current_user, before=body.start_date
+        ),
+    )
+
+
+def _recently_eaten(
+    *, session: SessionDep, current_user: User, before: date
+) -> frozenset[uuid.UUID]:
+    return crud.recent_recipe_ids(
+        session=session,
+        owner_ids=crud.household_member_ids(session=session, user_id=current_user.id),
+        before=before,
+    )
 
 
 def _compose(
     request: GenerationRequest,
     candidates: list[Recipe],
     prices: PriceBookDep,
-) -> list[tuple[Recipe, list[MenuSlot]]]:
-    """A fresh menu, as recipes and the slots each one covers."""
+    *,
+    use_ai: bool = False,
+) -> tuple[list[tuple[Recipe, list[MenuSlot]]], bool]:
+    """A fresh menu, as recipes and the slots each one covers.
+
+    Also says whether an LLM's suggestions shaped it: with ``use_ai``, the
+    model proposes a balanced week that the generator then checks slot by slot.
+    """
     if request.slot_count == 0:
         raise HTTPException(status_code=422, detail="No meals selected for these days")
     if not candidates:
         raise HTTPException(
             status_code=422, detail="No recipes available to build a menu from"
         )
-    meals = generate_menu(candidates, request, prices)
+    suggestions = suggest_menu(candidates, request, prices) if use_ai else {}
+    meals = generate_menu(candidates, request, prices, suggestions)
     if not meals:
         raise HTTPException(
             status_code=422,
             detail="No recipes match those constraints",
         )
+    balanced = any(
+        suggestions.get((meal.entry_date, meal.meal_type)) == meal.recipe.id
+        for meal in meals
+    )
     return [
         (
             meal.recipe,
@@ -401,7 +437,7 @@ def _compose(
             ],
         )
         for meal in meals
-    ]
+    ], balanced
 
 
 def _load_meals(
@@ -487,6 +523,8 @@ def _to_preview(
     meals: list[tuple[Recipe, list[MenuSlot]]],
     request: GenerationRequest,
     prices: PriceBookDep,
+    *,
+    ai_balanced: bool = False,
 ) -> MenuPreview:
     proposed = []
     for recipe, slots in meals:
@@ -516,6 +554,7 @@ def _to_preview(
         estimated_total=sum(priced, Decimal(0)) if priced else None,
         unpriced_meal_count=sum(1 for m in proposed if m.estimated_cost is None),
         currency=prices.currency,
+        ai_balanced=ai_balanced,
     )
 
 
@@ -538,16 +577,16 @@ def preview_menu(
         session=session, current_user=current_user, include_public=body.include_public
     )
     if body.meals is None:
-        meals = _compose(request, candidates, prices)
-    else:
-        meals = _load_meals(
-            body.meals,
-            body,
-            session=session,
-            current_user=current_user,
-            candidates=candidates,
-        )
-        meals = _replace_meals(meals, body.replace, request, candidates, prices)
+        meals, balanced = _compose(request, candidates, prices, use_ai=body.use_ai)
+        return _to_preview(meals, request, prices, ai_balanced=balanced)
+    meals = _load_meals(
+        body.meals,
+        body,
+        session=session,
+        current_user=current_user,
+        candidates=candidates,
+    )
+    meals = _replace_meals(meals, body.replace, request, candidates, prices)
     return _to_preview(meals, request, prices)
 
 
@@ -600,7 +639,7 @@ def generate_menu_route(
         session=session, current_user=current_user, include_public=body.include_public
     )
     if body.meals is None:
-        meals = _compose(request, candidates, prices)
+        meals, _ = _compose(request, candidates, prices, use_ai=body.use_ai)
     else:
         if not body.meals:
             raise HTTPException(status_code=422, detail="The menu has no meals")
@@ -678,7 +717,15 @@ def swap_entry(
     candidates = _candidate_recipes(
         session=session, current_user=current_user, include_public=body.include_public
     )
-    request = _generation_request(body, servings=cooked.servings)
+    # A fresh draw on every swap: a fixed seed would offer the same
+    # replacement each time, and swapping it back would restore the original.
+    request = replace(
+        _generation_request(body, servings=cooked.servings),
+        seed=secrets.randbelow(2**31),
+        recent_recipe_ids=_recently_eaten(
+            session=session, current_user=current_user, before=plan.start_date
+        ),
+    )
     others = frozenset(e.recipe_id for e in plan.entries if e.id not in batch)
 
     replacement = pick_replacement(

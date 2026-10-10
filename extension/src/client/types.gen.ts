@@ -146,6 +146,7 @@ export type GenerateMenuRequest = {
     max_prep_minutes?: (number | null);
     match_season?: boolean;
     include_public?: boolean;
+    use_ai?: boolean;
     seed?: number;
 };
 
@@ -363,6 +364,7 @@ export type MenuPreview = {
     estimated_total?: (string | null);
     unpriced_meal_count?: number;
     currency?: string;
+    ai_balanced?: boolean;
 };
 
 /**
@@ -397,6 +399,7 @@ export type MenuPreviewRequest = {
     max_prep_minutes?: (number | null);
     match_season?: boolean;
     include_public?: boolean;
+    use_ai?: boolean;
     seed?: number;
     meals?: (Array<ProposedMealIn> | null);
     replace?: Array<(number)>;
@@ -435,6 +438,7 @@ export type MenuRecipeOptionsRequest = {
     max_prep_minutes?: (number | null);
     match_season?: boolean;
     include_public?: boolean;
+    use_ai?: boolean;
     seed?: number;
     meal_type?: MealType;
     search?: (string | null);
@@ -712,6 +716,7 @@ export type SaveMenuRequest = {
     max_prep_minutes?: (number | null);
     match_season?: boolean;
     include_public?: boolean;
+    use_ai?: boolean;
     seed?: number;
     meals?: (Array<ProposedMealIn> | null);
 };

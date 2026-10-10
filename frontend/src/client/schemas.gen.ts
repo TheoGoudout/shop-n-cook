@@ -547,6 +547,11 @@ export const GenerateMenuRequestSchema = {
             title: 'Include Public',
             default: true
         },
+        use_ai: {
+            type: 'boolean',
+            title: 'Use Ai',
+            default: false
+        },
         seed: {
             type: 'integer',
             title: 'Seed',
@@ -1710,6 +1715,11 @@ export const MenuPreviewSchema = {
             type: 'string',
             title: 'Currency',
             default: 'EUR'
+        },
+        ai_balanced: {
+            type: 'boolean',
+            title: 'Ai Balanced',
+            default: false
         }
     },
     type: 'object',
@@ -1845,6 +1855,11 @@ export const MenuPreviewRequestSchema = {
             type: 'boolean',
             title: 'Include Public',
             default: true
+        },
+        use_ai: {
+            type: 'boolean',
+            title: 'Use Ai',
+            default: false
         },
         seed: {
             type: 'integer',
@@ -2039,6 +2054,11 @@ export const MenuRecipeOptionsRequestSchema = {
             type: 'boolean',
             title: 'Include Public',
             default: true
+        },
+        use_ai: {
+            type: 'boolean',
+            title: 'Use Ai',
+            default: false
         },
         seed: {
             type: 'integer',
@@ -3628,6 +3648,11 @@ export const SaveMenuRequestSchema = {
             type: 'boolean',
             title: 'Include Public',
             default: true
+        },
+        use_ai: {
+            type: 'boolean',
+            title: 'Use Ai',
+            default: false
         },
         seed: {
             type: 'integer',

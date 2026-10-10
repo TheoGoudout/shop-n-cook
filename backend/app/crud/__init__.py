@@ -45,6 +45,7 @@ from app.crud.meal_plan import (
     get_meal_plans,
     meal_plan_entry_to_public,
     meal_plan_to_public,
+    recent_recipe_ids,
     update_entry,
     update_meal_plan,
 )
@@ -130,6 +131,7 @@ __all__ = [
     "meal_plan_entry_to_public",
     "get_meal_plan",
     "get_meal_plans",
+    "recent_recipe_ids",
     "create_meal_plan",
     "update_meal_plan",
     "delete_meal_plan",

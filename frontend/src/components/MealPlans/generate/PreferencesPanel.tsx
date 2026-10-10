@@ -311,6 +311,25 @@ export function PreferencesPanel({
               {t("generate.public_label")}
             </Label>
           </div>
+          <div className="flex items-start gap-2">
+            <Checkbox
+              id="gen-balance"
+              className="mt-0.5"
+              checked={value.balance}
+              onCheckedChange={(c) => onChange({ balance: Boolean(c) })}
+            />
+            <div className="space-y-0.5">
+              <Label
+                htmlFor="gen-balance"
+                className="cursor-pointer font-normal"
+              >
+                {t("generate.balance_label")}
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                {t("generate.balance_hint")}
+              </p>
+            </div>
+          </div>
         </div>
       </Section>
     </div>

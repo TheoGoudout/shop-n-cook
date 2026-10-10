@@ -82,7 +82,9 @@
     "default_name": "Menu of {{date}}",
     "success": "Menu created",
     "swap": "Swap this meal",
-    "swapped": "Meal swapped"
+    "swapped": "Meal swapped",
+    "balance_label": "Balance the week with AI",
+    "balance_hint": "Varies proteins, vegetables and richer or lighter dishes. Takes a few more seconds."
   },
   "review": {
     "hint": "Tick meals to swap several at once, or use the icons on each meal.",
@@ -118,6 +120,8 @@
     "stat_cost": "Estimated cost",
     "unpriced": "{{count}} recipe not priced",
     "unpriced_other": "{{count}} recipes not priced",
-    "create": "Create menu"
+    "create": "Create menu",
+    "ai_balanced": "Balanced by AI: varied proteins, vegetables and lighter dishes.",
+    "ai_unavailable": "AI balancing is unavailable right now; this menu was composed without it."
   }
 }

@@ -87,6 +87,8 @@ function GenerateMenuPage() {
   const [composedWith, setComposedWith] = useState<GenerateMenuRequest | null>(
     null,
   )
+  /** Whether an AI balanced the composed menu; swaps afterwards keep it. */
+  const [aiBalanced, setAiBalanced] = useState(false)
   const [selected, setSelected] = useState<Set<number>>(new Set())
   const [picking, setPicking] = useState<number | null>(null)
 
@@ -109,6 +111,7 @@ function GenerateMenuPage() {
     onSuccess: (next, body) => {
       setPreview(next)
       setComposedWith(body)
+      setAiBalanced(next.ai_balanced ?? false)
       setSelected(new Set())
     },
   })
@@ -302,6 +305,14 @@ function GenerateMenuPage() {
 
           {preview && (
             <>
+              {composedWith?.use_ai && (
+                <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <Sparkles className="h-4 w-4 shrink-0 text-primary" />
+                  {aiBalanced
+                    ? t("review.ai_balanced")
+                    : t("review.ai_unavailable")}
+                </p>
+              )}
               <div className="flex min-h-9 flex-wrap items-center justify-between gap-2">
                 <p className="text-sm text-muted-foreground">
                   {selected.size > 0

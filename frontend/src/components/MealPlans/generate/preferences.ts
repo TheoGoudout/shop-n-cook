@@ -43,6 +43,8 @@ export interface MenuPreferences {
   diets: Record<DietKey, boolean>
   matchSeason: boolean
   includePublic: boolean
+  /** Have an AI suggest a balanced week before the usual checks. */
+  balance: boolean
 }
 
 export const SCHEDULE_PRESETS = {
@@ -84,6 +86,7 @@ export function defaultPreferences(): MenuPreferences {
     },
     matchSeason: true,
     includePublic: true,
+    balance: false,
   }
 }
 
@@ -118,6 +121,7 @@ function load(): MenuPreferences {
       diets: { ...defaults.diets, ...(saved.diets ?? {}) },
       matchSeason: saved.matchSeason ?? defaults.matchSeason,
       includePublic: saved.includePublic ?? defaults.includePublic,
+      balance: saved.balance ?? defaults.balance,
     }
   } catch {
     return defaults
@@ -165,6 +169,7 @@ export function toRequest(preferences: MenuPreferences): GenerateMenuRequest {
     max_prep_minutes: optionalNumber(preferences.maxPrep),
     match_season: preferences.matchSeason,
     include_public: preferences.includePublic,
+    use_ai: preferences.balance,
     // `map` forgets the tuple length; a schedule always has seven days.
     meals_by_weekday: preferences.schedule.map((day) =>
       PLANNED_MEALS.filter((meal) => day[meal]),

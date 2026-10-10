@@ -17,6 +17,7 @@ from app.models.recipe import (
 from app.services.menu_generator import (
     GenerationRequest,
     PlannedMeal,
+    cooking_slots,
     generate_menu,
     is_eligible,
     pick_replacement,
@@ -611,3 +612,138 @@ def test_a_swap_avoids_a_cuisine_already_used_that_week() -> None:
     )
     assert replacement is not None
     assert replacement.id == fresh.id
+
+
+def test_a_second_swap_does_not_flip_back_to_the_first_recipe() -> None:
+    """Swapping twice used to alternate between the same two recipes."""
+    recipes = [make_recipe(f"r{i}") for i in range(10)]
+    replacements = {
+        pick_replacement(
+            recipes,
+            request(seed=seed),
+            MONDAY,
+            MealType.DINNER,
+            current_recipe_id=recipes[0].id,
+        ).id  # type: ignore[union-attr]
+        for seed in range(20)
+    }
+    assert len(replacements) > 2
+
+
+# --------------------------------------------------------------------------- #
+# Sampling and recent meals                                                    #
+# --------------------------------------------------------------------------- #
+
+
+def test_the_best_scoring_recipe_is_not_the_only_one_ever_chosen() -> None:
+    """A slightly better recipe must not win every single menu."""
+    favourite = make_recipe("favourite", difficulty=Difficulty.EASY, prep=10)
+    others = [make_recipe(f"r{i}") for i in range(10)]
+    firsts = {
+        generate_menu([favourite, *others], request(days=1, seed=seed))[0].recipe.id
+        for seed in range(30)
+    }
+    assert favourite.id in firsts
+    assert len(firsts) > 3
+
+
+def test_a_much_worse_fit_is_never_drawn_over_a_good_one() -> None:
+    """Sampling stays among good fits: out of season loses to in season."""
+    summery = make_recipe("gazpacho", seasons=[Season.SUMMER])
+    wintry = make_recipe("stew", seasons=[Season.WINTER])
+    for seed in range(30):
+        meals = generate_menu(
+            [summery, wintry],
+            GenerationRequest(start_date=MIDSUMMER, days=1, seed=seed),
+        )
+        assert meals[0].recipe.id == summery.id
+
+
+def test_a_recently_eaten_recipe_scores_lower() -> None:
+    dish = make_recipe("dish")
+    fresh = score(dish, request(), MONDAY, MealType.DINNER, {}, set(), None)
+    stale = score(
+        dish,
+        request(recent_recipe_ids=frozenset({dish.id})),
+        MONDAY,
+        MealType.DINNER,
+        {},
+        set(),
+        None,
+    )
+    assert stale < fresh
+
+
+def test_recently_eaten_recipes_come_back_less_often() -> None:
+    recipes = [make_recipe(f"r{i}") for i in range(14)]
+    recent = frozenset(r.id for r in recipes[:7])
+    picked = [
+        m.recipe.id
+        for seed in range(10)
+        for m in generate_menu(
+            recipes, request(days=7, seed=seed, recent_recipe_ids=recent)
+        )
+    ]
+    assert sum(1 for i in picked if i in recent) < len(picked) / 4
+
+
+# --------------------------------------------------------------------------- #
+# Suggestions                                                                  #
+# --------------------------------------------------------------------------- #
+
+
+def test_cooking_slots_put_leftovers_on_the_following_days() -> None:
+    shape = cooking_slots(request(days=4, batch_portions=2))
+    assert [slot for slot, _ in shape] == [
+        (MONDAY, MealType.DINNER),
+        (MONDAY + timedelta(days=2), MealType.DINNER),
+    ]
+    assert shape[0][1] == [(MONDAY + timedelta(days=1), MealType.DINNER)]
+
+
+def test_a_valid_suggestion_is_taken() -> None:
+    recipes = [make_recipe(f"r{i}") for i in range(10)]
+    wanted = {
+        (MONDAY + timedelta(days=i), MealType.DINNER): recipes[9 - i].id
+        for i in range(3)
+    }
+    meals = generate_menu(recipes, request(days=3), suggested=wanted)
+    assert [m.recipe.id for m in meals] == [recipes[9].id, recipes[8].id, recipes[7].id]
+
+
+def test_a_suggestion_breaking_the_diet_is_ignored() -> None:
+    meaty = make_recipe("meaty")
+    vegan = make_recipe("vegan", vegan=True)
+    meals = generate_menu(
+        [meaty, vegan],
+        request(days=1, require_vegan=True),
+        suggested={(MONDAY, MealType.DINNER): meaty.id},
+    )
+    assert [m.recipe.id for m in meals] == [vegan.id]
+
+
+def test_a_suggestion_over_budget_is_ignored() -> None:
+    cheap = make_recipe("cheap", ingredient=("beef", 1, Unit.KILOGRAM))
+    dear = make_recipe("dear", ingredient=("beef", 10, Unit.KILOGRAM))
+    meals = generate_menu(
+        [cheap, dear],
+        request(days=1, budget=Decimal("5.00")),
+        _price_book("beef", "2.00"),
+        suggested={(MONDAY, MealType.DINNER): dear.id},
+    )
+    assert [m.recipe.id for m in meals] == [cheap.id]
+
+
+def test_a_suggestion_repeating_a_recipe_is_ignored() -> None:
+    recipes = [make_recipe(f"r{i}") for i in range(5)]
+    same = recipes[0].id
+    meals = generate_menu(
+        recipes,
+        request(days=2),
+        suggested={
+            (MONDAY, MealType.DINNER): same,
+            (MONDAY + timedelta(days=1), MealType.DINNER): same,
+        },
+    )
+    assert meals[0].recipe.id == same
+    assert meals[1].recipe.id != same

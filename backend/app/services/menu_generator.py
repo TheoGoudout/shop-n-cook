@@ -1,10 +1,10 @@
 """Compose a week of meals from the recipes a user can cook.
 
-Deliberately **not** LLM-backed. Menu selection is a constraint problem over
-data we already hold — diet flags, seasons, prep time, cuisine, and now cost —
-and a scorer is faster, free, reproducible, and testable in a way a prompt is
-not. The LLM earns its place reading recipes off the web; it has nothing to add
-to arithmetic.
+The generator itself is a scorer, not a prompt: diet flags, seasons, prep time,
+cuisine and cost are data we already hold, and the hard constraints (diet,
+time, budget) must hold every time. An LLM may *suggest* a balanced week
+(``services/menu_balancer.py``), but its suggestions go through the same
+checks as everything else, and the scorer fills any slot it gets wrong.
 
 The algorithm is a greedy fill with a variety penalty:
 
@@ -12,23 +12,28 @@ The algorithm is a greedy fill with a variety penalty:
    and anything classified for another kind of meal — a lunch or dinner slot
    takes only lunch, dinner or unclassified recipes, and desserts, drinks and
    "other" (sauces, stocks, sides) are never chosen;
-2. score what remains on how well it fits the request;
+2. score what remains on how well it fits the request, penalising recipes the
+   household already ate in the last few weeks;
 3. fill slots in order, re-ranking after each pick so that a cuisine already
    used this week is penalised — this is what stops seven pasta nights;
-4. stop adding a recipe once it would take the plan over budget, unless nothing
+4. pick at random among the recipes scoring close to the best, the better ones
+   more likely. Always taking the single best recipe made every menu the same
+   handful of dishes; sampling keeps the preferences while letting the whole
+   library come up;
+5. stop adding a recipe once it would take the plan over budget, unless nothing
    affordable is left to pick;
-5. when batch cooking, a pick also fills the next free slots on later days as
+6. when batch cooking, a pick also fills the next free slots on later days as
    leftovers, and is priced for every meal it covers.
 
-Ties break on recipe id, and the shuffle is seeded, so the same request against
-the same library always produces the same menu. That matters: a user who does
-not like a menu should get a different one by asking for a swap, not by
-refreshing and hoping.
+The random choices are seeded, so the same request against the same library
+always produces the same menu, and a different seed a different one.
 """
 
 import hashlib
+import math
+import random
 import uuid
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from datetime import date, timedelta
 from decimal import Decimal
@@ -39,6 +44,9 @@ from app.services.pricing import PriceBook
 __all__ = [
     "GenerationRequest",
     "PlannedMeal",
+    "Slot",
+    "auto_pickable",
+    "cooking_slots",
     "cost_of",
     "generate_menu",
     "is_eligible",
@@ -70,6 +78,16 @@ _RECIPE_REPEAT_PENALTY = 60.0
 _DIFFICULTY_BONUS = 8.0
 _QUICK_BONUS = 10.0
 _UNPRICED_PENALTY = 5.0
+#: Eaten in the household's plans of the last few weeks: still possible, but a
+#: menu should not hand back last week's.
+_RECENT_PENALTY = 20.0
+
+# Sampling. Only recipes within the window of the best score are drawn, so a
+# repeat cuisine (25) or an out-of-season recipe (30) is never preferred over a
+# fitting one; within it, each ``_TEMPERATURE`` points below the best makes a
+# recipe e (~2.7) times less likely.
+_SAMPLING_WINDOW = 24.0
+_TEMPERATURE = 8.0
 
 
 def season_for_date(day: date) -> Season:
@@ -105,6 +123,8 @@ class GenerationRequest:
     #: Batch cooking: how many meals one cooking covers. Above one, each recipe
     #: is cooked in a larger quantity and eaten again on the following days.
     batch_portions: int = 1
+    #: Recipes the household ate recently, made less likely to come back.
+    recent_recipe_ids: frozenset[uuid.UUID] = field(default_factory=frozenset)
 
     def __post_init__(self) -> None:
         if self.meals_by_weekday is not None and len(self.meals_by_weekday) != 7:
@@ -198,7 +218,7 @@ _AUTO_PICKABLE: dict[MealType, frozenset[MealType]] = {
 }
 
 
-def _auto_pickable(recipe: Recipe, meal_type: MealType) -> bool:
+def auto_pickable(recipe: Recipe, meal_type: MealType) -> bool:
     """Whether the generator may choose this recipe on its own for this slot.
 
     An unclassified recipe stays allowed everywhere: a missing meal type is not
@@ -244,6 +264,9 @@ def score(
     if recipe.id in used_recipe_ids:
         points -= _RECIPE_REPEAT_PENALTY
 
+    if recipe.id in request.recent_recipe_ids:
+        points -= _RECENT_PENALTY
+
     # Prefer recipes we can actually cost, so the budget figure means something.
     if cost is None:
         points -= _UNPRICED_PENALTY
@@ -268,12 +291,10 @@ def cost_of(recipe: Recipe, prices: PriceBook | None, servings: int) -> Decimal 
 def _tiebreaker(seed: int) -> Callable[[uuid.UUID], str]:
     """A stable per-seed ordering over recipe ids.
 
-    Equally-scoring recipes are extremely common — most of a library shares a
-    score when no seasons or cuisines are set — so the tiebreak decides the
-    menu far more often than the scorer does. Breaking on the raw id would give
-    every user with the same library the identical week and make ``seed``
-    inert; hashing the id together with the seed keeps runs reproducible while
-    letting a different seed genuinely produce a different menu.
+    Sampling walks the candidates in rank order, so equally-scoring recipes
+    need an order that does not depend on how the database returned them.
+    Hashing the id together with the seed keeps runs reproducible without
+    favouring the same recipes for every seed.
     """
 
     def key(recipe_id: uuid.UUID) -> str:
@@ -292,12 +313,12 @@ def _rank(
     used_recipe_ids: set[uuid.UUID],
     costs: dict[uuid.UUID, Decimal | None],
     tiebreak: Callable[[uuid.UUID], str],
-) -> list[Recipe]:
-    """Candidates best-first, with a deterministic, seed-dependent tiebreak."""
-    return sorted(
-        candidates,
-        key=lambda r: (
-            -score(
+) -> list[tuple[Recipe, float]]:
+    """Candidates with their score, best-first, in a seed-dependent stable order."""
+    scored = [
+        (
+            r,
+            score(
                 r,
                 request,
                 day,
@@ -306,9 +327,19 @@ def _rank(
                 used_recipe_ids,
                 costs.get(r.id),
             ),
-            tiebreak(r.id),
-        ),
-    )
+        )
+        for r in candidates
+    ]
+    scored.sort(key=lambda pair: (-pair[1], tiebreak(pair[0].id)))
+    return scored
+
+
+def _sample(ranked: list[tuple[Recipe, float]], rng: random.Random) -> Recipe:
+    """Draw one of the recipes scoring close to the best, the better more likely."""
+    best = ranked[0][1]
+    pool = [(r, s) for r, s in ranked if best - s <= _SAMPLING_WINDOW]
+    weights = [math.exp((s - best) / _TEMPERATURE) for _, s in pool]
+    return rng.choices([r for r, _ in pool], weights=weights)[0]
 
 
 Slot = tuple[date, MealType]
@@ -337,16 +368,49 @@ def _leftover_slots(
     return leftovers
 
 
+def _all_slots(request: GenerationRequest) -> list[Slot]:
+    return [
+        (day, meal_type)
+        for day in request.dates
+        for meal_type in request.meal_types_for(day)
+    ]
+
+
+def cooking_slots(request: GenerationRequest) -> list[tuple[Slot, list[Slot]]]:
+    """The slots a recipe is cooked in, each with the slots eaten as leftovers.
+
+    This is the menu's shape when every slot can be filled; without batch
+    cooking, every slot is cooked and has no leftovers.
+    """
+    slots = _all_slots(request)
+    filled: set[Slot] = set()
+    shape: list[tuple[Slot, list[Slot]]] = []
+    for index, slot in enumerate(slots):
+        if slot in filled:
+            continue
+        leftovers = _leftover_slots(slots, index, filled, request.batch_portions)
+        filled.add(slot)
+        filled.update(leftovers)
+        shape.append((slot, leftovers))
+    return shape
+
+
 def generate_menu(
     recipes: list[Recipe],
     request: GenerationRequest,
     prices: PriceBook | None = None,
+    suggested: Mapping[Slot, uuid.UUID] | None = None,
 ) -> list[PlannedMeal]:
     """Choose a recipe for each slot in the request.
 
     With ``batch_portions`` above one, each recipe chosen is cooked once for
     several meals and also fills the next free slots as leftovers, so the menu
     has fewer recipes than slots.
+
+    ``suggested`` proposes a recipe for some cooking slots (an LLM's balanced
+    week). A suggestion is taken only when it passes every check a scored pick
+    does — eligible, affordable, not already on the menu; otherwise the slot is
+    filled as if there were no suggestion.
 
     Returns fewer meals than slots when the constraints cannot be met — an
     honest short menu beats one that quietly ignores the diet it was given.
@@ -366,17 +430,15 @@ def generate_menu(
 
     pool = list(recipes)
     tiebreak = _tiebreaker(request.seed)
+    rng = random.Random(request.seed)
+    suggested = suggested or {}
 
     used_cuisines: dict[str, int] = {}
     used_recipe_ids: set[uuid.UUID] = set()
     spent = Decimal(0)
     chosen: list[PlannedMeal] = []
 
-    slots: list[Slot] = [
-        (day, meal_type)
-        for day in request.dates
-        for meal_type in request.meal_types_for(day)
-    ]
+    slots = _all_slots(request)
     filled: set[Slot] = set()
 
     for index, (day, meal_type) in enumerate(slots):
@@ -385,7 +447,7 @@ def generate_menu(
         eligible = [
             r
             for r in pool
-            if _auto_pickable(r, meal_type) and is_eligible(r, request, meal_type)
+            if auto_pickable(r, meal_type) and is_eligible(r, request, meal_type)
         ]
         if not eligible:
             continue
@@ -405,11 +467,21 @@ def generate_menu(
             tiebreak,
         )
 
-        pick = _first_affordable(ranked, batch_costs, spent, request.budget)
-        if pick is None:
+        affordable = _affordable(ranked, batch_costs, spent, request.budget)
+        if not affordable:
             # Nothing left that fits the budget; the menu ends here rather
             # than silently going over.
             return chosen
+
+        wanted = suggested.get((day, meal_type))
+        pick = next(
+            (
+                r
+                for r, _ in affordable
+                if r.id == wanted and r.id not in used_recipe_ids
+            ),
+            None,
+        ) or _sample(affordable, rng)
 
         cost = batch_costs.get(pick.id)
         if cost is not None:
@@ -435,24 +507,24 @@ def generate_menu(
     return chosen
 
 
-def _first_affordable(
-    ranked: list[Recipe],
+def _affordable(
+    ranked: list[tuple[Recipe, float]],
     costs: dict[uuid.UUID, Decimal | None],
     spent: Decimal,
     budget: Decimal | None,
-) -> Recipe | None:
-    """Best-ranked recipe that still fits the budget.
+) -> list[tuple[Recipe, float]]:
+    """The ranked recipes that still fit the budget, in the same order.
 
     An unpriced recipe is allowed through: refusing it would mean a budget
     silently excluded everything we simply do not know the price of.
     """
     if budget is None:
-        return ranked[0] if ranked else None
-    for recipe in ranked:
-        cost = costs.get(recipe.id)
-        if cost is None or spent + cost <= budget:
-            return recipe
-    return None
+        return ranked
+    return [
+        (recipe, points)
+        for recipe, points in ranked
+        if (cost := costs.get(recipe.id)) is None or spent + cost <= budget
+    ]
 
 
 def pick_replacement(
@@ -469,7 +541,9 @@ def pick_replacement(
 
     The recipe being replaced is excluded so a swap always changes something,
     and the rest of the week is passed in as ``other_recipe_ids`` so the
-    replacement still respects the variety rules.
+    replacement still respects the variety rules. The replacement is drawn like
+    any other pick, so swapping again with another seed offers another recipe
+    rather than flipping between the same two.
     """
     costs: dict[uuid.UUID, Decimal | None] = {
         r.id: cost_of(r, prices, request.servings) for r in recipes
@@ -484,7 +558,7 @@ def pick_replacement(
         r
         for r in recipes
         if r.id != current_recipe_id
-        and _auto_pickable(r, meal_type)
+        and auto_pickable(r, meal_type)
         and is_eligible(r, request, meal_type)
     ]
     if not eligible:
@@ -500,4 +574,4 @@ def pick_replacement(
         costs,
         _tiebreaker(request.seed),
     )
-    return ranked[0]
+    return _sample(ranked, random.Random(request.seed))

@@ -1,7 +1,7 @@
-import type { ColumnDef } from "@tanstack/react-table"
 import { useTranslation } from "react-i18next"
 
 import type { UserPublic } from "@/client"
+import type { DataTableColumnDef } from "@/components/Common/DataTable"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { UserActionsMenu } from "./UserActionsMenu"
@@ -10,7 +10,7 @@ export type UserTableData = UserPublic & {
   isCurrentUser: boolean
 }
 
-export function useUserColumns(): ColumnDef<UserTableData>[] {
+export function useUserColumns(): DataTableColumnDef<UserTableData>[] {
   const { t } = useTranslation("admin")
 
   return [

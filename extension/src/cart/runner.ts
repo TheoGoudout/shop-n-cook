@@ -83,7 +83,7 @@ async function addToCartInPage(
 function waitForTabLoad(tabId: number, timeoutMs: number): Promise<void> {
   return new Promise((resolve) => {
     const timer = setTimeout(finish, timeoutMs)
-    function listener(updatedId: number, info: chrome.tabs.TabChangeInfo) {
+    function listener(updatedId: number, info: chrome.tabs.OnUpdatedInfo) {
       if (updatedId === tabId && info.status === "complete") finish()
     }
     function finish() {

@@ -88,7 +88,7 @@ class Household(HouseholdBase, table=True):
     )
     created_at: datetime | None = Field(
         default_factory=get_datetime_utc,
-        sa_type=DateTime(timezone=True),  # type: ignore[call-overload]
+        sa_type=DateTime(timezone=True),
     )
     members: list["HouseholdMember"] = Relationship(
         back_populates="household",
@@ -120,7 +120,7 @@ class HouseholdMember(SQLModel, table=True):
     )
     joined_at: datetime | None = Field(
         default_factory=get_datetime_utc,
-        sa_type=DateTime(timezone=True),  # type: ignore[call-overload]
+        sa_type=DateTime(timezone=True),
     )
     household: Household = Relationship(back_populates="members")
     user: "User" = Relationship(sa_relationship_kwargs={"lazy": "selectin"})
@@ -133,14 +133,14 @@ class HouseholdInvite(SQLModel, table=True):
     )
     email: str = Field(max_length=255, index=True)
     expires_at: datetime = Field(
-        sa_type=DateTime(timezone=True),  # type: ignore[call-overload]
+        sa_type=DateTime(timezone=True),
     )
     accepted_at: datetime | None = Field(
         default=None,
-        sa_type=DateTime(timezone=True),  # type: ignore[call-overload]
+        sa_type=DateTime(timezone=True),
     )
     created_at: datetime | None = Field(
         default_factory=get_datetime_utc,
-        sa_type=DateTime(timezone=True),  # type: ignore[call-overload]
+        sa_type=DateTime(timezone=True),
     )
     household: Household = Relationship(back_populates="invites")

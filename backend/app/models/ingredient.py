@@ -89,7 +89,7 @@ class Ingredient(IngredientPricingBase, table=True):
     )
     price_updated_at: datetime | None = Field(
         default=None,
-        sa_type=DateTime(timezone=True),  # type: ignore[call-overload]
+        sa_type=DateTime(timezone=True),
     )
 
 

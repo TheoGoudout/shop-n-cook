@@ -345,7 +345,13 @@ async def import_recipe_photos(
     *,
     request: Request,  # noqa: ARG001 — consumed by slowapi rate-limit decorator
     current_user: CurrentUser,  # noqa: ARG001 — auth gate, and the rate-limit key
-    photos: Annotated[list[UploadFile], File()],
+    # FastAPI now describes uploads with OpenAPI 3.1 `contentMediaType`, which
+    # the pinned @hey-api/openapi-ts types as `string`; `format: binary` keeps the
+    # generated client typed as `Blob | File`.
+    photos: Annotated[
+        list[UploadFile],
+        File(json_schema_extra={"items": {"type": "string", "format": "binary"}}),
+    ],
     language: Annotated[str | None, Form()] = None,
 ) -> Any:
     """Parse a recipe from photos using AI. Returns pre-filled data for review — does NOT save.

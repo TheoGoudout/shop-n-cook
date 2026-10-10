@@ -145,7 +145,7 @@ class MealPlan(MealPlanBase, table=True):
     )
     created_at: datetime | None = Field(
         default_factory=get_datetime_utc,
-        sa_type=DateTime(timezone=True),  # type: ignore[call-overload]
+        sa_type=DateTime(timezone=True),
     )
     shopping_list_id: uuid.UUID | None = Field(
         default=None, foreign_key="shoppinglist.id", ondelete="SET NULL"

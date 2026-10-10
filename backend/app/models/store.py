@@ -80,7 +80,7 @@ class Store(StoreBase, table=True):
     #: ``StoreBase``: it is a fact about the data, not a setting to edit.
     prices_refreshed_at: datetime | None = Field(
         default=None,
-        sa_type=DateTime(timezone=True),  # type: ignore[call-overload]
+        sa_type=DateTime(timezone=True),
     )
     prices: list["IngredientPrice"] = Relationship(
         back_populates="store", cascade_delete=True
@@ -150,7 +150,7 @@ class IngredientPrice(IngredientPriceBase, table=True):
     )
     updated_at: datetime | None = Field(
         default_factory=get_datetime_utc,
-        sa_type=DateTime(timezone=True),  # type: ignore[call-overload]
+        sa_type=DateTime(timezone=True),
     )
     store: Store = Relationship(
         back_populates="prices", sa_relationship_kwargs={"lazy": "selectin"}

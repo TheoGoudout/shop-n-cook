@@ -89,3 +89,36 @@ test.describe("Generate a menu", () => {
     await expect(page.getByText(/^Leftovers from /).first()).toBeVisible()
   })
 })
+
+// East of Greenwich, local midnight is the previous day in UTC: dates built
+// with toISOString() put the plan a day early, leaving its first day empty.
+test.describe("A generated week east of UTC", () => {
+  test.use({ timezoneId: "Europe/Paris" })
+
+  test.beforeEach(async ({ page }) => {
+    await seedRecipes(page)
+  })
+
+  test("has a meal on its first day", async ({ page }) => {
+    await page.goto("/meal-plans/generate")
+    await page.getByRole("button", { name: "Dinners only" }).click()
+    await page
+      .getByRole("button", { name: "Generate a new menu" })
+      .first()
+      .click()
+    await expect(page.getByText("Estimated cost")).toBeVisible()
+    await page.getByRole("button", { name: "Create menu" }).click()
+    await expect(page).toHaveURL(/\/meal-plans\/[0-9a-f-]{36}$/)
+
+    // Today in the browser's timezone, which is where the menu starts.
+    const firstDay = await page.evaluate(() =>
+      new Date().toLocaleDateString("en", {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+      }),
+    )
+    await expect(page.getByText(firstDay, { exact: true })).toBeVisible()
+    await expect(page.getByText("Nothing planned")).toHaveCount(0)
+  })
+})

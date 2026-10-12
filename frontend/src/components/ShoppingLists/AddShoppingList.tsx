@@ -28,10 +28,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
 import { useCrudMutation } from "@/hooks/useCrudMutation"
-
-function toDateInput(d: Date): string {
-  return d.toISOString().split("T")[0]
-}
+import { toIsoDate } from "@/lib/dates"
 
 function getDefaultListDefaults(locale: string) {
   const now = new Date()
@@ -47,8 +44,8 @@ function getDefaultListDefaults(locale: string) {
 
   return {
     name: `${fmt(monday)} – ${fmt(sunday)}`,
-    start_date: toDateInput(monday),
-    end_date: toDateInput(sunday),
+    start_date: toIsoDate(monday),
+    end_date: toIsoDate(sunday),
   }
 }
 

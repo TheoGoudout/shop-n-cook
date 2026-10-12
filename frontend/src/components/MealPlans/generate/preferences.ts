@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 
 import type { GenerateMenuRequest, MealType } from "@/client"
+import { todayIso } from "@/lib/dates"
 
 /** The four dietary switches, which map one-to-one onto request flags. */
 export const DIETS = [
@@ -60,18 +61,10 @@ function weekOf(day: DaySchedule): WeeklySchedule {
   return Array.from({ length: 7 }, () => ({ ...day }))
 }
 
-function today(): string {
-  const now = new Date()
-  // Local date, not UTC: late in the evening UTC is already tomorrow.
-  return new Date(now.getTime() - now.getTimezoneOffset() * 60_000)
-    .toISOString()
-    .slice(0, 10)
-}
-
 export function defaultPreferences(): MenuPreferences {
   return {
     name: "",
-    start: today(),
+    start: todayIso(),
     days: 7,
     servings: "",
     budget: "",

@@ -45,6 +45,49 @@ describe("parsedRecipeToCreate", () => {
     expect(result.image_url).toBe("https://example.com/pasta.jpg")
   })
 
+  it("keeps the metadata the import filled in", () => {
+    const result = parsedRecipeToCreate({
+      ...baseParsed,
+      seasons: ["winter"],
+      is_vegan: false,
+      is_vegetarian: false,
+      is_gluten_free: false,
+      is_dairy_free: true,
+      kcal_per_serving: 650,
+      difficulty: "medium",
+      meal_type: "dinner",
+      cuisine_type: "Italian",
+    })
+    expect(result).toMatchObject({
+      seasons: ["winter"],
+      is_dairy_free: true,
+      kcal_per_serving: 650,
+      difficulty: "medium",
+      meal_type: "dinner",
+      cuisine_type: "Italian",
+    })
+  })
+
+  it("defaults missing metadata rather than dropping it", () => {
+    const result = parsedRecipeToCreate({ title: "Simple recipe" })
+    expect(result).toMatchObject({
+      seasons: [],
+      is_vegan: false,
+      kcal_per_serving: null,
+      difficulty: null,
+      meal_type: null,
+      cuisine_type: null,
+    })
+  })
+
+  it("matches step ingredient names regardless of case", () => {
+    const result = parsedRecipeToCreate({
+      ...baseParsed,
+      steps: [{ instruction: "Boil.", ingredient_names: ["Spaghetti"] }],
+    })
+    expect(result.steps?.[0]?.ingredient_indices).toEqual([0])
+  })
+
   it("records a URL import and the language it was read in", () => {
     const result = parsedRecipeToCreate({ ...baseParsed, language: "fr" })
     expect(result.import_source).toBe("url")

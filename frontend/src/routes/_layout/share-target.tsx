@@ -6,6 +6,8 @@ import { useTranslation } from "react-i18next"
 import { z } from "zod"
 
 import { type ImportSource, type ParsedRecipe, RecipesService } from "@/client"
+import { parsedRecipeToFormValues } from "@/components/Recipes/parsedRecipeToFormValues"
+import { toRecipeCreatePayload } from "@/components/Recipes/recipeFormSchema"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import useCustomToast from "@/hooks/useCustomToast"
@@ -128,39 +130,14 @@ function ShareTargetPage() {
   })
 
   const saveMutation = useMutation({
+    // The same mapping the Add-recipe form saves an import with, so a shared
+    // recipe keeps every field the import filled in.
     mutationFn: (vars: { parsed: ParsedRecipe; source: ImportSource }) =>
       RecipesService.createRecipe({
-        requestBody: {
-          title: vars.parsed.title,
-          description: vars.parsed.description ?? null,
-          servings: vars.parsed.servings ?? null,
-          prep_time_minutes: vars.parsed.prep_time_minutes ?? null,
-          cook_time_minutes: vars.parsed.cook_time_minutes ?? null,
-          source_url: vars.parsed.source_url ?? null,
-          image_url: vars.parsed.image_url ?? null,
+        requestBody: toRecipeCreatePayload({
+          ...parsedRecipeToFormValues(vars.parsed, vars.source),
           import_consent: true,
-          import_source: vars.source,
-          import_language: vars.parsed.language ?? null,
-          ingredients: (vars.parsed.ingredients ?? []).map((ing) => ({
-            ingredient_name: ing.name,
-            name_en: ing.name_en ?? null,
-            quantity: ing.quantity,
-            unit: ing.unit,
-            notes: ing.notes ?? null,
-            category: ing.category ?? null,
-          })),
-          steps: (vars.parsed.steps ?? []).map((step, i) => ({
-            step_number: i + 1,
-            instruction: step.instruction,
-            ingredient_indices: (step.ingredient_names ?? [])
-              .map((name) =>
-                (vars.parsed.ingredients ?? []).findIndex(
-                  (ing) => ing.name === name,
-                ),
-              )
-              .filter((idx) => idx !== -1),
-          })),
-        },
+        }),
       }),
     onSuccess: (recipe) => {
       showSuccessToast(t("share.success", { title: recipe.title }))

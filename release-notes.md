@@ -1,5 +1,26 @@
 # Release Notes
 
+## 1.9.0 (2026-10-13)
+
+### Features
+
+* Vary generated menus, add an AI-balanced week, and fix the empty first day. PR [#118](https://github.com/TheoGoudout/shop-n-cook/pull/118) by [@TheoGoudout](https://github.com/TheoGoudout).
+* Add recipes to a shopping list from the recipe itself. PR [#117](https://github.com/TheoGoudout/shop-n-cook/pull/117) by [@TheoGoudout](https://github.com/TheoGoudout).
+
+### Fixes
+
+* Keep every field a recipe import fills in. PR [#119](https://github.com/TheoGoudout/shop-n-cook/pull/119) by [@TheoGoudout](https://github.com/TheoGoudout).
+
+### Internal
+
+* ⬆ Bump pytest from 7.4.4 to 9.1.1. PR [#116](https://github.com/TheoGoudout/shop-n-cook/pull/116) by [@dependabot[bot]](https://github.com/apps/dependabot).
+* ⬆ Bump actions/checkout from 6.1.0 to 7.0.1. PR [#106](https://github.com/TheoGoudout/shop-n-cook/pull/106) by [@dependabot[bot]](https://github.com/apps/dependabot).
+* ⬆ Bump softprops/action-gh-release from 2.6.2 to 3.0.3. PR [#105](https://github.com/TheoGoudout/shop-n-cook/pull/105) by [@dependabot[bot]](https://github.com/apps/dependabot).
+* ⬆ Bump lucide-react from 0.563.0 to 1.51.0. PR [#111](https://github.com/TheoGoudout/shop-n-cook/pull/111) by [@dependabot[bot]](https://github.com/apps/dependabot).
+* ⬆ Bump astral-sh/setup-uv from 7.6.0 to 10.2.0. PR [#104](https://github.com/TheoGoudout/shop-n-cook/pull/104) by [@dependabot[bot]](https://github.com/apps/dependabot).
+* ⬆ Bump actions/setup-java from 4.9.1 to 6.0.1. PR [#103](https://github.com/TheoGoudout/shop-n-cook/pull/103) by [@dependabot[bot]](https://github.com/apps/dependabot).
+* ⬆ Bump ruby/setup-ruby from 1.321.0 to 1.327.0 in the github-actions group. PR [#102](https://github.com/TheoGoudout/shop-n-cook/pull/102) by [@dependabot[bot]](https://github.com/apps/dependabot).
+
 ## 1.8.1 (2026-10-07)
 
 ### Refactors

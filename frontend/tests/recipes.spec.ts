@@ -128,3 +128,65 @@ test.describe("Recipe detail page — direct URL navigation", () => {
     await deleteRecipeFromDetail(page)
   })
 })
+
+test.describe("Add a recipe to a shopping list", () => {
+  test("adds the recipe from its detail page to the chosen list", async ({
+    page,
+  }) => {
+    const listName = `Playwright List ${Date.now()}`
+    await page.goto("/shopping-lists")
+    await page.getByRole("button", { name: /New List/i }).click()
+    await page.getByLabel(/Name/i).fill(listName)
+    await page.getByRole("button", { name: "Create" }).click()
+    await expect(page.getByText(listName)).toBeVisible()
+
+    const title = uniqueTitle()
+    await page.goto("/recipes")
+    const id = await createRecipe(page, title)
+    await page.goto(`/recipes/${id}`)
+
+    await page.getByRole("button", { name: "Add to shopping list" }).click()
+    const dialog = page.getByRole("dialog", { name: "Add to shopping list" })
+    await expect(dialog).toBeVisible()
+    await dialog.getByRole("combobox").click()
+    await page.getByRole("option", { name: listName }).click()
+    await dialog.getByLabel("Servings").fill("2")
+    await dialog.getByRole("button", { name: "Add" }).click()
+    await expect(dialog).not.toBeVisible()
+    await expect(page.getByText(`Added to “${listName}”`)).toBeVisible()
+
+    await page.goto("/shopping-lists")
+    await page
+      .locator("[data-slot='card']")
+      .filter({ hasText: listName })
+      .getByRole("link", { name: /Open/i })
+      .click()
+    await page.getByRole("tab", { name: /Meals/i }).click()
+    await expect(page.getByText(title)).toBeVisible()
+
+    await page.goto(`/recipes/${id}`)
+    await deleteRecipeFromDetail(page)
+  })
+
+  test("opens from a recipe card without following the card link", async ({
+    page,
+  }) => {
+    const title = uniqueTitle()
+    await page.goto("/recipes")
+    const id = await createRecipe(page, title)
+
+    await page
+      .locator("article")
+      .filter({ hasText: title })
+      .getByRole("button", { name: "Add to shopping list" })
+      .click()
+    await expect(
+      page.getByRole("dialog", { name: "Add to shopping list" }),
+    ).toBeVisible()
+    await expect(page).toHaveURL("/recipes")
+    await page.getByRole("button", { name: "Cancel" }).click()
+
+    await page.goto(`/recipes/${id}`)
+    await deleteRecipeFromDetail(page)
+  })
+})

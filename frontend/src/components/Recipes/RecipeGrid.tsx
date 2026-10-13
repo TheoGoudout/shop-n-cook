@@ -6,6 +6,7 @@ import type { RecipePublic } from "@/client"
 import { mealTypeIcon } from "@/components/Common/categoryIcons"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
+import { AddToShoppingList } from "./AddToShoppingList"
 import { DietaryBadges } from "./DietaryBadges"
 import { RecipeActionsMenu } from "./RecipeActionsMenu"
 import { RecipeCover } from "./RecipeCover"
@@ -108,6 +109,10 @@ function RecipeCard({
               count: (recipe.ingredients ?? []).length,
             })}
           </span>
+          {/* relative z-10 lifts the button above the card-wide link */}
+          <div className="relative z-10 -my-2 -mr-2 ml-auto">
+            <AddToShoppingList recipe={recipe} variant="icon" />
+          </div>
         </div>
       </div>
     </article>

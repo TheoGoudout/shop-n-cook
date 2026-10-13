@@ -18,6 +18,7 @@ import {
   mealTypeIcon,
   SEASON_ICONS,
 } from "@/components/Common/categoryIcons"
+import { AddToShoppingList } from "@/components/Recipes/AddToShoppingList"
 import { DietaryBadges } from "@/components/Recipes/DietaryBadges"
 import { RecipeActionsMenu } from "@/components/Recipes/RecipeActionsMenu"
 import { Badge } from "@/components/ui/badge"
@@ -83,7 +84,7 @@ function RecipeDetailContent() {
       )}
 
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between gap-2">
         <div className="flex-1">
           <h1 className="text-3xl font-bold tracking-tight">{recipe.title}</h1>
           {recipe.description && (
@@ -103,7 +104,10 @@ function RecipeDetailContent() {
             </a>
           )}
         </div>
-        <RecipeActionsMenu recipe={recipe} />
+        <div className="flex items-center gap-1">
+          <AddToShoppingList recipe={recipe} />
+          <RecipeActionsMenu recipe={recipe} />
+        </div>
       </div>
 
       {/* Meta badges */}

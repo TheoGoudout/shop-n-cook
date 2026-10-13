@@ -30,7 +30,7 @@ import { LoadingButton } from "@/components/ui/loading-button"
 import { useCrudMutation } from "@/hooks/useCrudMutation"
 import { toIsoDate } from "@/lib/dates"
 
-function getDefaultListDefaults(locale: string) {
+export function getDefaultListDefaults(locale: string) {
   const now = new Date()
   const day = now.getDay()
   const daysToMonday = day === 0 ? 1 : 8 - day

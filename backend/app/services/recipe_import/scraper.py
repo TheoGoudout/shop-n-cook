@@ -5,6 +5,7 @@ from __future__ import annotations
 import ipaddress
 import json
 import socket
+from typing import Any
 from urllib.parse import urlparse
 
 import httpx
@@ -38,6 +39,36 @@ def _validate_url_is_public(url: str) -> None:
             raise ValueError(
                 "Requests to private or reserved addresses are not allowed"
             )
+
+
+#: What the model is handed from a JSON-LD ``Recipe``: our key → schema.org key.
+#: Everything the page states is passed on, so the model reads servings, times
+#: and the rest instead of guessing them, and reads them the same way each time.
+_JSONLD_FIELDS = {
+    "title": "name",
+    "description": "description",
+    "yield": "recipeYield",
+    "prep_time": "prepTime",
+    "cook_time": "cookTime",
+    "total_time": "totalTime",
+    "category": "recipeCategory",
+    "cuisine": "recipeCuisine",
+    "keywords": "keywords",
+    "suitable_for_diet": "suitableForDiet",
+    "ingredients": "recipeIngredient",
+    "instructions": "recipeInstructions",
+}
+
+
+def _jsonld_fields(recipe: dict[str, Any]) -> dict[str, Any]:
+    """The parts of a JSON-LD ``Recipe`` the model needs, without empty ones."""
+    extracted = {key: recipe.get(source) for key, source in _JSONLD_FIELDS.items()}
+    nutrition = recipe.get("nutrition")
+    if isinstance(nutrition, dict):
+        extracted["calories"] = nutrition.get("calories")
+    return {
+        key: value for key, value in extracted.items() if value not in (None, "", [])
+    }
 
 
 def fetch_page(url: str) -> tuple[str, str | None]:
@@ -74,14 +105,7 @@ def extract_page(html: str) -> tuple[str, str | None]:
     # --- 1. Try JSON-LD (best quality, lowest tokens) ---
     recipe = jsonld.find_recipe(soup)
     if recipe is not None:
-        # Extract only relevant fields
-        extracted = {
-            "title": recipe.get("name"),
-            "description": recipe.get("description"),
-            "ingredients": recipe.get("recipeIngredient"),
-            "instructions": recipe.get("recipeInstructions"),
-        }
-        return json.dumps(extracted), image_url
+        return json.dumps(_jsonld_fields(recipe), ensure_ascii=False), image_url
 
     # --- 2. Targeted HTML extraction ---
     def find_section(keywords: list[str]) -> str:

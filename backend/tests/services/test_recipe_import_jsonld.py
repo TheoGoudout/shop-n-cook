@@ -72,3 +72,38 @@ def test_extract_page_reads_a_graph_recipe() -> None:
     text, image = extract_page(html)
     assert json.loads(text)["title"] == "Tatin"
     assert image == "https://img/tatin.jpg"
+
+
+def test_extract_page_passes_on_what_the_recipe_states() -> None:
+    html = str(
+        _soup(
+            {
+                "@type": "Recipe",
+                "name": "Ratatouille",
+                "recipeYield": ["4", "4 portions"],
+                "prepTime": "PT20M",
+                "cookTime": "PT1H",
+                "recipeCategory": "Plat principal",
+                "recipeCuisine": "Française",
+                "keywords": "été, légumes",
+                "suitableForDiet": "https://schema.org/VeganDiet",
+                "nutrition": {"@type": "NutritionInformation", "calories": "210 kcal"},
+                "recipeIngredient": ["3 courgettes"],
+                "recipeInstructions": ["Cuire"],
+            }
+        )
+    )
+    data = json.loads(extract_page(html)[0])
+    assert data == {
+        "title": "Ratatouille",
+        "yield": ["4", "4 portions"],
+        "prep_time": "PT20M",
+        "cook_time": "PT1H",
+        "category": "Plat principal",
+        "cuisine": "Française",
+        "keywords": "été, légumes",
+        "suitable_for_diet": "https://schema.org/VeganDiet",
+        "calories": "210 kcal",
+        "ingredients": ["3 courgettes"],
+        "instructions": ["Cuire"],
+    }

@@ -13,4 +13,4 @@ refresh. A number that only moves when the pipeline does keeps a release from
 re-reading the whole catalogue for nothing.
 """
 
-IMPORT_VERSION = 1
+IMPORT_VERSION = 2

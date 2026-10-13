@@ -62,7 +62,18 @@ actually read — omit the item instead
 and nothing else"""
     else:
         input_description = "the text content of a recipe web page"
-        source_rules = ""
+        source_rules = """
+Reading structured page data:
+- The content may be the page's own structured recipe data (schema.org). \
+When it states a value, use it rather than estimating one: "yield" gives \
+"servings" (the number of people or portions), "prep_time" / "cook_time" / \
+"total_time" are ISO 8601 durations (PT1H15M = 75 minutes) giving the times in \
+minutes, "calories" gives "kcal_per_serving", "cuisine" gives "cuisine_type", \
+and "category", "keywords" and "suitable_for_diet" inform "meal_type", \
+"seasons" and the diet flags
+- When only "total_time" is given, put the time actually spent cooking in \
+"cook_time_minutes" and the rest in "prep_time_minutes" if the steps make the \
+split clear; otherwise put all of it in "cook_time_minutes" alone"""
 
     return f"""You are a recipe extraction assistant. Given {input_description}, extract the recipe information and return it as JSON.
 

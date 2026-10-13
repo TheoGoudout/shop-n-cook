@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 
 import type { GenerateMenuRequest, MealType } from "@/client"
+import { todayIso } from "@/lib/dates"
 
 /** The four dietary switches, which map one-to-one onto request flags. */
 export const DIETS = [
@@ -43,6 +44,8 @@ export interface MenuPreferences {
   diets: Record<DietKey, boolean>
   matchSeason: boolean
   includePublic: boolean
+  /** Have an AI suggest a balanced week before the usual checks. */
+  balance: boolean
 }
 
 export const SCHEDULE_PRESETS = {
@@ -58,18 +61,10 @@ function weekOf(day: DaySchedule): WeeklySchedule {
   return Array.from({ length: 7 }, () => ({ ...day }))
 }
 
-function today(): string {
-  const now = new Date()
-  // Local date, not UTC: late in the evening UTC is already tomorrow.
-  return new Date(now.getTime() - now.getTimezoneOffset() * 60_000)
-    .toISOString()
-    .slice(0, 10)
-}
-
 export function defaultPreferences(): MenuPreferences {
   return {
     name: "",
-    start: today(),
+    start: todayIso(),
     days: 7,
     servings: "",
     budget: "",
@@ -84,6 +79,7 @@ export function defaultPreferences(): MenuPreferences {
     },
     matchSeason: true,
     includePublic: true,
+    balance: false,
   }
 }
 
@@ -118,6 +114,7 @@ function load(): MenuPreferences {
       diets: { ...defaults.diets, ...(saved.diets ?? {}) },
       matchSeason: saved.matchSeason ?? defaults.matchSeason,
       includePublic: saved.includePublic ?? defaults.includePublic,
+      balance: saved.balance ?? defaults.balance,
     }
   } catch {
     return defaults
@@ -165,6 +162,7 @@ export function toRequest(preferences: MenuPreferences): GenerateMenuRequest {
     max_prep_minutes: optionalNumber(preferences.maxPrep),
     match_season: preferences.matchSeason,
     include_public: preferences.includePublic,
+    use_ai: preferences.balance,
     // `map` forgets the tuple length; a schedule always has seven days.
     meals_by_weekday: preferences.schedule.map((day) =>
       PLANNED_MEALS.filter((meal) => day[meal]),

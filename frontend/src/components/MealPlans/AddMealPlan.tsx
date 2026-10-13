@@ -18,13 +18,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { LoadingButton } from "@/components/ui/loading-button"
 import { useCrudMutation } from "@/hooks/useCrudMutation"
-
-/** ISO date, n days from today. */
-function isoDate(offsetDays = 0): string {
-  const d = new Date()
-  d.setDate(d.getDate() + offsetDays)
-  return d.toISOString().slice(0, 10)
-}
+import { todayIso } from "@/lib/dates"
 
 export function AddMealPlan() {
   const { t } = useTranslation("mealPlans")
@@ -34,8 +28,8 @@ export function AddMealPlan() {
 
   const [name, setName] = useState("")
   // Defaults to the coming week, which is what a plan almost always is.
-  const [start, setStart] = useState(isoDate())
-  const [end, setEnd] = useState(isoDate(6))
+  const [start, setStart] = useState(todayIso())
+  const [end, setEnd] = useState(todayIso(6))
 
   const mutation = useCrudMutation({
     mutationFn: () =>

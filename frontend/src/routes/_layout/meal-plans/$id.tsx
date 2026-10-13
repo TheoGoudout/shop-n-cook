@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useCrudMutation } from "@/hooks/useCrudMutation"
 import { APP_NAME } from "@/lib/config"
+import { datesBetween } from "@/lib/dates"
 import { formatMoney } from "@/lib/money"
 
 /** Order the slots are shown in — how a day is actually eaten. */
@@ -43,18 +44,6 @@ export const Route = createFileRoute("/_layout/meal-plans/$id")({
     meta: [{ title: `Meal Plan - ${APP_NAME}` }],
   }),
 })
-
-/** Every date the plan spans, inclusive. */
-function daysBetween(start: string, end: string): string[] {
-  const days: string[] = []
-  const cursor = new Date(`${start}T00:00:00`)
-  const last = new Date(`${end}T00:00:00`)
-  while (cursor <= last) {
-    days.push(cursor.toISOString().slice(0, 10))
-    cursor.setDate(cursor.getDate() + 1)
-  }
-  return days
-}
 
 function EntryRow({
   entry,
@@ -179,7 +168,7 @@ function EntryRow({
 function WeekGrid({ plan }: { plan: MealPlanPublic }) {
   const { t } = useTranslation("mealPlans")
   const { i18n } = useTranslation("common")
-  const days = daysBetween(plan.start_date, plan.end_date)
+  const days = datesBetween(plan.start_date, plan.end_date)
   const entries = plan.entries ?? []
 
   const rank = (type: string | null | undefined) => {

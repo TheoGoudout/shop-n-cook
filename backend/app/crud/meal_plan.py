@@ -1,4 +1,5 @@
 import uuid
+from datetime import date, timedelta
 from decimal import Decimal
 
 from sqlmodel import Session, col, select
@@ -104,6 +105,30 @@ def get_meal_plans(
         skip=skip,
         limit=limit,
     )
+
+
+def recent_recipe_ids(
+    *,
+    session: Session,
+    owner_ids: set[uuid.UUID],
+    before: date,
+    days: int = 21,
+) -> frozenset[uuid.UUID]:
+    """Recipes planned in the ``days`` before ``before`` by any of ``owner_ids``.
+
+    What a household has just eaten, so a new menu can avoid serving it again.
+    """
+    statement = (
+        select(MealPlanEntry.recipe_id)
+        .join(MealPlan, col(MealPlan.id) == col(MealPlanEntry.meal_plan_id))
+        .where(
+            col(MealPlanEntry.entry_date) >= before - timedelta(days=days),
+            col(MealPlanEntry.entry_date) < before,
+            col(MealPlan.owner_id).in_(owner_ids),
+        )
+        .distinct()
+    )
+    return frozenset(session.exec(statement).all())
 
 
 def create_meal_plan(

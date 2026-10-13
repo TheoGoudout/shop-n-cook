@@ -1,8 +1,11 @@
 """Reviewing a menu before saving it, batch cooking, and saved preferences."""
 
+import json
 import uuid
 from datetime import date, timedelta
 from decimal import Decimal
+from typing import Any
+from unittest.mock import MagicMock, patch
 
 from fastapi.testclient import TestClient
 from sqlmodel import Session
@@ -16,6 +19,8 @@ from app.models import (
     Unit,
     User,
 )
+from app.models.meal_plan import MealPlanCreate, MealPlanEntryCreate
+from app.models.recipe import MealType
 from tests.utils.user import authentication_token_from_email, create_random_user
 from tests.utils.utils import random_lower_string
 
@@ -530,3 +535,111 @@ def test_removing_a_cooked_meal_keeps_its_leftovers(
     plan = client.get(f"{API}/{plan_id}", headers=headers).json()
     assert len(plan["entries"]) == 2
     assert all(e["batch_of_id"] is None for e in plan["entries"])
+
+
+# --------------------------------------------------------------------------- #
+# Variety across weeks, and the AI-balanced menu                               #
+# --------------------------------------------------------------------------- #
+
+
+def _plan_with(
+    db: Session, owner_id: uuid.UUID, day: date, recipe_id: uuid.UUID
+) -> None:
+    plan = crud.create_meal_plan(
+        session=db,
+        plan_in=MealPlanCreate(name="past", start_date=day, end_date=day),
+        owner_id=owner_id,
+    )
+    crud.add_entry(
+        session=db,
+        plan=plan,
+        entry_in=MealPlanEntryCreate(
+            recipe_id=recipe_id, entry_date=day, meal_type=MealType.DINNER
+        ),
+    )
+
+
+def test_recent_recipes_are_those_of_the_weeks_before(
+    client: TestClient, db: Session
+) -> None:
+    _, user = _account(client, db)
+    _, stranger = _account(client, db)
+    last_week = _recipe(db, user.id)
+    long_ago = _recipe(db, user.id)
+    upcoming = _recipe(db, user.id)
+    theirs = _recipe(db, stranger.id)
+    _plan_with(db, user.id, START - timedelta(days=5), last_week)
+    _plan_with(db, user.id, START - timedelta(days=40), long_ago)
+    _plan_with(db, user.id, START, upcoming)
+    _plan_with(db, stranger.id, START - timedelta(days=2), theirs)
+
+    recent = crud.recent_recipe_ids(session=db, owner_ids={user.id}, before=START)
+    assert recent == frozenset({last_week})
+
+
+def _llm_choosing(title: str) -> MagicMock:
+    """A model that puts the recipe called ``title`` in the first slot."""
+
+    def invoke(messages: list[Any]) -> MagicMock:
+        payload = json.loads(messages[-1].content)
+        number = next(r["number"] for r in payload["recipes"] if r["title"] == title)
+        return MagicMock(content=json.dumps({"meals": [{"slot": 0, "recipe": number}]}))
+
+    llm = MagicMock()
+    llm.invoke.side_effect = invoke
+    return llm
+
+
+def test_an_ai_balanced_preview_follows_the_models_suggestion(
+    client: TestClient, db: Session
+) -> None:
+    headers, user = _account(client, db)
+    for _ in range(6):
+        _recipe(db, user.id)
+    chosen = _recipe(db, user.id, title="chosen-by-the-model")
+
+    with patch(
+        "app.services.recipe_import.llm.get_llm",
+        return_value=_llm_choosing("chosen-by-the-model"),
+    ):
+        response = client.post(
+            f"{API}/generate/preview",
+            headers=headers,
+            json=_base(days=1, use_ai=True),
+        )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["ai_balanced"] is True
+    assert body["meals"][0]["recipe_id"] == str(chosen)
+
+
+def test_an_ai_failure_still_composes_a_menu(client: TestClient, db: Session) -> None:
+    headers, user = _account(client, db)
+    for _ in range(5):
+        _recipe(db, user.id)
+
+    with patch(
+        "app.services.recipe_import.llm.get_llm",
+        side_effect=ValueError("no provider"),
+    ):
+        response = client.post(
+            f"{API}/generate/preview", headers=headers, json=_base(use_ai=True)
+        )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["ai_balanced"] is False
+    assert len(body["meals"]) == 4
+
+
+def test_without_use_ai_the_model_is_never_called(
+    client: TestClient, db: Session
+) -> None:
+    headers, user = _account(client, db)
+    for _ in range(3):
+        _recipe(db, user.id)
+
+    with patch("app.services.recipe_import.llm.get_llm") as get_llm:
+        response = client.post(f"{API}/generate/preview", headers=headers, json=_base())
+    assert response.status_code == 200
+    assert response.json()["ai_balanced"] is False
+    get_llm.assert_not_called()

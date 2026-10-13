@@ -36,6 +36,7 @@ import { LoadingButton } from "@/components/ui/loading-button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useCrudMutation } from "@/hooks/useCrudMutation"
 import { APP_NAME } from "@/lib/config"
+import { datesFrom } from "@/lib/dates"
 import { formatMoney } from "@/lib/money"
 import { cn } from "@/lib/utils"
 
@@ -51,17 +52,6 @@ const REPRICE_DELAY_MS = 400
 
 function randomSeed(): number {
   return Math.floor(Math.random() * 1_000_000)
-}
-
-function datesOf(start: string, days: number): string[] {
-  const first = new Date(`${start}T00:00:00`)
-  if (Number.isNaN(first.getTime())) return []
-  return Array.from({ length: days }, (_, i) => {
-    const day = new Date(first)
-    day.setDate(first.getDate() + i)
-    const local = new Date(day.getTime() - day.getTimezoneOffset() * 60_000)
-    return local.toISOString().slice(0, 10)
-  })
 }
 
 function mealsOf(preview: MenuPreview): ProposedMealIn[] {
@@ -87,6 +77,8 @@ function GenerateMenuPage() {
   const [composedWith, setComposedWith] = useState<GenerateMenuRequest | null>(
     null,
   )
+  /** Whether an AI balanced the composed menu; swaps afterwards keep it. */
+  const [aiBalanced, setAiBalanced] = useState(false)
   const [selected, setSelected] = useState<Set<number>>(new Set())
   const [picking, setPicking] = useState<number | null>(null)
 
@@ -109,6 +101,7 @@ function GenerateMenuPage() {
     onSuccess: (next, body) => {
       setPreview(next)
       setComposedWith(body)
+      setAiBalanced(next.ai_balanced ?? false)
       setSelected(new Set())
     },
   })
@@ -302,6 +295,14 @@ function GenerateMenuPage() {
 
           {preview && (
             <>
+              {composedWith?.use_ai && (
+                <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <Sparkles className="h-4 w-4 shrink-0 text-primary" />
+                  {aiBalanced
+                    ? t("review.ai_balanced")
+                    : t("review.ai_unavailable")}
+                </p>
+              )}
               <div className="flex min-h-9 flex-wrap items-center justify-between gap-2">
                 <p className="text-sm text-muted-foreground">
                   {selected.size > 0
@@ -338,7 +339,7 @@ function GenerateMenuPage() {
               >
                 <MenuBoard
                   preview={preview}
-                  days={datesOf(
+                  days={datesFrom(
                     composedWith?.start_date ?? preferences.start,
                     composedWith?.days ?? preferences.days,
                   )}

@@ -222,6 +222,18 @@ Never use `--no-verify` — fix the underlying issue.
 - LangSmith tracing is opt-in via `LANGCHAIN_TRACING_V2` +
   `LANGCHAIN_API_KEY` env vars.
 
+**Menu generation**
+- `services/menu_generator.py` composes menus: hard constraints filter, a scorer
+  ranks, and the pick is drawn (seeded) among recipes close to the best score —
+  never always the top one, or every menu is the same handful of dishes. What
+  the household planned in the previous three weeks (`crud.recent_recipe_ids`)
+  is penalised.
+- `services/menu_balancer.py` (opt-in `use_ai`) asks the LLM for a balanced
+  week from an eligible shortlist. Its answer is only a suggestion:
+  `generate_menu(..., suggested=...)` re-checks diet, meal type, budget and
+  repeats, and any failure falls back to the scorer alone. Tests mock
+  `app.services.recipe_import.llm.get_llm`.
+
 **Recipe crawler**
 - `backend/app/services/recipe_crawler/` imports top-rated recipes from a fixed
   list of sites as public recipes owned by an inactive crawler account.

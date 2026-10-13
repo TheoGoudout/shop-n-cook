@@ -82,7 +82,9 @@
     "default_name": "Menu du {{date}}",
     "success": "Menu créé",
     "swap": "Remplacer ce repas",
-    "swapped": "Repas remplacé"
+    "swapped": "Repas remplacé",
+    "balance_label": "Équilibrer la semaine avec l'IA",
+    "balance_hint": "Varie les protéines, les légumes et alterne plats riches et légers. Prend quelques secondes de plus."
   },
   "review": {
     "hint": "Cochez des repas pour en remplacer plusieurs à la fois, ou utilisez les icônes de chaque repas.",
@@ -118,6 +120,8 @@
     "stat_cost": "Coût estimé",
     "unpriced": "{{count}} recette sans prix",
     "unpriced_other": "{{count}} recettes sans prix",
-    "create": "Créer le menu"
+    "create": "Créer le menu",
+    "ai_balanced": "Équilibré par l'IA : protéines variées, légumes et plats plus légers.",
+    "ai_unavailable": "L'équilibrage par l'IA est indisponible pour le moment ; ce menu a été composé sans."
   }
 }

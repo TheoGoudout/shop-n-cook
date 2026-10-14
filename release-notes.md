@@ -1,5 +1,11 @@
 # Release Notes
 
+## 1.9.1 (2026-10-14)
+
+### Fixes
+
+* Fix responsive layout on phones and tablets. PR [#132](https://github.com/TheoGoudout/shop-n-cook/pull/132) by [@TheoGoudout](https://github.com/TheoGoudout).
+
 ## 1.9.0 (2026-10-13)
 
 ### Features

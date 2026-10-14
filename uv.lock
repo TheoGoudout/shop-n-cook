@@ -80,7 +80,7 @@ wheels = [
 
 [[package]]
 name = "app"
-version = "1.9.0"
+version = "1.9.1"
 source = { editable = "backend" }
 dependencies = [
     { name = "alembic" },

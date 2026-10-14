@@ -84,11 +84,13 @@ function RecipeDetailContent() {
       )}
 
       {/* Header */}
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex-1">
-          <h1 className="text-3xl font-bold tracking-tight">{recipe.title}</h1>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-2">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-2xl font-bold tracking-tight break-words sm:text-3xl">
+            {recipe.title}
+          </h1>
           {recipe.description && (
-            <p className="text-muted-foreground mt-2 text-lg">
+            <p className="text-muted-foreground mt-2 text-base sm:text-lg">
               {recipe.description}
             </p>
           )}
@@ -104,7 +106,7 @@ function RecipeDetailContent() {
             </a>
           )}
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex shrink-0 items-center gap-1">
           <AddToShoppingList recipe={recipe} />
           <RecipeActionsMenu recipe={recipe} />
         </div>
@@ -226,8 +228,8 @@ function RecipeDetailContent() {
                 const category = catalogEntry?.category ?? "other"
                 return (
                   <li key={ing.id} className="text-sm">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 font-medium">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 font-medium">
                         {catalogEntry?.image_url && (
                           <img
                             src={catalogEntry.image_url}
@@ -235,7 +237,9 @@ function RecipeDetailContent() {
                             className="w-10 h-10 rounded-md object-contain shrink-0 bg-muted p-0.5"
                           />
                         )}
-                        <span>{ing.ingredient_name}</span>
+                        <span className="break-words">
+                          {ing.ingredient_name}
+                        </span>
                         <Badge
                           variant="outline"
                           className="text-xs font-normal"
@@ -245,8 +249,8 @@ function RecipeDetailContent() {
                           })}
                         </Badge>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-muted-foreground">
+                      <div className="flex shrink-0 items-center gap-2">
+                        <span className="text-muted-foreground whitespace-nowrap">
                           {converted.quantity}{" "}
                           {tCommon(`unit_labels.${converted.unit}`, {
                             defaultValue: converted.unit,

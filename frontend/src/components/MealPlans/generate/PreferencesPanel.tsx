@@ -165,8 +165,8 @@ export function PreferencesPanel({
   return (
     <div className="space-y-6">
       <Section title={t("generate.section_when")}>
-        <div className="grid grid-cols-[1fr_auto] gap-3">
-          <div className="space-y-1.5">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3">
+          <div className="min-w-0 space-y-1.5">
             <Label htmlFor="gen-start">{t("add.start_label")}</Label>
             <Input
               id="gen-start"
@@ -214,7 +214,7 @@ export function PreferencesPanel({
               key={portions}
               pressed={value.batch === portions}
               onClick={() => onChange({ batch: portions })}
-              className="h-9"
+              className="min-h-9 min-w-0 px-1 py-1 text-center leading-tight"
             >
               {t(`generate.batch_${portions}`)}
             </Toggle>
@@ -224,7 +224,7 @@ export function PreferencesPanel({
 
       <Section title={t("generate.section_who")}>
         <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5">
+          <div className="min-w-0 space-y-1.5">
             <Label htmlFor="gen-servings">{t("generate.servings_label")}</Label>
             <Input
               id="gen-servings"
@@ -235,7 +235,7 @@ export function PreferencesPanel({
               onChange={(e) => onChange({ servings: e.target.value })}
             />
           </div>
-          <div className="space-y-1.5">
+          <div className="min-w-0 space-y-1.5">
             <Label htmlFor="gen-budget">{t("generate.budget_label")}</Label>
             <Input
               id="gen-budget"

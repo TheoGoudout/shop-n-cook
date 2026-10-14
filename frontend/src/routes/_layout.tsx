@@ -20,11 +20,11 @@ function Layout() {
   return (
     <div className="bg-kitchen-glow flex min-h-svh flex-col">
       <TopNav />
-      {/* pb-24 keeps the last row clear of the mobile tab bar */}
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 pt-8 pb-24 md:px-6 md:pb-12">
+      {/* The bottom padding keeps the last row clear of the tab bar */}
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 pt-6 pb-[calc(6rem+env(safe-area-inset-bottom))] sm:pt-8 md:px-6 lg:pb-12">
         <Outlet />
       </main>
-      <div className="hidden md:block">
+      <div className="hidden lg:block">
         <Footer />
       </div>
     </div>

@@ -4,6 +4,9 @@
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
+/* Devices with a mouse. Controls revealed on hover stay visible elsewhere,
+   since a touch screen has no hover to reveal them with. */
+@custom-variant can-hover (@media (hover: hover) and (pointer: fine));
 
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);

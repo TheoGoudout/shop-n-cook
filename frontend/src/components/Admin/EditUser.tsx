@@ -100,7 +100,7 @@ const EditUser = ({ user, onSuccess }: EditUserProps) => {
         <Pencil />
         {t("edit.menu_item")}
       </DropdownMenuItem>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-md">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <DialogHeader>

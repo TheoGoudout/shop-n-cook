@@ -20,7 +20,7 @@ export function useUserColumns(): DataTableColumnDef<UserTableData>[] {
       cell: ({ row }) => {
         const fullName = row.original.full_name
         return (
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-40 items-center gap-2 whitespace-normal">
             <span
               className={cn(
                 "font-medium",

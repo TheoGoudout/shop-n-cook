@@ -85,7 +85,7 @@ function DeduplicateButton() {
         {t("ingredient.deduplicate")}
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-md">
           <DialogHeader>
             <DialogTitle>
               {t("ingredient.deduplicate_confirm_title")}
@@ -131,11 +131,11 @@ function IngredientsTableContent() {
   }
 
   return (
-    <div className="border rounded-md">
+    <div className="relative border rounded-md overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b bg-muted/50">
-            <th className="text-left font-medium p-3 w-10" />
+            <th className="text-left font-medium p-3 w-10 hidden sm:table-cell" />
             <th className="text-left font-medium p-3">{t("name")}</th>
             <th className="text-left font-medium p-3">{t("category")}</th>
             <th className="text-left font-medium p-3">
@@ -166,7 +166,7 @@ function IngredientsTableContent() {
                 : null
             return (
               <tr key={ingredient.id} className="border-b last:border-0">
-                <td className="p-3">
+                <td className="p-3 hidden sm:table-cell">
                   {ingredient.image_url ? (
                     <img
                       src={ingredient.image_url}

@@ -179,24 +179,24 @@ function ShoppingTab({ list }: { list: ShoppingListPublic }) {
             />
           )}
           <span
-            className={`flex-1 text-sm font-medium ${item.is_checked ? "line-through text-muted-foreground" : ""}`}
+            className={`min-w-0 flex-1 break-words text-sm font-medium ${item.is_checked ? "line-through text-muted-foreground" : ""}`}
           >
             {item.name}
           </span>
-          <span className="text-sm text-muted-foreground">
+          <span className="shrink-0 whitespace-nowrap text-sm text-muted-foreground">
             {converted.quantity}{" "}
             {tCommon(`unit_labels.${converted.unit}`, {
               defaultValue: converted.unit,
             })}
           </span>
-          <span className="text-sm tabular-nums w-16 text-right text-muted-foreground">
+          <span className="w-16 shrink-0 text-right text-sm tabular-nums text-muted-foreground">
             {formatMoney(item.estimated_cost, list.currency, i18n.language) ??
               tCommon("pricing.no_price")}
           </span>
           <Button
             variant="ghost"
             size="icon"
-            className="h-6 w-6 opacity-0 group-hover:opacity-100"
+            className="h-6 w-6 shrink-0 can-hover:opacity-0 can-hover:group-focus-within:opacity-100 can-hover:group-hover:opacity-100"
             onClick={() => removeItemMutation.mutate(item.id)}
           >
             <Trash2 className="h-3 w-3" />

@@ -128,7 +128,7 @@ export function RecipeFilterBar({
         value={filters.difficulty}
         onChange={(value) => onChange({ ...filters, difficulty: value })}
         noneLabel={t("filters.difficulty")}
-        triggerClassName="h-7 w-28 text-xs"
+        triggerClassName="h-7 min-w-28 text-xs"
       />
 
       {/* Meal type select */}
@@ -137,7 +137,7 @@ export function RecipeFilterBar({
         value={filters.meal_type}
         onChange={(value) => onChange({ ...filters, meal_type: value })}
         noneLabel={t("filters.meal_type")}
-        triggerClassName="h-7 w-28 text-xs"
+        triggerClassName="h-7 min-w-28 text-xs"
       />
 
       {/* Cuisine type text */}

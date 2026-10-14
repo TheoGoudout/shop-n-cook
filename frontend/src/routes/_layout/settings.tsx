@@ -65,7 +65,8 @@ function UserSettings() {
       <PageHeader title={t("page.title")} subtitle={t("page.subtitle")} />
 
       <Tabs defaultValue="my-profile">
-        <TabsList>
+        {/* Five tabs are wider than a phone: let them wrap onto a second row */}
+        <TabsList className="h-auto max-w-full flex-wrap justify-start">
           {tabsConfig.map((tab) => (
             <TabsTrigger key={tab.value} value={tab.value}>
               {tab.title}

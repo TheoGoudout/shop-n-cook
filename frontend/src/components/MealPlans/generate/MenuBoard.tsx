@@ -208,7 +208,7 @@ export function MenuBoard({
       {days.map((day) => {
         const rows = rowsForDay(preview, day)
         return (
-          <Card key={day} className="gap-0 py-0">
+          <Card key={day} className="min-w-0 gap-0 py-0">
             <CardHeader className="px-3 pt-3 pb-2">
               <CardTitle className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 {new Date(`${day}T00:00:00`).toLocaleDateString(i18n.language, {

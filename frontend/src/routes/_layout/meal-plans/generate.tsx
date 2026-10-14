@@ -466,7 +466,7 @@ function SummaryBar({
     Number(preview.estimated_total) > Number(preview.budget)
 
   return (
-    <div className="sticky bottom-0 z-10 -mx-1 rounded-t-lg border bg-background/95 p-3 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/80">
+    <div className="sticky bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-10 lg:bottom-0 -mx-1 rounded-t-lg border bg-background/95 p-3 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/80">
       <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
         <dl className="flex flex-wrap gap-x-5 gap-y-1 text-sm">
           <Stat label={t("review.stat_recipes")} value={preview.meals.length} />

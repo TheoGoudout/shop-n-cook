@@ -80,8 +80,8 @@ export function RecipeForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)}>
-        <div className="grid gap-4 py-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="min-w-0">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-4 py-4">
           {importPanel}
 
           <FormField
@@ -153,7 +153,7 @@ export function RecipeForm({
               )}
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <FormField
               control={form.control}
               name="source_url"
@@ -220,7 +220,7 @@ export function RecipeForm({
             </div>
 
             {/* Difficulty, Meal type, Kcal */}
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
               <FormField
                 control={form.control}
                 name="difficulty"
@@ -232,6 +232,7 @@ export function RecipeForm({
                       value={field.value ?? ""}
                       onChange={field.onChange}
                       noneLabel={t("form.none")}
+                      triggerClassName="w-full"
                       inForm
                     />
                   </FormItem>
@@ -248,6 +249,7 @@ export function RecipeForm({
                       value={field.value ?? ""}
                       onChange={field.onChange}
                       noneLabel={t("form.none")}
+                      triggerClassName="w-full"
                       inForm
                     />
                   </FormItem>
@@ -273,7 +275,7 @@ export function RecipeForm({
             </div>
 
             {/* Cuisine type and Seasons */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <FormField
                 control={form.control}
                 name="cuisine_type"
@@ -394,12 +396,13 @@ export function RecipeForm({
             <div className="space-y-3">
               {ingredientFields.map((field, index) => (
                 <div key={field.id} className="flex flex-col gap-1">
-                  <div className="flex gap-2 items-start">
+                  {/* On a phone the name takes its own row, above the amount */}
+                  <div className="flex flex-wrap gap-2 items-start sm:flex-nowrap">
                     <FormField
                       control={form.control}
                       name={`ingredients.${index}.ingredient_name`}
                       render={({ field: f }) => (
-                        <FormItem className="flex-1">
+                        <FormItem className="min-w-0 basis-full sm:flex-1">
                           <FormControl>
                             <Input
                               placeholder={t(
@@ -417,7 +420,7 @@ export function RecipeForm({
                       control={form.control}
                       name={`ingredients.${index}.quantity`}
                       render={({ field: f }) => (
-                        <FormItem className="w-20">
+                        <FormItem className="min-w-0 flex-1 sm:w-20 sm:flex-none">
                           <FormControl>
                             <Input
                               type="number"
@@ -434,11 +437,12 @@ export function RecipeForm({
                       control={form.control}
                       name={`ingredients.${index}.unit`}
                       render={({ field: f }) => (
-                        <FormItem className="w-24">
+                        <FormItem className="w-28 sm:w-24">
                           <FormControl>
                             <UnitSelect
                               value={f.value}
                               onValueChange={f.onChange}
+                              className="w-full"
                             />
                           </FormControl>
                         </FormItem>
@@ -449,7 +453,7 @@ export function RecipeForm({
                       variant="ghost"
                       size="icon"
                       onClick={() => removeIngredient(index)}
-                      className="mt-0.5"
+                      className="mt-0.5 shrink-0"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -458,7 +462,7 @@ export function RecipeForm({
                     control={form.control}
                     name={`ingredients.${index}.notes`}
                     render={({ field: f }) => (
-                      <FormItem className="pr-10">
+                      <FormItem className="sm:pr-10">
                         <FormControl>
                           <Input
                             placeholder={t("form.notes_placeholder")}
@@ -502,7 +506,7 @@ export function RecipeForm({
                     <span className="flex-shrink-0 w-6 h-6 rounded-full bg-muted text-muted-foreground text-xs flex items-center justify-center font-semibold mt-1">
                       {stepIndex + 1}
                     </span>
-                    <div className="flex-1 space-y-2">
+                    <div className="min-w-0 flex-1 space-y-2">
                       <FormField
                         control={form.control}
                         name={`steps.${stepIndex}.instruction`}

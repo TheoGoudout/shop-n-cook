@@ -157,7 +157,7 @@ export function ShoppingListCard({ list }: Props) {
                   }
                 />
                 <span
-                  className={`flex-1 text-sm ${item.is_checked ? "line-through text-muted-foreground" : ""}`}
+                  className={`min-w-0 flex-1 break-words text-sm ${item.is_checked ? "line-through text-muted-foreground" : ""}`}
                 >
                   {item.name}
                   <span className="text-muted-foreground ml-1">
@@ -170,7 +170,7 @@ export function ShoppingListCard({ list }: Props) {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-6 w-6 opacity-0 group-hover:opacity-100"
+                  className="h-6 w-6 shrink-0 can-hover:opacity-0 can-hover:group-focus-within:opacity-100 can-hover:group-hover:opacity-100"
                   onClick={() => removeItemMutation.mutate(item.id)}
                 >
                   <Trash2 className="h-3 w-3" />

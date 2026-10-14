@@ -134,7 +134,7 @@ export function AddToShoppingList({ recipe, variant = "button" }: Props) {
           {t("add_to_list.button")}
         </Button>
       )}
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{t("add_to_list.dialog_title")}</DialogTitle>
           <DialogDescription>

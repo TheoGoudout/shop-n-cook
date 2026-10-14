@@ -63,7 +63,7 @@ const EditRecipe = ({ recipe, onSuccess }: Props) => {
         <Pencil />
         {t("edit.menu_item")}
       </DropdownMenuItem>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90dvh] overflow-y-auto p-4 sm:max-w-2xl sm:p-6">
         <DialogHeader>
           <DialogTitle>{t("edit.dialog_title")}</DialogTitle>
           <DialogDescription>{t("edit.dialog_description")}</DialogDescription>

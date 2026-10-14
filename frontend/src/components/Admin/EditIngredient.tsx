@@ -89,7 +89,7 @@ const EditIngredient = ({ ingredient, onSuccess }: EditIngredientProps) => {
         <Pencil />
         {t("ingredient.edit", { ns: "admin" })}
       </DropdownMenuItem>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-md">
         <Form {...form}>
           <form onSubmit={form.handleSubmit((d) => mutation.mutate(d))}>
             <DialogHeader>

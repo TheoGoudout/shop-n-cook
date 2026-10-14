@@ -62,10 +62,19 @@
     /* ── Features ── */
     .features {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+      /* Four cards: one, two or four per row, never three and an orphan. */
+      grid-template-columns: 1fr;
       gap: 1rem;
       width: 100%;
       max-width: 56rem;
+    }
+
+    @media (min-width: 34rem) {
+      .features { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (min-width: 58rem) {
+      .features { grid-template-columns: repeat(4, minmax(0, 1fr)); }
     }
 
     .feature {

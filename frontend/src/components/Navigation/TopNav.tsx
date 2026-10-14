@@ -60,7 +60,8 @@ function useActivePath(items: NavItem[]): string | undefined {
 /**
  * The app's header: logo, the sections as pills, and the theme and account
  * menus. On small screens the sections move to a tab bar at the bottom of
- * the screen, where a thumb can reach them.
+ * the screen, where a thumb can reach them; tablets in portrait get the tab
+ * bar too, since the pills only fit from the `lg` breakpoint.
  */
 export function TopNav() {
   const items = useNavItems()
@@ -71,44 +72,43 @@ export function TopNav() {
       <header className="sticky top-0 z-30 border-b bg-background/80 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-6xl items-center gap-6 px-4 md:px-6">
           <Logo variant="full" className="shrink-0 [&_span]:text-lg" />
-          <nav className="hidden flex-1 items-center gap-1 md:flex">
+          <nav className="hidden min-w-0 flex-1 items-center gap-1 lg:flex">
             {items.map((item) => (
               <Link
                 key={item.path}
                 to={item.path}
                 className={cn(
-                  "flex items-center gap-2 rounded-full px-3.5 py-2 text-sm font-medium transition-colors",
+                  "flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-3 py-2 text-sm font-medium transition-colors",
                   item.path === active
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:bg-secondary hover:text-secondary-foreground",
                 )}
               >
                 <item.icon className="size-4" />
-                {item.title}
+                <span className="xl:hidden">{item.shortTitle}</span>
+                <span className="hidden xl:inline">{item.title}</span>
               </Link>
             ))}
           </nav>
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex shrink-0 items-center gap-2">
             <Appearance />
             <UserMenu />
           </div>
         </div>
       </header>
-      <nav className="fixed inset-x-0 bottom-0 z-30 grid auto-cols-[minmax(0,1fr)] grid-flow-col border-t bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-30 grid auto-cols-[minmax(0,1fr)] grid-flow-col border-t bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden">
         {items.map((item) => (
           <Link
             key={item.path}
             to={item.path}
             aria-label={item.title}
             className={cn(
-              "flex min-w-0 flex-col items-center gap-1 py-2 text-[0.6875rem] font-medium",
+              "flex h-14 min-w-0 flex-col items-center justify-center gap-1 text-[0.625rem] font-medium min-[400px]:text-[0.6875rem]",
               item.path === active ? "text-primary" : "text-muted-foreground",
             )}
           >
             <item.icon className="size-5" />
-            <span className="max-w-full truncate px-0.5">
-              {item.shortTitle}
-            </span>
+            <span className="max-w-full truncate">{item.shortTitle}</span>
           </Link>
         ))}
       </nav>
